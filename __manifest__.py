@@ -25,8 +25,10 @@
         
         # 2. Datos (surveys)
         'data/surveys_data.xml',
+        'data/demo/users_groups.xml',
         
         # 3. Vistas
+        'views/dashboard.xml',
         'views/academic_group_views.xml',
         'views/res_users_views.xml',
         'views/survey_extension_views.xml',

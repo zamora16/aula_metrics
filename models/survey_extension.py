@@ -50,4 +50,5 @@ class SurveyExtension(models.Model):
             'res_model': 'aulametrics.evaluation',
             'view_mode': 'tree,form',
             'domain': [('survey_ids', 'in', self.id)],
+            'context': {'default_survey_ids': [(6, 0, [self.id])]},
         }

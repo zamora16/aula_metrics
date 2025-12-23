@@ -65,13 +65,6 @@ class Evaluation(models.Model):
     )
     
     # Programación temporal
-    periodicity = fields.Selection([
-        ('once', 'Puntual'),
-        ('quarterly', 'Trimestral'),
-        ('semester', 'Semestral'),
-        ('annual', 'Anual'),
-    ], string='Periodicidad', required=True, default='once')
-    
     date_start = fields.Datetime(
         string='Fecha Inicio',
         required=True,
@@ -206,36 +199,6 @@ class Evaluation(models.Model):
                         'student_id': student.id,
                         'state': 'pending',
                     })
-    
-    # Cron para activación automática
-    @api.model
-    def _cron_activate_evaluations(self):
-        """Cron que activa evaluaciones programadas cuando llega su fecha de inicio"""
-        now = fields.Datetime.now()
-        evaluations = self.search([
-            ('state', '=', 'scheduled'),
-            ('date_start', '<=', now),
-        ])
-        evaluations.action_activate()
-    
-    # Cron para cierre automático
-    @api.model
-    def _cron_close_evaluations(self):
-        """Cron que cierra evaluaciones activas cuando pasa su fecha de fin"""
-        now = fields.Datetime.now()
-        evaluations = self.search([
-            ('state', '=', 'active'),
-            ('date_end', '<=', now),
-        ])
-        evaluations.action_close()
-    
-    @api.model
-    def _cron_expire_participations(self):
-        """Cron que marca como expiradas las participaciones pendientes de evaluaciones cerradas"""
-        closed_evaluations = self.search([('state', '=', 'closed')])
-        for evaluation in closed_evaluations:
-            pending_participations = evaluation.participation_ids.filtered(lambda p: p.state == 'pending')
-            pending_participations.action_expire()
     
     def action_view_participations(self):
         """Acción para ver participaciones desde el smart button"""

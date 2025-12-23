@@ -58,7 +58,6 @@
                     <group>
                         <group>
                             <field name="user_id" widget="many2one_avatar_user"/>
-                            <field name="periodicity"/>
                             <field name="date_start" required="1"/>
                             <field name="date_end" required="1"/>
                         </group>
@@ -130,7 +129,6 @@
                 <field name="name"/>
                 <field name="date_start"/>
                 <field name="date_end"/>
-                <field name="periodicity"/>
                 <field name="group_count" string="Grupos"/>
                 <field name="survey_count" string="Cuestionarios"/>
                 <field name="participation_rate" widget="progressbar"/>
@@ -167,6 +165,11 @@
                 <field name="survey_ids"/>
                 
                 <!-- Filtros predefinidos -->
+                <filter string="Necesitan Acción" name="needs_action" 
+                        domain="['|', 
+                                 '&amp;', ('state', '=', 'scheduled'), ('date_start', '&lt;=', context_today()),
+                                 '&amp;', ('state', '=', 'active'), ('date_end', '&lt;=', context_today())]"/>
+                <separator/>
                 <filter string="Borradores" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Programadas" name="scheduled" domain="[('state', '=', 'scheduled')]"/>
                 <filter string="Activas" name="active_evaluations" domain="[('state', '=', 'active')]"/>
@@ -183,7 +186,6 @@
                 <!-- Agrupaciones -->
                 <group expand="0" string="Agrupar por">
                     <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Periodicidad" name="group_by_periodicity" context="{'group_by': 'periodicity'}"/>
                     <filter string="Mes Inicio" name="group_by_month" context="{'group_by': 'date_start:month'}"/>
                 </group>
             </search>

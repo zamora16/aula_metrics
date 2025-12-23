@@ -8,8 +8,9 @@
 
     <!-- Dashboard (placeholder) -->
     <menuitem id="menu_aulametrics_dashboard" 
-              name="Dashboard" 
-              parent="menu_aulametrics_root" 
+              name="Panel de Control" 
+              parent="menu_aulametrics_root"
+              action="action_aulametrics_dashboard" 
               sequence="10"/>
 
     <!-- Cuestionarios -->

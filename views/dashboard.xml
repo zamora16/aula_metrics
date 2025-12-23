@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard de AulaMetrics -->
+    <record id="view_aulametrics_dashboard" model="ir.ui.view">
+        <field name="name">aulametrics.dashboard</field>
+        <field name="model">aulametrics.evaluation</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_dashboard o_aulametrics_dashboard" create="false">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="state"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="participation_rate"/>
+                <field name="completed_students"/>
+                <field name="total_students"/>
+                
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click o_kanban_record_has_image_fill">
+                            <div class="o_kanban_record_top">
+                                <div class="o_kanban_record_headings">
+                                    <strong class="o_kanban_record_title">
+                                        <field name="name"/>
+                                    </strong>
+                                </div>
+                                <span class="float-end badge" t-attf-class="badge-{{
+                                    record.state.raw_value == 'active' ? 'success' :
+                                    record.state.raw_value == 'scheduled' ? 'warning' :
+                                    record.state.raw_value == 'closed' ? 'secondary' : 'info'
+                                }}">
+                                    <field name="state"/>
+                                </span>
+                            </div>
+                            
+                            <div class="o_kanban_record_body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <i class="fa fa-calendar"/> Inicio: <field name="date_start"/>
+                                    </div>
+                                    <div class="col-6">
+                                        <i class="fa fa-calendar-check-o"/> Fin: <field name="date_end"/>
+                                    </div>
+                                </div>
+                                <div class="row mt-2" t-if="record.state.raw_value in ['active', 'closed']">
+                                    <div class="col-12">
+                                        <div class="progress" style="height: 25px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 t-attf-style="width: {{record.participation_rate.raw_value}}%"
+                                                 t-attf-aria-valuenow="{{record.participation_rate.raw_value}}"
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                <strong>
+                                                    <field name="completed_students"/> / <field name="total_students"/>
+                                                    (<field name="participation_rate" widget="percentage"/>)
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="o_kanban_record_bottom mt-3" t-if="record.state.raw_value in ['scheduled', 'active']">
+                                <div class="oe_kanban_bottom_left">
+                                    <button t-if="record.state.raw_value == 'scheduled'" 
+                                            name="action_activate" type="object" 
+                                            class="btn btn-sm btn-primary">
+                                        <i class="fa fa-play"/> Activar
+                                    </button>
+                                    <button t-if="record.state.raw_value == 'active'" 
+                                            name="action_close" type="object" 
+                                            class="btn btn-sm btn-warning">
+                                        <i class="fa fa-stop"/> Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    
+    <!-- Acción del Dashboard -->
+    <record id="action_aulametrics_dashboard" model="ir.actions.act_window">
+        <field name="name">Panel de Control</field>
+        <field name="res_model">aulametrics.evaluation</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_id" ref="view_aulametrics_dashboard"/>
+        <field name="domain">[('state', 'in', ['scheduled', 'active'])]</field>
+        <field name="context">{'search_default_needs_action': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay evaluaciones activas o programadas
+            </p>
+            <p>
+                Crea una nueva evaluación para comenzar a recopilar datos de tus alumnos.
+            </p>
+        </field>
+    </record>
+</odoo>
