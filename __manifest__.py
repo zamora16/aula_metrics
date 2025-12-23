@@ -1,34 +1,37 @@
 # -*- coding: utf-8 -*-
 {
     'name': "AulaMetrics",
-
-    'summary': "Short (1 phrase/line) summary of the module's purpose",
+    'version': '1.0.0',
+    'summary': "Sistema de evaluación psicosocial para centros educativos",
 
     'description': """
-Long description of module's purpose
+        Módulo base de AulaMetrics que proporciona:
+        - Gestión de grupos académicos
+        - Extensión de roles y permisos
+        - Configuración global del sistema
     """,
 
-    'author': "My Company",
-    'website': "https://www.yourcompany.com",
-
-    # Categories can be used to filter modules in modules listing
-    # Check https://github.com/odoo/odoo/blob/15.0/odoo/addons/base/data/ir_module_category_data.xml
-    # for the full list
-    'category': 'Uncategorized',
-    'version': '0.1',
-
+    'author': "Angel Zamora",
+    'category': 'Education',
     # any module necessary for this one to work correctly
-    'depends': ['base'],
+    'depends': ['base','mail', 'survey'],
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
-        'views/views.xml',
-        'views/templates.xml',
+        'security/security.xml',
+        'views/academic_group_views.xml',
+        'views/res_users_views.xml', 
+        'views/menu.xml',
+        'security/ir.model.access.csv',
+        'security/record_rules.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
         'demo/demo.xml',
     ],
+    'installable': True,
+    'application': True,
+    'auto_install': False,
+    'license': 'LGPL-3',
 }
 

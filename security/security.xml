@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Categoría de Seguridad -->
+        <record id="module_category_aulametrics" model="ir.module.category">
+            <field name="name">AulaMetrics</field>
+            <field name="description">Sistema de evaluación psicosocial educativa</field>
+            <field name="sequence">50</field>
+        </record>
+
+        <!-- Grupo: Alumno -->
+        <record id="group_aulametrics_student" model="res.groups">
+            <field name="name">Alumno</field>
+            <field name="category_id" ref="module_category_aulametrics"/>
+            <field name="comment">Alumnos que pueden responder evaluaciones asignadas</field>
+        </record>
+
+        <!-- Grupo: Tutor -->
+        <record id="group_aulametrics_tutor" model="res.groups">
+            <field name="name">Tutor</field>
+            <field name="category_id" ref="module_category_aulametrics"/>
+            <field name="implied_ids" eval="[(4, ref('group_aulametrics_student'))]"/>
+            <field name="comment">Tutores con acceso a datos agregados de sus grupos</field>
+        </record>
+
+        <!-- Grupo: Orientador -->
+        <record id="group_aulametrics_counselor" model="res.groups">
+            <field name="name">Orientador</field>
+            <field name="category_id" ref="module_category_aulametrics"/>
+            <field name="implied_ids" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+            <field name="comment">Orientadores con acceso completo a evaluaciones y datos individuales</field>
+        </record>
+
+        <!-- Grupo: Dirección -->
+        <record id="group_aulametrics_management" model="res.groups">
+            <field name="name">Dirección</field>
+            <field name="category_id" ref="module_category_aulametrics"/>
+            <field name="implied_ids" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+            <field name="comment">Equipo directivo con acceso a datos globales del centro</field>
+        </record>
+
+        <!-- Grupo: Administrador -->
+        <record id="group_aulametrics_admin" model="res.groups">
+            <field name="name">Administrador AulaMetrics</field>
+            <field name="category_id" ref="module_category_aulametrics"/>
+            <field name="implied_ids" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_management'))]"/>
+            <field name="comment">Administrador con gestión completa del sistema</field>
+        </record>
+    </data>
+</odoo>

@@ -1,2 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_aula_metrics_aula_metrics,aula_metrics.aula_metrics,model_aula_metrics_aula_metrics,base.group_user,1,1,1,1
+access_academic_group_admin,access.academic.group.admin,model_aulametrics_academic_group,group_aulametrics_admin,1,1,1,1
+access_academic_group_counselor,access.academic.group.counselor,model_aulametrics_academic_group,group_aulametrics_counselor,1,1,1,0
+access_academic_group_tutor,access.academic.group.tutor,model_aulametrics_academic_group,group_aulametrics_tutor,1,0,0,0
+access_academic_group_management,access.academic.group.management,model_aulametrics_academic_group,group_aulametrics_management,1,0,0,0
+access_academic_group_student,access.academic.group.student,model_aulametrics_academic_group,group_aulametrics_student,1,0,0,0

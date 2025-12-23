@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario -->
+    <record id="view_academic_group_form" model="ir.ui.view">
+        <field name="name">aulametrics.academic_group.form</field>
+        <field name="model">aulametrics.academic_group</field>
+        <field name="arch" type="xml">
+            <form string="Grupo Académico">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="Ej: 1º ESO A"/>
+                            <field name="course_level"/>
+                            <field name="academic_year"/>
+                        </group>
+                        <group>
+                            <field name="tutor_id" options="{'no_create': True}"/>
+                            <field name="student_count"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Alumnado" name="students">
+                            <field name="student_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="email"/>
+                                    <field name="login"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="notes" placeholder="Observaciones sobre el grupo..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Lista -->
+    <record id="view_academic_group_tree" model="ir.ui.view">
+        <field name="name">aulametrics.academic_group.tree</field>
+        <field name="model">aulametrics.academic_group</field>
+        <field name="arch" type="xml">
+            <tree string="Grupos Académicos">
+                <field name="name"/>
+                <field name="course_level"/>
+                <field name="academic_year"/>
+                <field name="tutor_id" widget="many2one_avatar_user"/>
+                <field name="student_count"/>
+                <field name="active" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda/Filtros -->
+    <record id="view_academic_group_search" model="ir.ui.view">
+        <field name="name">aulametrics.academic_group.search</field>
+        <field name="model">aulametrics.academic_group</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Grupos">
+                <field name="name"/>
+                <field name="tutor_id"/>
+                <field name="academic_year"/>
+                <filter string="Activos" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Archivados" name="inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="ESO" name="eso" domain="[('course_level', 'in', ['eso1', 'eso2', 'eso3', 'eso4'])]"/>
+                <filter string="Bachillerato" name="bach" domain="[('course_level', 'in', ['bach1', 'bach2'])]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Nivel" name="group_by_level" context="{'group_by': 'course_level'}"/>
+                    <filter string="Curso Académico" name="group_by_year" context="{'group_by': 'academic_year'}"/>
+                    <filter string="Tutor" name="group_by_tutor" context="{'group_by': 'tutor_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción de Ventana -->
+    <record id="action_academic_group" model="ir.actions.act_window">
+        <field name="name">Grupos Académicos</field>
+        <field name="res_model">aulametrics.academic_group</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear el primer grupo académico
+            </p>
+            <p>
+                Los grupos académicos organizan a los estudiantes por cursos y permiten
+                asignar evaluaciones específicas según el nivel educativo.
+            </p>
+        </field>
+    </record>
+</odoo>
