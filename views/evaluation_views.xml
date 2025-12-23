@@ -27,10 +27,6 @@
                 <sheet>
                     <!-- Métricas superiores -->
                     <div class="oe_button_box" name="button_box">
-                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
-                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
-                        </button>
-                        
                         <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-users">
                             <field name="total_students" widget="statinfo" string="Alumnos"/>
                         </button>
@@ -141,19 +137,6 @@
         </field>
     </record>
 
-    <!-- Vista Calendario -->
-    <record id="view_evaluation_calendar" model="ir.ui.view">
-        <field name="name">aulametrics.evaluation.calendar</field>
-        <field name="model">aulametrics.evaluation</field>
-        <field name="arch" type="xml">
-            <calendar string="Evaluaciones" date_start="date_start" date_stop="date_end" 
-                      color="state" mode="month">
-                <field name="name"/>
-                <field name="state"/>
-            </calendar>
-        </field>
-    </record>
-
     <!-- Vista de Búsqueda/Filtros -->
     <record id="view_evaluation_search" model="ir.ui.view">
         <field name="name">aulametrics.evaluation.search</field>
@@ -174,12 +157,6 @@
                 <filter string="Programadas" name="scheduled" domain="[('state', '=', 'scheduled')]"/>
                 <filter string="Activas" name="active_evaluations" domain="[('state', '=', 'active')]"/>
                 <filter string="Cerradas" name="closed" domain="[('state', '=', 'closed')]"/>
-                
-                <separator/>
-                <filter string="Este Mes" name="this_month" 
-                        domain="[('date_start', '&gt;=', (context_today().replace(day=1)).strftime('%Y-%m-%d')),
-                                 ('date_start', '&lt;', ((context_today().replace(day=1)) + relativedelta(months=1)).strftime('%Y-%m-%d'))]"/>
-                
                 <separator/>
                 <filter string="Archivadas" name="inactive" domain="[('active', '=', False)]"/>
                 
@@ -196,8 +173,7 @@
     <record id="action_evaluation" model="ir.actions.act_window">
         <field name="name">Evaluaciones</field>
         <field name="res_model">aulametrics.evaluation</field>
-        <field name="view_mode">tree,form,calendar</field>
-        <field name="context">{'search_default_active_evaluations': 1}</field>
+        <field name="view_mode">tree,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Crear la primera evaluación

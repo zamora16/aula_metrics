@@ -32,18 +32,6 @@
               action="action_evaluation"
               sequence="30"/>
 
-    <!-- Informes (placeholder) -->
-    <menuitem id="menu_aulametrics_reports" 
-              name="Informes" 
-              parent="menu_aulametrics_root" 
-              sequence="40"/>
-
-    <!-- Alertas (placeholder) -->
-    <menuitem id="menu_aulametrics_alerts" 
-              name="Alertas" 
-              parent="menu_aulametrics_root" 
-              sequence="50"/>
-
     <!-- Configuración -->
     <menuitem id="menu_aulametrics_config" 
               name="Configuración" 
