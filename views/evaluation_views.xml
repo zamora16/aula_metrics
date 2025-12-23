@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario de Evaluación -->
+    <record id="view_evaluation_form" model="ir.ui.view">
+        <field name="name">aulametrics.evaluation.form</field>
+        <field name="model">aulametrics.evaluation</field>
+        <field name="arch" type="xml">
+            <form string="Evaluación">
+                <header>
+                    <!-- Botones de estado -->
+                    <button name="action_schedule" type="object" string="Programar" 
+                            invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_activate" type="object" string="Activar" 
+                            invisible="state != 'scheduled'" class="oe_highlight"/>
+                    <button name="action_close" type="object" string="Cerrar" 
+                            invisible="state != 'active'" class="oe_highlight"/>
+                    <button name="action_cancel" type="object" string="Cancelar" 
+                            invisible="state not in ('draft', 'scheduled', 'active')"/>
+                    <button name="action_reset_to_draft" type="object" string="Volver a Borrador" 
+                            invisible="state != 'cancelled'"/>
+                    
+                    <!-- Barra de estado -->
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="draft,scheduled,active,closed"/>
+                </header>
+                
+                <sheet>
+                    <!-- Métricas superiores -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                        
+                        <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-users">
+                            <field name="total_students" widget="statinfo" string="Alumnos"/>
+                        </button>
+                        
+                        <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-check-circle">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="completed_students"/> / <field name="total_students"/>
+                                </span>
+                                <span class="o_stat_text">Completadas</span>
+                            </div>
+                        </button>
+                        
+                        <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-percent">
+                            <field name="participation_rate" widget="statinfo" string="Participación"/>
+                        </button>
+                    </div>
+                    
+                    <!-- Información básica -->
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Ej: Evaluación Trimestral Bienestar - 1º Trimestre 2025"/></h1>
+                    </div>
+                    
+                    <group>
+                        <group>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="periodicity"/>
+                            <field name="date_start" required="1"/>
+                            <field name="date_end" required="1"/>
+                        </group>
+                        <group>
+                            <field name="survey_count" invisible="1"/>
+                            <field name="group_count" invisible="1"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <field name="description" placeholder="Descripción de los objetivos de esta evaluación..."/>
+                    </group>
+                    
+                    <!-- Pestañas -->
+                    <notebook>
+                        <page string="Cuestionarios" name="surveys">
+                            <field name="survey_ids" widget="many2many_tags" 
+                                   domain="[('is_aulametrics', '=', True)]"
+                                   context="{'default_is_aulametrics': True}">
+                                <tree>
+                                    <field name="title"/>
+                                    <field name="thematic_area"/>
+                                    <field name="question_count"/>
+                                </tree>
+                            </field>
+                        </page>
+                        
+                        <page string="Grupos Académicos" name="groups">
+                            <field name="academic_group_ids" widget="many2many_tags">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="course_level"/>
+                                    <field name="student_count"/>
+                                    <field name="tutor_id" widget="many2one_avatar_user"/>
+                                </tree>
+                            </field>
+                        </page>
+                        
+                        <page string="Participaciones" name="participations">
+                            <field name="participation_ids" readonly="1">
+                                <tree decoration-success="state == 'completed'" 
+                                      decoration-warning="state == 'pending'"
+                                      decoration-danger="state == 'expired'">
+                                    <field name="student_id"/>
+                                    <field name="state" widget="badge" 
+                                           decoration-success="state == 'completed'"
+                                           decoration-warning="state == 'pending'"
+                                           decoration-danger="state == 'expired'"/>
+                                    <field name="completed_at"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Lista de Evaluaciones -->
+    <record id="view_evaluation_tree" model="ir.ui.view">
+        <field name="name">aulametrics.evaluation.tree</field>
+        <field name="model">aulametrics.evaluation</field>
+        <field name="arch" type="xml">
+            <tree string="Evaluaciones" 
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state == 'scheduled'"
+                  decoration-success="state == 'active'"
+                  decoration-muted="state in ['closed', 'cancelled']">
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="periodicity"/>
+                <field name="group_count" string="Grupos"/>
+                <field name="survey_count" string="Cuestionarios"/>
+                <field name="participation_rate" widget="progressbar"/>
+                <field name="state" widget="badge" 
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'scheduled'"
+                       decoration-success="state == 'active'"
+                       decoration-muted="state in ['closed', 'cancelled']"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Calendario -->
+    <record id="view_evaluation_calendar" model="ir.ui.view">
+        <field name="name">aulametrics.evaluation.calendar</field>
+        <field name="model">aulametrics.evaluation</field>
+        <field name="arch" type="xml">
+            <calendar string="Evaluaciones" date_start="date_start" date_stop="date_end" 
+                      color="state" mode="month">
+                <field name="name"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda/Filtros -->
+    <record id="view_evaluation_search" model="ir.ui.view">
+        <field name="name">aulametrics.evaluation.search</field>
+        <field name="model">aulametrics.evaluation</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Evaluaciones">
+                <field name="name"/>
+                <field name="academic_group_ids"/>
+                <field name="survey_ids"/>
+                
+                <!-- Filtros predefinidos -->
+                <filter string="Borradores" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Programadas" name="scheduled" domain="[('state', '=', 'scheduled')]"/>
+                <filter string="Activas" name="active_evaluations" domain="[('state', '=', 'active')]"/>
+                <filter string="Cerradas" name="closed" domain="[('state', '=', 'closed')]"/>
+                
+                <separator/>
+                <filter string="Este Mes" name="this_month" 
+                        domain="[('date_start', '&gt;=', (context_today().replace(day=1)).strftime('%Y-%m-%d')),
+                                 ('date_start', '&lt;', ((context_today().replace(day=1)) + relativedelta(months=1)).strftime('%Y-%m-%d'))]"/>
+                
+                <separator/>
+                <filter string="Archivadas" name="inactive" domain="[('active', '=', False)]"/>
+                
+                <!-- Agrupaciones -->
+                <group expand="0" string="Agrupar por">
+                    <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Periodicidad" name="group_by_periodicity" context="{'group_by': 'periodicity'}"/>
+                    <filter string="Mes Inicio" name="group_by_month" context="{'group_by': 'date_start:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción de Ventana -->
+    <record id="action_evaluation" model="ir.actions.act_window">
+        <field name="name">Evaluaciones</field>
+        <field name="res_model">aulametrics.evaluation</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="context">{'search_default_active_evaluations': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear la primera evaluación
+            </p>
+            <p>
+                Las evaluaciones programan cuestionarios psicosociales para grupos académicos específicos.
+                Define fechas de inicio y fin, asigna los cuestionarios y grupos correspondientes.
+            </p>
+        </field>
+    </record>
+</odoo>

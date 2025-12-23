@@ -20,6 +20,15 @@ class Evaluation(models.Model):
         help='Descripción de los objetivos de esta evaluación'
     )
     
+    # Usuario responsable
+    user_id = fields.Many2one(
+        'res.users',
+        string='Responsable',
+        default=lambda self: self.env.user,
+        required=True,
+        help='Usuario responsable de esta evaluación'
+    )
+    
     # Cuestionarios incluidos (Many2many)
     survey_ids = fields.Many2many(
         'survey.survey',
@@ -227,3 +236,15 @@ class Evaluation(models.Model):
         for evaluation in closed_evaluations:
             pending_participations = evaluation.participation_ids.filtered(lambda p: p.state == 'pending')
             pending_participations.action_expire()
+    
+    def action_view_participations(self):
+        """Acción para ver participaciones desde el smart button"""
+        self.ensure_one()
+        return {
+            'name': 'Participaciones',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aulametrics.participation',
+            'view_mode': 'tree,form',
+            'domain': [('evaluation_id', '=', self.id)],
+            'context': {'default_evaluation_id': self.id},
+        }

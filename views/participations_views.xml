@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario de Participación -->
+    <record id="view_participation_form" model="ir.ui.view">
+        <field name="name">aulametrics.participation.form</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="arch" type="xml">
+            <form string="Participación" create="false" delete="false">
+                <header>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="pending,completed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="evaluation_id" readonly="1"/>
+                            <field name="student_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="completed_at" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Lista de Participaciones -->
+    <record id="view_participation_tree" model="ir.ui.view">
+        <field name="name">aulametrics.participation.tree</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="arch" type="xml">
+            <tree string="Participaciones" 
+                  decoration-success="state == 'completed'" 
+                  decoration-warning="state == 'pending'"
+                  decoration-danger="state == 'expired'"
+                  create="false" delete="false">
+                <field name="evaluation_id"/>
+                <field name="student_id"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'completed'"
+                       decoration-warning="state == 'pending'"
+                       decoration-danger="state == 'expired'"/>
+                <field name="completed_at"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda/Filtros -->
+    <record id="view_participation_search" model="ir.ui.view">
+        <field name="name">aulametrics.participation.search</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Participaciones">
+                <field name="evaluation_id"/>
+                <field name="student_id"/>
+                
+                <!-- Filtros predefinidos -->
+                <filter string="Pendientes" name="pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Completadas" name="completed" domain="[('state', '=', 'completed')]"/>
+                <filter string="Expiradas" name="expired" domain="[('state', '=', 'expired')]"/>
+                
+                <!-- Agrupaciones -->
+                <group expand="0" string="Agrupar por">
+                    <filter string="Evaluación" name="group_by_evaluation" context="{'group_by': 'evaluation_id'}"/>
+                    <filter string="Alumno" name="group_by_student" context="{'group_by': 'student_id'}"/>
+                    <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción de Ventana (no se añadirá al menú directamente, se accede desde evaluaciones) -->
+    <record id="action_participation" model="ir.actions.act_window">
+        <field name="name">Participaciones</field>
+        <field name="res_model">aulametrics.participation</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+</odoo>

@@ -1,192 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Vista Kanban genérica para secciones en desarrollo -->
-    <record id="view_placeholder_kanban" model="ir.ui.view">
-        <field name="name">placeholder.kanban</field>
-        <field name="model">ir.ui.menu</field>
-        <field name="arch" type="xml">
-            <kanban class="o_kanban_mobile" create="false" edit="false" delete="false">
-                <templates>
-                    <t t-name="kanban-box">
-                        <div class="oe_kanban_global_click">
-                            <div class="o_kanban_record_top">
-                                <div class="o_kanban_record_headings">
-                                    <strong class="o_kanban_record_title">Funcionalidad en desarrollo</strong>
-                                </div>
-                            </div>
-                            <div class="o_kanban_record_body">
-                                <field name="name"/>
-                            </div>
-                        </div>
-                    </t>
-                </templates>
-            </kanban>
-        </field>
-    </record>
-
-    <!-- Acción para Dashboard -->
-    <record id="action_dashboard" model="ir.actions.act_window">
-        <field name="name">Dashboard</field>
-        <field name="res_model">ir.ui.menu</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_placeholder_kanban"/>
-        <field name="domain">[('id', '=', 0)]</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Dashboard en desarrollo
-            </p>
-            <p>
-                Esta sección mostrará métricas globales, gráficos de tendencias 
-                y alertas del sistema de evaluación.
-                <br/><br/>
-                <b>Disponible en:</b> Paso 4 - Módulo Analytics
-            </p>
-        </field>
-    </record>
-
-    <!-- Acción para Cuestionarios -->
-    <record id="action_cuestionarios" model="ir.actions.act_window">
-        <field name="name">Cuestionarios</field>
-        <field name="res_model">ir.ui.menu</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_placeholder_kanban"/>
-        <field name="domain">[('id', '=', 0)]</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Biblioteca de Cuestionarios en desarrollo
-            </p>
-            <p>
-                Aquí se gestionará la biblioteca de cuestionarios predefinidos:
-                <br/>• Bienestar emocional
-                <br/>• Detección de bullying
-                <br/>• Educación sexual
-                <br/>• Consumo de sustancias
-                <br/>• Hábitos saludables
-                <br/><br/>
-                <b>Disponible en:</b> Paso 2 - Módulo Surveys
-            </p>
-        </field>
-    </record>
-
-    <!-- Acción para Evaluaciones -->
-    <record id="action_evaluaciones" model="ir.actions.act_window">
-        <field name="name">Evaluaciones</field>
-        <field name="res_model">ir.ui.menu</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_placeholder_kanban"/>
-        <field name="domain">[('id', '=', 0)]</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Gestión de Evaluaciones en desarrollo
-            </p>
-            <p>
-                Aquí se programarán y gestionarán las evaluaciones:
-                <br/>• Programar evaluaciones por grupos
-                <br/>• Seguimiento de respuestas
-                <br/>• Estado de completitud
-                <br/>• Recordatorios automáticos
-                <br/><br/>
-                <b>Disponible en:</b> Paso 2 - Módulo Surveys
-            </p>
-        </field>
-    </record>
-
-    <!-- Acción para Informes -->
-    <record id="action_informes" model="ir.actions.act_window">
-        <field name="name">Informes</field>
-        <field name="res_model">ir.ui.menu</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_placeholder_kanban"/>
-        <field name="domain">[('id', '=', 0)]</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Sistema de Informes en desarrollo
-            </p>
-            <p>
-                Generación de informes personalizados:
-                <br/>• Informes por grupo/curso
-                <br/>• Informes individuales (orientador)
-                <br/>• Exportación PDF/Excel
-                <br/>• Gráficos comparativos
-                <br/><br/>
-                <b>Disponible en:</b> Paso 4 - Módulo Reports
-            </p>
-        </field>
-    </record>
-
-    <!-- Acción para Alertas -->
-    <record id="action_alertas" model="ir.actions.act_window">
-        <field name="name">Alertas</field>
-        <field name="res_model">ir.ui.menu</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_placeholder_kanban"/>
-        <field name="domain">[('id', '=', 0)]</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Sistema de Alertas en desarrollo
-            </p>
-            <p>
-                Detección automática de situaciones de riesgo:
-                <br/>• Alertas por umbrales configurables
-                <br/>• Notificaciones al departamento de orientación
-                <br/>• Registro de seguimiento
-                <br/>• Priorización de casos
-                <br/><br/>
-                <b>Disponible en:</b> Paso 3 - Módulo Analytics
-            </p>
-        </field>
-    </record>
-
     <!-- Menú Principal -->
-    <menuitem id="menu_aulametrics_root"
-              name="AulaMetrics"
+    <menuitem id="menu_aulametrics_root" 
+              name="AulaMetrics" 
+              web_icon="aula_metrics,static/description/icon.png"
               sequence="10"/>
 
-    <!-- Dashboard -->
-    <menuitem id="menu_aulametrics_dashboard"
-              name="Dashboard"
-              parent="menu_aulametrics_root"
-              action="action_dashboard"
-              sequence="1"/>
+    <!-- Dashboard (placeholder) -->
+    <menuitem id="menu_aulametrics_dashboard" 
+              name="Dashboard" 
+              parent="menu_aulametrics_root" 
+              sequence="10"/>
 
     <!-- Cuestionarios -->
-    <menuitem id="menu_aulametrics_cuestionarios"
-              name="Cuestionarios"
-              parent="menu_aulametrics_root"
-              action="action_cuestionarios"
-              sequence="2"/>
+    <menuitem id="menu_aulametrics_surveys" 
+              name="Cuestionarios" 
+              parent="menu_aulametrics_root" 
+              sequence="20"/>
+    
+    <menuitem id="menu_survey_library" 
+              name="Biblioteca de Cuestionarios" 
+              parent="menu_aulametrics_surveys"
+              action="survey.action_survey_form"
+              sequence="10"/>
 
     <!-- Evaluaciones -->
-    <menuitem id="menu_aulametrics_evaluaciones"
-              name="Evaluaciones"
-              parent="menu_aulametrics_root"
-              action="action_evaluaciones"
-              sequence="3"/>
+    <menuitem id="menu_aulametrics_evaluations" 
+              name="Evaluaciones" 
+              parent="menu_aulametrics_root" 
+              action="action_evaluation"
+              sequence="30"/>
 
-    <!-- Informes -->
-    <menuitem id="menu_aulametrics_informes"
-              name="Informes"
-              parent="menu_aulametrics_root"
-              action="action_informes"
-              sequence="4"/>
+    <!-- Informes (placeholder) -->
+    <menuitem id="menu_aulametrics_reports" 
+              name="Informes" 
+              parent="menu_aulametrics_root" 
+              sequence="40"/>
 
-    <!-- Alertas -->
-    <menuitem id="menu_aulametrics_alertas"
-              name="Alertas"
-              parent="menu_aulametrics_root"
-              action="action_alertas"
-              sequence="5"/>
+    <!-- Alertas (placeholder) -->
+    <menuitem id="menu_aulametrics_alerts" 
+              name="Alertas" 
+              parent="menu_aulametrics_root" 
+              sequence="50"/>
 
     <!-- Configuración -->
-    <menuitem id="menu_aulametrics_config"
-              name="Configuración"
-              parent="menu_aulametrics_root"
-              sequence="100"
-              groups="group_aulametrics_admin,group_aulametrics_counselor"/>
-
-    <!-- Opción: Grupos Académicos -->
-    <menuitem id="menu_academic_groups"
-              name="Grupos Académicos"
+    <menuitem id="menu_aulametrics_config" 
+              name="Configuración" 
+              parent="menu_aulametrics_root" 
+              sequence="100"/>
+    
+    <menuitem id="menu_academic_groups" 
+              name="Grupos Académicos" 
               parent="menu_aulametrics_config"
               action="action_academic_group"
               sequence="10"/>

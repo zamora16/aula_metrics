@@ -40,3 +40,14 @@ class SurveyExtension(models.Model):
         """Cuenta cuántas evaluaciones usan este cuestionario"""
         for survey in self:
             survey.evaluation_count = len(survey.evaluation_ids)
+
+    def action_view_evaluations(self):
+        """Acción para ver evaluaciones que usan este cuestionario"""
+        self.ensure_one()
+        return {
+            'name': 'Evaluaciones',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aulametrics.evaluation',
+            'view_mode': 'tree,form',
+            'domain': [('survey_ids', 'in', self.id)],
+        }

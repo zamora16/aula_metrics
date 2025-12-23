@@ -18,12 +18,22 @@
 
     # always loaded
     'data': [
+        # 1. Seguridad
         'security/security.xml',
-        'views/academic_group_views.xml',
-        'views/res_users_views.xml', 
-        'views/menu.xml',
         'security/ir.model.access.csv',
         'security/record_rules.xml',
+        
+        # 2. Datos (surveys)
+        'data/surveys_data.xml',
+        
+        # 3. Vistas
+        'views/academic_group_views.xml',
+        'views/res_users_views.xml',
+        'views/survey_extension_views.xml',
+        'views/evaluation_views.xml',
+        'views/participations_views.xml',
+        'views/menu.xml',
+
     ],
     # only loaded in demonstration mode
     'demo': [
