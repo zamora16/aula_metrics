@@ -8,18 +8,10 @@
             <field name="sequence">50</field>
         </record>
 
-        <!-- Grupo: Alumno -->
-        <record id="group_aulametrics_student" model="res.groups">
-            <field name="name">Alumno</field>
-            <field name="category_id" ref="module_category_aulametrics"/>
-            <field name="comment">Alumnos que pueden responder evaluaciones asignadas</field>
-        </record>
-
         <!-- Grupo: Tutor -->
         <record id="group_aulametrics_tutor" model="res.groups">
             <field name="name">Tutor</field>
             <field name="category_id" ref="module_category_aulametrics"/>
-            <field name="implied_ids" eval="[(4, ref('group_aulametrics_student'))]"/>
             <field name="comment">Tutores con acceso a datos agregados de sus grupos</field>
         </record>
 

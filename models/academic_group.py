@@ -41,7 +41,7 @@ class AcademicGroup(models.Model):
     )
     
     student_ids = fields.One2many(
-        'res.users',
+        'res.partner',
         'academic_group_id',
         string='Alumnado',
         help='Estudiantes que pertenecen a este grupo'
@@ -80,15 +80,3 @@ class AcademicGroup(models.Model):
          'UNIQUE(name, academic_year)', 
          'Ya existe un grupo con ese nombre en este curso académico.')
     ]
-
-
-class ResUsers(models.Model):
-    """Extensión del modelo de usuarios para añadir relación con grupos académicos"""
-    _inherit = 'res.users'
-    
-    academic_group_id = fields.Many2one(
-        'aulametrics.academic_group',
-        string='Grupo Académico',
-        help='Grupo al que pertenece el estudiante',
-        ondelete='set null'
-    )

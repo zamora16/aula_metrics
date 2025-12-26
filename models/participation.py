@@ -17,7 +17,7 @@ class Participation(models.Model):
     )
     
     student_id = fields.Many2one(
-        'res.users',
+        'res.partner',
         string='Alumno',
         required=True,
         ondelete='cascade',

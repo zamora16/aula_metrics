@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
 
         <!-- ========================================== -->
         <!-- DATOS DE DEMOSTRACIÓN GENERADOS AUTOMÁTICAMENTE -->
@@ -11,69 +11,59 @@
             <field name="name">Prof. María López</field>
             <field name="login">tutor.eso1.a</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 1º ESO A -->
-        <record id="user_alumno_1" model="res.users">
+        <record id="partner_alumno_1" model="res.partner">
             <field name="name">María López Gómez</field>
-            <field name="login">alumno1</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno1@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_2" model="res.users">
+        <record id="partner_alumno_2" model="res.partner">
             <field name="name">Pedro Martínez Pérez</field>
-            <field name="login">alumno2</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno2@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_3" model="res.users">
+        <record id="partner_alumno_3" model="res.partner">
             <field name="name">Ana Rodríguez Ruiz</field>
-            <field name="login">alumno3</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno3@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_4" model="res.users">
+        <record id="partner_alumno_4" model="res.partner">
             <field name="name">Luis Fernández Díaz</field>
-            <field name="login">alumno4</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno4@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_5" model="res.users">
+        <record id="partner_alumno_5" model="res.partner">
             <field name="name">Carmen Sánchez Jiménez</field>
-            <field name="login">alumno5</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno5@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_6" model="res.users">
+        <record id="partner_alumno_6" model="res.partner">
             <field name="name">José Gómez Moreno</field>
-            <field name="login">alumno6</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno6@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_7" model="res.users">
+        <record id="partner_alumno_7" model="res.partner">
             <field name="name">Laura Pérez Álvarez</field>
-            <field name="login">alumno7</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno7@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_8" model="res.users">
+        <record id="partner_alumno_8" model="res.partner">
             <field name="name">Carlos Ruiz Romero</field>
-            <field name="login">alumno8</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno8@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_9" model="res.users">
+        <record id="partner_alumno_9" model="res.partner">
             <field name="name">Elena Díaz Torres</field>
-            <field name="login">alumno9</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno9@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
-        <record id="user_alumno_10" model="res.users">
+        <record id="partner_alumno_10" model="res.partner">
             <field name="name">Miguel Jiménez Navarro</field>
-            <field name="login">alumno10</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno10@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
 
         <!-- Grupo Académico: 1º ESO A -->
@@ -81,7 +71,6 @@
             <field name="name">1º ESO A</field>
             <field name="course_level">eso1</field>
             <field name="tutor_id" ref="user_tutor_1"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_1'), ref('user_alumno_2'), ref('user_alumno_3'), ref('user_alumno_4'), ref('user_alumno_5'), ref('user_alumno_6'), ref('user_alumno_7'), ref('user_alumno_8'), ref('user_alumno_9'), ref('user_alumno_10')])]"/>
         </record>
 
         <!-- Tutor: 1º ESO B -->
@@ -89,69 +78,59 @@
             <field name="name">Prof. Pedro Martínez</field>
             <field name="login">tutor.eso1.b</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 1º ESO B -->
-        <record id="user_alumno_11" model="res.users">
+        <record id="partner_alumno_11" model="res.partner">
             <field name="name">Isabel Moreno García</field>
-            <field name="login">alumno11</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno11@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_12" model="res.users">
+        <record id="partner_alumno_12" model="res.partner">
             <field name="name">David Álvarez López</field>
-            <field name="login">alumno12</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno12@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_13" model="res.users">
+        <record id="partner_alumno_13" model="res.partner">
             <field name="name">Sofía Romero Martínez</field>
-            <field name="login">alumno13</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno13@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_14" model="res.users">
+        <record id="partner_alumno_14" model="res.partner">
             <field name="name">Antonio Torres Rodríguez</field>
-            <field name="login">alumno14</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno14@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_15" model="res.users">
+        <record id="partner_alumno_15" model="res.partner">
             <field name="name">Lucía Navarro Fernández</field>
-            <field name="login">alumno15</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno15@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_16" model="res.users">
+        <record id="partner_alumno_16" model="res.partner">
             <field name="name">Francisco García Sánchez</field>
-            <field name="login">alumno16</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno16@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_17" model="res.users">
+        <record id="partner_alumno_17" model="res.partner">
             <field name="name">Paula López Gómez</field>
-            <field name="login">alumno17</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno17@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_18" model="res.users">
+        <record id="partner_alumno_18" model="res.partner">
             <field name="name">Manuel Martínez Pérez</field>
-            <field name="login">alumno18</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno18@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_19" model="res.users">
+        <record id="partner_alumno_19" model="res.partner">
             <field name="name">Andrea Rodríguez Ruiz</field>
-            <field name="login">alumno19</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno19@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
-        <record id="user_alumno_20" model="res.users">
+        <record id="partner_alumno_20" model="res.partner">
             <field name="name">Juan Fernández Díaz</field>
-            <field name="login">alumno20</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno20@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
 
         <!-- Grupo Académico: 1º ESO B -->
@@ -159,7 +138,6 @@
             <field name="name">1º ESO B</field>
             <field name="course_level">eso1</field>
             <field name="tutor_id" ref="user_tutor_2"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_11'), ref('user_alumno_12'), ref('user_alumno_13'), ref('user_alumno_14'), ref('user_alumno_15'), ref('user_alumno_16'), ref('user_alumno_17'), ref('user_alumno_18'), ref('user_alumno_19'), ref('user_alumno_20')])]"/>
         </record>
 
         <!-- Tutor: 1º ESO C -->
@@ -167,69 +145,59 @@
             <field name="name">Prof. Ana Rodríguez</field>
             <field name="login">tutor.eso1.c</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 1º ESO C -->
-        <record id="user_alumno_21" model="res.users">
+        <record id="partner_alumno_21" model="res.partner">
             <field name="name">María Sánchez Jiménez</field>
-            <field name="login">alumno21</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno21@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_22" model="res.users">
+        <record id="partner_alumno_22" model="res.partner">
             <field name="name">Pedro Gómez Moreno</field>
-            <field name="login">alumno22</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno22@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_23" model="res.users">
+        <record id="partner_alumno_23" model="res.partner">
             <field name="name">Ana Pérez Álvarez</field>
-            <field name="login">alumno23</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno23@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_24" model="res.users">
+        <record id="partner_alumno_24" model="res.partner">
             <field name="name">Luis Ruiz Romero</field>
-            <field name="login">alumno24</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno24@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_25" model="res.users">
+        <record id="partner_alumno_25" model="res.partner">
             <field name="name">Carmen Díaz Torres</field>
-            <field name="login">alumno25</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno25@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_26" model="res.users">
+        <record id="partner_alumno_26" model="res.partner">
             <field name="name">José Jiménez Navarro</field>
-            <field name="login">alumno26</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno26@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_27" model="res.users">
+        <record id="partner_alumno_27" model="res.partner">
             <field name="name">Laura Moreno García</field>
-            <field name="login">alumno27</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno27@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_28" model="res.users">
+        <record id="partner_alumno_28" model="res.partner">
             <field name="name">Carlos Álvarez López</field>
-            <field name="login">alumno28</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno28@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_29" model="res.users">
+        <record id="partner_alumno_29" model="res.partner">
             <field name="name">Elena Romero Martínez</field>
-            <field name="login">alumno29</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno29@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
-        <record id="user_alumno_30" model="res.users">
+        <record id="partner_alumno_30" model="res.partner">
             <field name="name">Miguel Torres Rodríguez</field>
-            <field name="login">alumno30</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno30@test.com</field>
+            <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
 
         <!-- Grupo Académico: 1º ESO C -->
@@ -237,7 +205,6 @@
             <field name="name">1º ESO C</field>
             <field name="course_level">eso1</field>
             <field name="tutor_id" ref="user_tutor_3"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_21'), ref('user_alumno_22'), ref('user_alumno_23'), ref('user_alumno_24'), ref('user_alumno_25'), ref('user_alumno_26'), ref('user_alumno_27'), ref('user_alumno_28'), ref('user_alumno_29'), ref('user_alumno_30')])]"/>
         </record>
 
         <!-- Tutor: 2º ESO A -->
@@ -245,69 +212,59 @@
             <field name="name">Prof. Luis Fernández</field>
             <field name="login">tutor.eso2.a</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 2º ESO A -->
-        <record id="user_alumno_31" model="res.users">
+        <record id="partner_alumno_31" model="res.partner">
             <field name="name">Isabel Navarro Fernández</field>
-            <field name="login">alumno31</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno31@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_32" model="res.users">
+        <record id="partner_alumno_32" model="res.partner">
             <field name="name">David García Sánchez</field>
-            <field name="login">alumno32</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno32@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_33" model="res.users">
+        <record id="partner_alumno_33" model="res.partner">
             <field name="name">Sofía López Gómez</field>
-            <field name="login">alumno33</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno33@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_34" model="res.users">
+        <record id="partner_alumno_34" model="res.partner">
             <field name="name">Antonio Martínez Pérez</field>
-            <field name="login">alumno34</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno34@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_35" model="res.users">
+        <record id="partner_alumno_35" model="res.partner">
             <field name="name">Lucía Rodríguez Ruiz</field>
-            <field name="login">alumno35</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno35@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_36" model="res.users">
+        <record id="partner_alumno_36" model="res.partner">
             <field name="name">Francisco Fernández Díaz</field>
-            <field name="login">alumno36</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno36@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_37" model="res.users">
+        <record id="partner_alumno_37" model="res.partner">
             <field name="name">Paula Sánchez Jiménez</field>
-            <field name="login">alumno37</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno37@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_38" model="res.users">
+        <record id="partner_alumno_38" model="res.partner">
             <field name="name">Manuel Gómez Moreno</field>
-            <field name="login">alumno38</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno38@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_39" model="res.users">
+        <record id="partner_alumno_39" model="res.partner">
             <field name="name">Andrea Pérez Álvarez</field>
-            <field name="login">alumno39</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno39@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
-        <record id="user_alumno_40" model="res.users">
+        <record id="partner_alumno_40" model="res.partner">
             <field name="name">Juan Ruiz Romero</field>
-            <field name="login">alumno40</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno40@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
 
         <!-- Grupo Académico: 2º ESO A -->
@@ -315,7 +272,6 @@
             <field name="name">2º ESO A</field>
             <field name="course_level">eso2</field>
             <field name="tutor_id" ref="user_tutor_4"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_31'), ref('user_alumno_32'), ref('user_alumno_33'), ref('user_alumno_34'), ref('user_alumno_35'), ref('user_alumno_36'), ref('user_alumno_37'), ref('user_alumno_38'), ref('user_alumno_39'), ref('user_alumno_40')])]"/>
         </record>
 
         <!-- Tutor: 2º ESO B -->
@@ -323,69 +279,59 @@
             <field name="name">Prof. Carmen Sánchez</field>
             <field name="login">tutor.eso2.b</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 2º ESO B -->
-        <record id="user_alumno_41" model="res.users">
+        <record id="partner_alumno_41" model="res.partner">
             <field name="name">María Díaz Torres</field>
-            <field name="login">alumno41</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno41@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_42" model="res.users">
+        <record id="partner_alumno_42" model="res.partner">
             <field name="name">Pedro Jiménez Navarro</field>
-            <field name="login">alumno42</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno42@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_43" model="res.users">
+        <record id="partner_alumno_43" model="res.partner">
             <field name="name">Ana Moreno García</field>
-            <field name="login">alumno43</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno43@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_44" model="res.users">
+        <record id="partner_alumno_44" model="res.partner">
             <field name="name">Luis Álvarez López</field>
-            <field name="login">alumno44</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno44@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_45" model="res.users">
+        <record id="partner_alumno_45" model="res.partner">
             <field name="name">Carmen Romero Martínez</field>
-            <field name="login">alumno45</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno45@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_46" model="res.users">
+        <record id="partner_alumno_46" model="res.partner">
             <field name="name">José Torres Rodríguez</field>
-            <field name="login">alumno46</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno46@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_47" model="res.users">
+        <record id="partner_alumno_47" model="res.partner">
             <field name="name">Laura Navarro Fernández</field>
-            <field name="login">alumno47</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno47@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_48" model="res.users">
+        <record id="partner_alumno_48" model="res.partner">
             <field name="name">Carlos García Sánchez</field>
-            <field name="login">alumno48</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno48@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_49" model="res.users">
+        <record id="partner_alumno_49" model="res.partner">
             <field name="name">Elena López Gómez</field>
-            <field name="login">alumno49</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno49@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
-        <record id="user_alumno_50" model="res.users">
+        <record id="partner_alumno_50" model="res.partner">
             <field name="name">Miguel Martínez Pérez</field>
-            <field name="login">alumno50</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno50@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
 
         <!-- Grupo Académico: 2º ESO B -->
@@ -393,7 +339,6 @@
             <field name="name">2º ESO B</field>
             <field name="course_level">eso2</field>
             <field name="tutor_id" ref="user_tutor_5"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_41'), ref('user_alumno_42'), ref('user_alumno_43'), ref('user_alumno_44'), ref('user_alumno_45'), ref('user_alumno_46'), ref('user_alumno_47'), ref('user_alumno_48'), ref('user_alumno_49'), ref('user_alumno_50')])]"/>
         </record>
 
         <!-- Tutor: 2º ESO C -->
@@ -401,69 +346,59 @@
             <field name="name">Prof. José Gómez</field>
             <field name="login">tutor.eso2.c</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 2º ESO C -->
-        <record id="user_alumno_51" model="res.users">
+        <record id="partner_alumno_51" model="res.partner">
             <field name="name">Isabel Rodríguez Ruiz</field>
-            <field name="login">alumno51</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno51@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_52" model="res.users">
+        <record id="partner_alumno_52" model="res.partner">
             <field name="name">David Fernández Díaz</field>
-            <field name="login">alumno52</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno52@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_53" model="res.users">
+        <record id="partner_alumno_53" model="res.partner">
             <field name="name">Sofía Sánchez Jiménez</field>
-            <field name="login">alumno53</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno53@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_54" model="res.users">
+        <record id="partner_alumno_54" model="res.partner">
             <field name="name">Antonio Gómez Moreno</field>
-            <field name="login">alumno54</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno54@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_55" model="res.users">
+        <record id="partner_alumno_55" model="res.partner">
             <field name="name">Lucía Pérez Álvarez</field>
-            <field name="login">alumno55</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno55@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_56" model="res.users">
+        <record id="partner_alumno_56" model="res.partner">
             <field name="name">Francisco Ruiz Romero</field>
-            <field name="login">alumno56</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno56@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_57" model="res.users">
+        <record id="partner_alumno_57" model="res.partner">
             <field name="name">Paula Díaz Torres</field>
-            <field name="login">alumno57</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno57@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_58" model="res.users">
+        <record id="partner_alumno_58" model="res.partner">
             <field name="name">Manuel Jiménez Navarro</field>
-            <field name="login">alumno58</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno58@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_59" model="res.users">
+        <record id="partner_alumno_59" model="res.partner">
             <field name="name">Andrea Moreno García</field>
-            <field name="login">alumno59</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno59@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
-        <record id="user_alumno_60" model="res.users">
+        <record id="partner_alumno_60" model="res.partner">
             <field name="name">Juan Álvarez López</field>
-            <field name="login">alumno60</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno60@test.com</field>
+            <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
 
         <!-- Grupo Académico: 2º ESO C -->
@@ -471,7 +406,6 @@
             <field name="name">2º ESO C</field>
             <field name="course_level">eso2</field>
             <field name="tutor_id" ref="user_tutor_6"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_51'), ref('user_alumno_52'), ref('user_alumno_53'), ref('user_alumno_54'), ref('user_alumno_55'), ref('user_alumno_56'), ref('user_alumno_57'), ref('user_alumno_58'), ref('user_alumno_59'), ref('user_alumno_60')])]"/>
         </record>
 
         <!-- Tutor: 3º ESO A -->
@@ -479,69 +413,59 @@
             <field name="name">Prof. Laura Pérez</field>
             <field name="login">tutor.eso3.a</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 3º ESO A -->
-        <record id="user_alumno_61" model="res.users">
+        <record id="partner_alumno_61" model="res.partner">
             <field name="name">María Romero Martínez</field>
-            <field name="login">alumno61</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno61@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_62" model="res.users">
+        <record id="partner_alumno_62" model="res.partner">
             <field name="name">Pedro Torres Rodríguez</field>
-            <field name="login">alumno62</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno62@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_63" model="res.users">
+        <record id="partner_alumno_63" model="res.partner">
             <field name="name">Ana Navarro Fernández</field>
-            <field name="login">alumno63</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno63@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_64" model="res.users">
+        <record id="partner_alumno_64" model="res.partner">
             <field name="name">Luis García Sánchez</field>
-            <field name="login">alumno64</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno64@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_65" model="res.users">
+        <record id="partner_alumno_65" model="res.partner">
             <field name="name">Carmen López Gómez</field>
-            <field name="login">alumno65</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno65@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_66" model="res.users">
+        <record id="partner_alumno_66" model="res.partner">
             <field name="name">José Martínez Pérez</field>
-            <field name="login">alumno66</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno66@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_67" model="res.users">
+        <record id="partner_alumno_67" model="res.partner">
             <field name="name">Laura Rodríguez Ruiz</field>
-            <field name="login">alumno67</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno67@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_68" model="res.users">
+        <record id="partner_alumno_68" model="res.partner">
             <field name="name">Carlos Fernández Díaz</field>
-            <field name="login">alumno68</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno68@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_69" model="res.users">
+        <record id="partner_alumno_69" model="res.partner">
             <field name="name">Elena Sánchez Jiménez</field>
-            <field name="login">alumno69</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno69@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
-        <record id="user_alumno_70" model="res.users">
+        <record id="partner_alumno_70" model="res.partner">
             <field name="name">Miguel Gómez Moreno</field>
-            <field name="login">alumno70</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno70@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
 
         <!-- Grupo Académico: 3º ESO A -->
@@ -549,7 +473,6 @@
             <field name="name">3º ESO A</field>
             <field name="course_level">eso3</field>
             <field name="tutor_id" ref="user_tutor_7"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_61'), ref('user_alumno_62'), ref('user_alumno_63'), ref('user_alumno_64'), ref('user_alumno_65'), ref('user_alumno_66'), ref('user_alumno_67'), ref('user_alumno_68'), ref('user_alumno_69'), ref('user_alumno_70')])]"/>
         </record>
 
         <!-- Tutor: 3º ESO B -->
@@ -557,69 +480,59 @@
             <field name="name">Prof. Carlos Ruiz</field>
             <field name="login">tutor.eso3.b</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 3º ESO B -->
-        <record id="user_alumno_71" model="res.users">
+        <record id="partner_alumno_71" model="res.partner">
             <field name="name">Isabel Pérez Álvarez</field>
-            <field name="login">alumno71</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno71@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_72" model="res.users">
+        <record id="partner_alumno_72" model="res.partner">
             <field name="name">David Ruiz Romero</field>
-            <field name="login">alumno72</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno72@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_73" model="res.users">
+        <record id="partner_alumno_73" model="res.partner">
             <field name="name">Sofía Díaz Torres</field>
-            <field name="login">alumno73</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno73@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_74" model="res.users">
+        <record id="partner_alumno_74" model="res.partner">
             <field name="name">Antonio Jiménez Navarro</field>
-            <field name="login">alumno74</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno74@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_75" model="res.users">
+        <record id="partner_alumno_75" model="res.partner">
             <field name="name">Lucía Moreno García</field>
-            <field name="login">alumno75</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno75@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_76" model="res.users">
+        <record id="partner_alumno_76" model="res.partner">
             <field name="name">Francisco Álvarez López</field>
-            <field name="login">alumno76</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno76@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_77" model="res.users">
+        <record id="partner_alumno_77" model="res.partner">
             <field name="name">Paula Romero Martínez</field>
-            <field name="login">alumno77</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno77@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_78" model="res.users">
+        <record id="partner_alumno_78" model="res.partner">
             <field name="name">Manuel Torres Rodríguez</field>
-            <field name="login">alumno78</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno78@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_79" model="res.users">
+        <record id="partner_alumno_79" model="res.partner">
             <field name="name">Andrea Navarro Fernández</field>
-            <field name="login">alumno79</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno79@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
-        <record id="user_alumno_80" model="res.users">
+        <record id="partner_alumno_80" model="res.partner">
             <field name="name">Juan García Sánchez</field>
-            <field name="login">alumno80</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno80@test.com</field>
+            <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
 
         <!-- Grupo Académico: 3º ESO B -->
@@ -627,7 +540,6 @@
             <field name="name">3º ESO B</field>
             <field name="course_level">eso3</field>
             <field name="tutor_id" ref="user_tutor_8"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_71'), ref('user_alumno_72'), ref('user_alumno_73'), ref('user_alumno_74'), ref('user_alumno_75'), ref('user_alumno_76'), ref('user_alumno_77'), ref('user_alumno_78'), ref('user_alumno_79'), ref('user_alumno_80')])]"/>
         </record>
 
         <!-- Tutor: 4º ESO A -->
@@ -635,69 +547,59 @@
             <field name="name">Prof. Elena Díaz</field>
             <field name="login">tutor.eso4.a</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 4º ESO A -->
-        <record id="user_alumno_81" model="res.users">
+        <record id="partner_alumno_81" model="res.partner">
             <field name="name">María López Gómez</field>
-            <field name="login">alumno81</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno81@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_82" model="res.users">
+        <record id="partner_alumno_82" model="res.partner">
             <field name="name">Pedro Martínez Pérez</field>
-            <field name="login">alumno82</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno82@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_83" model="res.users">
+        <record id="partner_alumno_83" model="res.partner">
             <field name="name">Ana Rodríguez Ruiz</field>
-            <field name="login">alumno83</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno83@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_84" model="res.users">
+        <record id="partner_alumno_84" model="res.partner">
             <field name="name">Luis Fernández Díaz</field>
-            <field name="login">alumno84</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno84@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_85" model="res.users">
+        <record id="partner_alumno_85" model="res.partner">
             <field name="name">Carmen Sánchez Jiménez</field>
-            <field name="login">alumno85</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno85@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_86" model="res.users">
+        <record id="partner_alumno_86" model="res.partner">
             <field name="name">José Gómez Moreno</field>
-            <field name="login">alumno86</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno86@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_87" model="res.users">
+        <record id="partner_alumno_87" model="res.partner">
             <field name="name">Laura Pérez Álvarez</field>
-            <field name="login">alumno87</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno87@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_88" model="res.users">
+        <record id="partner_alumno_88" model="res.partner">
             <field name="name">Carlos Ruiz Romero</field>
-            <field name="login">alumno88</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno88@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_89" model="res.users">
+        <record id="partner_alumno_89" model="res.partner">
             <field name="name">Elena Díaz Torres</field>
-            <field name="login">alumno89</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno89@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
-        <record id="user_alumno_90" model="res.users">
+        <record id="partner_alumno_90" model="res.partner">
             <field name="name">Miguel Jiménez Navarro</field>
-            <field name="login">alumno90</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno90@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
 
         <!-- Grupo Académico: 4º ESO A -->
@@ -705,7 +607,6 @@
             <field name="name">4º ESO A</field>
             <field name="course_level">eso4</field>
             <field name="tutor_id" ref="user_tutor_9"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_81'), ref('user_alumno_82'), ref('user_alumno_83'), ref('user_alumno_84'), ref('user_alumno_85'), ref('user_alumno_86'), ref('user_alumno_87'), ref('user_alumno_88'), ref('user_alumno_89'), ref('user_alumno_90')])]"/>
         </record>
 
         <!-- Tutor: 4º ESO B -->
@@ -713,69 +614,59 @@
             <field name="name">Prof. Miguel Jiménez</field>
             <field name="login">tutor.eso4.b</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 4º ESO B -->
-        <record id="user_alumno_91" model="res.users">
+        <record id="partner_alumno_91" model="res.partner">
             <field name="name">Isabel Moreno García</field>
-            <field name="login">alumno91</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno91@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_92" model="res.users">
+        <record id="partner_alumno_92" model="res.partner">
             <field name="name">David Álvarez López</field>
-            <field name="login">alumno92</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno92@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_93" model="res.users">
+        <record id="partner_alumno_93" model="res.partner">
             <field name="name">Sofía Romero Martínez</field>
-            <field name="login">alumno93</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno93@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_94" model="res.users">
+        <record id="partner_alumno_94" model="res.partner">
             <field name="name">Antonio Torres Rodríguez</field>
-            <field name="login">alumno94</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno94@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_95" model="res.users">
+        <record id="partner_alumno_95" model="res.partner">
             <field name="name">Lucía Navarro Fernández</field>
-            <field name="login">alumno95</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno95@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_96" model="res.users">
+        <record id="partner_alumno_96" model="res.partner">
             <field name="name">Francisco García Sánchez</field>
-            <field name="login">alumno96</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno96@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_97" model="res.users">
+        <record id="partner_alumno_97" model="res.partner">
             <field name="name">Paula López Gómez</field>
-            <field name="login">alumno97</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno97@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_98" model="res.users">
+        <record id="partner_alumno_98" model="res.partner">
             <field name="name">Manuel Martínez Pérez</field>
-            <field name="login">alumno98</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno98@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_99" model="res.users">
+        <record id="partner_alumno_99" model="res.partner">
             <field name="name">Andrea Rodríguez Ruiz</field>
-            <field name="login">alumno99</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno99@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
-        <record id="user_alumno_100" model="res.users">
+        <record id="partner_alumno_100" model="res.partner">
             <field name="name">Juan Fernández Díaz</field>
-            <field name="login">alumno100</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno100@test.com</field>
+            <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
 
         <!-- Grupo Académico: 4º ESO B -->
@@ -783,7 +674,6 @@
             <field name="name">4º ESO B</field>
             <field name="course_level">eso4</field>
             <field name="tutor_id" ref="user_tutor_10"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_91'), ref('user_alumno_92'), ref('user_alumno_93'), ref('user_alumno_94'), ref('user_alumno_95'), ref('user_alumno_96'), ref('user_alumno_97'), ref('user_alumno_98'), ref('user_alumno_99'), ref('user_alumno_100')])]"/>
         </record>
 
         <!-- Tutor: 1º Bachillerato A -->
@@ -791,69 +681,59 @@
             <field name="name">Prof. Isabel Moreno</field>
             <field name="login">tutor.bach1.a</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 1º Bachillerato A -->
-        <record id="user_alumno_101" model="res.users">
+        <record id="partner_alumno_101" model="res.partner">
             <field name="name">María Sánchez Jiménez</field>
-            <field name="login">alumno101</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno101@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_102" model="res.users">
+        <record id="partner_alumno_102" model="res.partner">
             <field name="name">Pedro Gómez Moreno</field>
-            <field name="login">alumno102</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno102@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_103" model="res.users">
+        <record id="partner_alumno_103" model="res.partner">
             <field name="name">Ana Pérez Álvarez</field>
-            <field name="login">alumno103</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno103@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_104" model="res.users">
+        <record id="partner_alumno_104" model="res.partner">
             <field name="name">Luis Ruiz Romero</field>
-            <field name="login">alumno104</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno104@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_105" model="res.users">
+        <record id="partner_alumno_105" model="res.partner">
             <field name="name">Carmen Díaz Torres</field>
-            <field name="login">alumno105</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno105@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_106" model="res.users">
+        <record id="partner_alumno_106" model="res.partner">
             <field name="name">José Jiménez Navarro</field>
-            <field name="login">alumno106</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno106@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_107" model="res.users">
+        <record id="partner_alumno_107" model="res.partner">
             <field name="name">Laura Moreno García</field>
-            <field name="login">alumno107</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno107@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_108" model="res.users">
+        <record id="partner_alumno_108" model="res.partner">
             <field name="name">Carlos Álvarez López</field>
-            <field name="login">alumno108</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno108@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_109" model="res.users">
+        <record id="partner_alumno_109" model="res.partner">
             <field name="name">Elena Romero Martínez</field>
-            <field name="login">alumno109</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno109@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
-        <record id="user_alumno_110" model="res.users">
+        <record id="partner_alumno_110" model="res.partner">
             <field name="name">Miguel Torres Rodríguez</field>
-            <field name="login">alumno110</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno110@test.com</field>
+            <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
 
         <!-- Grupo Académico: 1º Bachillerato A -->
@@ -861,7 +741,6 @@
             <field name="name">1º Bachillerato A</field>
             <field name="course_level">bach1</field>
             <field name="tutor_id" ref="user_tutor_11"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_101'), ref('user_alumno_102'), ref('user_alumno_103'), ref('user_alumno_104'), ref('user_alumno_105'), ref('user_alumno_106'), ref('user_alumno_107'), ref('user_alumno_108'), ref('user_alumno_109'), ref('user_alumno_110')])]"/>
         </record>
 
         <!-- Tutor: 2º Bachillerato A -->
@@ -869,69 +748,59 @@
             <field name="name">Prof. David Álvarez</field>
             <field name="login">tutor.bach2.a</field>
             <field name="password">tutor123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_tutor')])]"/>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
         <!-- Alumnos: 2º Bachillerato A -->
-        <record id="user_alumno_111" model="res.users">
+        <record id="partner_alumno_111" model="res.partner">
             <field name="name">Isabel Navarro Fernández</field>
-            <field name="login">alumno111</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno111@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_112" model="res.users">
+        <record id="partner_alumno_112" model="res.partner">
             <field name="name">David García Sánchez</field>
-            <field name="login">alumno112</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno112@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_113" model="res.users">
+        <record id="partner_alumno_113" model="res.partner">
             <field name="name">Sofía López Gómez</field>
-            <field name="login">alumno113</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno113@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_114" model="res.users">
+        <record id="partner_alumno_114" model="res.partner">
             <field name="name">Antonio Martínez Pérez</field>
-            <field name="login">alumno114</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno114@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_115" model="res.users">
+        <record id="partner_alumno_115" model="res.partner">
             <field name="name">Lucía Rodríguez Ruiz</field>
-            <field name="login">alumno115</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno115@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_116" model="res.users">
+        <record id="partner_alumno_116" model="res.partner">
             <field name="name">Francisco Fernández Díaz</field>
-            <field name="login">alumno116</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno116@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_117" model="res.users">
+        <record id="partner_alumno_117" model="res.partner">
             <field name="name">Paula Sánchez Jiménez</field>
-            <field name="login">alumno117</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno117@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_118" model="res.users">
+        <record id="partner_alumno_118" model="res.partner">
             <field name="name">Manuel Gómez Moreno</field>
-            <field name="login">alumno118</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno118@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_119" model="res.users">
+        <record id="partner_alumno_119" model="res.partner">
             <field name="name">Andrea Pérez Álvarez</field>
-            <field name="login">alumno119</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno119@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
-        <record id="user_alumno_120" model="res.users">
+        <record id="partner_alumno_120" model="res.partner">
             <field name="name">Juan Ruiz Romero</field>
-            <field name="login">alumno120</field>
-            <field name="password">alumno123</field>
-            <field name="groups_id" eval="[(6, 0, [ref('aula_metrics.group_aulametrics_student')])]"/>
+            <field name="email">alumno120@test.com</field>
+            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
 
         <!-- Grupo Académico: 2º Bachillerato A -->
@@ -939,395 +808,6 @@
             <field name="name">2º Bachillerato A</field>
             <field name="course_level">bach2</field>
             <field name="tutor_id" ref="user_tutor_12"/>
-            <field name="student_ids" eval="[(6, 0, [ref('user_alumno_111'), ref('user_alumno_112'), ref('user_alumno_113'), ref('user_alumno_114'), ref('user_alumno_115'), ref('user_alumno_116'), ref('user_alumno_117'), ref('user_alumno_118'), ref('user_alumno_119'), ref('user_alumno_120')])]"/>
-        </record>
-
-        <!-- ========================================== -->
-        <!-- ASIGNACIÓN DE GRUPOS A ALUMNOS -->
-        <!-- ========================================== -->
-
-        <!-- 1º ESO A -->
-        <record id="user_alumno_1" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_2" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_3" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_4" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_5" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_6" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_7" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_8" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_9" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-        <record id="user_alumno_10" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_a"/>
-        </record>
-
-        <!-- 1º ESO B -->
-        <record id="user_alumno_11" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_12" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_13" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_14" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_15" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_16" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_17" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_18" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_19" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-        <record id="user_alumno_20" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_b"/>
-        </record>
-
-        <!-- 1º ESO C -->
-        <record id="user_alumno_21" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_22" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_23" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_24" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_25" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_26" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_27" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_28" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_29" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-        <record id="user_alumno_30" model="res.users">
-            <field name="academic_group_id" ref="group_eso1_c"/>
-        </record>
-
-        <!-- 2º ESO A -->
-        <record id="user_alumno_31" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_32" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_33" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_34" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_35" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_36" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_37" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_38" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_39" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-        <record id="user_alumno_40" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_a"/>
-        </record>
-
-        <!-- 2º ESO B -->
-        <record id="user_alumno_41" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_42" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_43" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_44" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_45" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_46" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_47" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_48" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_49" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-        <record id="user_alumno_50" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_b"/>
-        </record>
-
-        <!-- 2º ESO C -->
-        <record id="user_alumno_51" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_52" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_53" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_54" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_55" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_56" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_57" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_58" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_59" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-        <record id="user_alumno_60" model="res.users">
-            <field name="academic_group_id" ref="group_eso2_c"/>
-        </record>
-
-        <!-- 3º ESO A -->
-        <record id="user_alumno_61" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_62" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_63" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_64" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_65" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_66" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_67" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_68" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_69" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-        <record id="user_alumno_70" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_a"/>
-        </record>
-
-        <!-- 3º ESO B -->
-        <record id="user_alumno_71" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_72" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_73" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_74" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_75" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_76" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_77" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_78" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_79" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-        <record id="user_alumno_80" model="res.users">
-            <field name="academic_group_id" ref="group_eso3_b"/>
-        </record>
-
-        <!-- 4º ESO A -->
-        <record id="user_alumno_81" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_82" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_83" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_84" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_85" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_86" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_87" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_88" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_89" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-        <record id="user_alumno_90" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_a"/>
-        </record>
-
-        <!-- 4º ESO B -->
-        <record id="user_alumno_91" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_92" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_93" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_94" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_95" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_96" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_97" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_98" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_99" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-        <record id="user_alumno_100" model="res.users">
-            <field name="academic_group_id" ref="group_eso4_b"/>
-        </record>
-
-        <!-- 1º Bachillerato A -->
-        <record id="user_alumno_101" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_102" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_103" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_104" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_105" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_106" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_107" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_108" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_109" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-        <record id="user_alumno_110" model="res.users">
-            <field name="academic_group_id" ref="group_bach1_a"/>
-        </record>
-
-        <!-- 2º Bachillerato A -->
-        <record id="user_alumno_111" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_112" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_113" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_114" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_115" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_116" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_117" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_118" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_119" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-        <record id="user_alumno_120" model="res.users">
-            <field name="academic_group_id" ref="group_bach2_a"/>
         </record>
 
     </data>
