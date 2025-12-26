@@ -167,8 +167,36 @@ class Evaluation(models.Model):
         self._create_participations()
     
     def action_activate(self):
-        """Activar evaluación (scheduled -> active)"""
+        """Activar evaluación (scheduled -> active) y enviar invitaciones"""
         self.write({'state': 'active'})
+        self._send_survey_invitations()
+    
+    def _send_survey_invitations(self):
+        """Crea invitaciones de survey para cada participación pendiente"""
+        SurveyInvite = self.env['survey.invite']
+        
+        for evaluation in self:
+            # Solo procesar participaciones pendientes
+            pending_participations = evaluation.participation_ids.filtered(
+                lambda p: p.state == 'pending'
+            )
+            
+            for participation in pending_participations:
+                # Crear una invitación por cada survey de la evaluación
+                for survey in evaluation.survey_ids:
+                    # Verificar si ya existe invitación para este alumno/survey
+                    existing_invite = SurveyInvite.search([
+                        ('survey_id', '=', survey.id),
+                        ('partner_id', '=', participation.student_id.id),
+                    ], limit=1)
+                    
+                    if not existing_invite:
+                        # Crear invitación (automáticamente genera token)
+                        SurveyInvite.create({
+                            'survey_id': survey.id,
+                            'partner_id': participation.student_id.id,
+                            'deadline': evaluation.date_end,
+                        })
     
     def action_close(self):
         """Cerrar evaluación (active -> closed)"""

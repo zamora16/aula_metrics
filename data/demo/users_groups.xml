@@ -14,6 +14,13 @@
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
 
+        <!-- Grupo Académico: 1º ESO A -->
+        <record id="group_eso1_a" model="aulametrics.academic_group">
+            <field name="name">1º ESO A</field>
+            <field name="course_level">eso1</field>
+            <field name="tutor_id" ref="user_tutor_1"/>
+        </record>
+
         <!-- Alumnos: 1º ESO A -->
         <record id="partner_alumno_1" model="res.partner">
             <field name="name">María López Gómez</field>
@@ -66,19 +73,19 @@
             <field name="academic_group_id" ref="group_eso1_a"/>
         </record>
 
-        <!-- Grupo Académico: 1º ESO A -->
-        <record id="group_eso1_a" model="aulametrics.academic_group">
-            <field name="name">1º ESO A</field>
-            <field name="course_level">eso1</field>
-            <field name="tutor_id" ref="user_tutor_1"/>
-        </record>
-
         <!-- Tutor: 1º ESO B -->
         <record id="user_tutor_2" model="res.users">
             <field name="name">Prof. Pedro Martínez</field>
             <field name="login">tutor.eso1.b</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 1º ESO B -->
+        <record id="group_eso1_b" model="aulametrics.academic_group">
+            <field name="name">1º ESO B</field>
+            <field name="course_level">eso1</field>
+            <field name="tutor_id" ref="user_tutor_2"/>
         </record>
 
         <!-- Alumnos: 1º ESO B -->
@@ -133,19 +140,19 @@
             <field name="academic_group_id" ref="group_eso1_b"/>
         </record>
 
-        <!-- Grupo Académico: 1º ESO B -->
-        <record id="group_eso1_b" model="aulametrics.academic_group">
-            <field name="name">1º ESO B</field>
-            <field name="course_level">eso1</field>
-            <field name="tutor_id" ref="user_tutor_2"/>
-        </record>
-
         <!-- Tutor: 1º ESO C -->
         <record id="user_tutor_3" model="res.users">
             <field name="name">Prof. Ana Rodríguez</field>
             <field name="login">tutor.eso1.c</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 1º ESO C -->
+        <record id="group_eso1_c" model="aulametrics.academic_group">
+            <field name="name">1º ESO C</field>
+            <field name="course_level">eso1</field>
+            <field name="tutor_id" ref="user_tutor_3"/>
         </record>
 
         <!-- Alumnos: 1º ESO C -->
@@ -200,19 +207,19 @@
             <field name="academic_group_id" ref="group_eso1_c"/>
         </record>
 
-        <!-- Grupo Académico: 1º ESO C -->
-        <record id="group_eso1_c" model="aulametrics.academic_group">
-            <field name="name">1º ESO C</field>
-            <field name="course_level">eso1</field>
-            <field name="tutor_id" ref="user_tutor_3"/>
-        </record>
-
         <!-- Tutor: 2º ESO A -->
         <record id="user_tutor_4" model="res.users">
             <field name="name">Prof. Luis Fernández</field>
             <field name="login">tutor.eso2.a</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 2º ESO A -->
+        <record id="group_eso2_a" model="aulametrics.academic_group">
+            <field name="name">2º ESO A</field>
+            <field name="course_level">eso2</field>
+            <field name="tutor_id" ref="user_tutor_4"/>
         </record>
 
         <!-- Alumnos: 2º ESO A -->
@@ -267,19 +274,19 @@
             <field name="academic_group_id" ref="group_eso2_a"/>
         </record>
 
-        <!-- Grupo Académico: 2º ESO A -->
-        <record id="group_eso2_a" model="aulametrics.academic_group">
-            <field name="name">2º ESO A</field>
-            <field name="course_level">eso2</field>
-            <field name="tutor_id" ref="user_tutor_4"/>
-        </record>
-
         <!-- Tutor: 2º ESO B -->
         <record id="user_tutor_5" model="res.users">
             <field name="name">Prof. Carmen Sánchez</field>
             <field name="login">tutor.eso2.b</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 2º ESO B -->
+        <record id="group_eso2_b" model="aulametrics.academic_group">
+            <field name="name">2º ESO B</field>
+            <field name="course_level">eso2</field>
+            <field name="tutor_id" ref="user_tutor_5"/>
         </record>
 
         <!-- Alumnos: 2º ESO B -->
@@ -334,19 +341,19 @@
             <field name="academic_group_id" ref="group_eso2_b"/>
         </record>
 
-        <!-- Grupo Académico: 2º ESO B -->
-        <record id="group_eso2_b" model="aulametrics.academic_group">
-            <field name="name">2º ESO B</field>
-            <field name="course_level">eso2</field>
-            <field name="tutor_id" ref="user_tutor_5"/>
-        </record>
-
         <!-- Tutor: 2º ESO C -->
         <record id="user_tutor_6" model="res.users">
             <field name="name">Prof. José Gómez</field>
             <field name="login">tutor.eso2.c</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 2º ESO C -->
+        <record id="group_eso2_c" model="aulametrics.academic_group">
+            <field name="name">2º ESO C</field>
+            <field name="course_level">eso2</field>
+            <field name="tutor_id" ref="user_tutor_6"/>
         </record>
 
         <!-- Alumnos: 2º ESO C -->
@@ -401,19 +408,19 @@
             <field name="academic_group_id" ref="group_eso2_c"/>
         </record>
 
-        <!-- Grupo Académico: 2º ESO C -->
-        <record id="group_eso2_c" model="aulametrics.academic_group">
-            <field name="name">2º ESO C</field>
-            <field name="course_level">eso2</field>
-            <field name="tutor_id" ref="user_tutor_6"/>
-        </record>
-
         <!-- Tutor: 3º ESO A -->
         <record id="user_tutor_7" model="res.users">
             <field name="name">Prof. Laura Pérez</field>
             <field name="login">tutor.eso3.a</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 3º ESO A -->
+        <record id="group_eso3_a" model="aulametrics.academic_group">
+            <field name="name">3º ESO A</field>
+            <field name="course_level">eso3</field>
+            <field name="tutor_id" ref="user_tutor_7"/>
         </record>
 
         <!-- Alumnos: 3º ESO A -->
@@ -468,19 +475,19 @@
             <field name="academic_group_id" ref="group_eso3_a"/>
         </record>
 
-        <!-- Grupo Académico: 3º ESO A -->
-        <record id="group_eso3_a" model="aulametrics.academic_group">
-            <field name="name">3º ESO A</field>
-            <field name="course_level">eso3</field>
-            <field name="tutor_id" ref="user_tutor_7"/>
-        </record>
-
         <!-- Tutor: 3º ESO B -->
         <record id="user_tutor_8" model="res.users">
             <field name="name">Prof. Carlos Ruiz</field>
             <field name="login">tutor.eso3.b</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 3º ESO B -->
+        <record id="group_eso3_b" model="aulametrics.academic_group">
+            <field name="name">3º ESO B</field>
+            <field name="course_level">eso3</field>
+            <field name="tutor_id" ref="user_tutor_8"/>
         </record>
 
         <!-- Alumnos: 3º ESO B -->
@@ -535,19 +542,19 @@
             <field name="academic_group_id" ref="group_eso3_b"/>
         </record>
 
-        <!-- Grupo Académico: 3º ESO B -->
-        <record id="group_eso3_b" model="aulametrics.academic_group">
-            <field name="name">3º ESO B</field>
-            <field name="course_level">eso3</field>
-            <field name="tutor_id" ref="user_tutor_8"/>
-        </record>
-
         <!-- Tutor: 4º ESO A -->
         <record id="user_tutor_9" model="res.users">
             <field name="name">Prof. Elena Díaz</field>
             <field name="login">tutor.eso4.a</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 4º ESO A -->
+        <record id="group_eso4_a" model="aulametrics.academic_group">
+            <field name="name">4º ESO A</field>
+            <field name="course_level">eso4</field>
+            <field name="tutor_id" ref="user_tutor_9"/>
         </record>
 
         <!-- Alumnos: 4º ESO A -->
@@ -602,19 +609,19 @@
             <field name="academic_group_id" ref="group_eso4_a"/>
         </record>
 
-        <!-- Grupo Académico: 4º ESO A -->
-        <record id="group_eso4_a" model="aulametrics.academic_group">
-            <field name="name">4º ESO A</field>
-            <field name="course_level">eso4</field>
-            <field name="tutor_id" ref="user_tutor_9"/>
-        </record>
-
         <!-- Tutor: 4º ESO B -->
         <record id="user_tutor_10" model="res.users">
             <field name="name">Prof. Miguel Jiménez</field>
             <field name="login">tutor.eso4.b</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 4º ESO B -->
+        <record id="group_eso4_b" model="aulametrics.academic_group">
+            <field name="name">4º ESO B</field>
+            <field name="course_level">eso4</field>
+            <field name="tutor_id" ref="user_tutor_10"/>
         </record>
 
         <!-- Alumnos: 4º ESO B -->
@@ -669,19 +676,19 @@
             <field name="academic_group_id" ref="group_eso4_b"/>
         </record>
 
-        <!-- Grupo Académico: 4º ESO B -->
-        <record id="group_eso4_b" model="aulametrics.academic_group">
-            <field name="name">4º ESO B</field>
-            <field name="course_level">eso4</field>
-            <field name="tutor_id" ref="user_tutor_10"/>
-        </record>
-
         <!-- Tutor: 1º Bachillerato A -->
         <record id="user_tutor_11" model="res.users">
             <field name="name">Prof. Isabel Moreno</field>
             <field name="login">tutor.bach1.a</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 1º Bachillerato A -->
+        <record id="group_bach1_a" model="aulametrics.academic_group">
+            <field name="name">1º Bachillerato A</field>
+            <field name="course_level">bach1</field>
+            <field name="tutor_id" ref="user_tutor_11"/>
         </record>
 
         <!-- Alumnos: 1º Bachillerato A -->
@@ -736,19 +743,19 @@
             <field name="academic_group_id" ref="group_bach1_a"/>
         </record>
 
-        <!-- Grupo Académico: 1º Bachillerato A -->
-        <record id="group_bach1_a" model="aulametrics.academic_group">
-            <field name="name">1º Bachillerato A</field>
-            <field name="course_level">bach1</field>
-            <field name="tutor_id" ref="user_tutor_11"/>
-        </record>
-
         <!-- Tutor: 2º Bachillerato A -->
         <record id="user_tutor_12" model="res.users">
             <field name="name">Prof. David Álvarez</field>
             <field name="login">tutor.bach2.a</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
+        </record>
+
+        <!-- Grupo Académico: 2º Bachillerato A -->
+        <record id="group_bach2_a" model="aulametrics.academic_group">
+            <field name="name">2º Bachillerato A</field>
+            <field name="course_level">bach2</field>
+            <field name="tutor_id" ref="user_tutor_12"/>
         </record>
 
         <!-- Alumnos: 2º Bachillerato A -->
@@ -801,13 +808,6 @@
             <field name="name">Juan Ruiz Romero</field>
             <field name="email">alumno120@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
-        </record>
-
-        <!-- Grupo Académico: 2º Bachillerato A -->
-        <record id="group_bach2_a" model="aulametrics.academic_group">
-            <field name="name">2º Bachillerato A</field>
-            <field name="course_level">bach2</field>
-            <field name="tutor_id" ref="user_tutor_12"/>
         </record>
 
     </data>

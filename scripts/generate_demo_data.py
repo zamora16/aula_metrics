@@ -68,7 +68,16 @@ def generate_xml():
             xml.append(f'        </record>')
             xml.append('')
             
-            # Alumnos del grupo
+            # Grupo académico (ANTES de los alumnos)
+            xml.append(f'        <!-- Grupo Académico: {course_name} -->')
+            xml.append(f'        <record id="{group_id}" model="aulametrics.academic_group">')
+            xml.append(f'            <field name="name">{course_name}</field>')
+            xml.append(f'            <field name="course_level">{course_level}</field>')
+            xml.append(f'            <field name="tutor_id" ref="{tutor_id}"/>')
+            xml.append(f'        </record>')
+            xml.append('')
+            
+            # Alumnos del grupo (DESPUÉS del grupo)
             xml.append(f'        <!-- Alumnos: {course_name} -->')
             for i in range(ALUMNOS_POR_GRUPO):
                 alumno_counter += 1
@@ -83,15 +92,6 @@ def generate_xml():
                 xml.append(f'            <field name="email">alumno{alumno_counter}@test.com</field>')
                 xml.append(f'            <field name="academic_group_id" ref="{group_id}"/>')
                 xml.append(f'        </record>')
-            xml.append('')
-            
-            # Grupo académico
-            xml.append(f'        <!-- Grupo Académico: {course_name} -->')
-            xml.append(f'        <record id="{group_id}" model="aulametrics.academic_group">')
-            xml.append(f'            <field name="name">{course_name}</field>')
-            xml.append(f'            <field name="course_level">{course_level}</field>')
-            xml.append(f'            <field name="tutor_id" ref="{tutor_id}"/>')
-            xml.append(f'        </record>')
             xml.append('')
             
             all_groups.append({

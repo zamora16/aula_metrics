@@ -25,7 +25,6 @@
                                 <tree>
                                     <field name="name"/>
                                     <field name="email"/>
-                                    <field name="login"/>
                                 </tree>
                             </field>
                         </page>
