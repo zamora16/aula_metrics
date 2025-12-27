@@ -5,6 +5,9 @@ Script para generar datos de demostración de AulaMetrics
 Genera grupos académicos con alumnos y tutores
 """
 
+import random
+from datetime import date
+
 # Configuración
 GRUPOS = {
     'eso1': ['A', 'B', 'C'],
@@ -17,11 +20,28 @@ GRUPOS = {
 
 ALUMNOS_POR_GRUPO = 10
 
-# Nombres para generar alumnos
-NOMBRES = ['Juan', 'María', 'Pedro', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Carlos', 'Elena',
-           'Miguel', 'Isabel', 'David', 'Sofía', 'Antonio', 'Lucía', 'Francisco', 'Paula', 'Manuel', 'Andrea']
+# Nombres separados por género
+NOMBRES_MASCULINOS = ['Juan', 'Pedro', 'Luis', 'José', 'Carlos', 'Miguel', 'David', 'Antonio', 'Francisco', 'Manuel']
+NOMBRES_FEMENINOS = ['María', 'Ana', 'Carmen', 'Laura', 'Elena', 'Isabel', 'Sofía', 'Lucía', 'Paula', 'Andrea']
 APELLIDOS = ['García', 'López', 'Martínez', 'Rodríguez', 'Fernández', 'Sánchez', 'Gómez', 'Pérez', 
              'Ruiz', 'Díaz', 'Jiménez', 'Moreno', 'Álvarez', 'Romero', 'Torres', 'Navarro']
+
+# Años de nacimiento por curso
+BIRTH_YEARS = {
+    'eso1': 2012,
+    'eso2': 2011,
+    'eso3': 2010,
+    'eso4': 2009,
+    'bach1': 2008,
+    'bach2': 2007,
+}
+
+def generate_birthdate(course_level):
+    """Genera fecha de nacimiento realista para el curso"""
+    base_year = BIRTH_YEARS[course_level]
+    month = random.randint(1, 12)
+    day = random.randint(1, 28)
+    return f"{base_year}-{month:02d}-{day:02d}"
 
 def get_course_name(course_level, section):
     """Convierte código de curso a nombre legible"""
@@ -57,8 +77,9 @@ def generate_xml():
             tutor_id = f"user_tutor_{tutor_counter}"
             course_name = get_course_name(course_level, section)
             
-            # Tutor
-            tutor_name = f"{NOMBRES[tutor_counter % len(NOMBRES)]} {APELLIDOS[tutor_counter % len(APELLIDOS)]}"
+            # Tutor (usar nombres combinados)
+            nombres_tutores = NOMBRES_MASCULINOS + NOMBRES_FEMENINOS
+            tutor_name = f"{nombres_tutores[tutor_counter % len(nombres_tutores)]} {APELLIDOS[tutor_counter % len(APELLIDOS)]}"
             xml.append(f'        <!-- Tutor: {course_name} -->')
             xml.append(f'        <record id="{tutor_id}" model="res.users">')
             xml.append(f'            <field name="name">Prof. {tutor_name}</field>')
@@ -83,14 +104,23 @@ def generate_xml():
                 alumno_counter += 1
                 alumno_id = f"partner_alumno_{alumno_counter}"
                 
-                nombre = NOMBRES[alumno_counter % len(NOMBRES)]
+                # Alternar género
+                gender = 'male' if alumno_counter % 2 == 0 else 'female'
+                if gender == 'male':
+                    nombre = NOMBRES_MASCULINOS[alumno_counter % len(NOMBRES_MASCULINOS)]
+                else:
+                    nombre = NOMBRES_FEMENINOS[alumno_counter % len(NOMBRES_FEMENINOS)]
+                
                 apellido = APELLIDOS[alumno_counter % len(APELLIDOS)]
                 apellido2 = APELLIDOS[(alumno_counter + 5) % len(APELLIDOS)]
+                birthdate = generate_birthdate(course_level)
                 
                 xml.append(f'        <record id="{alumno_id}" model="res.partner">')
                 xml.append(f'            <field name="name">{nombre} {apellido} {apellido2}</field>')
                 xml.append(f'            <field name="email">alumno{alumno_counter}@test.com</field>')
                 xml.append(f'            <field name="academic_group_id" ref="{group_id}"/>')
+                xml.append(f'            <field name="gender">{gender}</field>')
+                xml.append(f'            <field name="birthdate">{birthdate}</field>')
                 xml.append(f'        </record>')
             xml.append('')
             

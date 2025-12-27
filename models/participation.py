@@ -49,6 +49,32 @@ class Participation(models.Model):
         help='Fecha y hora en que el alumno finalizó el cuestionario'
     )
     
+    # Puntuaciones calculadas - WHO-5 (Bienestar)
+    who5_raw_score = fields.Integer(
+        string='WHO-5 Puntuación Bruta',
+        readonly=True,
+        help='Suma de los 5 ítems (0-25)'
+    )
+    
+    who5_percentage = fields.Float(
+        string='WHO-5 Porcentaje',
+        readonly=True,
+        help='Puntuación convertida a escala 0-100. <50 sugiere baja calidad de vida'
+    )
+    
+    # Puntuaciones calculadas - Victimización y Agresión
+    victimization_score = fields.Float(
+        string='Puntuación Victimización',
+        readonly=True,
+        help='Suma de 7 ítems de victimización (0-28). Mayor puntuación = mayor victimización'
+    )
+    
+    aggression_score = fields.Float(
+        string='Puntuación Agresión',
+        readonly=True,
+        help='Suma de 7 ítems de agresión (0-28). Mayor puntuación = mayor agresión'
+    )
+    
     # Constraint: un alumno solo puede tener una participación por evaluación
     _sql_constraints = [
         ('unique_student_evaluation',
