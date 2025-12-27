@@ -6,19 +6,11 @@
         <field name="model">survey.survey</field>
         <field name="inherit_id" ref="survey.survey_survey_view_form"/>
         <field name="arch" type="xml">
-            <!-- Ocultar botones innecesarios del header -->
-            <xpath expr="//button[@name='action_send_survey']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//button[@name='action_result_survey']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//button[@name='action_start_session']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//button[@name='action_test_survey']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
+            <!-- Eliminar botones innecesarios del header -->
+            <xpath expr="//button[@name='action_send_survey']" position="replace"/>
+            <xpath expr="//button[@name='action_result_survey']" position="replace"/>
+            <xpath expr="//button[@name='action_start_session']" position="replace"/>
+            <xpath expr="//button[@name='action_test_survey']" position="replace"/>
             
             <!-- Añadir campos de AulaMetrics en el formulario de survey -->
             <xpath expr="//field[@name='title']" position="after">
@@ -37,6 +29,11 @@
             <!-- Ocultar chatter completamente -->
             <xpath expr="//div[hasclass('oe_chatter')]" position="replace"/>
         </field>
+    </record>
+
+    <!-- Modificar acción para mostrar solo vista tree y form -->
+    <record id="survey.action_survey_form" model="ir.actions.act_window">
+        <field name="view_mode">tree,form</field>
     </record>
 
 </odoo>
