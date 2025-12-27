@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+import uuid
 
 class Participation(models.Model):
     """Seguimiento de participación de alumnos en evaluaciones"""
@@ -25,6 +26,15 @@ class Participation(models.Model):
         domain=[('academic_group_id', '!=', False)]
     )
     
+    # Token único para acceso web
+    evaluation_token = fields.Char(
+        string='Token de Acceso',
+        readonly=True,
+        copy=False,
+        index=True,
+        help='Token único para acceder al portal de evaluación'
+    )
+    
     # Estado de participación
     state = fields.Selection([
         ('pending', 'Pendiente'),
@@ -45,6 +55,14 @@ class Participation(models.Model):
          'UNIQUE(evaluation_id, student_id)',
          'Un alumno solo puede participar una vez en cada evaluación.')
     ]
+    
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Genera token único al crear participación"""
+        for vals in vals_list:
+            if not vals.get('evaluation_token'):
+                vals['evaluation_token'] = str(uuid.uuid4())
+        return super().create(vals_list)
     
     def action_complete(self):
         """Marca la participación como completada"""

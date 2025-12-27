@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="evaluation_portal" name="Portal de Evaluación">
+        <t t-call="web.layout">
+            <style>
+                :root {
+                    --primary: #2c3e50;
+                    --accent: #3498db;
+                    --bg: #f5f7fa;
+                    --card: #ffffff;
+                    --text: #2c3e50;
+                    --text-light: #7f8c8d;
+                    --border: #e2e8f0;
+                }
+
+                body {
+                    background-color: var(--bg);
+                    color: var(--text);
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    margin: 0;
+                    line-height: 1.6;
+                }
+                
+                .evaluation-wrapper {
+                    max-width: 1024px;
+                    margin: 0 auto;
+                    padding: 2rem 1rem;
+                }
+                
+                .evaluation-banner {
+                    background: var(--card);
+                    border-radius: 8px;
+                    padding: 2rem;
+                    margin-bottom: 2rem;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    border: 1px solid var(--border);
+                }
+                
+                .evaluation-banner h2 {
+                    color: var(--primary);
+                    font-size: 1.75rem;
+                    margin: 0 0 1.5rem 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    border-bottom: 2px solid var(--bg);
+                    padding-bottom: 1rem;
+                }
+                
+                .evaluation-banner h2 i { color: var(--accent); }
+                
+                .eval-info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
+                }
+                
+                .eval-info-item .label {
+                    font-size: 0.8rem;
+                    color: var(--text-light);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    margin-bottom: 0.25rem;
+                }
+                
+                .eval-info-item .label i { color: var(--accent); margin-right: 5px; }
+                .eval-info-item .value { font-size: 1.1rem; font-weight: 500; }
+                
+                .progress-section {
+                    background: var(--bg);
+                    padding: 1.25rem;
+                    border-radius: 6px;
+                }
+                
+                .progress-label {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 0.75rem;
+                    font-weight: 600;
+                }
+                
+                .progress-bar-container {
+                    height: 10px;
+                    background: #e2e8f0;
+                    border-radius: 5px;
+                    overflow: hidden;
+                }
+                
+                .progress-bar-fill {
+                    height: 100%;
+                    background-color: var(--accent);
+                    transition: width 0.5s ease;
+                }
+
+                .survey-container {
+                    background: var(--card);
+                    border-radius: 8px;
+                    margin-bottom: 2rem;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    border: 1px solid var(--border);
+                    overflow: hidden;
+                }
+                
+                .survey-header {
+                    background: #f8f9fa;
+                    padding: 1rem 1.5rem;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    border-bottom: 1px solid var(--border);
+                }
+                
+                .survey-badge {
+                    background: #fff3cd;
+                    color: #856404;
+                    padding: 0.35rem 0.85rem;
+                    border-radius: 50px;
+                    font-size: 0.8rem;
+                    border: 1px solid #ffeeba;
+                }
+
+                .survey-container iframe {
+                    width: 100%;
+                    min-height: 500px;
+                    border: none;
+                    display: block;
+                }
+                
+                .survey-completed {
+                    padding: 3rem 2rem;
+                    text-align: center;
+                    background-color: #f8fff9;
+                }
+                
+                .survey-completed i {
+                    font-size: 2.5rem;
+                    color: #28a745;
+                    margin-bottom: 1rem;
+                    display: block;
+                }
+                
+                .all-done {
+                    background: var(--card);
+                    padding: 3rem;
+                    text-align: center;
+                    border-radius: 8px;
+                    border: 1px solid var(--border);
+                    margin-top: 3rem;
+                }
+                
+                .all-done i { font-size: 3rem; color: #f1c40f; margin-bottom: 1.5rem; display: block; }
+                
+                @media (max-width: 768px) {
+                    .evaluation-wrapper { padding: 1rem; }
+                    .survey-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+                }
+            </style>
+
+            <div class="evaluation-wrapper">
+                <div class="evaluation-banner">
+                    <h2>
+                        <i class="fa fa-clipboard-check"></i>
+                        <t t-esc="evaluation.name"/>
+                    </h2>
+                    
+                    <div class="eval-info-grid">
+                        <div class="eval-info-item">
+                            <div class="label"><i class="fa fa-user-graduate"></i> Estudiante</div>
+                            <div class="value"><t t-esc="student.name"/></div>
+                        </div>
+                        <div class="eval-info-item">
+                            <div class="label"><i class="fa fa-calendar-alt"></i> Fecha límite</div>
+                            <div class="value"><t t-esc="evaluation.date_end"/></div>
+                        </div>
+                        <div class="eval-info-item">
+                            <div class="label"><i class="fa fa-list-ul"></i> Completadas</div>
+                            <div class="value">
+                                <t t-esc="len([s for s in survey_data if s['completed']])"/> / <t t-esc="len(survey_data)"/>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-label">
+                            <span>Progreso del curso</span>
+                            <span class="progress-percentage">
+                                <t t-esc="int((len([s for s in survey_data if s['completed']]) / len(survey_data) * 100) if survey_data else 0)"/>%
+                            </span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" t-attf-style="width: {{(len([s for s in survey_data if s['completed']]) / len(survey_data) * 100) if survey_data else 0}}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <t t-foreach="survey_data" t-as="item">
+                    <div class="survey-container">
+                        <t t-if="not item['completed'] and item['url']">
+                            <div class="survey-header">
+                                <span><i class="fa fa-file-alt" style="color: var(--accent); margin-right: 8px;"></i> <t t-esc="item['survey'].title"/></span>
+                                <span class="survey-badge"><i class="fa fa-clock"></i> Pendiente</span>
+                            </div>
+                            <iframe t-att-src="item['url']"></iframe>
+                        </t>
+
+                        <t t-if="item['completed']">
+                            <div class="survey-completed">
+                                <i class="fa fa-check-circle"></i>
+                                <h4><t t-esc="item['survey'].title"/></h4>
+                                <p>Respuesta registrada correctamente.</p>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+
+                <t t-if="len([s for s in survey_data if s['completed']]) == len(survey_data)">
+                    <div class="all-done">
+                        <i class="fa fa-award"></i>
+                        <h3>¡Evaluación Completada!</h3>
+                        <p>Has finalizado exitosamente todas las encuestas.</p>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <template id="evaluation_not_found" name="Evaluación no encontrada">
+        <t t-call="web.layout">
+            <style>
+                body { background: #f5f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; }
+                .error-box { background: white; padding: 3rem; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+                .error-box i { font-size: 3rem; color: #e74c3c; margin-bottom: 1rem; }
+            </style>
+            <div class="error-box">
+                <i class="fa fa-exclamation-circle"></i>
+                <h3>Enlace no disponible</h3>
+                <p>La evaluación no existe o ha caducado.</p>
+            </div>
+        </t>
+    </template>
+
+</odoo>

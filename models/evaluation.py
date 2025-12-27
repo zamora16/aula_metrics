@@ -167,13 +167,13 @@ class Evaluation(models.Model):
         self._create_participations()
     
     def action_activate(self):
-        """Activar evaluación (scheduled -> active) y enviar invitaciones"""
+        """Activar evaluación (scheduled -> active) y crear accesos para alumnos"""
         self.write({'state': 'active'})
-        self._send_survey_invitations()
+        self._create_survey_accesses()
     
-    def _send_survey_invitations(self):
-        """Crea invitaciones de survey para cada participación pendiente"""
-        SurveyInvite = self.env['survey.invite']
+    def _create_survey_accesses(self):
+        """Crea accesos directos (user_input) para cada participación pendiente"""
+        SurveyUserInput = self.env['survey.user_input']
         
         for evaluation in self:
             # Solo procesar participaciones pendientes
@@ -182,17 +182,18 @@ class Evaluation(models.Model):
             )
             
             for participation in pending_participations:
-                # Crear una invitación por cada survey de la evaluación
+                # Crear un user_input por cada survey de la evaluación
                 for survey in evaluation.survey_ids:
-                    # Verificar si ya existe invitación para este alumno/survey
-                    existing_invite = SurveyInvite.search([
+                    # Verificar si ya existe acceso para este alumno/survey
+                    existing_input = SurveyUserInput.search([
                         ('survey_id', '=', survey.id),
                         ('partner_id', '=', participation.student_id.id),
+                        ('state', '!=', 'done')
                     ], limit=1)
                     
-                    if not existing_invite:
-                        # Crear invitación (automáticamente genera token)
-                        SurveyInvite.create({
+                    if not existing_input:
+                        # Crear acceso (automáticamente genera token)
+                        SurveyUserInput.create({
                             'survey_id': survey.id,
                             'partner_id': participation.student_id.id,
                             'deadline': evaluation.date_end,

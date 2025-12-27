@@ -14,6 +14,7 @@
         <field name="is_attempts_limited" eval="False"/>
         <field name="is_time_limited" eval="False"/>
         <field name="access_mode">public</field>
+        <field name="users_login_required" eval="False"/>
     </record>
 
     <!-- Página 1: Victimización (solo contenedor) -->
@@ -196,6 +197,7 @@
         <field name="is_attempts_limited" eval="False"/>
         <field name="is_time_limited" eval="False"/>
         <field name="access_mode">public</field>
+        <field name="users_login_required" eval="False"/>
     </record>
 
     <!-- Pregunta matriz WHO-5 -->

@@ -33,10 +33,11 @@
         'views/survey_extension_views.xml',
         'views/evaluation_views.xml',
         'views/participations_views.xml',
+        'views/templates.xml',
         'views/menu.xml',
 
     ],
-    # only loaded in demonstration mode
+
     'demo': [
         'demo/demo.xml',
     ],
