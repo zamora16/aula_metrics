@@ -36,7 +36,6 @@ class Evaluation(models.Model):
         'evaluation_id',
         'survey_id',
         string='Cuestionarios',
-        domain=[('is_aulametrics', '=', True)],
         required=True,
         help='Cuestionarios que forman parte de esta evaluación'
     )

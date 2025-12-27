@@ -6,6 +6,20 @@
         <field name="model">survey.survey</field>
         <field name="inherit_id" ref="survey.survey_survey_view_form"/>
         <field name="arch" type="xml">
+            <!-- Ocultar botones innecesarios del header -->
+            <xpath expr="//button[@name='action_send_survey']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_result_survey']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_start_session']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_test_survey']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            
             <!-- Añadir campos de AulaMetrics en el formulario de survey -->
             <xpath expr="//field[@name='title']" position="after">
                 <field name="is_aulametrics" invisible="1"/>
@@ -25,6 +39,4 @@
         </field>
     </record>
 
-
-    </record>
 </odoo>

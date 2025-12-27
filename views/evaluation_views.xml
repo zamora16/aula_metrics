@@ -70,9 +70,9 @@
                     <!-- Pestañas -->
                     <notebook>
                         <page string="Cuestionarios" name="surveys">
-                            <field name="survey_ids" widget="many2many_tags" 
+                            <field name="survey_ids" widget="many2many_tags"
                                    domain="[('is_aulametrics', '=', True)]"
-                                   context="{'default_is_aulametrics': True}">
+                                   options="{'no_create': True, 'no_create_edit': True}">
                                 <tree>
                                     <field name="title"/>
                                     <field name="thematic_area"/>
