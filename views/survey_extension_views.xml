@@ -20,25 +20,11 @@
                 </button>
             </xpath>
             
-            <!-- Ocultar chatter para cuestionarios de AulaMetrics -->
-            <xpath expr="//div[hasclass('oe_chatter')]" position="attributes">
-                <attribute name="invisible">is_aulametrics</attribute>
-            </xpath>
+            <!-- Ocultar chatter completamente -->
+            <xpath expr="//div[hasclass('oe_chatter')]" position="replace"/>
         </field>
     </record>
 
-    <!-- Filtro adicional en vista de búsqueda de surveys -->
-    <record id="view_survey_search_inherit_aulametrics" model="ir.ui.view">
-        <field name="name">survey.survey.search.inherit.aulametrics</field>
-        <field name="model">survey.survey</field>
-        <field name="inherit_id" ref="survey.survey_survey_view_search"/>
-        <field name="arch" type="xml">
-            <xpath expr="//search" position="inside">
-                <filter string="AulaMetrics" name="aulametrics" domain="[('is_aulametrics', '=', True)]"/>
-                <separator/>
-                <filter string="Bienestar Emocional" name="wellbeing" domain="[('thematic_area', '=', 'wellbeing')]"/>
-                <filter string="Clima Escolar / Bullying" name="bullying" domain="[('thematic_area', '=', 'bullying')]"/>
-            </xpath>
-        </field>
+
     </record>
 </odoo>

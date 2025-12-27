@@ -21,8 +21,8 @@
                     </group>
                     <notebook>
                         <page string="Alumnado" name="students">
-                            <field name="student_ids">
-                                <tree>
+                            <field name="student_ids" widget="many2many" mode="tree">
+                                <tree editable="bottom">
                                     <field name="name"/>
                                     <field name="email"/>
                                 </tree>

@@ -6,7 +6,7 @@
               web_icon="aula_metrics,static/description/icon.png"
               sequence="10"/>
 
-    <!-- Dashboard (placeholder) -->
+    <!-- Dashboard -->
     <menuitem id="menu_aulametrics_dashboard" 
               name="Panel de Control" 
               parent="menu_aulametrics_root"
@@ -16,15 +16,9 @@
     <!-- Cuestionarios -->
     <menuitem id="menu_aulametrics_surveys" 
               name="Cuestionarios" 
-              parent="menu_aulametrics_root" 
-              sequence="20"/>
-    
-    <menuitem id="menu_survey_library" 
-              name="Biblioteca de Cuestionarios" 
-              parent="menu_aulametrics_surveys"
+              parent="menu_aulametrics_root"
               action="survey.action_survey_form"
-              sequence="10"/>
-
+              sequence="20"/>
     <!-- Evaluaciones -->
     <menuitem id="menu_aulametrics_evaluations" 
               name="Evaluaciones" 
