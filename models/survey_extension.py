@@ -103,12 +103,10 @@ class SurveyExtension(models.Model):
         
         for line in answer_lines:
             if line.suggested_answer_id:
-                try:
-                    value = int(line.suggested_answer_id.value or 0)
-                    raw_score += value
-                    item_count += 1
-                except (ValueError, AttributeError):
-                    continue
+                # sequence va de 1-6, restamos 1 para obtener 0-5
+                value = line.suggested_answer_id.sequence - 1
+                raw_score += value
+                item_count += 1
         
         # Solo retornar si se completaron los 5 ítems
         if item_count == 5:
@@ -155,12 +153,10 @@ class SurveyExtension(models.Model):
         
         for line in victimization_lines:
             if line.suggested_answer_id:
-                try:
-                    value = int(line.suggested_answer_id.value or 0)
-                    victimization_score += value
-                    victimization_count += 1
-                except (ValueError, AttributeError):
-                    continue
+                # sequence va de 1-5, restamos 1 para obtener 0-4
+                value = line.suggested_answer_id.sequence - 1
+                victimization_score += value
+                victimization_count += 1
         
         # Calcular Agresión
         aggression_lines = user_input.user_input_line_ids.filtered(
@@ -172,12 +168,10 @@ class SurveyExtension(models.Model):
         
         for line in aggression_lines:
             if line.suggested_answer_id:
-                try:
-                    value = int(line.suggested_answer_id.value or 0)
-                    aggression_score += value
-                    aggression_count += 1
-                except (ValueError, AttributeError):
-                    continue
+                # sequence va de 1-5, restamos 1 para obtener 0-4
+                value = line.suggested_answer_id.sequence - 1
+                aggression_score += value
+                aggression_count += 1
         
         # Solo retornar si ambas escalas están completas
         if victimization_count == 7 and aggression_count == 7:
