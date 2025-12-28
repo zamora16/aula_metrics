@@ -91,13 +91,42 @@ class Participation(models.Model):
         return super().create(vals_list)
     
     def action_complete(self):
-        """Marca la participación como completada"""
+        """Marca la participación como completada y calcula puntuaciones"""
         self.ensure_one()
         if self.state == 'pending':
+            # Calcular puntuaciones antes de marcar como completada
+            self._calculate_scores()
+            
             self.write({
                 'state': 'completed',
                 'completed_at': fields.Datetime.now()
             })
+    
+    def _calculate_scores(self):
+        """
+        Calcula las puntuaciones de todos los cuestionarios de la evaluación.
+        """
+        self.ensure_one()
+        
+        surveys = self.evaluation_id.survey_ids
+        
+        for survey in surveys:
+            # Buscar la respuesta del alumno a este survey
+            user_input = self.env['survey.user_input'].search([
+                ('partner_id', '=', self.student_id.id),
+                ('survey_id', '=', survey.id),
+                ('state', '=', 'done')
+            ], limit=1)
+            
+            if not user_input:
+                continue
+            
+            # Delegar el cálculo al propio survey
+            scores = survey.calculate_scores(user_input)
+            
+            # Actualizar las puntuaciones calculadas
+            if scores:
+                self.write(scores)
     
     def action_expire(self):
         """Marca participaciones pendientes como expiradas"""

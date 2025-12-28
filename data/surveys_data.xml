@@ -6,7 +6,7 @@
     <record id="survey_bullying" model="survey.survey">
         <field name="title">Cuestionario de Conductas de Victimización y Agresión</field>
         <field name="is_aulametrics" eval="True"/>
-        <field name="thematic_area">bullying</field>
+        <field name="survey_code">BULLYING_VA</field>
         <field name="description">A continuación se presentan una serie de situaciones. Indica con qué frecuencia te han ocurrido en los últimos dos meses.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">page_per_section</field>
@@ -186,10 +186,10 @@
     <!-- ========================================== -->
     <!-- CUESTIONARIO 2: Bienestar WHO-5 -->
     <!-- ========================================== -->
-    <record id="survey_wellbeing_who5" model="survey.survey">
+    <record id="survey_who5" model="survey.survey">
         <field name="title">Índice de Bienestar de la OMS (WHO-5)</field>
         <field name="is_aulametrics" eval="True"/>
-        <field name="thematic_area">wellbeing</field>
+        <field name="survey_code">WHO5</field>
         <field name="description">Por favor, responde a cada ítem marcando una sola opción por fila, según cómo te has sentido durante las últimas dos semanas.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">one_page</field>
@@ -202,7 +202,7 @@
 
     <!-- Pregunta matriz WHO-5 -->
     <record id="survey_who5_question" model="survey.question">
-        <field name="survey_id" ref="survey_wellbeing_who5"/>
+        <field name="survey_id" ref="survey_who5"/>
         <field name="title">Durante las últimas dos semanas...</field>
         <field name="question_type">matrix</field>
         <field name="matrix_subtype">simple</field>

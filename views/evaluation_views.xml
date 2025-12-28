@@ -75,7 +75,7 @@
                                    options="{'no_create': True, 'no_create_edit': True}">
                                 <tree>
                                     <field name="title"/>
-                                    <field name="thematic_area"/>
+                                    <field name="survey_code"/>
                                     <field name="question_count"/>
                                 </tree>
                             </field>

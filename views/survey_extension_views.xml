@@ -15,7 +15,7 @@
             <!-- Añadir campos de AulaMetrics en el formulario de survey -->
             <xpath expr="//field[@name='title']" position="after">
                 <field name="is_aulametrics" invisible="1"/>
-                <field name="thematic_area" invisible="not is_aulametrics"/>
+                <field name="survey_code" invisible="not is_aulametrics"/>
             </xpath>
             
             <!-- Añadir smart button para ver evaluaciones que usan este cuestionario -->
