@@ -13,19 +13,19 @@
 
     'author': "Angel Zamora",
     'category': 'Education',
-    # any module necessary for this one to work correctly
     'depends': ['base','mail', 'survey'],
 
-    # always loaded
     'data': [
         # 1. Seguridad
         'security/security.xml',
         'security/ir.model.access.csv',
         'security/record_rules.xml',
         
-        # 2. Datos (surveys)
-        'data/surveys_data.xml',
-        'data/cron_jobs.xml',
+        # 2. Datos
+        'data/surveys/survey_bullying.xml',
+        'data/surveys/survey_who5.xml',
+        'data/surveys/survey_asq14.xml',
+        'data/cron/cron_jobs.xml',
         'data/demo/users_groups.xml',
         
         # 3. Vistas
@@ -38,7 +38,6 @@
         'views/menu.xml',
 
     ],
-    # only loaded in demonstration mode
     'demo': [
         'demo/demo.xml',
     ],

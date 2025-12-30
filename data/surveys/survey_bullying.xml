@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- ========================================== -->
-    <!-- CUESTIONARIO 1: Bullying (Victimización y Agresión) -->
+    <!--Bullying (Victimización y Agresión) -->
     <!-- ========================================== -->
     <record id="survey_bullying" model="survey.survey">
         <field name="title">Cuestionario de Conductas de Victimización y Agresión</field>
         <field name="is_aulametrics" eval="True"/>
         <field name="survey_code">BULLYING_VA</field>
+        <field name="scoring_config" eval="{'max_sequence': 4, 'subscales': {'bullying_score': {'questions': 'all', 'items': 14}, 'victimization_score': {'questions': 0, 'items': 7}, 'aggression_score': {'questions': 1, 'items': 7}}}"/>
         <field name="description">A continuación se presentan una serie de situaciones. Indica con qué frecuencia te han ocurrido en los últimos dos meses.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">page_per_section</field>
@@ -181,91 +182,5 @@
         <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
         <field name="value">He difundido rumores sobre alguien</field>
         <field name="sequence">16</field>
-    </record>
-
-    <!-- ========================================== -->
-    <!-- CUESTIONARIO 2: Bienestar WHO-5 -->
-    <!-- ========================================== -->
-    <record id="survey_who5" model="survey.survey">
-        <field name="title">Índice de Bienestar de la OMS (WHO-5)</field>
-        <field name="is_aulametrics" eval="True"/>
-        <field name="survey_code">WHO5</field>
-        <field name="description">Por favor, responde a cada ítem marcando una sola opción por fila, según cómo te has sentido durante las últimas dos semanas.</field>
-        <field name="scoring_type">no_scoring</field>
-        <field name="questions_layout">one_page</field>
-        <field name="users_can_go_back" eval="True"/>
-        <field name="is_attempts_limited" eval="False"/>
-        <field name="is_time_limited" eval="False"/>
-        <field name="access_mode">public</field>
-        <field name="users_login_required" eval="False"/>
-    </record>
-
-    <!-- Pregunta matriz WHO-5 -->
-    <record id="survey_who5_question" model="survey.question">
-        <field name="survey_id" ref="survey_who5"/>
-        <field name="title">Durante las últimas dos semanas...</field>
-        <field name="question_type">matrix</field>
-        <field name="matrix_subtype">simple</field>
-        <field name="sequence">1</field>
-        <field name="constr_mandatory" eval="True"/>
-    </record>
-
-    <!-- Opciones de respuesta WHO-5 (columnas) -->
-    <record id="who5_answer_0" model="survey.question.answer">
-        <field name="question_id" ref="survey_who5_question"/>
-        <field name="value">En ningún momento</field>
-        <field name="sequence">0</field>
-    </record>
-    <record id="who5_answer_1" model="survey.question.answer">
-        <field name="question_id" ref="survey_who5_question"/>
-        <field name="value">Algo de tiempo</field>
-        <field name="sequence">1</field>
-    </record>
-    <record id="who5_answer_2" model="survey.question.answer">
-        <field name="question_id" ref="survey_who5_question"/>
-        <field name="value">Menos de la mitad del tiempo</field>
-        <field name="sequence">2</field>
-    </record>
-    <record id="who5_answer_3" model="survey.question.answer">
-        <field name="question_id" ref="survey_who5_question"/>
-        <field name="value">Más de la mitad del tiempo</field>
-        <field name="sequence">3</field>
-    </record>
-    <record id="who5_answer_4" model="survey.question.answer">
-        <field name="question_id" ref="survey_who5_question"/>
-        <field name="value">La mayor parte del tiempo</field>
-        <field name="sequence">4</field>
-    </record>
-    <record id="who5_answer_5" model="survey.question.answer">
-        <field name="question_id" ref="survey_who5_question"/>
-        <field name="value">Todo el tiempo</field>
-        <field name="sequence">5</field>
-    </record>
-
-    <!-- Filas de la matriz WHO-5 -->
-    <record id="who5_row_1" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_who5_question"/>
-        <field name="value">Me he sentido alegre y de buen humor</field>
-        <field name="sequence">10</field>
-    </record>
-    <record id="who5_row_2" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_who5_question"/>
-        <field name="value">Me he sentido calmado/a y relajado/a</field>
-        <field name="sequence">11</field>
-    </record>
-    <record id="who5_row_3" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_who5_question"/>
-        <field name="value">Me he sentido activo/a y con energía</field>
-        <field name="sequence">12</field>
-    </record>
-    <record id="who5_row_4" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_who5_question"/>
-        <field name="value">Me he despertado sintiéndome fresco/a y descansado/a</field>
-        <field name="sequence">13</field>
-    </record>
-    <record id="who5_row_5" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_who5_question"/>
-        <field name="value">Mi vida diaria ha estado llena de cosas que me interesan</field>
-        <field name="sequence">14</field>
     </record>
 </odoo>

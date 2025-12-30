@@ -28,9 +28,6 @@
                                 </tree>
                             </field>
                         </page>
-                        <page string="Notas" name="notes">
-                            <field name="notes" placeholder="Observaciones sobre el grupo..."/>
-                        </page>
                     </notebook>
                 </sheet>
             </form>

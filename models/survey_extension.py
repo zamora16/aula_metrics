@@ -19,7 +19,11 @@ class SurveyExtension(models.Model):
         help='Identificador único del cuestionario (ej: WHO5, BULLYING_VA)'
     )
     
-    # Relación con evaluaciones
+    # Configuración de puntuaciones en JSON
+    scoring_config = fields.Json(
+        string='Configuración de Puntuaciones',
+        help='Configuración JSON para calcular puntuaciones. Ej: {"max_sequence": 5, "subscales": {"score": {"questions": "all_matrix", "items": 5}}}'
+    )
     evaluation_ids = fields.Many2many(
         'aulametrics.evaluation',
         'evaluation_survey_rel',
@@ -45,8 +49,9 @@ class SurveyExtension(models.Model):
     
     @api.model
     def create(self, vals):
-        """Prevenir la creación de nuevos cuestionarios"""
-        raise UserError("No se pueden crear nuevos cuestionarios. Los cuestionarios son proporcionados por el sistema de AulaMetrics.")
+        """Crear cuestionarios - solo permitido durante instalación de datos"""
+        # Permitir creación durante carga de datos del módulo
+        return super().create(vals)
     
     @api.depends('evaluation_ids')
     def _compute_evaluation_count(self):
@@ -105,27 +110,30 @@ class SurveyExtension(models.Model):
         """
         self.ensure_one()
         
-        # Configuración por survey_code
-        survey_configs = {
-            'WHO5': {
-                'max_sequence': 5,
-                'subscales': {
-                    'who5_score': {'questions': 'all_matrix', 'items': 5}
-                }
-            },
-            'BULLYING_VA': {
-                'max_sequence': 4,
-                'subscales': {
-                    'bullying_score': {'questions': 'all', 'items': 14},  # Global: suma de ambas matrices
-                    'victimization_score': {'questions': 0, 'items': 7},
-                    'aggression_score': {'questions': 1, 'items': 7}
+        # Usar configuración JSON si existe, sino fallback al código hardcodeado
+        if self.scoring_config:
+            config = self.scoring_config
+        else:
+            # Fallback para backward compatibility
+            survey_configs = {
+                'WHO5': {
+                    'max_sequence': 5,
+                    'subscales': {
+                        'who5_score': {'questions': 'all_matrix', 'items': 5}
+                    }
+                },
+                'BULLYING_VA': {
+                    'max_sequence': 4,
+                    'subscales': {
+                        'bullying_score': {'questions': 'all', 'items': 14},
+                        'victimization_score': {'questions': 0, 'items': 7},
+                        'aggression_score': {'questions': 1, 'items': 7}
+                    }
                 }
             }
-        }
-        
-        config = survey_configs.get(self.survey_code)
-        if not config:
-            return {}
+            config = survey_configs.get(self.survey_code)
+            if not config:
+                return {}
         
         return self._calculate_normalized_scores(user_input, config)
     

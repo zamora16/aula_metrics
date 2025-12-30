@@ -81,6 +81,13 @@ class Participation(models.Model):
         help='Puntuación normalizada 0-100. Mayor puntuación = mayor agresión'
     )
     
+    # Puntuaciones calculadas - Estrés (ASQ-14)
+    stress_score = fields.Float(
+        string='Puntuación Estrés (ASQ-14)',
+        readonly=True,
+        help='Puntuación normalizada 0-100 del cuestionario de estrés para adolescentes'
+    )
+    
     # Constraint: un alumno solo puede tener una participación por evaluación
     _sql_constraints = [
         ('unique_student_evaluation',

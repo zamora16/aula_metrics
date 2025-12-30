@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========================================== -->
+    <!-- CUESTIONARIO 3: Estrés para Adolescentes (ASQ-14) -->
+    <!-- ========================================== -->
+    <record id="survey_asq14" model="survey.survey">
+        <field name="title">Cuestionario de Estrés para Adolescentes (ASQ-14)</field>
+        <field name="is_aulametrics" eval="True"/>
+        <field name="survey_code">ASQ14</field>
+        <field name="scoring_config" eval="{'max_sequence': 4, 'subscales': {'stress_score': {'questions': 'all_matrix', 'items': 14}}}"/>
+        <field name="description">A continuación, encontrarás algunas situaciones que te pueden suceder en tu vida. Por favor, rodea con un círculo en qué medida o grado estas situaciones te provocan preocupación, inquietud o estrés durante el último año.
+
+Por favor, responde a todos los enunciados del cuestionario. Si alguno de ellos no te ha ocurrido debes marca 0 = nada estresante (o no es importante para mí).</field>
+        <field name="scoring_type">no_scoring</field>
+        <field name="questions_layout">one_page</field>
+        <field name="users_can_go_back" eval="True"/>
+        <field name="is_attempts_limited" eval="False"/>
+        <field name="is_time_limited" eval="False"/>
+        <field name="access_mode">public</field>
+        <field name="users_login_required" eval="False"/>
+    </record>
+
+    <!-- Pregunta matriz ASQ-14 -->
+    <record id="survey_asq14_question" model="survey.question">
+        <field name="survey_id" ref="survey_asq14"/>
+        <field name="title">Durante el último año...</field>
+        <field name="question_type">matrix</field>
+        <field name="matrix_subtype">simple</field>
+        <field name="sequence">1</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+
+    <!-- Opciones de respuesta ASQ-14 (columnas) -->
+    <record id="asq14_answer_0" model="survey.question.answer">
+        <field name="question_id" ref="survey_asq14_question"/>
+        <field name="value">0 = Nada estresante (o no es importante para mí)</field>
+        <field name="sequence">0</field>
+    </record>
+    <record id="asq14_answer_1" model="survey.question.answer">
+        <field name="question_id" ref="survey_asq14_question"/>
+        <field name="value">1 = Un poco estresante</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="asq14_answer_2" model="survey.question.answer">
+        <field name="question_id" ref="survey_asq14_question"/>
+        <field name="value">2 = Moderadamente estresante</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="asq14_answer_3" model="survey.question.answer">
+        <field name="question_id" ref="survey_asq14_question"/>
+        <field name="value">3 = Bastante estresante</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="asq14_answer_4" model="survey.question.answer">
+        <field name="question_id" ref="survey_asq14_question"/>
+        <field name="value">4 = Muy estresante</field>
+        <field name="sequence">4</field>
+    </record>
+
+    <!-- Filas de la matriz ASQ-14 -->
+    <record id="asq14_row_1" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener discusiones en tu casa</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="asq14_row_2" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Sentir que tus padres no te comprenden</field>
+        <field name="sequence">11</field>
+    </record>
+    <record id="asq14_row_3" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Sentirte presionado por estudiar</field>
+        <field name="sequence">12</field>
+    </record>
+    <record id="asq14_row_4" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener dificultades con algunas asignaturas</field>
+        <field name="sequence">13</field>
+    </record>
+    <record id="asq14_row_5" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener que asistir obligatoriamente a clase</field>
+        <field name="sequence">14</field>
+    </record>
+    <record id="asq14_row_6" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener poco tiempo para estar con tu novio/a</field>
+        <field name="sequence">15</field>
+    </record>
+    <record id="asq14_row_7" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Estar insatisfecho con tu aspecto</field>
+        <field name="sequence">16</field>
+    </record>
+    <record id="asq14_row_8" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener desacuerdos con tus compañeros</field>
+        <field name="sequence">17</field>
+    </record>
+    <record id="asq14_row_9" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Que los profesores no te escuchen</field>
+        <field name="sequence">18</field>
+    </record>
+    <record id="asq14_row_10" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener desacuerdos con tus profesores</field>
+        <field name="sequence">19</field>
+    </record>
+    <record id="asq14_row_11" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener preocupaciones acerca de tu futuro</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="asq14_row_12" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener poca libertad</field>
+        <field name="sequence">21</field>
+    </record>
+    <record id="asq14_row_13" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener poco dinero para comprar las cosas que quieres</field>
+        <field name="sequence">22</field>
+    </record>
+    <record id="asq14_row_14" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_asq14_question"/>
+        <field name="value">Tener que asumir nuevas responsabilidades familiares conforme te haces mayor</field>
+        <field name="sequence">23</field>
+    </record>
+</odoo>
