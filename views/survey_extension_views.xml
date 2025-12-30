@@ -37,4 +37,22 @@
         <field name="context">{'create': False}</field>
     </record>
 
+    <!-- Heredar vista tree de survey.survey para mostrar solo campos relevantes -->
+    <record id="view_survey_tree_inherit_aulametrics" model="ir.ui.view">
+        <field name="name">survey.survey.tree.inherit.aulametrics</field>
+        <field name="model">survey.survey</field>
+        <field name="inherit_id" ref="survey.survey_survey_view_tree"/>
+        <field name="arch" type="xml">
+            <!-- Reemplazar el tree completo con campos simplificados -->
+            <xpath expr="//tree" position="replace">
+                <tree string="Cuestionarios" create="false" edit="false" delete="false">
+                    <field name="title" string="Título de la Encuesta"/>
+                    <field name="average_duration" string="Duración Media (min)" widget="integer"/>
+                    <field name="evaluation_count" string="Nº Evaluaciones"/>
+                    <button name="action_test_survey" type="object" string="Vista Previa" icon="fa-eye"/>
+                </tree>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

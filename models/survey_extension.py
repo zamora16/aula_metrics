@@ -36,6 +36,13 @@ class SurveyExtension(models.Model):
         store=True
     )
     
+    # Duración media estimada (10 segundos por ítem, mostrado en minutos)
+    average_duration = fields.Integer(
+        string='Duración Media (min)',
+        compute='_compute_average_duration',
+        help='Duración estimada en minutos (10 seg por ítem del cuestionario, redondeado)'
+    )
+    
     @api.model
     def create(self, vals):
         """Prevenir la creación de nuevos cuestionarios"""
@@ -46,6 +53,27 @@ class SurveyExtension(models.Model):
         """Cuenta cuántas evaluaciones usan este cuestionario"""
         for survey in self:
             survey.evaluation_count = len(survey.evaluation_ids)
+    
+    @api.depends('question_ids')
+    def _compute_average_duration(self):
+        """Calcula la duración media estimada: 10 segundos por ítem del cuestionario, en minutos redondeados"""
+        for survey in self:
+            item_count = 0
+            matrix_questions = survey.question_ids.filtered(lambda q: q.question_type == 'matrix')
+            if matrix_questions:
+                # Para preguntas matrix, contar las filas (answers con matrix_question_id)
+                matrix_answers = self.env['survey.question.answer'].search([
+                    ('matrix_question_id', 'in', matrix_questions.ids)
+                ])
+                item_count += len(matrix_answers)
+            
+            # Para preguntas no matrix, contar como 1 ítem cada una
+            non_matrix_questions = survey.question_ids.filtered(lambda q: q.question_type != 'matrix' and not q.is_page)
+            item_count += len(non_matrix_questions)
+            
+            # Calcular en segundos y convertir a minutos redondeados
+            total_seconds = item_count * 10
+            survey.average_duration = round(total_seconds / 60)
 
     def action_view_evaluations(self):
         """Acción para ver evaluaciones que usan este cuestionario"""
