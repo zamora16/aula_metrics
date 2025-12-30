@@ -34,6 +34,7 @@
     <!-- Modificar acción para mostrar solo vista tree y form -->
     <record id="survey.action_survey_form" model="ir.actions.act_window">
         <field name="view_mode">tree,form</field>
+        <field name="context">{'create': False}</field>
     </record>
 
 </odoo>

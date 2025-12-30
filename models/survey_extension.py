@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+from odoo.exceptions import UserError
 
 class SurveyExtension(models.Model):
     """Extensión del modelo survey de Odoo para AulaMetrics"""
@@ -34,6 +35,11 @@ class SurveyExtension(models.Model):
         compute='_compute_evaluation_count',
         store=True
     )
+    
+    @api.model
+    def create(self, vals):
+        """Prevenir la creación de nuevos cuestionarios"""
+        raise UserError("No se pueden crear nuevos cuestionarios. Los cuestionarios son proporcionados por el sistema de AulaMetrics.")
     
     @api.depends('evaluation_ids')
     def _compute_evaluation_count(self):
