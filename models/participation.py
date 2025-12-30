@@ -56,23 +56,29 @@ class Participation(models.Model):
         help='Suma de los 5 ítems (0-25)'
     )
     
-    who5_percentage = fields.Float(
-        string='WHO-5 Porcentaje',
+    who5_score = fields.Float(
+        string='WHO-5 Puntuación',
         readonly=True,
-        help='Puntuación convertida a escala 0-100. <50 sugiere baja calidad de vida'
+        help='Puntuación normalizada 0-100. <50 sugiere baja calidad de vida'
     )
     
     # Puntuaciones calculadas - Victimización y Agresión
+    bullying_score = fields.Float(
+        string='Puntuación Bullying Global',
+        readonly=True,
+        help='Puntuación global normalizada 0-100 del cuestionario de bullying'
+    )
+    
     victimization_score = fields.Float(
         string='Puntuación Victimización',
         readonly=True,
-        help='Suma de 7 ítems de victimización (0-28). Mayor puntuación = mayor victimización'
+        help='Puntuación normalizada 0-100. Mayor puntuación = mayor victimización'
     )
     
     aggression_score = fields.Float(
         string='Puntuación Agresión',
         readonly=True,
-        help='Suma de 7 ítems de agresión (0-28). Mayor puntuación = mayor agresión'
+        help='Puntuación normalizada 0-100. Mayor puntuación = mayor agresión'
     )
     
     # Constraint: un alumno solo puede tener una participación por evaluación

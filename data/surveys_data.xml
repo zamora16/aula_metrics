@@ -40,27 +40,27 @@
     <record id="bullying_answer_0" model="survey.question.answer">
         <field name="question_id" ref="survey_bullying_matrix_victimization"/>
         <field name="value">Nunca</field>
-        <field name="sequence">1</field>
+        <field name="sequence">0</field>
     </record>
     <record id="bullying_answer_1" model="survey.question.answer">
         <field name="question_id" ref="survey_bullying_matrix_victimization"/>
         <field name="value">Casi nunca</field>
-        <field name="sequence">2</field>
+        <field name="sequence">1</field>
     </record>
     <record id="bullying_answer_2" model="survey.question.answer">
         <field name="question_id" ref="survey_bullying_matrix_victimization"/>
         <field name="value">A veces</field>
-        <field name="sequence">3</field>
+        <field name="sequence">2</field>
     </record>
     <record id="bullying_answer_3" model="survey.question.answer">
         <field name="question_id" ref="survey_bullying_matrix_victimization"/>
         <field name="value">Casi siempre</field>
-        <field name="sequence">4</field>
+        <field name="sequence">3</field>
     </record>
     <record id="bullying_answer_4" model="survey.question.answer">
         <field name="question_id" ref="survey_bullying_matrix_victimization"/>
         <field name="value">Siempre</field>
-        <field name="sequence">5</field>
+        <field name="sequence">4</field>
     </record>
 
     <!-- Filas de la matriz Victimización (survey.question.answer con matrix_question_id) -->
@@ -214,32 +214,32 @@
     <record id="who5_answer_0" model="survey.question.answer">
         <field name="question_id" ref="survey_who5_question"/>
         <field name="value">En ningún momento</field>
-        <field name="sequence">1</field>
+        <field name="sequence">0</field>
     </record>
     <record id="who5_answer_1" model="survey.question.answer">
         <field name="question_id" ref="survey_who5_question"/>
         <field name="value">Algo de tiempo</field>
-        <field name="sequence">2</field>
+        <field name="sequence">1</field>
     </record>
     <record id="who5_answer_2" model="survey.question.answer">
         <field name="question_id" ref="survey_who5_question"/>
         <field name="value">Menos de la mitad del tiempo</field>
-        <field name="sequence">3</field>
+        <field name="sequence">2</field>
     </record>
     <record id="who5_answer_3" model="survey.question.answer">
         <field name="question_id" ref="survey_who5_question"/>
         <field name="value">Más de la mitad del tiempo</field>
-        <field name="sequence">4</field>
+        <field name="sequence">3</field>
     </record>
     <record id="who5_answer_4" model="survey.question.answer">
         <field name="question_id" ref="survey_who5_question"/>
         <field name="value">La mayor parte del tiempo</field>
-        <field name="sequence">5</field>
+        <field name="sequence">4</field>
     </record>
     <record id="who5_answer_5" model="survey.question.answer">
         <field name="question_id" ref="survey_who5_question"/>
         <field name="value">Todo el tiempo</field>
-        <field name="sequence">6</field>
+        <field name="sequence">5</field>
     </record>
 
     <!-- Filas de la matriz WHO-5 -->

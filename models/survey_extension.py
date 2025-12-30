@@ -95,7 +95,6 @@ class SurveyExtension(models.Model):
         """
         Calcula las puntuaciones de este cuestionario para una respuesta dada.
         
-        Cada cuestionario sabe cómo calcularse a sí mismo según su survey_code.
         Retorna un diccionario con los campos de puntuación a actualizar.
         
         Args:
@@ -106,112 +105,81 @@ class SurveyExtension(models.Model):
         """
         self.ensure_one()
         
-        if self.survey_code == 'WHO5':
-            return self._calculate_who5(user_input)
-        elif self.survey_code == 'BULLYING_VA':
-            return self._calculate_victimization_aggression(user_input)
-        
-        return {}
-    
-    def _calculate_who5(self, user_input):
-        """
-        Calcula la puntuación WHO-5 (Índice de Bienestar de la OMS)
-        
-        Fórmula:
-        - Suma de 5 ítems, cada uno valorado de 0 a 5
-        - Puntuación bruta: 0-25
-        - Puntuación porcentual: (bruta × 4) = 0-100
-        - Interpretación: <50 sugiere baja calidad de vida
-        
-        Returns:
-            dict: {'who5_raw_score': int, 'who5_percentage': float}
-        """
-        self.ensure_one()
-        
-        answer_lines = user_input.user_input_line_ids.filtered(
-            lambda l: l.question_id.question_type == 'matrix'
-        )
-        
-        raw_score = 0
-        item_count = 0
-        
-        for line in answer_lines:
-            if line.suggested_answer_id:
-                # sequence va de 1-6, restamos 1 para obtener 0-5
-                value = line.suggested_answer_id.sequence - 1
-                raw_score += value
-                item_count += 1
-        
-        # Solo retornar si se completaron los 5 ítems
-        if item_count == 5:
-            return {
-                'who5_raw_score': raw_score,
-                'who5_percentage': raw_score * 4
+        # Configuración por survey_code
+        survey_configs = {
+            'WHO5': {
+                'max_sequence': 5,
+                'subscales': {
+                    'who5_score': {'questions': 'all_matrix', 'items': 5}
+                }
+            },
+            'BULLYING_VA': {
+                'max_sequence': 4,
+                'subscales': {
+                    'bullying_score': {'questions': 'all', 'items': 14},  # Global: suma de ambas matrices
+                    'victimization_score': {'questions': 0, 'items': 7},
+                    'aggression_score': {'questions': 1, 'items': 7}
+                }
             }
+        }
         
-        return {}
+        config = survey_configs.get(self.survey_code)
+        if not config:
+            return {}
+        
+        return self._calculate_normalized_scores(user_input, config)
     
-    def _calculate_victimization_aggression(self, user_input):
+    def _calculate_normalized_scores(self, user_input, config):
         """
-        Calcula las puntuaciones de Victimización y Agresión
+        Calcula puntuaciones normalizadas (0-100) basadas en configuración.
         
-        El cuestionario tiene 2 preguntas matrix:
-        - Primera matrix: 7 ítems de VICTIMIZACIÓN (sufrir acoso)
-        - Segunda matrix: 7 ítems de AGRESIÓN (ejercer acoso)
-        
-        Cada ítem: 0=Nunca, 1=Pocas veces, 2=Algunas veces, 3=Muchas veces, 4=Siempre
-        Puntuación por escala: 0-28 (7 ítems × 4 puntos máximo)
-        
+        Args:
+            user_input: survey.user_input
+            config: dict con max_sequence y subscales
+            
         Returns:
-            dict: {'victimization_score': float, 'aggression_score': float}
+            dict: {'field_name': float, ...}
         """
-        self.ensure_one()
+        scores = {}
         
         matrix_questions = self.question_ids.filtered(
             lambda q: q.question_type == 'matrix'
         ).sorted(key=lambda q: q.sequence)
         
-        if len(matrix_questions) < 2:
-            return {}
+        subscale_scores = []
         
-        victimization_question = matrix_questions[0]
-        aggression_question = matrix_questions[1]
+        for subscale_name, subscale_config in config['subscales'].items():
+            if subscale_config['questions'] == 'all_matrix':
+                # Todas las preguntas matrix
+                questions = matrix_questions
+            elif subscale_config['questions'] == 'all':
+                # Todas las preguntas matrix (alias)
+                questions = matrix_questions
+            else:
+                # Índice específico
+                questions = matrix_questions[subscale_config['questions']] if subscale_config['questions'] < len(matrix_questions) else None
+                if not questions:
+                    continue
+                questions = [questions]
+            
+            total_score = 0
+            item_count = 0
+            
+            for question in questions:
+                lines = user_input.user_input_line_ids.filtered(
+                    lambda l: l.question_id.id == question.id
+                )
+                for line in lines:
+                    if line.suggested_answer_id:
+                        # Normalizar: sequence 0-max -> 0-100
+                        value = (line.suggested_answer_id.sequence / config['max_sequence']) * 100
+                        total_score += value
+                        item_count += 1
+            
+            # Solo calcular si se completaron todos los ítems esperados
+            if item_count == subscale_config['items']:
+                subscale_score = total_score / item_count
+                scores[subscale_name] = subscale_score
+                subscale_scores.append(subscale_score)
         
-        # Calcular Victimización
-        victimization_lines = user_input.user_input_line_ids.filtered(
-            lambda l: l.question_id.id == victimization_question.id
-        )
-        
-        victimization_score = 0
-        victimization_count = 0
-        
-        for line in victimization_lines:
-            if line.suggested_answer_id:
-                # sequence va de 1-5, restamos 1 para obtener 0-4
-                value = line.suggested_answer_id.sequence - 1
-                victimization_score += value
-                victimization_count += 1
-        
-        # Calcular Agresión
-        aggression_lines = user_input.user_input_line_ids.filtered(
-            lambda l: l.question_id.id == aggression_question.id
-        )
-        
-        aggression_score = 0
-        aggression_count = 0
-        
-        for line in aggression_lines:
-            if line.suggested_answer_id:
-                # sequence va de 1-5, restamos 1 para obtener 0-4
-                value = line.suggested_answer_id.sequence - 1
-                aggression_score += value
-                aggression_count += 1
-        
-        # Solo retornar si ambas escalas están completas
-        if victimization_count == 7 and aggression_count == 7:
-            return {
-                'victimization_score': victimization_score,
-                'aggression_score': aggression_score
-            }
-        
-        return {}
+        return scores
