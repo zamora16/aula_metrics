@@ -25,6 +25,7 @@
         
         # 2. Datos (surveys)
         'data/surveys_data.xml',
+        'data/cron_jobs.xml',
         'data/demo/users_groups.xml',
         
         # 3. Vistas

@@ -239,3 +239,28 @@ class Evaluation(models.Model):
             'domain': [('evaluation_id', '=', self.id)],
             'context': {'default_evaluation_id': self.id},
         }
+    
+    # Método automático para actualizar estados basado en fechas
+    @api.model
+    def _auto_update_evaluation_states(self):
+        """Método que se ejecuta automáticamente para actualizar estados de evaluaciones
+        basado en las fechas de inicio y fin"""
+        now = fields.Datetime.now()
+        
+        # 1. Activar evaluaciones programadas que han llegado a su fecha de inicio
+        scheduled_evaluations = self.search([
+            ('state', '=', 'scheduled'),
+            ('date_start', '<=', now)
+        ])
+        
+        for evaluation in scheduled_evaluations:
+            evaluation.action_activate()
+        
+        # 2. Cerrar evaluaciones activas que han expirado
+        active_evaluations = self.search([
+            ('state', '=', 'active'),
+            ('date_end', '<=', now)
+        ])
+        
+        for evaluation in active_evaluations:
+            evaluation.action_close()
