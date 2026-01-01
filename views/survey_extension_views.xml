@@ -46,7 +46,7 @@
             <!-- Reemplazar el tree completo con campos simplificados -->
             <xpath expr="//tree" position="replace">
                 <tree string="Cuestionarios" create="false" edit="false" delete="false">
-                    <field name="title" string="Título de la Encuesta"/>
+                    <field name="title" string="Título del Cuestionario"/>
                     <field name="average_duration" string="Duración Media (min)" widget="integer"/>
                     <field name="evaluation_count" string="Nº Evaluaciones"/>
                     <button name="action_test_survey" type="object" string="Vista Previa" icon="fa-eye"/>
