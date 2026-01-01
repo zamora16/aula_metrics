@@ -20,7 +20,7 @@
             <field name="name">Orientador</field>
             <field name="category_id" ref="module_category_aulametrics"/>
             <field name="implied_ids" eval="[(4, ref('group_aulametrics_tutor'))]"/>
-            <field name="comment">Orientadores con acceso completo a evaluaciones y datos individuales</field>
+            <field name="comment">Orientadores con control total del sistema AulaMetrics en su centro</field>
         </record>
 
         <!-- Grupo: Dirección -->

@@ -26,6 +26,7 @@
         'data/surveys/survey_who5.xml',
         'data/surveys/survey_asq14.xml',
         'data/cron/cron_jobs.xml',
+        'data/dashboard_data.xml',
         'data/demo/users_groups.xml',
         
         # 3. Vistas
@@ -34,6 +35,9 @@
         'views/survey_extension_views.xml',
         'views/evaluation_views.xml',
         'views/participations_views.xml',
+        'views/threshold_views.xml',
+        'views/alert_views.xml',
+        'views/alerts_dashboard.xml',
         'views/templates.xml',
         'views/menu.xml',
 

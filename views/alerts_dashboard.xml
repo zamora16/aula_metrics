@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard de Alertas -->
+    <record id="view_alerts_dashboard" model="ir.ui.view">
+        <field name="name">aulametrics.alerts.dashboard</field>
+        <field name="model">alerts.dashboard</field>
+        <field name="arch" type="xml">
+            <form string="Sistema de Alertas" create="false" edit="false">
+                <div class="oe_title">
+                    <h1>
+                        <field name="name" readonly="1"/>
+                    </h1>
+                </div>
+                <notebook>
+                    <!-- Pestaña de Alertas Activas -->
+                    <page string="Alertas Activas" name="active_alerts">
+                        <div class="alert alert-info" role="alert">
+                            <strong>Alertas activas:</strong> Las alertas se generan automáticamente según los umbrales configurados.
+                        </div>
+                        <field name="active_alerts" nolabel="1" mode="tree,form">
+                            <tree string="Alertas Activas" decoration-success="severity == 'low'" decoration-warning="severity == 'moderate'" decoration-danger="severity == 'high'">
+                                <field name="name"/>
+                                <field name="alert_date"/>
+                                <field name="alert_level"/>
+                                <field name="severity"/>
+                                <field name="threshold_id"/>
+                                <field name="academic_group_id"/>
+                                <field name="score_value"/>
+                                <button name="action_resolve" string="Resolver" type="object" class="btn btn-success btn-sm"/>
+                                <button name="action_dismiss" string="Descartar" type="object" class="btn btn-warning btn-sm" confirm="¿Descartar esta alerta?"/>
+                            </tree>
+                            <form string="Alerta">
+                                <group>
+                                    <field name="name" readonly="1"/>
+                                    <field name="alert_date" readonly="1"/>
+                                    <field name="status"/>
+                                    <field name="alert_level" readonly="1"/>
+                                    <field name="severity" readonly="1"/>
+                                    <field name="threshold_id" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="message" readonly="1"/>
+                                    <field name="score_value" readonly="1"/>
+                                    <field name="notes"/>
+                                </group>
+                                <group>
+                                    <field name="participation_id" readonly="1"/>
+                                    <field name="student_id" readonly="1"/>
+                                    <field name="academic_group_id" readonly="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+
+                    <!-- Pestaña de Configuración de Umbrales -->
+                    <page string="Umbrales Configurados" name="threshold_config">
+                        <div class="alert alert-info" role="alert">
+                            <strong>Umbrales Configurados:</strong> Aquí puedes ver los umbrales que activarán alertas automáticamente.
+                        </div>
+                        <field name="thresholds" nolabel="1" mode="kanban,tree,form" context="{'create': True, 'edit': True, 'delete': True}">
+                            <kanban class="o_kanban_mobile" quick_create="false">
+                                <field name="id"/>
+                                <templates>
+                                    <t t-name="kanban-box">
+                                        <div class="oe_kanban_card">
+                                            <div class="row">
+                                                <div class="col-8">
+                                                    <strong><field name="name"/></strong><br/>
+                                                    <small><field name="survey_id"/> - <field name="score_field"/></small><br/>
+                                                    <span class="badge" t-attf-class="badge bg-{{ {'low': 'success', 'moderate': 'warning', 'high': 'danger'}[record.severity] }}">
+                                                        <field name="severity"/>
+                                                    </span>
+                                                </div>
+                                                <div class="col-4 text-end">
+                                                    <field name="threshold_value"/>
+                                                    <field name="operator"/><br/>
+                                                    <field name="active" widget="boolean_toggle"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </templates>
+                            </kanban>
+                            <tree string="Umbrales Configurados" create="true" edit="true" delete="true">
+                                <field name="name"/>
+                                <field name="survey_id"/>
+                                <field name="score_field"/>
+                                <field name="threshold_value"/>
+                                <field name="operator"/>
+                                <field name="severity"/>
+                                <field name="group_threshold_percentage" string="% Grupal"/>
+                                <field name="active" widget="boolean_toggle"/>
+                            </tree>
+                            <form string="Umbral">
+                                <group>
+                                    <field name="name"/>
+                                    <field name="survey_id" domain="[('is_aulametrics', '=', True)]"/>
+                                    <field name="score_field"/>
+                                    <field name="operator"/>
+                                    <field name="threshold_value"/>
+                                    <field name="severity"/>
+                                    <field name="group_threshold_percentage"/>
+                                    <field name="active"/>
+                                </group>
+                                <group>
+                                    <field name="alert_message" placeholder="Mensaje que aparecerá en las alertas..."/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+
+                    <!-- Pestaña de Historial -->
+                    <page string="Historial de Alertas" name="alert_history">
+                        <div class="alert alert-info" role="alert">
+                            <strong>Historial:</strong> Todas las alertas generadas (resueltas, descartadas, etc.).
+                        </div>
+                        <field name="all_alerts" nolabel="1" mode="tree,form">
+                            <tree string="Historial Completo" create="false" edit="false" delete="false">
+                                <field name="name"/>
+                                <field name="alert_date"/>
+                                <field name="status"/>
+                                <field name="alert_level"/>
+                                <field name="threshold_id"/>
+                                <field name="academic_group_id"/>
+                                <button name="action_reactivate" string="Reactivar" type="object" class="btn btn-primary btn-sm" invisible="status == 'active'"/>
+                            </tree>
+                            <form string="Alerta">
+                                <group>
+                                    <field name="name" readonly="1"/>
+                                    <field name="alert_date" readonly="1"/>
+                                    <field name="status"/>
+                                    <field name="alert_level" readonly="1"/>
+                                    <field name="severity" readonly="1"/>
+                                    <field name="threshold_id" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="message" readonly="1"/>
+                                    <field name="score_value" readonly="1"/>
+                                    <field name="notes"/>
+                                </group>
+                                <group>
+                                    <field name="participation_id" readonly="1"/>
+                                    <field name="student_id" readonly="1"/>
+                                    <field name="academic_group_id" readonly="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                </notebook>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción del Dashboard -->
+    <record id="action_alerts_dashboard" model="ir.actions.act_window">
+        <field name="name">Dashboard de Alertas</field>
+        <field name="res_model">alerts.dashboard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_alerts_dashboard"/>
+        <field name="target">current</field>
+        <field name="res_id" ref="alerts_dashboard_main"/>
+        <field name="domain">[]</field>
+        <field name="context">{'create': False, 'edit': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Bienvenido al Sistema de Alertas
+            </p>
+            <p>
+                Aquí puedes configurar umbrales para alertas automáticas y gestionar las alertas activas.
+            </p>
+        </field>
+    </record>
+</odoo>

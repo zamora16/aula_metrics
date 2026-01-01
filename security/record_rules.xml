@@ -20,5 +20,45 @@
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
         </record>
+
+        <!-- Umbrales: todos los grupos pueden ver todos los umbrales -->
+        <record id="threshold_all_rule" model="ir.rule">
+            <field name="name">Umbrales: acceso global</field>
+            <field name="model_id" ref="model_aulametrics_threshold"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_tutor')), (4, ref('group_aulametrics_management'))]"/>
+        </record>
+
+        <!-- Alertas: Tutores solo ven alertas de sus grupos -->
+        <record id="alert_tutor_rule" model="ir.rule">
+            <field name="name">Alertas: Tutores solo sus grupos</field>
+            <field name="model_id" ref="model_aulametrics_alert"/>
+            <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+        </record>
+
+        <!-- Alertas: Management solo ve alertas grupales -->
+        <record id="alert_management_rule" model="ir.rule">
+            <field name="name">Alertas: Management solo grupales</field>
+            <field name="model_id" ref="model_aulametrics_alert"/>
+            <field name="domain_force">[('alert_level', '=', 'group')]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_management'))]"/>
+        </record>
+
+        <!-- Alertas: Orientadores y Admins ven todas -->
+        <record id="alert_counselor_admin_rule" model="ir.rule">
+            <field name="name">Alertas: Orientadores/Admins todas</field>
+            <field name="model_id" ref="model_aulametrics_alert"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+        </record>
+
+        <!-- Dashboard de Alertas: acceso global para todos los grupos -->
+        <record id="alerts_dashboard_all_rule" model="ir.rule">
+            <field name="name">Dashboard Alertas: acceso global</field>
+            <field name="model_id" ref="model_alerts_dashboard"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_tutor')), (4, ref('group_aulametrics_management'))]"/>
+        </record>
     </data>
 </odoo>

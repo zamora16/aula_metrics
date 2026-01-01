@@ -242,7 +242,7 @@ class Evaluation(models.Model):
     
     # Método automático para actualizar estados basado en fechas
     @api.model
-    def _auto_update_evaluation_states(self):
+    def auto_update_evaluation_states(self):
         """Método que se ejecuta automáticamente para actualizar estados de evaluaciones
         basado en las fechas de inicio y fin"""
         now = fields.Datetime.now()

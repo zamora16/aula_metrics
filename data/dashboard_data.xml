@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Registro inicial del Dashboard de Alertas -->
+        <record id="alerts_dashboard_main" model="alerts.dashboard">
+            <field name="name">Sistema de Alertas</field>
+        </record>
+    </data>
+</odoo>

@@ -6,3 +6,6 @@ from . import survey_extension
 from . import survey_user_input
 from . import evaluation
 from . import participation
+from . import threshold
+from . import alert
+from . import alerts_dashboard

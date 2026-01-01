@@ -26,6 +26,24 @@
               action="action_evaluation"
               sequence="30"/>
 
+    <!-- Alertas -->
+    <menuitem id="menu_aulametrics_alerts" 
+              name="Sistema de Alertas" 
+              parent="menu_aulametrics_root" 
+              sequence="40"/>
+              
+    <menuitem id="menu_aulametrics_alerts_dashboard" 
+              name="Dashboard de Alertas" 
+              parent="menu_aulametrics_alerts"
+              action="action_alerts_dashboard"
+              sequence="10"/>
+              
+    <menuitem id="menu_aulametrics_thresholds" 
+              name="Configurar Umbrales" 
+              parent="menu_aulametrics_alerts"
+              action="action_threshold"
+              sequence="20"/>
+
     <!-- Configuración -->
     <menuitem id="menu_aulametrics_config" 
               name="Configuración" 

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Lista de Umbrales -->
+    <record id="view_threshold_tree" model="ir.ui.view">
+        <field name="name">aulametrics.threshold.tree</field>
+        <field name="model">aulametrics.threshold</field>
+        <field name="arch" type="xml">
+            <tree string="Umbrales">
+                <field name="name"/>
+                <field name="survey_id"/>
+                <field name="score_field"/>
+                <field name="threshold_value"/>
+                <field name="operator"/>
+                <field name="severity"/>
+                <field name="group_threshold_percentage" string="% Grupal"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario de Umbrales -->
+    <record id="view_threshold_form" model="ir.ui.view">
+        <field name="name">aulametrics.threshold.form</field>
+        <field name="model">aulametrics.threshold</field>
+        <field name="arch" type="xml">
+            <form string="Umbral">
+                <header>
+                    <button string="Guardar" type="object" name="write" class="btn-primary"/>
+                    <button string="Guardar y Cerrar" type="object" name="write" class="btn-primary" close="1"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="survey_id" domain="[('is_aulametrics', '=', True)]"/>
+                        <field name="score_field"/>
+                        <field name="operator"/>
+                        <field name="threshold_value"/>
+                        <field name="severity"/>
+                        <field name="group_threshold_percentage"/>
+                        <field name="active"/>
+                    </group>
+                    <group>
+                        <field name="alert_message" placeholder="Mensaje que aparecerá en las alertas..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción de Ventana para Umbrales -->
+    <record id="action_threshold" model="ir.actions.act_window">
+        <field name="name">Umbrales</field>
+        <field name="res_model">aulametrics.threshold</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay umbrales configurados
+            </p>
+            <p>
+                Crea umbrales para activar alertas automáticamente cuando los alumnos superen ciertos valores en los cuestionarios.
+            </p>
+        </field>
+    </record>
+</odoo>
