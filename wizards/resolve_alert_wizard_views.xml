@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista del wizard para resolver alertas -->
+    <record id="view_resolve_alert_wizard_form" model="ir.ui.view">
+        <field name="name">aulametrics.resolve_alert_wizard.form</field>
+        <field name="model">aulametrics.resolve_alert_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Resolver Alerta">
+                <field name="alert_id" invisible="1"/>
+                <field name="resolution_date" invisible="1"/>
+                
+                <separator string="Registrar Acción de Resolución"/>
+                
+                <div class="alert alert-info mb-3" role="alert">
+                    <p class="mb-0">
+                        Por favor, describe brevemente la intervención o acción que has tomado para resolver esta alerta. 
+                        Esta información quedará registrada en el historial de la alerta.
+                    </p>
+                </div>
+                
+                <group col="1" class="oe_form_group_row_incomplete">
+                    <field name="resolution_action" 
+                           placeholder="Ejemplo: Reunión con el alumno y tutor legal. Se ha derivado al departamento de orientación para seguimiento personalizado durante 2 semanas..."
+                           widget="text"
+                           nolabel="1"
+                           options="{'height': 150}"
+                           style="width: 100%; min-width: 500px;"/>
+                </group>
+                
+                <footer>
+                    <button string="Resolver Alerta" 
+                            type="object" 
+                            name="action_confirm_resolve" 
+                            class="btn-primary"
+                            data-hotkey="q"/>
+                    <button string="Cancelar" 
+                            class="btn-secondary" 
+                            special="cancel"
+                            data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

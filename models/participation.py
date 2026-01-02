@@ -118,17 +118,20 @@ class Participation(models.Model):
     def _calculate_scores(self):
         """
         Calcula las puntuaciones de todos los cuestionarios de la evaluación.
+        Solo considera las respuestas completadas durante esta evaluación.
         """
         self.ensure_one()
         
         surveys = self.evaluation_id.survey_ids
         
         for survey in surveys:
-            # Buscar la respuesta del alumno a este survey
+            # Buscar la respuesta del alumno a este survey DURANTE esta evaluación
+            # Filtrar por fecha para evitar mezclar con evaluaciones anteriores
             user_input = self.env['survey.user_input'].search([
                 ('partner_id', '=', self.student_id.id),
                 ('survey_id', '=', survey.id),
-                ('state', '=', 'done')
+                ('state', '=', 'done'),
+                ('create_date', '>=', self.evaluation_id.date_start)
             ], limit=1)
             
             if not user_input:

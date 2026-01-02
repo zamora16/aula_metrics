@@ -40,6 +40,9 @@
         'views/alerts_dashboard.xml',
         'views/templates.xml',
         'views/menu.xml',
+        
+        # 4. Wizards
+        'wizards/resolve_alert_wizard_views.xml',
 
     ],
     'demo': [

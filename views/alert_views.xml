@@ -27,8 +27,6 @@
                     <button string="Descartar Alerta" type="object" name="action_dismiss" 
                             invisible="status != 'active'" class="btn-warning" 
                             confirm="¿Está seguro de que quiere descartar esta alerta?"/>
-                    <button string="Reactivar" type="object" name="action_reactivate" 
-                            invisible="status == 'active'" class="btn-primary"/>
                 </header>
                 <sheet>
                     <group>
@@ -37,16 +35,20 @@
                         <field name="status"/>
                         <field name="alert_level" readonly="1"/>
                         <field name="threshold_id" readonly="1"/>
+                        <field name="severity"/>
                     </group>
                     <group>
                         <field name="message" readonly="1"/>
                         <field name="score_value" readonly="1"/>
-                        <field name="notes" widget="text"/>
                     </group>
                     <group string="Detalles">
                         <field name="participation_id" readonly="1"/>
                         <field name="student_id" readonly="1"/>
                         <field name="academic_group_id" readonly="1"/>
+                    </group>
+                    <group string="Resolución" invisible="status != 'resolved'">
+                        <field name="resolution_date" readonly="1"/>
+                        <field name="resolution_action" readonly="1" widget="text" colspan="2"/>
                     </group>
                 </sheet>
             </form>

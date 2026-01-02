@@ -22,11 +22,21 @@ class EvaluationPortalController(http.Controller):
         # Construir datos para cada encuesta
         survey_data = []
         for survey in surveys:
-            # Buscar el user_input correspondiente
+            # Buscar o crear user_input ESPECÍFICO para esta evaluación
+            # Usamos un campo de referencia para vincularlo a la participación
             user_input = request.env['survey.user_input'].sudo().search([
                 ('partner_id', '=', participation.student_id.id),
-                ('survey_id', '=', survey.id)
+                ('survey_id', '=', survey.id),
+                ('create_date', '>=', participation.evaluation_id.date_start)
             ], limit=1)
+            
+            # Si no existe, crear uno nuevo para esta evaluación
+            if not user_input:
+                user_input = request.env['survey.user_input'].sudo().create({
+                    'survey_id': survey.id,
+                    'partner_id': participation.student_id.id,
+                    'state': 'new'
+                })
             
             survey_url = None
             is_completed = False

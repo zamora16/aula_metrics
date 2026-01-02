@@ -6,7 +6,7 @@ class Alert(models.Model):
     _description = 'Alerta de AulaMetrics'
     _order = 'alert_date desc'
     
-    name = fields.Char(string='Título', compute='_compute_name', store=True)
+    name = fields.Char(string='Título', compute='_compute_name')
     threshold_id = fields.Many2one('aulametrics.threshold', string='Umbral', required=True, ondelete='cascade')
     participation_id = fields.Many2one('aulametrics.participation', string='Participación', ondelete='cascade')
     student_id = fields.Many2one('res.partner', string='Alumno')
@@ -24,13 +24,28 @@ class Alert(models.Model):
         ('group', 'Grupal'),
     ], string='Nivel de Alerta', default='individual', required=True)
     severity = fields.Selection(related='threshold_id.severity', string='Severidad', readonly=True, store=True)
-    notes = fields.Text(string='Notas del Orientador', help='Notas privadas del orientador sobre esta alerta')
+    
+    # Campos de resolución
+    resolution_action = fields.Text(
+        string='Acción de Resolución',
+        help='Descripción de la intervención o acción tomada para resolver la alerta'
+    )
+    resolution_date = fields.Datetime(
+        string='Fecha de Resolución',
+        readonly=True,
+        help='Fecha y hora en que se resolvió la alerta'
+    )
+    
     def _compute_name(self):
         for alert in self:
+            can_see_student = self.env.user.has_group('aulametrics.group_aulametrics_admin') or self.env.user.has_group('aulametrics.group_aulametrics_counselor')
             if alert.alert_level == 'group':
                 alert.name = f"{alert.threshold_id.name} - Grupo {alert.academic_group_id.name}"
             else:
-                alert.name = f"{alert.threshold_id.name} - {alert.student_id.name}"
+                if can_see_student and alert.student_id:
+                    alert.name = f"{alert.threshold_id.name} - {alert.student_id.name}"
+                else:
+                    alert.name = f"{alert.threshold_id.name} - Alerta Individual"
     
     @api.model
     def generate_alerts(self):
@@ -135,16 +150,21 @@ class Alert(models.Model):
             self.create(vals)
 
     def action_resolve(self):
-        """Marcar alerta como resuelta"""
-        for alert in self:
-            alert.status = 'resolved'
+        """Abrir wizard para registrar la acción tomada y resolver la alerta"""
+        self.ensure_one()
+        
+        return {
+            'name': 'Resolver Alerta',
+            'type': 'ir.actions.act_window',
+            'res_model': 'aulametrics.resolve_alert_wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_alert_id': self.id,
+            }
+        }
 
     def action_dismiss(self):
         """Descartar alerta"""
         for alert in self:
             alert.status = 'dismissed'
-
-    def action_reactivate(self):
-        """Reactivar alerta"""
-        for alert in self:
-            alert.status = 'active'
