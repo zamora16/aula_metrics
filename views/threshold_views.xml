@@ -24,10 +24,6 @@
         <field name="model">aulametrics.threshold</field>
         <field name="arch" type="xml">
             <form string="Umbral">
-                <header>
-                    <button string="Guardar" type="object" name="write" class="btn-primary"/>
-                    <button string="Guardar y Cerrar" type="object" name="write" class="btn-primary" close="1"/>
-                </header>
                 <sheet>
                     <group>
                         <field name="name"/>
