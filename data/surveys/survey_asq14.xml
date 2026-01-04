@@ -16,7 +16,7 @@ Por favor, responde a todos los enunciados del cuestionario. Si alguno de ellos 
         <field name="users_can_go_back" eval="True"/>
         <field name="is_attempts_limited" eval="False"/>
         <field name="is_time_limited" eval="False"/>
-        <field name="access_mode">public</field>
+        <field name="access_mode">token</field>
         <field name="users_login_required" eval="False"/>
     </record>
 
