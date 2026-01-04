@@ -25,6 +25,21 @@ class Participation(models.Model):
         index=True,
         domain=[('academic_group_id', '!=', False)]
     )
+
+    # Campos related para facilitar agrupación y filtros
+    academic_group_id = fields.Many2one(
+        related='student_id.academic_group_id',
+        string='Grupo Académico',
+        store=True,
+        readonly=True
+    )
+    
+    student_gender = fields.Selection(
+        related='student_id.gender',
+        string='Género',
+        store=True,
+        readonly=True
+    )
     
     # Token único para acceso web
     evaluation_token = fields.Char(
@@ -50,15 +65,10 @@ class Participation(models.Model):
     )
     
     # Puntuaciones calculadas - WHO-5 (Bienestar)
-    who5_raw_score = fields.Integer(
-        string='WHO-5 Puntuación Bruta',
-        readonly=True,
-        help='Suma de los 5 ítems (0-25)'
-    )
-    
     who5_score = fields.Float(
         string='WHO-5 Puntuación',
         readonly=True,
+        group_operator='avg',
         help='Puntuación normalizada 0-100. <50 sugiere baja calidad de vida'
     )
     
@@ -66,18 +76,21 @@ class Participation(models.Model):
     bullying_score = fields.Float(
         string='Puntuación Bullying Global',
         readonly=True,
+        group_operator='avg',
         help='Puntuación global normalizada 0-100 del cuestionario de bullying'
     )
     
     victimization_score = fields.Float(
         string='Puntuación Victimización',
         readonly=True,
+        group_operator='avg',
         help='Puntuación normalizada 0-100. Mayor puntuación = mayor victimización'
     )
     
     aggression_score = fields.Float(
         string='Puntuación Agresión',
         readonly=True,
+        group_operator='avg',
         help='Puntuación normalizada 0-100. Mayor puntuación = mayor agresión'
     )
     
@@ -85,6 +98,7 @@ class Participation(models.Model):
     stress_score = fields.Float(
         string='Puntuación Estrés (ASQ-14)',
         readonly=True,
+        group_operator='avg',
         help='Puntuación normalizada 0-100 del cuestionario de estrés para adolescentes'
     )
     
@@ -144,6 +158,11 @@ class Participation(models.Model):
             if scores:
                 self.write(scores)
     
+    def check_alerts(self):
+        """Verifica si las puntuaciones actuales generan alertas"""
+        self.ensure_one()
+        self.env['aulametrics.alert'].check_alerts_for_participation(self)
+
     def action_expire(self):
         """Marca participaciones pendientes como expiradas"""
         for participation in self:

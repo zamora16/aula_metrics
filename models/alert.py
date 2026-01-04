@@ -48,82 +48,72 @@ class Alert(models.Model):
                     alert.name = f"{alert.threshold_id.name} - Alerta Individual"
     
     @api.model
-    def generate_alerts(self):
-        """Genera alertas para participaciones que superan umbrales activos"""
-        from datetime import timedelta
-        
-        # Buscar umbrales activos
-        thresholds = self.env['aulametrics.threshold'].search([('active', '=', True)])
+    def check_alerts_for_participation(self, participation):
+        """
+        Verifica si las puntuaciones de una participación superan algún umbral activo.
+        Se llama en tiempo real cada vez que se completa un cuestionario.
+        """
+        # Buscar umbrales activos relevantes para los cuestionarios de esta evaluación
+        thresholds = self.env['aulametrics.threshold'].search([
+            ('active', '=', True),
+            ('survey_id', 'in', participation.evaluation_id.survey_ids.ids)
+        ])
         
         for threshold in thresholds:
-            # Buscar participaciones completadas recientes (últimas 24h) que usen este survey
-            recent_participations = self.env['aulametrics.participation'].search([
-                ('evaluation_id.survey_ids', 'in', [threshold.survey_id.id]),
-                ('state', '=', 'completed'),
-                ('completed_at', '>=', fields.Datetime.now() - timedelta(hours=24))
-            ])
-            
-            # Generar alertas individuales
-            for participation in recent_participations:
-                score_value = getattr(participation, threshold.score_field, 0)
-                if not score_value:
-                    continue
-                
-                if threshold.operator == '>' and score_value > threshold.threshold_value:
-                    self._create_alert(participation, threshold, score_value, 'individual')
-                elif threshold.operator == '<' and score_value < threshold.threshold_value:
-                    self._create_alert(participation, threshold, score_value, 'individual')
-            
-            # Generar alertas grupales
-            self._generate_group_alerts(threshold, recent_participations)
-    
-    def _generate_group_alerts(self, threshold, participations):
-        """Genera alertas grupales si supera el porcentaje"""
-        if not threshold.group_threshold_percentage:
-            return
-        
-        # Agrupar participaciones por grupo
-        groups = {}
-        for part in participations:
-            group_id = part.student_id.academic_group_id.id
-            if group_id not in groups:
-                groups[group_id] = {'group': part.student_id.academic_group_id, 'participations': []}
-            groups[group_id]['participations'].append(part)
-        
-        for group_data in groups.values():
-            group = group_data['group']
-            parts = group_data['participations']
-            
-            # Contar alertas activas individuales en este grupo para este umbral
-            active_alerts = self.search([
-                ('threshold_id', '=', threshold.id),
-                ('academic_group_id', '=', group.id),
-                ('status', '=', 'active'),
-                ('alert_level', '=', 'individual')
-            ])
-            
-            total_students = group.student_count or len(group.student_ids)
-            if total_students == 0:
+            # Obtener el valor de la puntuación usando el nombre del campo definido en el umbral
+            score_value = getattr(participation, threshold.score_field, 0)
+            if not score_value:
                 continue
             
-            percentage = (len(active_alerts) / total_students) * 100
-            
-            if percentage >= threshold.group_threshold_percentage:
-                # Crear alerta grupal si no existe
-                existing_group_alert = self.search([
-                    ('threshold_id', '=', threshold.id),
-                    ('academic_group_id', '=', group.id),
-                    ('alert_level', '=', 'group'),
-                    ('status', '=', 'active')
-                ], limit=1)
+            # Comprobar condición individual
+            is_alert = False
+            if threshold.operator == '>' and score_value > threshold.threshold_value:
+                is_alert = True
+            elif threshold.operator == '<' and score_value < threshold.threshold_value:
+                is_alert = True
                 
-                if not existing_group_alert:
-                    self.create({
-                        'threshold_id': threshold.id,
-                        'academic_group_id': group.id,
-                        'score_value': percentage,
-                        'alert_level': 'group',
-                    })
+            if is_alert:
+                # Crear alerta individual
+                self._create_alert(participation, threshold, score_value, 'individual')
+                
+                # Al detectar una alerta individual, comprobar si se dispara la alerta grupal
+                self._check_group_alert(threshold, participation.student_id.academic_group_id)
+    
+    def _check_group_alert(self, threshold, group):
+        """Verifica y genera alerta grupal si corresponde"""
+        if not threshold.group_threshold_percentage:
+            return
+            
+        # Contar alertas activas individuales en este grupo para este umbral
+        active_alerts = self.search_count([
+            ('threshold_id', '=', threshold.id),
+            ('academic_group_id', '=', group.id),
+            ('status', '=', 'active'),
+            ('alert_level', '=', 'individual')
+        ])
+        
+        total_students = group.student_count or len(group.student_ids)
+        if total_students == 0:
+            return
+        
+        percentage = (active_alerts / total_students) * 100
+        
+        if percentage >= threshold.group_threshold_percentage:
+            # Crear alerta grupal si no existe
+            existing_group_alert = self.search([
+                ('threshold_id', '=', threshold.id),
+                ('academic_group_id', '=', group.id),
+                ('alert_level', '=', 'group'),
+                ('status', '=', 'active')
+            ], limit=1)
+            
+            if not existing_group_alert:
+                self.create({
+                    'threshold_id': threshold.id,
+                    'academic_group_id': group.id,
+                    'score_value': percentage,
+                    'alert_level': 'group',
+                })
     
     def _create_alert(self, participation, threshold, score_value, alert_level='individual'):
         """Crea alerta si no existe ya"""

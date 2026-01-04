@@ -40,7 +40,13 @@ class SurveyUserInput(models.Model):
                 if not participation:
                     continue
                 
-                # Verificar si ha completado TODOS los cuestionarios de ESTA evaluación
+                # 1. Calcular puntuaciones parciales inmediatamente
+                participation._calculate_scores()
+                
+                # 2. Verificar alertas inmediatamente
+                participation.check_alerts()
+                
+                # 3. Verificar si ha completado TODOS los cuestionarios de ESTA evaluación
                 # Solo contar user_inputs creados DESPUÉS del inicio de la evaluación
                 all_surveys = evaluation.survey_ids
                 completed_surveys = self.env['survey.user_input'].search_count([
