@@ -12,6 +12,9 @@
             <xpath expr="//button[@name='action_start_session']" position="replace"/>
             <xpath expr="//button[@name='action_test_survey']" position="replace"/>
             
+            <!-- Eliminar botón de participaciones del button_box -->
+            <xpath expr="//button[@name='action_survey_user_input_completed']" position="replace"/>
+            
             <!-- Añadir campos de AulaMetrics en el formulario de survey -->
             <xpath expr="//field[@name='title']" position="after">
                 <field name="is_aulametrics" invisible="1"/>

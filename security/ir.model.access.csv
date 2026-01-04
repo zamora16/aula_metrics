@@ -25,3 +25,7 @@ access_alerts_dashboard_tutor,access.alerts.dashboard.tutor,model_alerts_dashboa
 access_alerts_dashboard_management,access.alerts.dashboard.management,model_alerts_dashboard,group_aulametrics_management,1,0,0,0
 access_resolve_alert_wizard_admin,access.resolve.alert.wizard.admin,model_aulametrics_resolve_alert_wizard,group_aulametrics_admin,1,1,1,1
 access_resolve_alert_wizard_counselor,access.resolve.alert.wizard.counselor,model_aulametrics_resolve_alert_wizard,group_aulametrics_counselor,1,1,1,1
+access_report_admin,access.report.admin,model_aulametrics_report,group_aulametrics_admin,1,1,1,1
+access_report_counselor,access.report.counselor,model_aulametrics_report,group_aulametrics_counselor,1,1,1,1
+access_report_tutor,access.report.tutor,model_aulametrics_report,group_aulametrics_tutor,1,0,0,0
+access_report_management,access.report.management,model_aulametrics_report,group_aulametrics_management,1,0,0,0

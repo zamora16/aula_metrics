@@ -99,6 +99,16 @@ class Evaluation(models.Model):
         store=True,
         help='Número de alumnos que han completado la evaluación'
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Crear evaluación y su reporte asociado"""
+        evaluations = super().create(vals_list)
+        for evaluation in evaluations:
+            self.env['aulametrics.report'].create({
+                'evaluation_id': evaluation.id
+            })
+        return evaluations
     
     participation_rate = fields.Float(
         string='Tasa de Participación (%)',
@@ -201,6 +211,9 @@ class Evaluation(models.Model):
     def action_close(self):
         """Cerrar evaluación (active -> closed)"""
         self.write({'state': 'closed'})
+        # Marcar participaciones pendientes como expiradas
+        for evaluation in self:
+            evaluation.participation_ids.filtered(lambda p: p.state == 'pending').action_expire()
     
     def action_cancel(self):
         """Cancelar evaluación"""

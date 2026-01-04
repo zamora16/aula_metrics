@@ -9,3 +9,4 @@ from . import participation
 from . import threshold
 from . import alert
 from . import alerts_dashboard
+from . import report

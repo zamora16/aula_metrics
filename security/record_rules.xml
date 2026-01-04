@@ -60,5 +60,21 @@
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_tutor')), (4, ref('group_aulametrics_management'))]"/>
         </record>
+
+        <!-- Reportes: Tutores solo ven reportes de evaluaciones con sus grupos -->
+        <record id="report_tutor_rule" model="ir.rule">
+            <field name="name">Reportes: Tutores solo sus grupos</field>
+            <field name="model_id" ref="model_aulametrics_report"/>
+            <field name="domain_force">[('evaluation_id.academic_group_ids.tutor_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+        </record>
+
+        <!-- Reportes: Orientadores, Admins y Management ven todos -->
+        <record id="report_counselor_admin_rule" model="ir.rule">
+            <field name="name">Reportes: Orientadores/Admins/Management todos</field>
+            <field name="model_id" ref="model_aulametrics_report"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
+        </record>
     </data>
 </odoo>

@@ -13,7 +13,7 @@
 
     'author': "Angel Zamora",
     'category': 'Education',
-    'depends': ['base','mail', 'survey'],
+    'depends': ['base', 'mail', 'survey'],
 
     'data': [
         # 1. Seguridad
@@ -35,6 +35,7 @@
         'views/survey_extension_views.xml',
         'views/evaluation_views.xml',
         'views/participations_views.xml',
+        'views/report_views.xml',
         'views/threshold_views.xml',
         'views/alert_views.xml',
         'views/alerts_dashboard.xml',

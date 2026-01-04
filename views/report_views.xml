@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Tree de Reportes -->
+    <record id="view_report_tree" model="ir.ui.view">
+        <field name="name">aulametrics.report.tree</field>
+        <field name="model">aulametrics.report</field>
+        <field name="arch" type="xml">
+            <tree string="Resultados de Evaluaciones" create="false" delete="false">
+                <field name="name"/>
+                <field name="state" widget="badge" 
+                       decoration-info="state == 'draft'" 
+                       decoration-warning="state == 'scheduled'" 
+                       decoration-success="state == 'active'" 
+                       decoration-muted="state in ('closed', 'cancelled')"/>
+                <field name="evaluation_id" column_invisible="1"/>
+                <field name="completion_rate" widget="progressbar"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Form de Reporte -->
+    <record id="view_report_form" model="ir.ui.view">
+        <field name="name">aulametrics.report.form</field>
+        <field name="model">aulametrics.report</field>
+        <field name="arch" type="xml">
+            <form string="Resultados de Evaluación">
+                <sheet>
+                    <!-- Cabecera -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_participations" type="object"
+                                class="oe_stat_button" icon="fa-users">
+                            <span class="o_stat_text">Puntuaciones</span>
+                        </button>
+                        <button name="action_view_by_group" type="object"
+                                class="oe_stat_button" icon="fa-bar-chart">
+                            <span class="o_stat_text">Análisis</span>
+                        </button>
+                    </div>
+
+                    <!-- Info general -->
+                    <group>
+                        <group string="Información">
+                            <field name="evaluation_id" readonly="1"/>
+                            <field name="state" widget="badge"/>
+                        </group>
+                        <group string="Participación">
+                            <field name="completion_rate" widget="progressbar"/>
+                        </group>
+                    </group>
+
+                    <!-- Estadísticas de puntuaciones -->
+                    <group string="Estadísticas Globales (Promedios)">
+                        <group>
+                            <field name="avg_who5" widget="progressbar" 
+                                   options="{'max_value': 100}"/>
+                        </group>
+                        <group>
+                            <field name="avg_bullying" widget="progressbar"
+                                   options="{'max_value': 100}"/>
+                        </group>
+                        <group>
+                            <field name="avg_stress" widget="progressbar"
+                                   options="{'max_value': 100}"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para abrir reportes -->
+    <record id="action_report" model="ir.actions.act_window">
+        <field name="name">Resultados</field>
+        <field name="res_model">aulametrics.report</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('state', 'in', ['active', 'closed'])]</field>
+        <field name="context">{'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay resultados disponibles
+            </p>
+            <p>
+                Los resultados aparecen automáticamente cuando las evaluaciones se activan.
+            </p>
+        </field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- VISTA DE PARTICIPACIONES CON PUNTUACIONES -->
+    <!-- ============================================ -->
+    
+    <!-- Vista Tree para mostrar puntuaciones individuales -->
+    <record id="view_participation_scores_tree" model="ir.ui.view">
+        <field name="name">aulametrics.participation.scores.tree</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <tree string="Puntuaciones" default_order="academic_group_id, student_id" create="false" delete="false">
+                <field name="student_id"/>
+                <field name="academic_group_id"/>
+                <field name="who5_score" widget="progressbar" options="{'max_value': 100}"/>
+                <field name="bullying_score" widget="progressbar" options="{'max_value': 100}"/>
+                <field name="stress_score" widget="progressbar" options="{'max_value': 100}"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Pivot para análisis agrupado (con AVG) -->
+    <record id="view_participation_scores_pivot" model="ir.ui.view">
+        <field name="name">aulametrics.participation.scores.pivot</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="arch" type="xml">
+            <pivot string="Análisis de Puntuaciones" default_order="academic_group_id">
+                <field name="academic_group_id" type="row"/>
+                <field name="who5_score" type="measure" widget="float" string="WHO-5 (Media)"/>
+                <field name="bullying_score" type="measure" widget="float" string="Bullying (Media)"/>
+                <field name="stress_score" type="measure" widget="float" string="Estrés (Media)"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Vista Graph para visualización gráfica -->
+    <record id="view_participation_scores_graph" model="ir.ui.view">
+        <field name="name">aulametrics.participation.scores.graph</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="arch" type="xml">
+            <graph string="Comparativa de Puntuaciones" type="bar" stacked="False" sample="0">
+                <field name="academic_group_id"/>
+                <field name="who5_score" type="measure" string="WHO-5"/>
+                <field name="bullying_score" type="measure" string="Bullying"/>
+                <field name="stress_score" type="measure" string="Estrés"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Filtros de búsqueda para participaciones -->
+    <record id="view_participation_scores_search" model="ir.ui.view">
+        <field name="name">aulametrics.participation.scores.search</field>
+        <field name="model">aulametrics.participation</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Resultados">
+                <field name="student_id"/>
+                <field name="academic_group_id"/>
+                <separator/>
+                <filter name="low_who5" string="WHO-5 Bajo (&lt;50)" 
+                        domain="[('who5_score', '&lt;', 50), ('who5_score', '>', 0)]"/>
+                <filter name="high_bullying" string="Bullying Alto (&gt;60)" 
+                        domain="[('bullying_score', '&gt;', 60)]"/>
+                <filter name="high_stress" string="Estrés Alto (&gt;70)" 
+                        domain="[('stress_score', '&gt;', 70)]"/>
+                <separator/>
+                <group expand="1" string="Agrupar por">
+                    <filter name="group_by_academic_group" string="Grupo Académico" 
+                            context="{'group_by': 'academic_group_id'}"/>
+                    <filter name="group_by_gender" string="Género" 
+                            context="{'group_by': 'student_gender'}"/>
+                    <filter name="group_by_student" string="Alumno" 
+                            context="{'group_by': 'student_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

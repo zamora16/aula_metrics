@@ -44,6 +44,13 @@
               action="action_threshold"
               sequence="20"/>
 
+    <!-- Resultados -->
+    <menuitem id="menu_aulametrics_reports" 
+              name="Resultados" 
+              parent="menu_aulametrics_root"
+              action="action_report"
+              sequence="50"/>
+
     <!-- Configuración -->
     <menuitem id="menu_aulametrics_config" 
               name="Configuración" 
