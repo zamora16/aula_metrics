@@ -80,7 +80,6 @@
         <field name="name">Resultados</field>
         <field name="res_model">aulametrics.report</field>
         <field name="view_mode">tree,form</field>
-        <field name="domain">[('state', 'in', ['active', 'closed'])]</field>
         <field name="context">{'create': False}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
