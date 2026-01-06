@@ -34,6 +34,11 @@
 
                     <!-- Botones de acción -->
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_open_interactive_dashboard" type="object"
+                                class="oe_stat_button" icon="fa-line-chart">
+                            <span class="o_stat_text">Dashboard</span>
+                            <span class="o_stat_text">Interactivo</span>
+                        </button>
                         <button name="action_view_participations" type="object"
                                 class="oe_stat_button" icon="fa-users">
                             <span class="o_stat_text">Puntuaciones</span>

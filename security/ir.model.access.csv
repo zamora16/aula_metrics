@@ -29,3 +29,7 @@ access_report_admin,access.report.admin,model_aulametrics_report,group_aulametri
 access_report_counselor,access.report.counselor,model_aulametrics_report,group_aulametrics_counselor,1,1,1,1
 access_report_tutor,access.report.tutor,model_aulametrics_report,group_aulametrics_tutor,1,0,0,0
 access_report_management,access.report.management,model_aulametrics_report,group_aulametrics_management,1,0,0,0
+access_dashboard_charts_admin,access.dashboard.charts.admin,model_aulametrics_dashboard_charts,group_aulametrics_admin,1,1,1,1
+access_dashboard_charts_counselor,access.dashboard.charts.counselor,model_aulametrics_dashboard_charts,group_aulametrics_counselor,1,1,1,1
+access_dashboard_charts_tutor,access.dashboard.charts.tutor,model_aulametrics_dashboard_charts,group_aulametrics_tutor,1,0,0,0
+access_dashboard_charts_management,access.dashboard.charts.management,model_aulametrics_dashboard_charts,group_aulametrics_management,1,0,0,0

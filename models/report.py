@@ -104,6 +104,14 @@ class Report(models.Model):
             },
         }
 
+    def action_open_interactive_dashboard(self):
+        """Abre el dashboard interactivo con gráficos Plotly."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/aulametrics/dashboard/{self.evaluation_id.id}',
+            'target': 'new',
+        }
     def action_view_by_group(self):
         """Abre vista de análisis con gráficos y pivot."""
         self.ensure_one()

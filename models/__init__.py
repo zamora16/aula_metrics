@@ -10,3 +10,4 @@ from . import threshold
 from . import alert
 from . import alerts_dashboard
 from . import report
+from . import dashboard_charts
