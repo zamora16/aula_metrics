@@ -39,7 +39,7 @@
         'views/threshold_views.xml',
         'views/alert_views.xml',
         'views/alerts_dashboard.xml',
-        'views/templates.xml',
+        'views/survey_portal_templates.xml',
         'views/menu.xml',
         
         # 4. Wizards

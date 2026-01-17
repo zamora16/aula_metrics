@@ -112,26 +112,3 @@ class Report(models.Model):
             'url': f'/aulametrics/dashboard/{self.evaluation_id.id}',
             'target': 'new',
         }
-    def action_view_by_group(self):
-        """Abre vista de análisis con gráficos y pivot."""
-        self.ensure_one()
-        return {
-            'name': f'Análisis: {self.name}',
-            'type': 'ir.actions.act_window',
-            'res_model': 'aulametrics.participation',
-            'view_mode': 'graph,pivot,tree',
-            'views': [
-                (self.env.ref('aula_metrics.view_participation_scores_graph').id, 'graph'),
-                (self.env.ref('aula_metrics.view_participation_scores_pivot').id, 'pivot'),
-                (self.env.ref('aula_metrics.view_participation_scores_tree').id, 'tree'),
-            ],
-            'search_view_id': self.env.ref('aula_metrics.view_participation_scores_search').id,
-            'domain': [
-                ('evaluation_id', '=', self.evaluation_id.id),
-                ('state', '=', 'completed')
-            ],
-            'context': {
-                'create': False,
-                'delete': False,
-            },
-        }

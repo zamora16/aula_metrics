@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         PORTAL DE EVALUACIÓN - Lista de encuestas
+         ============================================================ -->
+    <template id="portal_evaluacion" name="Portal de Evaluación AulaMetrics">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <meta name="robots" content="noindex,nofollow"/>
+                <title>Evaluación - AulaMetrics</title>
+                <style>
+                    :root {
+                        --primary: #2c3e50;
+                        --accent: #3498db;
+                        --success: #27ae60;
+                        --warning: #f39c12;
+                        --bg: #f5f7fa;
+                        --card: #ffffff;
+                        --text: #2c3e50;
+                        --text-light: #7f8c8d;
+                        --border: #e2e8f0;
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                        background: var(--bg);
+                        color: var(--text);
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        margin: 0;
+                        line-height: 1.6;
+                    }
+                    .am-container { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+                    .am-card {
+                        background: var(--card);
+                        border-radius: 12px;
+                        padding: 2rem;
+                        margin-bottom: 1.5rem;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                        border: 1px solid var(--border);
+                    }
+                    .am-header h1 {
+                        margin: 0 0 0.5rem 0;
+                        font-size: 1.5rem;
+                        color: var(--primary);
+                    }
+                    .am-header p { margin: 0; color: var(--text-light); }
+                    .am-info { display: flex; gap: 2rem; flex-wrap: wrap; margin: 1.5rem 0; }
+                    .am-info-item span { display: block; }
+                    .am-info-item .label { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; }
+                    .am-info-item .value { font-weight: 600; }
+                    .am-progress-bar {
+                        height: 8px;
+                        background: var(--border);
+                        border-radius: 4px;
+                        overflow: hidden;
+                        margin-top: 1rem;
+                    }
+                    .am-progress-fill {
+                        height: 100%;
+                        background: var(--accent);
+                        transition: width 0.3s;
+                    }
+                    .am-survey-list { list-style: none; padding: 0; margin: 0; }
+                    .am-survey-item {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 1rem 1.25rem;
+                        border: 1px solid var(--border);
+                        border-radius: 8px;
+                        margin-bottom: 0.75rem;
+                        background: var(--card);
+                        transition: all 0.2s;
+                    }
+                    .am-survey-item:hover { border-color: var(--accent); }
+                    .am-survey-item.completed { background: #f0fdf4; border-color: #bbf7d0; }
+                    .am-survey-title { font-weight: 500; }
+                    .am-btn {
+                        display: inline-block;
+                        padding: 0.5rem 1.25rem;
+                        border-radius: 6px;
+                        text-decoration: none;
+                        font-weight: 500;
+                        font-size: 0.9rem;
+                        transition: all 0.2s;
+                    }
+                    .am-btn-primary { background: var(--accent); color: white; }
+                    .am-btn-primary:hover { background: #2980b9; }
+                    .am-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        padding: 0.35rem 0.75rem;
+                        border-radius: 50px;
+                        font-size: 0.8rem;
+                        font-weight: 500;
+                    }
+                    .am-badge-success { background: #dcfce7; color: #166534; }
+                    .am-badge-pending { background: #fef3c7; color: #92400e; }
+                    .am-alert {
+                        padding: 1rem;
+                        border-radius: 8px;
+                        margin-bottom: 1rem;
+                    }
+                    .am-alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+                    .am-complete-box {
+                        text-align: center;
+                        padding: 2rem;
+                    }
+                    .am-complete-box svg { width: 64px; height: 64px; color: var(--success); margin-bottom: 1rem; }
+                </style>
+            </head>
+            <body>
+                <div class="am-container">
+                <!-- Mensajes flash -->
+                <t t-if="request.params.get('msg') == 'guardado'">
+                    <div class="am-alert am-alert-success">✓ Respuestas guardadas correctamente</div>
+                </t>
+                
+                <div class="am-card am-header">
+                    <h1><t t-esc="evaluation.name"/></h1>
+                    <p>Completa las siguientes encuestas</p>
+                    
+                    <div class="am-info">
+                        <div class="am-info-item">
+                            <span class="label">Estudiante</span>
+                            <span class="value"><t t-esc="student.name"/></span>
+                        </div>
+                        <div class="am-info-item">
+                            <span class="label">Progreso</span>
+                            <span class="value"><t t-esc="completed_count"/> / <t t-esc="total_count"/> completadas</span>
+                        </div>
+                        <t t-if="evaluation.date_end">
+                            <div class="am-info-item">
+                                <span class="label">Fecha límite</span>
+                                <span class="value"><t t-esc="evaluation.date_end" t-options="{'widget': 'date'}"/></span>
+                            </div>
+                        </t>
+                    </div>
+                    <div class="am-progress-bar">
+                        <div class="am-progress-fill" t-attf-style="width: #{progress}%"></div>
+                    </div>
+                </div>
+
+                <t t-if="progress == 100">
+                    <div class="am-card am-complete-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <h2>¡Evaluación completada!</h2>
+                        <p>Has respondido todas las encuestas. Gracias por participar.</p>
+                    </div>
+                </t>
+
+                <ul class="am-survey-list">
+                    <t t-foreach="surveys" t-as="item">
+                        <li t-attf-class="am-survey-item #{item['completed'] and 'completed' or ''}">
+                            <span class="am-survey-title"><t t-esc="item['survey'].title"/></span>
+                            <t t-if="item['completed']">
+                                <span class="am-badge am-badge-success">✓ Completada</span>
+                            </t>
+                            <t t-else="">
+                                <a t-attf-href="/evaluacion/#{token}/encuesta/#{item['survey'].id}" class="am-btn am-btn-primary">
+                                    Responder
+                                </a>
+                            </t>
+                        </li>
+                    </t>
+                </ul>
+            </div>
+        </body>
+        </html>
+    </template>
+
+    <!-- ============================================================
+         FORMULARIO DE ENCUESTA
+         ============================================================ -->
+    <template id="portal_survey_form" name="Formulario de Encuesta">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <meta name="robots" content="noindex,nofollow"/>
+                <title><t t-esc="survey.title"/> - AulaMetrics</title>
+                <style>
+                    :root {
+                        --primary: #2c3e50;
+                        --accent: #3498db;
+                        --bg: #f5f7fa;
+                        --card: #ffffff;
+                        --text: #2c3e50;
+                        --text-light: #7f8c8d;
+                        --border: #e2e8f0;
+                        --error: #ef4444;
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                        background: var(--bg);
+                        color: var(--text);
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        margin: 0;
+                        line-height: 1.6;
+                    }
+                    .sf-container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+                    .sf-header {
+                        background: var(--card);
+                        border-radius: 12px;
+                        padding: 1.5rem 2rem;
+                        margin-bottom: 1.5rem;
+                        border: 1px solid var(--border);
+                    }
+                    .sf-header h1 { margin: 0; font-size: 1.4rem; color: var(--primary); }
+                    .sf-header p { margin: 0.5rem 0 0 0; color: var(--text-light); font-size: 0.9rem; }
+                    .sf-back { color: var(--accent); text-decoration: none; font-size: 0.9rem; display: inline-block; margin-bottom: 1rem; }
+                    .sf-back:hover { text-decoration: underline; }
+                    .sf-form {
+                        background: var(--card);
+                        border-radius: 12px;
+                        padding: 2rem;
+                        border: 1px solid var(--border);
+                    }
+                    .sf-page-title {
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        color: var(--primary);
+                        margin: 1.5rem 0 1rem 0;
+                        padding-bottom: 0.5rem;
+                        border-bottom: 2px solid var(--border);
+                    }
+                    .sf-page-title:first-child { margin-top: 0; }
+                    .sf-question { margin-bottom: 1.5rem; }
+                    .sf-question-title {
+                        font-weight: 500;
+                        margin-bottom: 0.75rem;
+                    }
+                    .sf-question-title .required { color: var(--error); }
+                    .sf-options { display: flex; flex-direction: column; gap: 0.5rem; }
+                    .sf-option {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        padding: 0.75rem 1rem;
+                        border: 1px solid var(--border);
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+                    .sf-option:hover { border-color: var(--accent); background: #f8fafc; }
+                    .sf-option input { margin: 0; }
+                    .sf-option span { flex: 1; }
+                    /* Matrix styles */
+                    .sf-matrix { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+                    .sf-matrix th, .sf-matrix td {
+                        padding: 0.75rem 0.5rem;
+                        text-align: center;
+                        border-bottom: 1px solid var(--border);
+                        font-size: 0.9rem;
+                    }
+                    .sf-matrix th { font-weight: 500; color: var(--text-light); font-size: 0.8rem; }
+                    .sf-matrix td:first-child { text-align: left; font-weight: 500; }
+                    .sf-matrix input[type="radio"] { width: 18px; height: 18px; cursor: pointer; }
+                    /* Text inputs */
+                    .sf-input {
+                        width: 100%;
+                        padding: 0.75rem 1rem;
+                        border: 1px solid var(--border);
+                        border-radius: 6px;
+                        font-size: 1rem;
+                        font-family: inherit;
+                    }
+                    .sf-input:focus { outline: none; border-color: var(--accent); }
+                    textarea.sf-input { min-height: 100px; resize: vertical; }
+                    /* Actions */
+                    .sf-actions {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: 2rem;
+                        padding-top: 1.5rem;
+                        border-top: 1px solid var(--border);
+                    }
+                    .sf-btn {
+                        padding: 0.75rem 2rem;
+                        border-radius: 6px;
+                        font-size: 1rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        border: none;
+                        transition: all 0.2s;
+                    }
+                    .sf-btn-submit { background: var(--accent); color: white; }
+                    .sf-btn-submit:hover { background: #2980b9; }
+                    .sf-btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+                    @media (max-width: 600px) {
+                        .sf-matrix { font-size: 0.8rem; }
+                        .sf-matrix th, .sf-matrix td { padding: 0.5rem 0.25rem; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="sf-container">
+                <a t-attf-href="/evaluacion/#{token}" class="sf-back">← Volver a la evaluación</a>
+                
+                <div class="sf-header">
+                    <h1><t t-esc="survey.title"/></h1>
+                    <t t-if="survey.description">
+                        <p><t t-raw="survey.description"/></p>
+                    </t>
+                </div>
+
+                <form class="sf-form" t-attf-action="/evaluacion/#{token}/encuesta/#{survey.id}/submit" method="post">
+                    <t t-foreach="questions" t-as="q">
+                        <!-- Título de página/sección -->
+                        <t t-if="q['type'] == 'page'">
+                            <h2 class="sf-page-title"><t t-esc="q['title']"/></h2>
+                        </t>
+
+                        <!-- Pregunta tipo Matrix -->
+                        <t t-if="q['type'] == 'question'">
+                            <div class="sf-question">
+                                <div class="sf-question-title">
+                                    <t t-esc="q['title']"/>
+                                    <t t-if="q['constr_mandatory']"><span class="required">*</span></t>
+                                </div>
+
+                                <table class="sf-matrix">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <t t-foreach="q['suggested_answer_ids']" t-as="col">
+                                                <th><t t-esc="col.value"/></th>
+                                            </t>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="q['matrix_row_ids']" t-as="row">
+                                            <tr>
+                                                <td><t t-esc="row.value"/></td>
+                                                <t t-foreach="q['suggested_answer_ids']" t-as="col">
+                                                    <td>
+                                                        <input type="radio" 
+                                                               t-attf-name="question_#{q['id']}_row_#{row.id}"
+                                                               t-att-value="col.id"
+                                                               t-att-required="q['constr_mandatory']"/>
+                                                    </td>
+                                                </t>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                    </t>
+
+                    <div class="sf-actions">
+                        <a t-attf-href="/evaluacion/#{token}" class="sf-back" style="margin: 0;">Cancelar</a>
+                        <button type="submit" class="sf-btn sf-btn-submit">Enviar respuestas</button>
+                    </div>
+                </form>
+            </div>
+        </body>
+        </html>
+    </template>
+
+    <!-- ============================================================
+         PÁGINA DE ERROR
+         ============================================================ -->
+    <template id="portal_error" name="Error Portal AulaMetrics">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <meta name="robots" content="noindex,nofollow"/>
+                <title>Error - AulaMetrics</title>
+                <style>
+                    body {
+                        background: #f5f7fa;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        margin: 0;
+                    }
+                    .error-box {
+                        background: white;
+                        padding: 3rem;
+                        border-radius: 12px;
+                        text-align: center;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                        max-width: 400px;
+                    }
+                    .error-box svg { width: 64px; height: 64px; color: #ef4444; margin-bottom: 1rem; }
+                    .error-box h3 { margin: 0 0 0.5rem 0; color: #1e293b; }
+                    .error-box p { margin: 0; color: #64748b; }
+                </style>
+            </head>
+            <body>
+                <div class="error-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <h3><t t-esc="error_title"/></h3>
+                    <p><t t-esc="error_message"/></p>
+                </div>
+            </body>
+        </html>
+    </template>
+
+</odoo>
