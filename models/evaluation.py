@@ -213,9 +213,9 @@ class Evaluation(models.Model):
         self._create_participations()
     
     def action_activate(self):
-        """Activar evaluación (scheduled -> active) y crear accesos para alumnos"""
+        """Activar evaluación (scheduled -> active) y enviar emails de notificación"""
         self.write({'state': 'active'})
-        self._create_survey_accesses()
+        self._send_activation_emails()
     
     def _create_survey_accesses(self):
         """Crea accesos directos (user_input) para cada participación pendiente"""
@@ -244,6 +244,128 @@ class Evaluation(models.Model):
                             'partner_id': participation.student_id.id,
                             'deadline': evaluation.date_end,
                         })
+    
+    def _send_activation_emails(self):
+        """Envía emails de notificación a alumnos y tutores cuando se activa la evaluación"""
+        for evaluation in self:
+            pending_participations = evaluation.participation_ids.filtered(
+                lambda p: p.state == 'pending'
+            )
+            
+            # Enviar a alumnos
+            self._send_student_emails(pending_participations)
+            
+            # Enviar a tutores
+            self._send_tutor_emails(evaluation)
+    
+    def _send_tutor_emails(self, evaluation):
+        """Envía emails a los tutores de los grupos asignados"""
+        # Obtener todos los tutores (con y sin email para debugging)
+        all_tutors = evaluation.academic_group_ids.mapped('tutor_id')
+        tutors_with_email = all_tutors.filtered(lambda t: t and t.email)
+        
+        # Filtrar solo tutores con email
+        tutors = tutors_with_email
+        
+        for tutor in tutors:
+            tutor_groups = evaluation.academic_group_ids.filtered(lambda g: g.tutor_id == tutor)
+            
+            mail_values = {
+                'subject': f'Evaluación activada para sus grupos: {evaluation.name}',
+                'body_html': self._get_tutor_email_body(evaluation, tutor, tutor_groups),
+                'email_to': tutor.email,
+                'email_from': self._get_email_from(evaluation),
+            }
+            self._send_mail(mail_values, tutor.email)
+    
+    def _send_student_emails(self, participations):
+        """Envía emails a los alumnos con su enlace de acceso personalizado"""
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', 'http://localhost:8069')
+        
+        valid_participations = participations.filtered(lambda p: p.student_id.email)
+        
+        for participation in valid_participations:
+            evaluation = participation.evaluation_id
+            
+            mail_values = {
+                'subject': f'Tienes una nueva evaluación: {evaluation.name}',
+                'body_html': self._get_student_email_body(participation, base_url),
+                'email_to': participation.student_id.email,
+                'email_from': self._get_email_from(evaluation),
+            }
+            self._send_mail(mail_values, participation.student_id.email)
+    
+    def _get_student_email_body(self, participation, base_url):
+        """Genera el HTML del email para el alumno"""
+        evaluation = participation.evaluation_id
+        evaluation_url = f"{base_url}/evaluacion/{participation.evaluation_token}"
+        
+        return f"""
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #333;">¡Evaluación Activada!</h2>
+    <p>Hola <strong>{participation.student_id.name}</strong>,</p>
+    <p>Se ha activado la evaluación <strong>"{evaluation.name}"</strong> en el sistema AulaMetrics.</p>
+    <p><strong>Detalles de la evaluación:</strong></p>
+    <ul>
+        <li><strong>Nombre:</strong> {evaluation.name}</li>
+        <li><strong>Fecha de inicio:</strong> {evaluation.date_start}</li>
+        <li><strong>Fecha de expiración:</strong> {evaluation.date_end}</li>
+        <li><strong>Cuestionarios incluidos:</strong> {', '.join(evaluation.survey_ids.mapped('title'))}</li>
+    </ul>
+    <p>Para participar en la evaluación, haz clic en el siguiente enlace:</p>
+    <p style="text-align: center; margin: 30px 0;">
+        <a href="{evaluation_url}"
+           style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Acceder a la Evaluación
+        </a>
+    </p>
+    <p><em>Este enlace es personal e intransferible. La evaluación estará disponible hasta la fecha de expiración.</em></p>
+    <p>Si tienes alguna duda, contacta con tu profesor o coordinador.</p>
+    <p>¡Gracias por tu participación!</p>
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #666;">
+        Este es un mensaje automático del sistema AulaMetrics.
+    </p>
+</div>
+"""
+    
+    def _get_tutor_email_body(self, evaluation, tutor, tutor_groups):
+        """Genera el HTML del email para el tutor"""
+        group_names = ', '.join(tutor_groups.mapped('name'))
+        
+        return f"""
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #333;">Evaluación Activada</h2>
+    <p>Hola <strong>{tutor.name}</strong>,</p>
+    <p>Se ha activado la evaluación <strong>"{evaluation.name}"</strong> para los siguientes grupos a su cargo:</p>
+    <p><strong>Grupos afectados:</strong> {group_names}</p>
+    <p><strong>Detalles de la evaluación:</strong></p>
+    <ul>
+        <li><strong>Fecha de inicio:</strong> {evaluation.date_start}</li>
+        <li><strong>Fecha de expiración:</strong> {evaluation.date_end}</li>
+        <li><strong>Cuestionarios incluidos:</strong> {', '.join(evaluation.survey_ids.mapped('title'))}</li>
+        <li><strong>Número de alumnos:</strong> {evaluation.total_students}</li>
+    </ul>
+    <p>Le recomendamos informar a sus alumnos sobre esta evaluación y recordarles que participen antes de la fecha límite.</p>
+    <p>Puede seguir el progreso de la evaluación desde el sistema AulaMetrics.</p>
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #666;">
+        Este es un mensaje automático del sistema AulaMetrics.
+    </p>
+</div>
+"""
+    
+    def _get_email_from(self, evaluation):
+        """Obtiene el email remitente (del usuario o por defecto)"""
+        return evaluation.user_id.email or 'noreply@aulametrics.com'
+    
+    def _send_mail(self, mail_values, recipient_email):
+        """Envía un email y maneja errores silenciosamente"""
+        try:
+            mail = self.env['mail.mail'].create(mail_values)
+            mail.send()
+        except Exception as e:
+            pass
     
     def action_close(self):
         """Cerrar evaluación (active -> closed)"""

@@ -84,6 +84,7 @@ def generate_xml():
             xml.append(f'        <record id="{tutor_id}" model="res.users">')
             xml.append(f'            <field name="name">Prof. {tutor_name}</field>')
             xml.append(f'            <field name="login">tutor.{course_level}.{section.lower()}</field>')
+            xml.append(f'            <field name="email">tutor.{course_level}.{section.lower()}@test.com</field>')
             xml.append(f'            <field name="password">tutor123</field>')
             xml.append(f'            <field name="groups_id" eval="[(6, 0, [ref(\'base.group_user\'), ref(\'aula_metrics.group_aulametrics_tutor\')])]"/>')
             xml.append(f'        </record>')

@@ -10,6 +10,7 @@
         <record id="user_tutor_1" model="res.users">
             <field name="name">Prof. Pedro López</field>
             <field name="login">tutor.eso1.a</field>
+            <field name="email">tutor.eso1.a@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -27,76 +28,77 @@
             <field name="email">alumno1@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-12-16</field>
+            <field name="birthdate">2012-10-21</field>
         </record>
         <record id="partner_alumno_2" model="res.partner">
             <field name="name">Luis Martínez Pérez</field>
             <field name="email">alumno2@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-12-18</field>
+            <field name="birthdate">2012-03-24</field>
         </record>
         <record id="partner_alumno_3" model="res.partner">
             <field name="name">Laura Rodríguez Ruiz</field>
             <field name="email">alumno3@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-12-10</field>
+            <field name="birthdate">2012-08-15</field>
         </record>
         <record id="partner_alumno_4" model="res.partner">
             <field name="name">Carlos Fernández Díaz</field>
             <field name="email">alumno4@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-02-13</field>
+            <field name="birthdate">2012-12-01</field>
         </record>
         <record id="partner_alumno_5" model="res.partner">
             <field name="name">Isabel Sánchez Jiménez</field>
             <field name="email">alumno5@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-03-01</field>
+            <field name="birthdate">2012-01-26</field>
         </record>
         <record id="partner_alumno_6" model="res.partner">
             <field name="name">David Gómez Moreno</field>
             <field name="email">alumno6@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-02-21</field>
+            <field name="birthdate">2012-02-06</field>
         </record>
         <record id="partner_alumno_7" model="res.partner">
             <field name="name">Lucía Pérez Álvarez</field>
             <field name="email">alumno7@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-12-05</field>
+            <field name="birthdate">2012-08-09</field>
         </record>
         <record id="partner_alumno_8" model="res.partner">
             <field name="name">Francisco Ruiz Romero</field>
             <field name="email">alumno8@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-03-24</field>
+            <field name="birthdate">2012-04-19</field>
         </record>
         <record id="partner_alumno_9" model="res.partner">
             <field name="name">Andrea Díaz Torres</field>
             <field name="email">alumno9@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-09-14</field>
+            <field name="birthdate">2012-02-11</field>
         </record>
         <record id="partner_alumno_10" model="res.partner">
             <field name="name">Juan Jiménez Navarro</field>
             <field name="email">alumno10@test.com</field>
             <field name="academic_group_id" ref="group_eso1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-03-27</field>
+            <field name="birthdate">2012-12-17</field>
         </record>
 
         <!-- Tutor: 1º ESO B -->
         <record id="user_tutor_2" model="res.users">
             <field name="name">Prof. Luis Martínez</field>
             <field name="login">tutor.eso1.b</field>
+            <field name="email">tutor.eso1.b@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -114,76 +116,77 @@
             <field name="email">alumno11@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-03-22</field>
+            <field name="birthdate">2012-05-28</field>
         </record>
         <record id="partner_alumno_12" model="res.partner">
             <field name="name">Luis Álvarez López</field>
             <field name="email">alumno12@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-12-02</field>
+            <field name="birthdate">2012-08-02</field>
         </record>
         <record id="partner_alumno_13" model="res.partner">
             <field name="name">Laura Romero Martínez</field>
             <field name="email">alumno13@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-09-08</field>
+            <field name="birthdate">2012-04-09</field>
         </record>
         <record id="partner_alumno_14" model="res.partner">
             <field name="name">Carlos Torres Rodríguez</field>
             <field name="email">alumno14@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-04-26</field>
+            <field name="birthdate">2012-06-27</field>
         </record>
         <record id="partner_alumno_15" model="res.partner">
             <field name="name">Isabel Navarro Fernández</field>
             <field name="email">alumno15@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-09-08</field>
+            <field name="birthdate">2012-09-15</field>
         </record>
         <record id="partner_alumno_16" model="res.partner">
             <field name="name">David García Sánchez</field>
             <field name="email">alumno16@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-04-13</field>
+            <field name="birthdate">2012-08-17</field>
         </record>
         <record id="partner_alumno_17" model="res.partner">
             <field name="name">Lucía López Gómez</field>
             <field name="email">alumno17@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-06-05</field>
+            <field name="birthdate">2012-03-17</field>
         </record>
         <record id="partner_alumno_18" model="res.partner">
             <field name="name">Francisco Martínez Pérez</field>
             <field name="email">alumno18@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-10-28</field>
+            <field name="birthdate">2012-08-21</field>
         </record>
         <record id="partner_alumno_19" model="res.partner">
             <field name="name">Andrea Rodríguez Ruiz</field>
             <field name="email">alumno19@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-05-05</field>
+            <field name="birthdate">2012-01-03</field>
         </record>
         <record id="partner_alumno_20" model="res.partner">
             <field name="name">Juan Fernández Díaz</field>
             <field name="email">alumno20@test.com</field>
             <field name="academic_group_id" ref="group_eso1_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-11-15</field>
+            <field name="birthdate">2012-01-16</field>
         </record>
 
         <!-- Tutor: 1º ESO C -->
         <record id="user_tutor_3" model="res.users">
             <field name="name">Prof. José Rodríguez</field>
             <field name="login">tutor.eso1.c</field>
+            <field name="email">tutor.eso1.c@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -201,76 +204,77 @@
             <field name="email">alumno21@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-10-02</field>
+            <field name="birthdate">2012-09-07</field>
         </record>
         <record id="partner_alumno_22" model="res.partner">
             <field name="name">Luis Gómez Moreno</field>
             <field name="email">alumno22@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-06-12</field>
+            <field name="birthdate">2012-03-25</field>
         </record>
         <record id="partner_alumno_23" model="res.partner">
             <field name="name">Laura Pérez Álvarez</field>
             <field name="email">alumno23@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-06-03</field>
+            <field name="birthdate">2012-11-04</field>
         </record>
         <record id="partner_alumno_24" model="res.partner">
             <field name="name">Carlos Ruiz Romero</field>
             <field name="email">alumno24@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-11-10</field>
+            <field name="birthdate">2012-01-02</field>
         </record>
         <record id="partner_alumno_25" model="res.partner">
             <field name="name">Isabel Díaz Torres</field>
             <field name="email">alumno25@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-03-09</field>
+            <field name="birthdate">2012-09-16</field>
         </record>
         <record id="partner_alumno_26" model="res.partner">
             <field name="name">David Jiménez Navarro</field>
             <field name="email">alumno26@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-02-01</field>
+            <field name="birthdate">2012-09-23</field>
         </record>
         <record id="partner_alumno_27" model="res.partner">
             <field name="name">Lucía Moreno García</field>
             <field name="email">alumno27@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-11-11</field>
+            <field name="birthdate">2012-04-03</field>
         </record>
         <record id="partner_alumno_28" model="res.partner">
             <field name="name">Francisco Álvarez López</field>
             <field name="email">alumno28@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-12-05</field>
+            <field name="birthdate">2012-08-26</field>
         </record>
         <record id="partner_alumno_29" model="res.partner">
             <field name="name">Andrea Romero Martínez</field>
             <field name="email">alumno29@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2012-06-26</field>
+            <field name="birthdate">2012-11-02</field>
         </record>
         <record id="partner_alumno_30" model="res.partner">
             <field name="name">Juan Torres Rodríguez</field>
             <field name="email">alumno30@test.com</field>
             <field name="academic_group_id" ref="group_eso1_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2012-09-20</field>
+            <field name="birthdate">2012-02-05</field>
         </record>
 
         <!-- Tutor: 2º ESO A -->
         <record id="user_tutor_4" model="res.users">
             <field name="name">Prof. Carlos Fernández</field>
             <field name="login">tutor.eso2.a</field>
+            <field name="email">tutor.eso2.a@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -288,76 +292,77 @@
             <field name="email">alumno31@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-03-13</field>
+            <field name="birthdate">2011-02-13</field>
         </record>
         <record id="partner_alumno_32" model="res.partner">
             <field name="name">Luis García Sánchez</field>
             <field name="email">alumno32@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-10-24</field>
+            <field name="birthdate">2011-08-26</field>
         </record>
         <record id="partner_alumno_33" model="res.partner">
             <field name="name">Laura López Gómez</field>
             <field name="email">alumno33@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-08-15</field>
+            <field name="birthdate">2011-09-01</field>
         </record>
         <record id="partner_alumno_34" model="res.partner">
             <field name="name">Carlos Martínez Pérez</field>
             <field name="email">alumno34@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-06-22</field>
+            <field name="birthdate">2011-09-20</field>
         </record>
         <record id="partner_alumno_35" model="res.partner">
             <field name="name">Isabel Rodríguez Ruiz</field>
             <field name="email">alumno35@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-05-26</field>
+            <field name="birthdate">2011-12-10</field>
         </record>
         <record id="partner_alumno_36" model="res.partner">
             <field name="name">David Fernández Díaz</field>
             <field name="email">alumno36@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-07-27</field>
+            <field name="birthdate">2011-09-07</field>
         </record>
         <record id="partner_alumno_37" model="res.partner">
             <field name="name">Lucía Sánchez Jiménez</field>
             <field name="email">alumno37@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-08-04</field>
+            <field name="birthdate">2011-08-10</field>
         </record>
         <record id="partner_alumno_38" model="res.partner">
             <field name="name">Francisco Gómez Moreno</field>
             <field name="email">alumno38@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-11-22</field>
+            <field name="birthdate">2011-03-27</field>
         </record>
         <record id="partner_alumno_39" model="res.partner">
             <field name="name">Andrea Pérez Álvarez</field>
             <field name="email">alumno39@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-09-02</field>
+            <field name="birthdate">2011-08-26</field>
         </record>
         <record id="partner_alumno_40" model="res.partner">
             <field name="name">Juan Ruiz Romero</field>
             <field name="email">alumno40@test.com</field>
             <field name="academic_group_id" ref="group_eso2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-06-04</field>
+            <field name="birthdate">2011-04-28</field>
         </record>
 
         <!-- Tutor: 2º ESO B -->
         <record id="user_tutor_5" model="res.users">
             <field name="name">Prof. Miguel Sánchez</field>
             <field name="login">tutor.eso2.b</field>
+            <field name="email">tutor.eso2.b@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -375,76 +380,77 @@
             <field name="email">alumno41@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-09-03</field>
+            <field name="birthdate">2011-07-21</field>
         </record>
         <record id="partner_alumno_42" model="res.partner">
             <field name="name">Luis Jiménez Navarro</field>
             <field name="email">alumno42@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-03-01</field>
+            <field name="birthdate">2011-02-21</field>
         </record>
         <record id="partner_alumno_43" model="res.partner">
             <field name="name">Laura Moreno García</field>
             <field name="email">alumno43@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-02-15</field>
+            <field name="birthdate">2011-02-22</field>
         </record>
         <record id="partner_alumno_44" model="res.partner">
             <field name="name">Carlos Álvarez López</field>
             <field name="email">alumno44@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-05-06</field>
+            <field name="birthdate">2011-09-08</field>
         </record>
         <record id="partner_alumno_45" model="res.partner">
             <field name="name">Isabel Romero Martínez</field>
             <field name="email">alumno45@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-12-18</field>
+            <field name="birthdate">2011-03-25</field>
         </record>
         <record id="partner_alumno_46" model="res.partner">
             <field name="name">David Torres Rodríguez</field>
             <field name="email">alumno46@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-10-11</field>
+            <field name="birthdate">2011-02-15</field>
         </record>
         <record id="partner_alumno_47" model="res.partner">
             <field name="name">Lucía Navarro Fernández</field>
             <field name="email">alumno47@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-02-02</field>
+            <field name="birthdate">2011-12-10</field>
         </record>
         <record id="partner_alumno_48" model="res.partner">
             <field name="name">Francisco García Sánchez</field>
             <field name="email">alumno48@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-07-21</field>
+            <field name="birthdate">2011-08-24</field>
         </record>
         <record id="partner_alumno_49" model="res.partner">
             <field name="name">Andrea López Gómez</field>
             <field name="email">alumno49@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-02-16</field>
+            <field name="birthdate">2011-01-02</field>
         </record>
         <record id="partner_alumno_50" model="res.partner">
             <field name="name">Juan Martínez Pérez</field>
             <field name="email">alumno50@test.com</field>
             <field name="academic_group_id" ref="group_eso2_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-08-10</field>
+            <field name="birthdate">2011-01-14</field>
         </record>
 
         <!-- Tutor: 2º ESO C -->
         <record id="user_tutor_6" model="res.users">
             <field name="name">Prof. David Gómez</field>
             <field name="login">tutor.eso2.c</field>
+            <field name="email">tutor.eso2.c@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -462,76 +468,77 @@
             <field name="email">alumno51@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-12-10</field>
+            <field name="birthdate">2011-08-22</field>
         </record>
         <record id="partner_alumno_52" model="res.partner">
             <field name="name">Luis Fernández Díaz</field>
             <field name="email">alumno52@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-06-01</field>
+            <field name="birthdate">2011-12-22</field>
         </record>
         <record id="partner_alumno_53" model="res.partner">
             <field name="name">Laura Sánchez Jiménez</field>
             <field name="email">alumno53@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-01-25</field>
+            <field name="birthdate">2011-07-22</field>
         </record>
         <record id="partner_alumno_54" model="res.partner">
             <field name="name">Carlos Gómez Moreno</field>
             <field name="email">alumno54@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-07-14</field>
+            <field name="birthdate">2011-09-18</field>
         </record>
         <record id="partner_alumno_55" model="res.partner">
             <field name="name">Isabel Pérez Álvarez</field>
             <field name="email">alumno55@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-07-04</field>
+            <field name="birthdate">2011-05-27</field>
         </record>
         <record id="partner_alumno_56" model="res.partner">
             <field name="name">David Ruiz Romero</field>
             <field name="email">alumno56@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-09-04</field>
+            <field name="birthdate">2011-07-12</field>
         </record>
         <record id="partner_alumno_57" model="res.partner">
             <field name="name">Lucía Díaz Torres</field>
             <field name="email">alumno57@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-12-24</field>
+            <field name="birthdate">2011-05-16</field>
         </record>
         <record id="partner_alumno_58" model="res.partner">
             <field name="name">Francisco Jiménez Navarro</field>
             <field name="email">alumno58@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-04-27</field>
+            <field name="birthdate">2011-04-01</field>
         </record>
         <record id="partner_alumno_59" model="res.partner">
             <field name="name">Andrea Moreno García</field>
             <field name="email">alumno59@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">female</field>
-            <field name="birthdate">2011-10-05</field>
+            <field name="birthdate">2011-07-07</field>
         </record>
         <record id="partner_alumno_60" model="res.partner">
             <field name="name">Juan Álvarez López</field>
             <field name="email">alumno60@test.com</field>
             <field name="academic_group_id" ref="group_eso2_c"/>
             <field name="gender">male</field>
-            <field name="birthdate">2011-03-23</field>
+            <field name="birthdate">2011-04-19</field>
         </record>
 
         <!-- Tutor: 3º ESO A -->
         <record id="user_tutor_7" model="res.users">
             <field name="name">Prof. Antonio Pérez</field>
             <field name="login">tutor.eso3.a</field>
+            <field name="email">tutor.eso3.a@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -549,76 +556,77 @@
             <field name="email">alumno61@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-10-09</field>
+            <field name="birthdate">2010-02-03</field>
         </record>
         <record id="partner_alumno_62" model="res.partner">
             <field name="name">Luis Torres Rodríguez</field>
             <field name="email">alumno62@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-12-14</field>
+            <field name="birthdate">2010-08-18</field>
         </record>
         <record id="partner_alumno_63" model="res.partner">
             <field name="name">Laura Navarro Fernández</field>
             <field name="email">alumno63@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-04-02</field>
+            <field name="birthdate">2010-02-19</field>
         </record>
         <record id="partner_alumno_64" model="res.partner">
             <field name="name">Carlos García Sánchez</field>
             <field name="email">alumno64@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-07-19</field>
+            <field name="birthdate">2010-03-25</field>
         </record>
         <record id="partner_alumno_65" model="res.partner">
             <field name="name">Isabel López Gómez</field>
             <field name="email">alumno65@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-08-21</field>
+            <field name="birthdate">2010-08-18</field>
         </record>
         <record id="partner_alumno_66" model="res.partner">
             <field name="name">David Martínez Pérez</field>
             <field name="email">alumno66@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-02-20</field>
+            <field name="birthdate">2010-01-09</field>
         </record>
         <record id="partner_alumno_67" model="res.partner">
             <field name="name">Lucía Rodríguez Ruiz</field>
             <field name="email">alumno67@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-03-08</field>
+            <field name="birthdate">2010-11-12</field>
         </record>
         <record id="partner_alumno_68" model="res.partner">
             <field name="name">Francisco Fernández Díaz</field>
             <field name="email">alumno68@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-06-11</field>
+            <field name="birthdate">2010-05-07</field>
         </record>
         <record id="partner_alumno_69" model="res.partner">
             <field name="name">Andrea Sánchez Jiménez</field>
             <field name="email">alumno69@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-03-05</field>
+            <field name="birthdate">2010-01-03</field>
         </record>
         <record id="partner_alumno_70" model="res.partner">
             <field name="name">Juan Gómez Moreno</field>
             <field name="email">alumno70@test.com</field>
             <field name="academic_group_id" ref="group_eso3_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-08-16</field>
+            <field name="birthdate">2010-12-28</field>
         </record>
 
         <!-- Tutor: 3º ESO B -->
         <record id="user_tutor_8" model="res.users">
             <field name="name">Prof. Francisco Ruiz</field>
             <field name="login">tutor.eso3.b</field>
+            <field name="email">tutor.eso3.b@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -636,76 +644,77 @@
             <field name="email">alumno71@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-05-17</field>
+            <field name="birthdate">2010-06-27</field>
         </record>
         <record id="partner_alumno_72" model="res.partner">
             <field name="name">Luis Ruiz Romero</field>
             <field name="email">alumno72@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-08-27</field>
+            <field name="birthdate">2010-08-10</field>
         </record>
         <record id="partner_alumno_73" model="res.partner">
             <field name="name">Laura Díaz Torres</field>
             <field name="email">alumno73@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-03-13</field>
+            <field name="birthdate">2010-07-18</field>
         </record>
         <record id="partner_alumno_74" model="res.partner">
             <field name="name">Carlos Jiménez Navarro</field>
             <field name="email">alumno74@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-10-24</field>
+            <field name="birthdate">2010-01-19</field>
         </record>
         <record id="partner_alumno_75" model="res.partner">
             <field name="name">Isabel Moreno García</field>
             <field name="email">alumno75@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-04-09</field>
+            <field name="birthdate">2010-03-09</field>
         </record>
         <record id="partner_alumno_76" model="res.partner">
             <field name="name">David Álvarez López</field>
             <field name="email">alumno76@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-11-14</field>
+            <field name="birthdate">2010-12-12</field>
         </record>
         <record id="partner_alumno_77" model="res.partner">
             <field name="name">Lucía Romero Martínez</field>
             <field name="email">alumno77@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-09-21</field>
+            <field name="birthdate">2010-07-04</field>
         </record>
         <record id="partner_alumno_78" model="res.partner">
             <field name="name">Francisco Torres Rodríguez</field>
             <field name="email">alumno78@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-02-07</field>
+            <field name="birthdate">2010-05-07</field>
         </record>
         <record id="partner_alumno_79" model="res.partner">
             <field name="name">Andrea Navarro Fernández</field>
             <field name="email">alumno79@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2010-12-24</field>
+            <field name="birthdate">2010-07-11</field>
         </record>
         <record id="partner_alumno_80" model="res.partner">
             <field name="name">Juan García Sánchez</field>
             <field name="email">alumno80@test.com</field>
             <field name="academic_group_id" ref="group_eso3_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2010-12-04</field>
+            <field name="birthdate">2010-12-21</field>
         </record>
 
         <!-- Tutor: 4º ESO A -->
         <record id="user_tutor_9" model="res.users">
             <field name="name">Prof. Manuel Díaz</field>
             <field name="login">tutor.eso4.a</field>
+            <field name="email">tutor.eso4.a@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -723,76 +732,77 @@
             <field name="email">alumno81@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-04-06</field>
+            <field name="birthdate">2009-02-22</field>
         </record>
         <record id="partner_alumno_82" model="res.partner">
             <field name="name">Luis Martínez Pérez</field>
             <field name="email">alumno82@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-02-23</field>
+            <field name="birthdate">2009-01-19</field>
         </record>
         <record id="partner_alumno_83" model="res.partner">
             <field name="name">Laura Rodríguez Ruiz</field>
             <field name="email">alumno83@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-03-07</field>
+            <field name="birthdate">2009-05-23</field>
         </record>
         <record id="partner_alumno_84" model="res.partner">
             <field name="name">Carlos Fernández Díaz</field>
             <field name="email">alumno84@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-05-26</field>
+            <field name="birthdate">2009-01-22</field>
         </record>
         <record id="partner_alumno_85" model="res.partner">
             <field name="name">Isabel Sánchez Jiménez</field>
             <field name="email">alumno85@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-10-07</field>
+            <field name="birthdate">2009-11-25</field>
         </record>
         <record id="partner_alumno_86" model="res.partner">
             <field name="name">David Gómez Moreno</field>
             <field name="email">alumno86@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-03-17</field>
+            <field name="birthdate">2009-02-05</field>
         </record>
         <record id="partner_alumno_87" model="res.partner">
             <field name="name">Lucía Pérez Álvarez</field>
             <field name="email">alumno87@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-03-14</field>
+            <field name="birthdate">2009-05-15</field>
         </record>
         <record id="partner_alumno_88" model="res.partner">
             <field name="name">Francisco Ruiz Romero</field>
             <field name="email">alumno88@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-05-04</field>
+            <field name="birthdate">2009-09-26</field>
         </record>
         <record id="partner_alumno_89" model="res.partner">
             <field name="name">Andrea Díaz Torres</field>
             <field name="email">alumno89@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-09-25</field>
+            <field name="birthdate">2009-09-12</field>
         </record>
         <record id="partner_alumno_90" model="res.partner">
             <field name="name">Juan Jiménez Navarro</field>
             <field name="email">alumno90@test.com</field>
             <field name="academic_group_id" ref="group_eso4_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-06-03</field>
+            <field name="birthdate">2009-01-09</field>
         </record>
 
         <!-- Tutor: 4º ESO B -->
         <record id="user_tutor_10" model="res.users">
             <field name="name">Prof. María Jiménez</field>
             <field name="login">tutor.eso4.b</field>
+            <field name="email">tutor.eso4.b@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -810,76 +820,77 @@
             <field name="email">alumno91@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-01-28</field>
+            <field name="birthdate">2009-09-27</field>
         </record>
         <record id="partner_alumno_92" model="res.partner">
             <field name="name">Luis Álvarez López</field>
             <field name="email">alumno92@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-11-23</field>
+            <field name="birthdate">2009-05-18</field>
         </record>
         <record id="partner_alumno_93" model="res.partner">
             <field name="name">Laura Romero Martínez</field>
             <field name="email">alumno93@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-07-22</field>
+            <field name="birthdate">2009-02-12</field>
         </record>
         <record id="partner_alumno_94" model="res.partner">
             <field name="name">Carlos Torres Rodríguez</field>
             <field name="email">alumno94@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-01-04</field>
+            <field name="birthdate">2009-07-27</field>
         </record>
         <record id="partner_alumno_95" model="res.partner">
             <field name="name">Isabel Navarro Fernández</field>
             <field name="email">alumno95@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-09-01</field>
+            <field name="birthdate">2009-07-08</field>
         </record>
         <record id="partner_alumno_96" model="res.partner">
             <field name="name">David García Sánchez</field>
             <field name="email">alumno96@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-03-17</field>
+            <field name="birthdate">2009-07-14</field>
         </record>
         <record id="partner_alumno_97" model="res.partner">
             <field name="name">Lucía López Gómez</field>
             <field name="email">alumno97@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-11-26</field>
+            <field name="birthdate">2009-04-23</field>
         </record>
         <record id="partner_alumno_98" model="res.partner">
             <field name="name">Francisco Martínez Pérez</field>
             <field name="email">alumno98@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-03-27</field>
+            <field name="birthdate">2009-09-21</field>
         </record>
         <record id="partner_alumno_99" model="res.partner">
             <field name="name">Andrea Rodríguez Ruiz</field>
             <field name="email">alumno99@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">female</field>
-            <field name="birthdate">2009-12-08</field>
+            <field name="birthdate">2009-10-16</field>
         </record>
         <record id="partner_alumno_100" model="res.partner">
             <field name="name">Juan Fernández Díaz</field>
             <field name="email">alumno100@test.com</field>
             <field name="academic_group_id" ref="group_eso4_b"/>
             <field name="gender">male</field>
-            <field name="birthdate">2009-05-23</field>
+            <field name="birthdate">2009-10-07</field>
         </record>
 
         <!-- Tutor: 1º Bachillerato A -->
         <record id="user_tutor_11" model="res.users">
             <field name="name">Prof. Ana Moreno</field>
             <field name="login">tutor.bach1.a</field>
+            <field name="email">tutor.bach1.a@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -897,76 +908,77 @@
             <field name="email">alumno101@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2008-03-13</field>
+            <field name="birthdate">2008-07-16</field>
         </record>
         <record id="partner_alumno_102" model="res.partner">
             <field name="name">Luis Gómez Moreno</field>
             <field name="email">alumno102@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2008-10-12</field>
+            <field name="birthdate">2008-04-16</field>
         </record>
         <record id="partner_alumno_103" model="res.partner">
             <field name="name">Laura Pérez Álvarez</field>
             <field name="email">alumno103@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2008-06-24</field>
+            <field name="birthdate">2008-11-06</field>
         </record>
         <record id="partner_alumno_104" model="res.partner">
             <field name="name">Carlos Ruiz Romero</field>
             <field name="email">alumno104@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2008-01-08</field>
+            <field name="birthdate">2008-10-07</field>
         </record>
         <record id="partner_alumno_105" model="res.partner">
             <field name="name">Isabel Díaz Torres</field>
             <field name="email">alumno105@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2008-06-27</field>
+            <field name="birthdate">2008-07-26</field>
         </record>
         <record id="partner_alumno_106" model="res.partner">
             <field name="name">David Jiménez Navarro</field>
             <field name="email">alumno106@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2008-11-12</field>
+            <field name="birthdate">2008-04-27</field>
         </record>
         <record id="partner_alumno_107" model="res.partner">
             <field name="name">Lucía Moreno García</field>
             <field name="email">alumno107@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2008-12-23</field>
+            <field name="birthdate">2008-08-01</field>
         </record>
         <record id="partner_alumno_108" model="res.partner">
             <field name="name">Francisco Álvarez López</field>
             <field name="email">alumno108@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2008-04-28</field>
+            <field name="birthdate">2008-07-17</field>
         </record>
         <record id="partner_alumno_109" model="res.partner">
             <field name="name">Andrea Romero Martínez</field>
             <field name="email">alumno109@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2008-10-03</field>
+            <field name="birthdate">2008-04-04</field>
         </record>
         <record id="partner_alumno_110" model="res.partner">
             <field name="name">Juan Torres Rodríguez</field>
             <field name="email">alumno110@test.com</field>
             <field name="academic_group_id" ref="group_bach1_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2008-03-03</field>
+            <field name="birthdate">2008-11-10</field>
         </record>
 
         <!-- Tutor: 2º Bachillerato A -->
         <record id="user_tutor_12" model="res.users">
             <field name="name">Prof. Carmen Álvarez</field>
             <field name="login">tutor.bach2.a</field>
+            <field name="email">tutor.bach2.a@test.com</field>
             <field name="password">tutor123</field>
             <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_tutor')])]"/>
         </record>
@@ -984,70 +996,70 @@
             <field name="email">alumno111@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2007-04-08</field>
+            <field name="birthdate">2007-08-14</field>
         </record>
         <record id="partner_alumno_112" model="res.partner">
             <field name="name">Luis García Sánchez</field>
             <field name="email">alumno112@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2007-03-11</field>
+            <field name="birthdate">2007-09-05</field>
         </record>
         <record id="partner_alumno_113" model="res.partner">
             <field name="name">Laura López Gómez</field>
             <field name="email">alumno113@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2007-06-03</field>
+            <field name="birthdate">2007-06-16</field>
         </record>
         <record id="partner_alumno_114" model="res.partner">
             <field name="name">Carlos Martínez Pérez</field>
             <field name="email">alumno114@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2007-01-07</field>
+            <field name="birthdate">2007-03-23</field>
         </record>
         <record id="partner_alumno_115" model="res.partner">
             <field name="name">Isabel Rodríguez Ruiz</field>
             <field name="email">alumno115@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2007-08-09</field>
+            <field name="birthdate">2007-10-26</field>
         </record>
         <record id="partner_alumno_116" model="res.partner">
             <field name="name">David Fernández Díaz</field>
             <field name="email">alumno116@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2007-05-04</field>
+            <field name="birthdate">2007-07-11</field>
         </record>
         <record id="partner_alumno_117" model="res.partner">
             <field name="name">Lucía Sánchez Jiménez</field>
             <field name="email">alumno117@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2007-02-17</field>
+            <field name="birthdate">2007-12-22</field>
         </record>
         <record id="partner_alumno_118" model="res.partner">
             <field name="name">Francisco Gómez Moreno</field>
             <field name="email">alumno118@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2007-02-15</field>
+            <field name="birthdate">2007-04-13</field>
         </record>
         <record id="partner_alumno_119" model="res.partner">
             <field name="name">Andrea Pérez Álvarez</field>
             <field name="email">alumno119@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">female</field>
-            <field name="birthdate">2007-10-10</field>
+            <field name="birthdate">2007-11-02</field>
         </record>
         <record id="partner_alumno_120" model="res.partner">
             <field name="name">Juan Ruiz Romero</field>
             <field name="email">alumno120@test.com</field>
             <field name="academic_group_id" ref="group_bach2_a"/>
             <field name="gender">male</field>
-            <field name="birthdate">2007-06-10</field>
+            <field name="birthdate">2007-12-08</field>
         </record>
 
     </data>
