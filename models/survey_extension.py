@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+
+# Importar configuración centralizada
+from .survey_config import SURVEY_SCORING_CONFIGS
 from odoo.exceptions import UserError
 
 class SurveyExtension(models.Model):
@@ -19,11 +22,6 @@ class SurveyExtension(models.Model):
         help='Identificador único del cuestionario (ej: WHO5, BULLYING_VA)'
     )
     
-    # Configuración de puntuaciones en JSON
-    scoring_config = fields.Json(
-        string='Configuración de Puntuaciones',
-        help='Configuración JSON para calcular puntuaciones. Ej: {"max_sequence": 5, "subscales": {"score": {"questions": "all_matrix", "items": 5}}}'
-    )
     evaluation_ids = fields.Many2many(
         'aulametrics.evaluation',
         'evaluation_survey_rel',
@@ -110,30 +108,10 @@ class SurveyExtension(models.Model):
         """
         self.ensure_one()
         
-        # Usar configuración JSON si existe, sino fallback al código hardcodeado
-        if self.scoring_config:
-            config = self.scoring_config
-        else:
-            # Fallback para backward compatibility
-            survey_configs = {
-                'WHO5': {
-                    'max_sequence': 5,
-                    'subscales': {
-                        'who5_score': {'questions': 'all_matrix', 'items': 5}
-                    }
-                },
-                'BULLYING_VA': {
-                    'max_sequence': 4,
-                    'subscales': {
-                        'bullying_score': {'questions': 'all', 'items': 14},
-                        'victimization_score': {'questions': 0, 'items': 7},
-                        'aggression_score': {'questions': 1, 'items': 7}
-                    }
-                }
-            }
-            config = survey_configs.get(self.survey_code)
-            if not config:
-                return {}
+        # Usar configuración centralizada
+        config = SURVEY_SCORING_CONFIGS.get(self.survey_code)
+        if not config:
+            return {}
         
         return self._calculate_normalized_scores(user_input, config)
     
@@ -156,7 +134,22 @@ class SurveyExtension(models.Model):
         
         subscale_scores = []
         
-        for subscale_name, subscale_config in config['subscales'].items():
+        # Ordenar subscales: primero las que se calculan directamente, luego las combinadas
+        subscale_items = list(config['subscales'].items())
+        subscale_items.sort(key=lambda x: 1 if 'combine' in x[1] else 0)
+        
+        for subscale_name, subscale_config in subscale_items:
+            if 'combine' in subscale_config:
+                # Puntuación combinada: promedio de otras subscales
+                combined_scores = []
+                for sub_name in subscale_config['combine']:
+                    if sub_name in scores:
+                        combined_scores.append(scores[sub_name])
+                
+                if combined_scores:
+                    scores[subscale_name] = sum(combined_scores) / len(combined_scores)
+                continue
+            
             if subscale_config['questions'] == 'all_matrix':
                 # Todas las preguntas matrix
                 questions = matrix_questions
@@ -188,6 +181,5 @@ class SurveyExtension(models.Model):
             if item_count == subscale_config['items']:
                 subscale_score = total_score / item_count
                 scores[subscale_name] = subscale_score
-                subscale_scores.append(subscale_score)
         
         return scores

@@ -7,7 +7,6 @@
         <field name="title">Índice de Bienestar de la OMS (WHO-5)</field>
         <field name="is_aulametrics" eval="True"/>
         <field name="survey_code">WHO5</field>
-        <field name="scoring_config" eval="{'max_sequence': 5, 'subscales': {'who5_score': {'questions': 'all_matrix', 'items': 5}}}"/>
         <field name="description">Por favor, responde a cada ítem marcando una sola opción por fila, según cómo te has sentido durante las últimas dos semanas.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">one_page</field>

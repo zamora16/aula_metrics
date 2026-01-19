@@ -7,7 +7,6 @@
         <field name="title">Cuestionario de Conductas de Victimización y Agresión</field>
         <field name="is_aulametrics" eval="True"/>
         <field name="survey_code">BULLYING_VA</field>
-        <field name="scoring_config" eval="{'max_sequence': 4, 'subscales': {'bullying_score': {'questions': 'all', 'items': 14}, 'victimization_score': {'questions': 0, 'items': 7}, 'aggression_score': {'questions': 1, 'items': 7}}}"/>
         <field name="description">A continuación se presentan una serie de situaciones. Indica con qué frecuencia te han ocurrido en los últimos dos meses.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">page_per_section</field>

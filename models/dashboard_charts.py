@@ -5,37 +5,8 @@ Versión Ejecutiva/Orientación - Enero 2026
 """
 from odoo import models, fields, api
 
-# =============================================================================
-# CONFIGURACIÓN DE MÉTRICAS
-# =============================================================================
-SURVEY_METRICS = {
-    'WHO5': {
-        'fields': ['who5_score'],
-        'labels': {'who5_score': 'Bienestar (WHO-5)'},
-        'colors': {'who5_score': '#28a745'},
-        'default_threshold': 50, 'default_op': '<'
-    },
-    'BULLYING_VA': {
-        'fields': ['bullying_score', 'victimization_score', 'aggression_score'],
-        'labels': {
-            'bullying_score': 'Bullying Global',
-            'victimization_score': 'Victimización',
-            'aggression_score': 'Agresión',
-        },
-        'colors': {
-            'bullying_score': '#dc3545',
-            'victimization_score': '#e83e8c', 
-            'aggression_score': '#6f42c1',
-        },
-        'default_threshold': 40, 'default_op': '>'
-    },
-    'ASQ14': {
-        'fields': ['stress_score'],
-        'labels': {'stress_score': 'Estrés (ASQ-14)'},
-        'colors': {'stress_score': '#fd7e14'},
-        'default_threshold': 60, 'default_op': '>'
-    },
-}
+# Importar configuración centralizada
+from .survey_config import SURVEY_METRICS
 
 class DashboardCharts(models.TransientModel):
     _name = 'aulametrics.dashboard.charts'

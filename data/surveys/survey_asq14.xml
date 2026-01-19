@@ -7,7 +7,6 @@
         <field name="title">Cuestionario de Estrés para Adolescentes (ASQ-14)</field>
         <field name="is_aulametrics" eval="True"/>
         <field name="survey_code">ASQ14</field>
-        <field name="scoring_config" eval="{'max_sequence': 4, 'subscales': {'stress_score': {'questions': 'all_matrix', 'items': 14}}}"/>
         <field name="description">A continuación, encontrarás algunas situaciones que te pueden suceder en tu vida. Por favor, rodea con un círculo en qué medida o grado estas situaciones te provocan preocupación, inquietud o estrés durante el último año.
 
 Por favor, responde a todos los enunciados del cuestionario. Si alguno de ellos no te ha ocurrido debes marca 0 = nada estresante (o no es importante para mí).</field>
