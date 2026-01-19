@@ -120,22 +120,22 @@
                 </t>
                 
                 <div class="am-card am-header">
-                    <h1><t t-esc="evaluation.name"/></h1>
+                    <h1><t t-out="evaluation.name"/></h1>
                     <p>Completa las siguientes encuestas</p>
                     
                     <div class="am-info">
                         <div class="am-info-item">
                             <span class="label">Estudiante</span>
-                            <span class="value"><t t-esc="student.name"/></span>
+                            <span class="value"><t t-out="student.name"/></span>
                         </div>
                         <div class="am-info-item">
                             <span class="label">Progreso</span>
-                            <span class="value"><t t-esc="completed_count"/> / <t t-esc="total_count"/> completadas</span>
+                            <span class="value"><t t-out="completed_count"/> / <t t-out="total_count"/> completadas</span>
                         </div>
                         <t t-if="evaluation.date_end">
                             <div class="am-info-item">
                                 <span class="label">Fecha límite</span>
-                                <span class="value"><t t-esc="evaluation.date_end" t-options="{'widget': 'date'}"/></span>
+                                <span class="value"><t t-out="evaluation.date_end" t-options="{'widget': 'date'}"/></span>
                             </div>
                         </t>
                     </div>
@@ -158,7 +158,7 @@
                 <ul class="am-survey-list">
                     <t t-foreach="surveys" t-as="item">
                         <li t-attf-class="am-survey-item #{item['completed'] and 'completed' or ''}">
-                            <span class="am-survey-title"><t t-esc="item['survey'].title"/></span>
+                            <span class="am-survey-title"><t t-out="item['survey'].title"/></span>
                             <t t-if="item['completed']">
                                 <span class="am-badge am-badge-success">✓ Completada</span>
                             </t>
@@ -184,7 +184,7 @@
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                 <meta name="robots" content="noindex,nofollow"/>
-                <title><t t-esc="survey.title"/> - AulaMetrics</title>
+                <title><t t-out="survey.title"/> - AulaMetrics</title>
                 <style>
                     :root {
                         --primary: #2c3e50;
@@ -305,7 +305,7 @@
                 <a t-attf-href="/evaluacion/#{token}" class="sf-back">← Volver a la evaluación</a>
                 
                 <div class="sf-header">
-                    <h1><t t-esc="survey.title"/></h1>
+                    <h1><t t-out="survey.title"/></h1>
                     <t t-if="survey.description">
                         <p><t t-raw="survey.description"/></p>
                     </t>
@@ -315,14 +315,14 @@
                     <t t-foreach="questions" t-as="q">
                         <!-- Título de página/sección -->
                         <t t-if="q['type'] == 'page'">
-                            <h2 class="sf-page-title"><t t-esc="q['title']"/></h2>
+                            <h2 class="sf-page-title"><t t-out="q['title']"/></h2>
                         </t>
 
                         <!-- Pregunta tipo Matrix -->
                         <t t-if="q['type'] == 'question'">
                             <div class="sf-question">
                                 <div class="sf-question-title">
-                                    <t t-esc="q['title']"/>
+                                    <t t-out="q['title']"/>
                                     <t t-if="q['constr_mandatory']"><span class="required">*</span></t>
                                 </div>
 
@@ -331,14 +331,14 @@
                                         <tr>
                                             <th></th>
                                             <t t-foreach="q['suggested_answer_ids']" t-as="col">
-                                                <th><t t-esc="col.value"/></th>
+                                                <th><t t-out="col.value"/></th>
                                             </t>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-foreach="q['matrix_row_ids']" t-as="row">
                                             <tr>
-                                                <td><t t-esc="row.value"/></td>
+                                                <td><t t-out="row.value"/></td>
                                                 <t t-foreach="q['suggested_answer_ids']" t-as="col">
                                                     <td>
                                                         <input type="radio" 
@@ -405,8 +405,8 @@
                         <line x1="12" y1="8" x2="12" y2="12"/>
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    <h3><t t-esc="error_title"/></h3>
-                    <p><t t-esc="error_message"/></p>
+                    <h3><t t-out="error_title"/></h3>
+                    <p><t t-out="error_message"/></p>
                 </div>
             </body>
         </html>

@@ -45,11 +45,11 @@ class SurveyExtension(models.Model):
         help='Duración estimada en minutos (10 seg por ítem del cuestionario, redondeado)'
     )
     
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """Crear cuestionarios - solo permitido durante instalación de datos"""
         # Permitir creación durante carga de datos del módulo
-        return super().create(vals)
+        return super().create(vals_list)
     
     @api.depends('evaluation_ids')
     def _compute_evaluation_count(self):

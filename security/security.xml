@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         <!-- Categoría de Seguridad -->
         <record id="module_category_aulametrics" model="ir.module.category">
             <field name="name">AulaMetrics</field>
