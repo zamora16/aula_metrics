@@ -35,8 +35,16 @@
                   decoration-warning="state == 'pending'"
                   decoration-danger="state == 'expired'"
                   create="false" delete="false">
+                <!-- Campos auxiliares para modifiers -->
+                <field name="has_who5" invisible="1"/>
+                <field name="has_bullying" invisible="1"/>
+                <field name="has_stress" invisible="1"/>
                 <field name="evaluation_id"/>
                 <field name="student_id"/>
+                <field name="academic_group_id"/>
+                <field name="who5_score" string="WHO-5" invisible="not has_who5"/>
+                <field name="bullying_score" string="Bullying" invisible="not has_bullying"/>
+                <field name="stress_score" string="Estrés" invisible="not has_stress"/>
                 <field name="state" widget="badge" 
                        decoration-success="state == 'completed'"
                        decoration-warning="state == 'pending'"

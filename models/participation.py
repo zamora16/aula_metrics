@@ -101,7 +101,24 @@ class Participation(models.Model):
         group_operator='avg',
         help='Puntuación normalizada 0-100 del cuestionario de estrés para adolescentes'
     )
-    
+
+    # Indicadores de surveys incluidos en la evaluación
+    has_who5 = fields.Boolean(
+        related='evaluation_id.has_who5',
+        string='Incluye WHO-5',
+        store=True
+    )
+    has_bullying = fields.Boolean(
+        related='evaluation_id.has_bullying',
+        string='Incluye Bullying',
+        store=True
+    )
+    has_stress = fields.Boolean(
+        related='evaluation_id.has_stress',
+        string='Incluye Estrés',
+        store=True
+    )
+
     # Constraint: un alumno solo puede tener una participación por evaluación
     _sql_constraints = [
         ('unique_student_evaluation',

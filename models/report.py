@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
+# Importar configuración centralizada
+from .survey_config import SURVEY_METRICS
+
 
 class Report(models.Model):
     """
@@ -53,11 +56,22 @@ class Report(models.Model):
         digits=(5, 1)
     )
 
-    _sql_constraints = [
-        ('unique_evaluation',
-         'UNIQUE(evaluation_id)',
-         'Solo puede existir un reporte por evaluación.')
-    ]
+    # Indicadores de surveys incluidos
+    has_who5 = fields.Boolean(
+        related='evaluation_id.has_who5',
+        string='Incluye WHO-5',
+        store=True
+    )
+    has_bullying = fields.Boolean(
+        related='evaluation_id.has_bullying',
+        string='Incluye Bullying',
+        store=True
+    )
+    has_stress = fields.Boolean(
+        related='evaluation_id.has_stress',
+        string='Incluye Estrés',
+        store=True
+    )
 
     @api.depends('evaluation_id.participation_ids.state',
                  'evaluation_id.participation_ids.who5_score',
@@ -88,12 +102,48 @@ class Report(models.Model):
     def action_view_participations(self):
         """Abre las participaciones completadas de esta evaluación con vista de puntuaciones."""
         self.ensure_one()
+
+        # Determinar qué campos de puntuación mostrar basándose en los surveys incluidos
+        survey_codes = self.evaluation_id.survey_ids.mapped('survey_code')
+
+        # Crear vista tree dinámica con solo los campos relevantes
+        view_arch = """<tree string="Puntuaciones"
+                      decoration-success="state == 'completed'"
+                      decoration-warning="state == 'pending'"
+                      decoration-danger="state == 'expired'"
+                      create="false" delete="false">
+                <field name="student_id"/>
+                <field name="academic_group_id"/>"""
+
+        # Añadir campos dinámicamente basados en SURVEY_METRICS
+        for survey_code, survey_config in SURVEY_METRICS.items():
+            if survey_code in survey_codes:
+                for field_name in survey_config['fields']:
+                    label = survey_config['labels'].get(field_name, field_name)
+                    view_arch += f'<field name="{field_name}" string="{label}"/>'
+
+        view_arch += """<field name="state" widget="badge"
+                       decoration-success="state == 'completed'"
+                       decoration-warning="state == 'pending'"
+                       decoration-danger="state == 'expired'"/>
+                <field name="completed_at"/>
+            </tree>"""
+
+        # Crear vista temporal
+        view = self.env['ir.ui.view'].create({
+            'name': f'participation_scores_{self.evaluation_id.id}',
+            'model': 'aulametrics.participation',
+            'type': 'tree',
+            'arch': view_arch,
+            'active': False,  # Vista temporal
+        })
+
         return {
             'name': f'Puntuaciones: {self.name}',
             'type': 'ir.actions.act_window',
             'res_model': 'aulametrics.participation',
             'view_mode': 'tree',
-            'views': [(self.env.ref('aula_metrics.view_participation_scores_tree').id, 'tree')],
+            'views': [(view.id, 'tree')],
             'domain': [
                 ('evaluation_id', '=', self.evaluation_id.id),
                 ('state', '=', 'completed')
