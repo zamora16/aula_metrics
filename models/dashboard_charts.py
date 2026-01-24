@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Dashboard Charts - Generación de gráficos interactivos con Plotly
-Versión Ejecutiva/Orientación - Enero 2026
 """
 from odoo import models, fields, api
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Importar configuración centralizada
 from .survey_config import SURVEY_METRICS
@@ -13,15 +15,6 @@ class DashboardCharts(models.TransientModel):
     _description = 'Generador de Dashboard Ejecutivo'
 
     evaluation_id = fields.Many2one('aulametrics.evaluation', string='Evaluación')
-
-    @staticmethod
-    def _import_plotly():
-        try:
-            import plotly.graph_objects as go
-            from plotly.subplots import make_subplots
-            return go, make_subplots
-        except ImportError:
-            return None, None
 
     def _get_metrics(self, evaluation):
         """Obtiene configuración de métricas y sus umbrales activos."""
@@ -60,10 +53,6 @@ class DashboardCharts(models.TransientModel):
 
     @api.model
     def generate_dashboard(self, evaluation_id):
-        go, make_subplots = self._import_plotly()
-        if not go:
-            return self._error_html("Plotly no instalado.")
-
         evaluation = self.env['aulametrics.evaluation'].browse(evaluation_id)
         if not evaluation.exists():
             return self._error_html("Evaluación no encontrada")
@@ -76,9 +65,9 @@ class DashboardCharts(models.TransientModel):
         # Secuencia modularizada
         data = self._prepare_data_section(participations, metrics)
         kpi_html = self._generate_kpis_section(data, metrics, evaluation)
-        fig_heatmap = self._generate_heatmap_section(go, data, metrics)
-        fig_gender = self._generate_gender_section(go, data, metrics)
-        fig_ranking = self._generate_ranking_section(go, data, metrics)
+        fig_heatmap = self._generate_heatmap_section(data, metrics)
+        fig_gender = self._generate_gender_section(data, metrics)
+        fig_ranking = self._generate_ranking_section(data, metrics)
 
         return self._build_final_html(evaluation, kpi_html, fig_heatmap, fig_gender, fig_ranking)
 
@@ -90,17 +79,17 @@ class DashboardCharts(models.TransientModel):
         """Generación de KPIs en HTML."""
         return self._generate_kpis_html(data, metrics, evaluation)
 
-    def _generate_heatmap_section(self, go, data, metrics):
+    def _generate_heatmap_section(self, data, metrics):
         """Creación de figura Heatmap Plotly."""
-        return self._chart_heatmap(go, data, metrics)
+        return self._chart_heatmap(data, metrics)
 
-    def _generate_gender_section(self, go, data, metrics):
+    def _generate_gender_section(self, data, metrics):
         """Creación de figura de distribución por género."""
-        return self._chart_gender_box(go, data, metrics)
+        return self._chart_gender_box(data, metrics)
 
-    def _generate_ranking_section(self, go, data, metrics):
+    def _generate_ranking_section(self, data, metrics):
         """Creación de figura de ranking de grupos."""
-        return self._chart_groups_ranking(go, data, metrics)
+        return self._chart_groups_ranking(data, metrics)
 
     def _prepare_dataframe(self, participations, metrics):
         data = []
@@ -116,7 +105,7 @@ class DashboardCharts(models.TransientModel):
             for f in metrics['fields']:
                 item[f] = getattr(p, f) or 0
             data.append(item)
-        return data
+        return pd.DataFrame(data)
 
     def _generate_kpis_html(self, data, metrics, evaluation):
         part_rate = evaluation.participation_rate
@@ -137,10 +126,10 @@ class DashboardCharts(models.TransientModel):
         """
 
         # Desglose por grupos si hay más de 1
-        groups = list(set(d['group'] for d in data))
+        groups = data['group'].unique().tolist()
         if len(groups) > 1:
             for group in sorted(groups):
-                group_participations = [d for d in data if d['group'] == group]
+                group_participations = data[data['group'] == group]
                 completed = len(group_participations)
                 # Obtener total de estudiantes en el grupo
                 group_obj = self.env['aulametrics.academic_group'].search([('name', '=', group)], limit=1)
@@ -161,10 +150,10 @@ class DashboardCharts(models.TransientModel):
 
         return html
 
-    def _chart_heatmap(self, go, data, metrics):
-        courses = sorted(list(set(d['course'] for d in data)))
+    def _chart_heatmap(self, data, metrics):
+        courses = data['course'].unique().tolist()
+        courses.sort()
         fields_list = metrics['fields']
-        z_values, text_values = [], []
         
         course_map = {
             'eso1': '1º ESO', 'eso2': '2º ESO', 'eso3': '3º ESO', 'eso4': '4º ESO',
@@ -173,16 +162,18 @@ class DashboardCharts(models.TransientModel):
         y_labels = [course_map.get(c, c) for c in courses]
         x_labels = [metrics['labels'][f] for f in fields_list]
 
+        # Usar groupby para calcular promedios
+        grouped = data.groupby('course')[fields_list].mean()
+        z_values = grouped.loc[courses].values.tolist()
+        
+        text_values = []
         for course in courses:
-            c_data = [d for d in data if d['course'] == course]
-            row_z, row_text = [], []
+            row_text = []
             for f in fields_list:
-                val = sum(d[f] for d in c_data) / len(c_data) if c_data else 0
-                row_z.append(val)
+                val = grouped.loc[course, f]
                 thresh = metrics['thresholds'].get(f)
                 risk_marker = " ⚠️" if thresh and self._check_risk(val, thresh) else ""
                 row_text.append(f"{val:.1f}{risk_marker}")
-            z_values.append(row_z)
             text_values.append(row_text)
 
         fig = go.Figure(data=go.Heatmap(
@@ -199,14 +190,15 @@ class DashboardCharts(models.TransientModel):
         )
         return fig
 
-    def _chart_gender_box(self, go, data, metrics):
+    def _chart_gender_box(self, data, metrics):
         fig = go.Figure()
         gender_map = {'male': 'Chicos', 'female': 'Chicas', 'other': 'Otro'}
-        sorted_genders = sorted(list(set(d['gender'] for d in data)))
+        sorted_genders = data['gender'].unique().tolist()
+        sorted_genders.sort()
         
         for f in metrics['fields']:
             for g in sorted_genders:
-                g_vals = [d[f] for d in data if d['gender'] == g]
+                g_vals = data[data['gender'] == g][f].tolist()
                 fig.add_trace(go.Box(
                     y=g_vals,
                     name=metrics['labels'][f],
@@ -221,17 +213,15 @@ class DashboardCharts(models.TransientModel):
         )
         return fig
 
-    def _chart_groups_ranking(self, go, data, metrics):
+    def _chart_groups_ranking(self, data, metrics):
         """Ranking de grupos (Barras horizontales)."""
-        groups = sorted(list(set(d['group'] for d in data)))
+        groups = data['group'].unique().tolist()
+        groups.sort()
         fig = go.Figure()
         
         for f in metrics['fields']:
-            vals = []
-            for g in groups:
-                 g_data = [d for d in data if d['group'] == g]
-                 avg = sum(d[f] for d in g_data) / len(g_data) if g_data else 0
-                 vals.append(avg)
+            grouped = data.groupby('group')[f].mean()
+            vals = grouped.loc[groups].tolist()
             
             fig.add_trace(go.Bar(
                 name=metrics['labels'][f], 
