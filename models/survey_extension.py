@@ -3,6 +3,7 @@ from odoo import models, fields, api
 
 # Importar configuración centralizada
 from .survey_config import SURVEY_SCORING_CONFIGS
+from .survey_scoring_strategies import SCORING_STRATEGIES
 from odoo.exceptions import UserError
 
 class SurveyExtension(models.Model):
@@ -94,92 +95,16 @@ class SurveyExtension(models.Model):
     # MÉTODOS DE CÁLCULO DE PUNTUACIONES
     # ============================================================
     
+
     def calculate_scores(self, user_input):
         """
-        Calcula las puntuaciones de este cuestionario para una respuesta dada.
-        
-        Retorna un diccionario con los campos de puntuación a actualizar.
-        
-        Args:
-            user_input: Registro de survey.user_input con las respuestas del alumno
-            
-        Returns:
-            dict: Diccionario con campos de puntuación {campo: valor}
+        Calcula las puntuaciones de este cuestionario para una respuesta dada usando la estrategia adecuada.
         """
         self.ensure_one()
-        
-        # Usar configuración centralizada
         config = SURVEY_SCORING_CONFIGS.get(self.survey_code)
         if not config:
             return {}
-        
-        return self._calculate_normalized_scores(user_input, config)
-    
-    def _calculate_normalized_scores(self, user_input, config):
-        """
-        Calcula puntuaciones normalizadas (0-100) basadas en configuración.
-        
-        Args:
-            user_input: survey.user_input
-            config: dict con max_sequence y subscales
-            
-        Returns:
-            dict: {'field_name': float, ...}
-        """
-        scores = {}
-        
-        matrix_questions = self.question_ids.filtered(
-            lambda q: q.question_type == 'matrix'
-        ).sorted(key=lambda q: q.sequence)
-        
-        subscale_scores = []
-        
-        # Ordenar subscales: primero las que se calculan directamente, luego las combinadas
-        subscale_items = list(config['subscales'].items())
-        subscale_items.sort(key=lambda x: 1 if 'combine' in x[1] else 0)
-        
-        for subscale_name, subscale_config in subscale_items:
-            if 'combine' in subscale_config:
-                # Puntuación combinada: promedio de otras subscales
-                combined_scores = []
-                for sub_name in subscale_config['combine']:
-                    if sub_name in scores:
-                        combined_scores.append(scores[sub_name])
-                
-                if combined_scores:
-                    scores[subscale_name] = sum(combined_scores) / len(combined_scores)
-                continue
-            
-            if subscale_config['questions'] == 'all_matrix':
-                # Todas las preguntas matrix
-                questions = matrix_questions
-            elif subscale_config['questions'] == 'all':
-                # Todas las preguntas matrix (alias)
-                questions = matrix_questions
-            else:
-                # Índice específico
-                questions = matrix_questions[subscale_config['questions']] if subscale_config['questions'] < len(matrix_questions) else None
-                if not questions:
-                    continue
-                questions = [questions]
-            
-            total_score = 0
-            item_count = 0
-            
-            for question in questions:
-                lines = user_input.user_input_line_ids.filtered(
-                    lambda l: l.question_id.id == question.id
-                )
-                for line in lines:
-                    if line.suggested_answer_id:
-                        # Normalizar: sequence 0-max -> 0-100
-                        value = (line.suggested_answer_id.sequence / config['max_sequence']) * 100
-                        total_score += value
-                        item_count += 1
-            
-            # Solo calcular si se completaron todos los ítems esperados
-            if item_count == subscale_config['items']:
-                subscale_score = total_score / item_count
-                scores[subscale_name] = subscale_score
-        
-        return scores
+        scoring_class = SCORING_STRATEGIES.get(self.survey_code)
+        if not scoring_class:
+            return {}
+        return scoring_class(self, config).calculate(user_input)
