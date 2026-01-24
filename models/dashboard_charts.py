@@ -57,36 +57,50 @@ class DashboardCharts(models.TransientModel):
         if threshold_cfg['op'] == '>': return value > threshold_cfg['val']
         else: return value < threshold_cfg['val']
 
+
     @api.model
     def generate_dashboard(self, evaluation_id):
         go, make_subplots = self._import_plotly()
-        if not go: return self._error_html("Plotly no instalado.")
+        if not go:
+            return self._error_html("Plotly no instalado.")
 
         evaluation = self.env['aulametrics.evaluation'].browse(evaluation_id)
-        if not evaluation.exists(): return self._error_html("Evaluación no encontrada")
+        if not evaluation.exists():
+            return self._error_html("Evaluación no encontrada")
 
         metrics = self._get_metrics(evaluation)
         participations = evaluation.participation_ids.filtered(lambda p: p.state == 'completed')
-        
-        if not participations: return self._error_html("Esperando datos... No hay participaciones completas aún.")
+        if not participations:
+            return self._error_html("Esperando datos... No hay participaciones completas aún.")
 
-        # --- PRECESAMIENTO DE DATOS ---
-        df = self._prepare_dataframe(participations, metrics)
-
-        # --- GENERACIÓN DE VISTAS (Orden Coherente) ---
-        # 1. Visión Global (Centro)
-        kpi_html = self._generate_kpis_html(df, metrics, evaluation)
-        
-        # 2. Visión Estratégica (Centro -> Niveles)
-        fig_heatmap = self._chart_heatmap(go, df, metrics)
-        
-        # 3. Análisis Demográfico (Distribución por Género)
-        fig_gender = self._chart_gender_box(go, df, metrics)
-        
-        # 4. Análisis Detallado (Grupos)
-        fig_ranking = self._chart_groups_ranking(go, df, metrics)
+        # Secuencia modularizada
+        data = self._prepare_data_section(participations, metrics)
+        kpi_html = self._generate_kpis_section(data, metrics, evaluation)
+        fig_heatmap = self._generate_heatmap_section(go, data, metrics)
+        fig_gender = self._generate_gender_section(go, data, metrics)
+        fig_ranking = self._generate_ranking_section(go, data, metrics)
 
         return self._build_final_html(evaluation, kpi_html, fig_heatmap, fig_gender, fig_ranking)
+
+    def _prepare_data_section(self, participations, metrics):
+        """Preprocesamiento de datos para el dashboard."""
+        return self._prepare_dataframe(participations, metrics)
+
+    def _generate_kpis_section(self, data, metrics, evaluation):
+        """Generación de KPIs en HTML."""
+        return self._generate_kpis_html(data, metrics, evaluation)
+
+    def _generate_heatmap_section(self, go, data, metrics):
+        """Creación de figura Heatmap Plotly."""
+        return self._chart_heatmap(go, data, metrics)
+
+    def _generate_gender_section(self, go, data, metrics):
+        """Creación de figura de distribución por género."""
+        return self._chart_gender_box(go, data, metrics)
+
+    def _generate_ranking_section(self, go, data, metrics):
+        """Creación de figura de ranking de grupos."""
+        return self._chart_groups_ranking(go, data, metrics)
 
     def _prepare_dataframe(self, participations, metrics):
         data = []
