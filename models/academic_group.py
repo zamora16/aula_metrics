@@ -5,7 +5,6 @@ import datetime
 class AcademicGroup(models.Model):
     _name = 'aulametrics.academic_group'
     _description = 'Grupo Académico'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'name'
 
     name = fields.Char(

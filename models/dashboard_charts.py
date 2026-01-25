@@ -64,32 +64,16 @@ class DashboardCharts(models.TransientModel):
 
         # Secuencia modularizada
         data = self._prepare_data_section(participations, metrics)
-        kpi_html = self._generate_kpis_section(data, metrics, evaluation)
-        fig_heatmap = self._generate_heatmap_section(data, metrics)
-        fig_gender = self._generate_gender_section(data, metrics)
-        fig_ranking = self._generate_ranking_section(data, metrics)
+        kpi_html = self._generate_kpis_html(data, metrics, evaluation)
+        fig_heatmap = self._chart_heatmap(data, metrics)
+        fig_gender = self._chart_gender_box(data, metrics)
+        fig_ranking = self._chart_groups_ranking(data, metrics)
 
         return self._build_final_html(evaluation, kpi_html, fig_heatmap, fig_gender, fig_ranking)
 
     def _prepare_data_section(self, participations, metrics):
         """Preprocesamiento de datos para el dashboard."""
         return self._prepare_dataframe(participations, metrics)
-
-    def _generate_kpis_section(self, data, metrics, evaluation):
-        """Generación de KPIs en HTML."""
-        return self._generate_kpis_html(data, metrics, evaluation)
-
-    def _generate_heatmap_section(self, data, metrics):
-        """Creación de figura Heatmap Plotly."""
-        return self._chart_heatmap(data, metrics)
-
-    def _generate_gender_section(self, data, metrics):
-        """Creación de figura de distribución por género."""
-        return self._chart_gender_box(data, metrics)
-
-    def _generate_ranking_section(self, data, metrics):
-        """Creación de figura de ranking de grupos."""
-        return self._chart_groups_ranking(data, metrics)
 
     def _prepare_dataframe(self, participations, metrics):
         data = []
