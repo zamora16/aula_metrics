@@ -9,6 +9,26 @@ from odoo.http import request
 class AulaMetricsSurveyPortal(http.Controller):
     """Portal público de encuestas sin autenticación."""
 
+    @http.route('/survey/preview/<int:survey_id>', type='http', auth='user', website=True)
+    def survey_preview(self, survey_id, **kw):
+        """Vista previa de survey usando template personalizado."""
+        survey = request.env['survey.survey'].sudo().browse(survey_id)
+        if not survey.exists() or not survey.is_aulametrics:
+            return request.render('aula_metrics.portal_error', {
+                'error_title': 'Encuesta no encontrada',
+                'error_message': 'La encuesta no existe o no es de AulaMetrics.'
+            })
+        
+        # Simular participación dummy para preview
+        questions = self._prepare_questions_data(survey, user_input=None)
+        
+        return request.render('aula_metrics.portal_survey_form', {
+            'survey': survey,
+            'questions': questions,
+            'preview': True,  # Flag para modo preview (sin submit)
+            'token': 'preview',  # Token dummy
+        })
+
     @http.route('/evaluacion/<string:token>', type='http', auth='public', csrf=False)
     def portal_evaluacion(self, token, **kw):
         """Portal principal con lista de encuestas de la evaluación."""
@@ -179,11 +199,13 @@ class AulaMetricsSurveyPortal(http.Controller):
         """Prepara datos de preguntas para el template."""
         questions = []
         
-        # Obtener respuestas existentes
-        existing_lines = {
-            line.question_id.id: line 
-            for line in user_input.user_input_line_ids
-        }
+        # Obtener respuestas existentes (si hay user_input)
+        existing_lines = {}
+        if user_input:
+            existing_lines = {
+                line.question_id.id: line 
+                for line in user_input.user_input_line_ids
+            }
         
         for question in survey.question_ids:
             if question.is_page:

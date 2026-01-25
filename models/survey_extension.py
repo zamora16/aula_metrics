@@ -91,6 +91,18 @@ class SurveyExtension(models.Model):
             'context': {'default_survey_ids': [(6, 0, [self.id])]},
         }
     
+    def action_test_survey(self):
+        """Override para vista previa: usa portal personalizado si es AulaMetrics."""
+        self.ensure_one()
+        if self.is_aulametrics:
+            return {
+                'type': 'ir.actions.act_url',
+                'url': f'/survey/preview/{self.id}',
+                'target': 'new',
+            }
+        else:
+            return super().action_test_survey()
+
     # ============================================================
     # MÉTODOS DE CÁLCULO DE PUNTUACIONES
     # ============================================================

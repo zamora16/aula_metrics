@@ -302,7 +302,12 @@
             </head>
             <body>
                 <div class="sf-container">
-                <a t-attf-href="/evaluacion/#{token}" class="sf-back">← Volver a la evaluación</a>
+                <t t-if="not preview">
+                    <a t-attf-href="/evaluacion/#{token}" class="sf-back">← Volver a la evaluación</a>
+                </t>
+                <t t-if="preview">
+                    <a href="#" onclick="window.close()" class="sf-back">← Cerrar vista previa</a>
+                </t>
                 
                 <div class="sf-header">
                     <h1><t t-out="survey.title"/></h1>
@@ -355,10 +360,17 @@
                         </t>
                     </t>
 
-                    <div class="sf-actions">
-                        <a t-attf-href="/evaluacion/#{token}" class="sf-back" style="margin: 0;">Cancelar</a>
-                        <button type="submit" class="sf-btn sf-btn-submit">Enviar respuestas</button>
-                    </div>
+                    <t t-if="not preview">
+                        <div class="sf-actions">
+                            <a t-attf-href="/evaluacion/#{token}" class="sf-back" style="margin: 0;">Cancelar</a>
+                            <button type="submit" class="sf-btn sf-btn-submit">Enviar respuestas</button>
+                        </div>
+                    </t>
+                    <t t-if="preview">
+                        <div class="sf-preview-notice">
+                            <p><em>Modo vista previa - No se pueden enviar respuestas</em></p>
+                        </div>
+                    </t>
                 </form>
             </div>
         </body>
