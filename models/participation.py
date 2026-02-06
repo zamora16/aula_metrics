@@ -64,59 +64,12 @@ class Participation(models.Model):
         help='Fecha y hora en que el alumno finalizó el cuestionario'
     )
     
-    # Puntuaciones calculadas - WHO-5 (Bienestar)
-    who5_score = fields.Float(
-        string='WHO-5 Puntuación',
-        readonly=True,
-        group_operator='avg',
-        help='Puntuación normalizada 0-100. <50 sugiere baja calidad de vida'
-    )
-    
-    # Puntuaciones calculadas - Victimización y Agresión
-    bullying_score = fields.Float(
-        string='Puntuación Bullying Global',
-        readonly=True,
-        group_operator='avg',
-        help='Puntuación global normalizada 0-100 del cuestionario de bullying'
-    )
-    
-    victimization_score = fields.Float(
-        string='Puntuación Victimización',
-        readonly=True,
-        group_operator='avg',
-        help='Puntuación normalizada 0-100. Mayor puntuación = mayor victimización'
-    )
-    
-    aggression_score = fields.Float(
-        string='Puntuación Agresión',
-        readonly=True,
-        group_operator='avg',
-        help='Puntuación normalizada 0-100. Mayor puntuación = mayor agresión'
-    )
-    
-    # Puntuaciones calculadas - Estrés (ASQ-14)
-    stress_score = fields.Float(
-        string='Puntuación Estrés (ASQ-14)',
-        readonly=True,
-        group_operator='avg',
-        help='Puntuación normalizada 0-100 del cuestionario de estrés para adolescentes'
-    )
-
-    # Indicadores de surveys incluidos en la evaluación
-    has_who5 = fields.Boolean(
-        related='evaluation_id.has_who5',
-        string='Incluye WHO-5',
-        store=True
-    )
-    has_bullying = fields.Boolean(
-        related='evaluation_id.has_bullying',
-        string='Incluye Bullying',
-        store=True
-    )
-    has_stress = fields.Boolean(
-        related='evaluation_id.has_stress',
-        string='Incluye Estrés',
-        store=True
+    # Relación a valores de métricas (nuevo sistema flexible)
+    metric_value_ids = fields.One2many(
+        'aulametrics.metric_value',
+        compute='_compute_metric_value_ids',
+        string='Valores de Métricas',
+        help='Valores de todas las métricas calculadas para este estudiante en esta evaluación'
     )
 
     # Constraint: un alumno solo puede tener una participación por evaluación
@@ -134,6 +87,43 @@ class Participation(models.Model):
                 vals['evaluation_token'] = str(uuid.uuid4())
         return super().create(vals_list)
     
+    @api.depends('student_id', 'evaluation_id')
+    def _compute_metric_value_ids(self):
+        """Obtiene las métricas de este estudiante en esta evaluación"""
+        for participation in self:
+            if participation.student_id and participation.evaluation_id:
+                participation.metric_value_ids = self.env['aulametrics.metric_value'].search([
+                    ('student_id', '=', participation.student_id.id),
+                    ('evaluation_id', '=', participation.evaluation_id.id)
+                ])
+            else:
+                participation.metric_value_ids = False
+    
+    def get_metric_value(self, metric_name):
+        """
+        Obtiene el valor de una métrica específica para esta participación.
+        Retorna el valor float o None si no existe.
+        """
+        self.ensure_one()
+        metric = self.env['aulametrics.metric_value'].search([
+            ('student_id', '=', self.student_id.id),
+            ('evaluation_id', '=', self.evaluation_id.id),
+            ('metric_name', '=', metric_name)
+        ], limit=1)
+        return metric.value_float if metric else None
+    
+    def get_all_metrics(self):
+        """
+        Retorna dict con todas las métricas de esta participación.
+        Formato: {metric_name: value_float}
+        """
+        self.ensure_one()
+        metrics = self.env['aulametrics.metric_value'].search([
+            ('student_id', '=', self.student_id.id),
+            ('evaluation_id', '=', self.evaluation_id.id)
+        ])
+        return {m.metric_name: m.value_float for m in metrics if m.value_float}
+    
     def action_complete(self):
         """Marca la participación como completada y calcula puntuaciones"""
         self.ensure_one()
@@ -149,15 +139,15 @@ class Participation(models.Model):
     def _calculate_scores(self):
         """
         Calcula las puntuaciones de todos los cuestionarios de la evaluación.
-        Solo considera las respuestas completadas durante esta evaluación.
+        Almacena los valores en el modelo metric_value para comparaciones temporales.
         """
         self.ensure_one()
         
         surveys = self.evaluation_id.survey_ids
+        MetricValue = self.env['aulametrics.metric_value']
         
         for survey in surveys:
             # Buscar la respuesta del alumno a este survey DURANTE esta evaluación
-            # Filtrar por fecha para evitar mezclar con evaluaciones anteriores
             user_input = self.env['survey.user_input'].search([
                 ('partner_id', '=', self.student_id.id),
                 ('survey_id', '=', survey.id),
@@ -168,12 +158,25 @@ class Participation(models.Model):
             if not user_input:
                 continue
             
-            # Delegar el cálculo al propio survey
-            scores = survey.calculate_scores(user_input)
+            # Delegar el cálculo al propio survey (ahora retorna lista de métricas)
+            metrics = survey.calculate_scores(user_input)
             
-            # Actualizar las puntuaciones calculadas
-            if scores:
-                self.write(scores)
+            # Crear registros de metric_value para cada métrica
+            if metrics:
+                for metric in metrics:
+                    MetricValue.create({
+                        'survey_id': survey.id,
+                        'student_id': self.student_id.id,
+                        'evaluation_id': self.evaluation_id.id,
+                        'user_input_id': user_input.id,
+                        'question_id': metric.get('question_id'),  # Puede ser None para métricas agregadas
+                        'metric_name': metric.get('metric_name'),
+                        'metric_label': metric.get('metric_label'),
+                        'value_float': metric.get('value_float'),
+                        'value_text': metric.get('value_text'),
+                        'value_json': metric.get('value_json'),
+                        'timestamp': fields.Datetime.now(),
+                    })
     
     def check_alerts(self):
         """Verifica si las puntuaciones actuales generan alertas"""

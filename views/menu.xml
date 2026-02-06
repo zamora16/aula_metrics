@@ -17,8 +17,21 @@
     <menuitem id="menu_aulametrics_surveys" 
               name="Cuestionarios" 
               parent="menu_aulametrics_root"
-              action="survey.action_survey_form"
               sequence="20"/>
+              
+    <menuitem id="menu_aulametrics_surveys_official" 
+              name="Cuestionarios Oficiales" 
+              parent="menu_aulametrics_surveys"
+              action="action_survey_official"
+              sequence="10"/>
+              
+    <menuitem id="menu_aulametrics_surveys_adhoc" 
+              name="Cuestionarios del Centro" 
+              parent="menu_aulametrics_surveys"
+              action="action_survey_adhoc"
+              groups="group_aulametrics_counselor,group_aulametrics_admin"
+              sequence="20"/>
+    
     <!-- Evaluaciones -->
     <menuitem id="menu_aulametrics_evaluations" 
               name="Evaluaciones" 

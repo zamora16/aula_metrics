@@ -60,8 +60,8 @@ class Alert(models.Model):
         ])
         
         for threshold in thresholds:
-            # Obtener el valor de la puntuación usando el nombre del campo definido en el umbral
-            score_value = getattr(participation, threshold.score_field, 0)
+            # Obtener el valor de la métrica desde metric_value
+            score_value = participation.get_metric_value(threshold.score_field)
             if not score_value:
                 continue
             

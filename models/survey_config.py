@@ -52,21 +52,40 @@ SURVEY_SCORING_CONFIGS = {
     'WHO5': {
         'max_sequence': 5,
         'subscales': {
-            'who5_score': {'questions': 'all_matrix', 'items': 5}
+            'who5_score': {
+                'questions': 'all_matrix',
+                'items': 5,
+                'label': 'Bienestar (WHO-5)'
+            }
         }
     },
     'BULLYING_VA': {
         'max_sequence': 4,
         'subscales': {
-            'victimization_score': {'questions': 0, 'items': 7},
-            'aggression_score': {'questions': 1, 'items': 7},
-            'bullying_score': {'combine': ['victimization_score', 'aggression_score']}
+            'victimization_score': {
+                'questions': 0,
+                'items': 7,
+                'label': 'Bullying - Victimización'
+            },
+            'aggression_score': {
+                'questions': 1,
+                'items': 7,
+                'label': 'Agresión'
+            },
+            'bullying_score': {
+                'combine': ['victimization_score', 'aggression_score'],
+                'label': 'Bullying - Global'
+            }
         }
     },
     'ASQ14': {
         'max_sequence': 4,
         'subscales': {
-            'stress_score': {'questions': 'all_matrix', 'items': 14}
+            'stress_score': {
+                'questions': 'all_matrix',
+                'items': 14,
+                'label': 'Estrés (ASQ-14)'
+            }
         }
     }
 }

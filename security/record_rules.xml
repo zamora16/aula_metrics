@@ -76,5 +76,41 @@
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
         </record>
+
+        <!-- Encuestas: Orientadores y Admins tienen acceso completo -->
+        <record id="survey_counselor_admin_rule" model="ir.rule">
+            <field name="name">Encuestas: Orientadores/Admins acceso completo</field>
+            <field name="model_id" ref="survey.model_survey_survey"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Preguntas de encuestas: Orientadores y Admins tienen acceso completo -->
+        <record id="survey_question_counselor_admin_rule" model="ir.rule">
+            <field name="name">Preguntas: Orientadores/Admins acceso completo</field>
+            <field name="model_id" ref="survey.model_survey_question"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- Respuestas de preguntas: Orientadores y Admins tienen acceso completo -->
+        <record id="survey_question_answer_counselor_admin_rule" model="ir.rule">
+            <field name="name">Opciones de respuesta: Orientadores/Admins acceso completo</field>
+            <field name="model_id" ref="survey.model_survey_question_answer"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
     </data>
 </odoo>

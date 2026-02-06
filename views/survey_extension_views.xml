@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- ========================================== -->
+    <!-- VISTAS COMUNES PARA TODOS LOS SURVEYS -->
+    <!-- ========================================== -->
+    
     <!-- Heredar vista de formulario de survey.survey -->
     <record id="view_survey_form_inherit_aulametrics" model="ir.ui.view">
         <field name="name">survey.survey.form.inherit.aulametrics</field>
@@ -18,7 +22,8 @@
             <!-- Añadir campos de AulaMetrics en el formulario de survey -->
             <xpath expr="//field[@name='title']" position="after">
                 <field name="is_aulametrics" invisible="1"/>
-                <field name="survey_code" invisible="not is_aulametrics"/>
+                <field name="is_adhoc" invisible="1"/>
+                <field name="survey_code" invisible="not is_aulametrics or is_adhoc"/>
             </xpath>
             
             <!-- Añadir smart button para ver evaluaciones que usan este cuestionario -->
@@ -34,27 +39,167 @@
         </field>
     </record>
 
-    <!-- Modificar acción para mostrar solo vista tree y form -->
-    <record id="survey.action_survey_form" model="ir.actions.act_window">
-        <field name="view_mode">tree,form</field>
-        <field name="context">{'create': False}</field>
+    <!-- ========================================== -->
+    <!-- VISTAS ESPECÍFICAS: CUESTIONARIOS DEL CENTRO (AD HOC) -->
+    <!-- ========================================== -->
+    
+    <!-- Vista tree para cuestionarios del centro -->
+    <record id="view_survey_adhoc_tree" model="ir.ui.view">
+        <field name="name">survey.adhoc.tree</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <tree string="Cuestionarios del Centro">
+                <field name="title" string="Título"/>
+                <field name="average_duration" string="Duración (min)"/>
+                <field name="evaluation_count" string="Evaluaciones"/>
+                <field name="create_date" string="Creado"/>
+                <button name="action_test_survey" type="object" string="Vista Previa" icon="fa-eye"/>
+            </tree>
+        </field>
     </record>
 
-    <!-- Heredar vista tree de survey.survey para mostrar solo campos relevantes -->
-    <record id="view_survey_tree_inherit_aulametrics" model="ir.ui.view">
-        <field name="name">survey.survey.tree.inherit.aulametrics</field>
+    <!-- Vista form simplificada para crear cuestionarios del centro -->
+    <record id="view_survey_adhoc_form" model="ir.ui.view">
+        <field name="name">survey.adhoc.form</field>
         <field name="model">survey.survey</field>
-        <field name="inherit_id" ref="survey.survey_survey_view_tree"/>
         <field name="arch" type="xml">
-            <!-- Reemplazar el tree completo con campos simplificados -->
-            <xpath expr="//tree" position="replace">
-                <tree string="Cuestionarios" create="false" edit="false" delete="false">
-                    <field name="title" string="Título del Cuestionario"/>
-                    <field name="average_duration" string="Duración Media (min)" widget="integer"/>
-                    <field name="evaluation_count" string="Nº Evaluaciones"/>
-                    <button name="action_test_survey" type="object" string="Vista Previa" icon="fa-eye"/>
-                </tree>
-            </xpath>
+            <form string="Cuestionario del Centro">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object" name="action_view_evaluations" class="oe_stat_button" icon="fa-calendar-check-o">
+                            <field name="evaluation_count" widget="statinfo" string="Evaluaciones"/>
+                        </button>
+                        <button type="object" name="action_test_survey" class="oe_stat_button" icon="fa-eye" string="Vista Previa"/>
+                    </div>
+                    
+                    <field name="is_adhoc" invisible="1"/>
+                    <field name="is_aulametrics" invisible="1"/>
+                    
+                    <group>
+                        <group>
+                            <field name="title" string="Título de la Encuesta" placeholder="Ej: Evaluación de Clima Escolar 2026"/>
+                        </group>
+                        <group>
+                            <field name="average_duration" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <field name="description" placeholder="Descripción y objetivo de la encuesta..."/>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Preguntas" name="questions">
+                            <field name="question_and_page_ids" nolabel="1" widget="question_page_one2many" mode="tree,kanban" context="{'default_survey_id': id}">
+                                <tree>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="title" string="Pregunta"/>
+                                    <field name="question_type" string="Tipo"/>
+                                    <field name="is_page" column_invisible="True"/>
+                                    <field name="survey_id" column_invisible="True"/>
+                                    <control>
+                                        <create name="add_question_control" string="Añadir una pregunta"/>
+                                    </control>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="📊 Análisis de Calidad" name="quality">
+                            <field name="quality_feedback" widget="html" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para cuestionarios del centro (ad hoc) -->
+    <record id="action_survey_adhoc" model="ir.actions.act_window">
+        <field name="name">Cuestionarios del Centro</field>
+        <field name="res_model">survey.survey</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('is_adhoc', '=', True)]</field>
+        <field name="context">{'default_is_adhoc': True, 'default_is_aulametrics': True}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_survey_adhoc_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_survey_adhoc_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea tu primer cuestionario personalizado</p>
+            <p>Los cuestionarios del centro son encuestas personalizadas que puedes crear según tus necesidades.</p>
+        </field>
+    </record>
+
+    <!-- ========================================== -->
+    <!-- VISTAS ESPECÍFICAS: CUESTIONARIOS OFICIALES -->
+    <!-- ========================================== -->
+    
+    <!-- Vista form simplificada para cuestionarios oficiales (solo lectura) -->
+    <record id="view_survey_official_form" model="ir.ui.view">
+        <field name="name">survey.official.form</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <form string="Cuestionario Oficial" create="false" edit="false" delete="false">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object" name="action_view_evaluations" class="oe_stat_button" icon="fa-calendar-check-o">
+                            <field name="evaluation_count" widget="statinfo" string="Evaluaciones"/>
+                        </button>
+                        <button type="object" name="action_test_survey" class="oe_stat_button" icon="fa-eye" string="Vista Previa"/>
+                    </div>
+                    
+                    <field name="is_adhoc" invisible="1"/>
+                    <field name="is_aulametrics" invisible="1"/>
+                    
+                    <group>
+                        <group>
+                            <field name="title" readonly="1"/>
+                            <field name="survey_code" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="average_duration" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <field name="description" readonly="1"/>
+                    </group>
+                    
+                    <div class="alert alert-info mt-3" role="alert">
+                        <strong>ℹ️ Cuestionario validado científicamente</strong><br/>
+                        Este es un cuestionario oficial de AulaMetrics. No puede ser modificado para mantener su validez psicométrica.
+                        Usa el botón "Vista Previa" para ver las preguntas.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Vista tree para cuestionarios oficiales -->
+    <record id="view_survey_official_tree" model="ir.ui.view">
+        <field name="name">survey.official.tree</field>
+        <field name="model">survey.survey</field>
+        <field name="arch" type="xml">
+            <tree string="Cuestionarios" create="false" edit="false" delete="false">
+                <field name="title" string="Título del Cuestionario"/>
+                <field name="average_duration" string="Duración Media (min)" widget="integer"/>
+                <field name="evaluation_count" string="Nº Evaluaciones"/>
+                <button name="action_test_survey" type="object" string="Vista Previa" icon="fa-eye"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Acción para cuestionarios oficiales -->
+    <record id="action_survey_official" model="ir.actions.act_window">
+        <field name="name">Cuestionarios Oficiales</field>
+        <field name="res_model">survey.survey</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('is_aulametrics', '=', True), ('is_adhoc', '=', False)]</field>
+        <field name="context">{'create': False, 'delete': False}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_survey_official_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_survey_official_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">Cuestionarios oficiales de AulaMetrics</p>
+            <p>WHO-5, ASQ-14, Bullying VA validados científicamente.</p>
         </field>
     </record>
 

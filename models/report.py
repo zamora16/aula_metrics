@@ -73,12 +73,9 @@ class Report(models.Model):
         store=True
     )
 
-    @api.depends('evaluation_id.participation_ids.state',
-                 'evaluation_id.participation_ids.who5_score',
-                 'evaluation_id.participation_ids.bullying_score',
-                 'evaluation_id.participation_ids.stress_score')
+    @api.depends('evaluation_id.participation_ids.state')
     def _compute_statistics(self):
-        """Calcula estadísticas agregadas de las participaciones completadas."""
+        """Calcula estadísticas agregadas desde metric_value."""
         for report in self:
             participations = report.evaluation_id.participation_ids.filtered(
                 lambda p: p.state == 'completed'
@@ -90,60 +87,40 @@ class Report(models.Model):
                 report.avg_stress = 0
                 continue
 
-            # Calcular promedios solo de valores no nulos
-            who5_scores = [p.who5_score for p in participations if p.who5_score]
-            bullying_scores = [p.bullying_score for p in participations if p.bullying_score]
-            stress_scores = [p.stress_score for p in participations if p.stress_score]
+            # Obtener métricas desde metric_value
+            MetricValue = self.env['aulametrics.metric_value']
+            
+            who5_metrics = MetricValue.search([
+                ('evaluation_id', '=', report.evaluation_id.id),
+                ('metric_name', '=', 'who5_score')
+            ])
+            bullying_metrics = MetricValue.search([
+                ('evaluation_id', '=', report.evaluation_id.id),
+                ('metric_name', '=', 'bullying_score')
+            ])
+            stress_metrics = MetricValue.search([
+                ('evaluation_id', '=', report.evaluation_id.id),
+                ('metric_name', '=', 'stress_score')
+            ])
 
-            report.avg_who5 = sum(who5_scores) / len(who5_scores) if who5_scores else 0
-            report.avg_bullying = sum(bullying_scores) / len(bullying_scores) if bullying_scores else 0
-            report.avg_stress = sum(stress_scores) / len(stress_scores) if stress_scores else 0
+            who5_values = [m.value_float for m in who5_metrics if m.value_float]
+            bullying_values = [m.value_float for m in bullying_metrics if m.value_float]
+            stress_values = [m.value_float for m in stress_metrics if m.value_float]
+
+            report.avg_who5 = sum(who5_values) / len(who5_values) if who5_values else 0
+            report.avg_bullying = sum(bullying_values) / len(bullying_values) if bullying_values else 0
+            report.avg_stress = sum(stress_values) / len(stress_values) if stress_values else 0
 
     def action_view_participations(self):
-        """Abre las participaciones completadas de esta evaluación con vista de puntuaciones."""
+        """Abre las participaciones completadas de esta evaluación."""
         self.ensure_one()
 
-        # Determinar qué campos de puntuación mostrar basándose en los surveys incluidos
-        survey_codes = self.evaluation_id.survey_ids.mapped('survey_code')
-
-        # Crear vista tree dinámica con solo los campos relevantes
-        view_arch = """<tree string="Puntuaciones"
-                      decoration-success="state == 'completed'"
-                      decoration-warning="state == 'pending'"
-                      decoration-danger="state == 'expired'"
-                      create="false" delete="false">
-                <field name="student_id"/>
-                <field name="academic_group_id"/>"""
-
-        # Añadir campos dinámicamente basados en SURVEY_METRICS
-        for survey_code, survey_config in SURVEY_METRICS.items():
-            if survey_code in survey_codes:
-                for field_name in survey_config['fields']:
-                    label = survey_config['labels'].get(field_name, field_name)
-                    view_arch += f'<field name="{field_name}" string="{label}"/>'
-
-        view_arch += """<field name="state" widget="badge"
-                       decoration-success="state == 'completed'"
-                       decoration-warning="state == 'pending'"
-                       decoration-danger="state == 'expired'"/>
-                <field name="completed_at"/>
-            </tree>"""
-
-        # Crear vista temporal
-        view = self.env['ir.ui.view'].create({
-            'name': f'participation_scores_{self.evaluation_id.id}',
-            'model': 'aulametrics.participation',
-            'type': 'tree',
-            'arch': view_arch,
-            'active': False,  # Vista temporal
-        })
-
+        # Vista simplificada - las métricas ahora están en metric_value
         return {
-            'name': f'Puntuaciones: {self.name}',
+            'name': f'Participaciones: {self.name}',
             'type': 'ir.actions.act_window',
             'res_model': 'aulametrics.participation',
-            'view_mode': 'tree',
-            'views': [(view.id, 'tree')],
+            'view_mode': 'tree,form',
             'domain': [
                 ('evaluation_id', '=', self.evaluation_id.id),
                 ('state', '=', 'completed')
