@@ -75,7 +75,12 @@ class Report(models.Model):
 
     @api.depends('evaluation_id.participation_ids.state')
     def _compute_statistics(self):
-        """Calcula estadísticas agregadas desde metric_value."""
+        """Calcula estadísticas agregadas desde metric_value.
+        
+        Nota: Las record rules de aulametrics.metric_value filtran automáticamente
+        por rol. Los tutores solo verán métricas de sus grupos, management verá
+        todas (solo lectura), y counselor/admin tendrán acceso completo.
+        """
         for report in self:
             participations = report.evaluation_id.participation_ids.filtered(
                 lambda p: p.state == 'completed'
@@ -87,7 +92,7 @@ class Report(models.Model):
                 report.avg_stress = 0
                 continue
 
-            # Obtener métricas desde metric_value
+            # Obtener métricas desde metric_value (filtrado por record rules)
             MetricValue = self.env['aulametrics.metric_value']
             
             who5_metrics = MetricValue.search([
@@ -132,10 +137,10 @@ class Report(models.Model):
         }
 
     def action_open_interactive_dashboard(self):
-        """Abre el dashboard interactivo con gráficos Plotly."""
+        """Abre el dashboard con filtro de esta evaluación."""
         self.ensure_one()
         return {
             'type': 'ir.actions.act_url',
-            'url': f'/aulametrics/dashboard/{self.evaluation_id.id}',
+            'url': f'/aulametrics/dashboard?evaluation_ids={self.evaluation_id.id}',
             'target': 'new',
         }

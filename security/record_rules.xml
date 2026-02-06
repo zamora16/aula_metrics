@@ -112,5 +112,89 @@
             <field name="perm_create" eval="True"/>
             <field name="perm_unlink" eval="True"/>
         </record>
+
+        <!-- ============================================================ -->
+        <!-- METRIC VALUE: Reglas de acceso por rol                       -->
+        <!-- ============================================================ -->
+
+        <!-- Métricas: Tutores solo ven métricas de estudiantes de sus grupos -->
+        <record id="metric_value_tutor_rule" model="ir.rule">
+            <field name="name">Métricas: Tutores solo sus grupos</field>
+            <field name="model_id" ref="model_aulametrics_metric_value"/>
+            <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Métricas: Management ve todas las métricas (solo lectura vía ACL) -->
+        <record id="metric_value_management_rule" model="ir.rule">
+            <field name="name">Métricas: Management todas (lectura)</field>
+            <field name="model_id" ref="model_aulametrics_metric_value"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_management'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Métricas: Orientadores y Admins acceso completo -->
+        <record id="metric_value_counselor_admin_rule" model="ir.rule">
+            <field name="name">Métricas: Orientadores/Admins acceso completo</field>
+            <field name="model_id" ref="model_aulametrics_metric_value"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- EVALUACIÓN: Reglas de acceso por rol                         -->
+        <!-- ============================================================ -->
+
+        <!-- Evaluaciones: Tutores solo ven evaluaciones que incluyen sus grupos -->
+        <record id="evaluation_tutor_rule" model="ir.rule">
+            <field name="name">Evaluaciones: Tutores solo sus grupos</field>
+            <field name="model_id" ref="model_aulametrics_evaluation"/>
+            <field name="domain_force">[('academic_group_ids.tutor_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Evaluaciones: Management, Orientadores y Admins ven todas -->
+        <record id="evaluation_counselor_admin_management_rule" model="ir.rule">
+            <field name="name">Evaluaciones: Orientadores/Admins/Management todas</field>
+            <field name="model_id" ref="model_aulametrics_evaluation"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- PARTICIPACIÓN: Reglas de acceso por rol                      -->
+        <!-- ============================================================ -->
+
+        <!-- Participaciones: Tutores solo ven participaciones de sus grupos -->
+        <record id="participation_tutor_rule" model="ir.rule">
+            <field name="name">Participaciones: Tutores solo sus grupos</field>
+            <field name="model_id" ref="model_aulametrics_participation"/>
+            <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Participaciones: Management, Orientadores y Admins ven todas -->
+        <record id="participation_counselor_admin_management_rule" model="ir.rule">
+            <field name="name">Participaciones: Orientadores/Admins/Management todas</field>
+            <field name="model_id" ref="model_aulametrics_participation"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
+        </record>
     </data>
 </odoo>

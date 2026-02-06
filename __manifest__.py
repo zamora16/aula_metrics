@@ -31,6 +31,7 @@
         
         # 3. Vistas
         'views/dashboard.xml',
+        'views/dashboard_hub.xml',
         'views/academic_group_views.xml',
         'views/survey_extension_views.xml',
         'views/evaluation_views.xml',

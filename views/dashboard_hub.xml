@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción URL para abrir el Dashboard de Métricas -->
+    <record id="action_dashboard_hub" model="ir.actions.act_url">
+        <field name="name">Dashboard de Métricas</field>
+        <field name="url">/aulametrics/dashboard</field>
+        <field name="target">self</field>
+    </record>
+</odoo>

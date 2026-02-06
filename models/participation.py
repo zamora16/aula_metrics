@@ -103,6 +103,9 @@ class Participation(models.Model):
         """
         Obtiene el valor de una métrica específica para esta participación.
         Retorna el valor float o None si no existe.
+        
+        Nota: Las record rules filtran automáticamente según el rol del usuario.
+        Los tutores solo verán métricas de estudiantes de sus grupos.
         """
         self.ensure_one()
         metric = self.env['aulametrics.metric_value'].search([
@@ -116,6 +119,8 @@ class Participation(models.Model):
         """
         Retorna dict con todas las métricas de esta participación.
         Formato: {metric_name: value_float}
+        
+        Nota: Las record rules filtran automáticamente según el rol del usuario.
         """
         self.ensure_one()
         metrics = self.env['aulametrics.metric_value'].search([
