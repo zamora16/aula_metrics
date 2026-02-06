@@ -88,6 +88,84 @@ class DashboardChartsController(http.Controller):
             headers=[('Content-Type', 'text/html; charset=utf-8')]
         )
 
+    @http.route('/aulametrics/students', type='http', auth='user')
+    def students_list_view(self, **kwargs):
+        """
+        Lista de estudiantes en formato HTML estilo dashboard.
+        
+        Acceso según rol:
+        - Counselor/Admin: todos los alumnos
+        - Tutor: solo alumnos de sus grupos
+        - Management: bloqueado
+        """
+        role_info = self._detect_user_role()
+        
+        # Management no tiene acceso a perfiles individuales
+        if role_info.get('role') == 'management':
+            return request.make_response(
+                "<h1>Acceso Denegado</h1><p>El equipo directivo no tiene acceso a perfiles individuales de alumnos.</p>",
+                headers=[('Content-Type', 'text/html; charset=utf-8')],
+                status=403
+            )
+        
+        # Generar lista HTML de estudiantes
+        html_content = request.env['aulametrics.dashboard.student_profile'].generate_students_list(
+            role_info=role_info
+        )
+        
+        return request.make_response(
+            html_content,
+            headers=[('Content-Type', 'text/html; charset=utf-8')]
+        )
+
+    @http.route('/aulametrics/student/<int:student_id>', type='http', auth='user')
+    def student_profile_view(self, student_id, **kwargs):
+        """
+        Dashboard individual de alumno con visión longitudinal.
+        
+        Acceso según rol:
+        - Counselor/Admin: todos los alumnos
+        - Tutor: solo alumnos de sus grupos
+        - Management: bloqueado
+        
+        Args:
+            student_id: ID del res.partner con student=True
+        """
+        role_info = self._detect_user_role()
+        
+        # Verificar que el ID corresponde a un estudiante
+        student = request.env['res.partner'].sudo().search([
+            ('id', '=', student_id),
+            ('is_student', '=', True)
+        ], limit=1)
+        
+        if not student:
+            return request.not_found(description="El estudiante solicitado no existe.")
+        
+        # Delegar validación de acceso y generación al modelo
+        try:
+            html_content = request.env['aulametrics.dashboard.student_profile'].generate_student_profile(
+                student_id=student_id,
+                role_info=role_info
+            )
+            
+            return request.make_response(
+                html_content,
+                headers=[('Content-Type', 'text/html; charset=utf-8')]
+            )
+        except Exception as e:
+            # Capturar errores de permisos o generación
+            error_msg = str(e)
+            if 'permiso' in error_msg.lower() or 'access' in error_msg.lower():
+                return request.not_found(description=error_msg)
+            else:
+                # Error genérico
+                return request.make_response(
+                    f"<h1>Error al generar el perfil</h1><p>{error_msg}</p>",
+                    headers=[('Content-Type', 'text/html; charset=utf-8')],
+                    status=500
+                )
+
     def _parse_hub_filters(self, kwargs):
         """Parsea los parámetros GET a un dict de filtros."""
         filters = {

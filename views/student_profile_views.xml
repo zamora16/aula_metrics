@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Tree de Estudiantes con acceso al perfil -->
+    <record id="view_student_profile_tree" model="ir.ui.view">
+        <field name="name">student.profile.tree</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <tree string="Alumnos" create="false" edit="false" delete="false">
+                <field name="name"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="is_student" invisible="1"/>
+                <button 
+                    name="action_view_student_profile" 
+                    type="object" 
+                    string="Ver Perfil" 
+                    icon="fa-user-circle"
+                    class="btn-primary"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Form de Estudiantes con botón de perfil -->
+    <record id="view_student_profile_form" model="ir.ui.view">
+        <field name="name">student.profile.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form string="Alumno" create="false" edit="false" delete="false">
+                <header>
+                    <button 
+                        name="action_view_student_profile" 
+                        type="object" 
+                        string="Ver Perfil Completo" 
+                        class="oe_highlight"
+                        icon="fa-chart-line"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="contact_info">
+                            <field name="email" readonly="1"/>
+                            <field name="phone" readonly="1"/>
+                            <field name="mobile" readonly="1"/>
+                        </group>
+                        <group name="student_info">
+                            <field name="is_student" invisible="1"/>
+                            <field name="company_id" readonly="1" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Grupo Académico" name="academic_group">
+                            <group>
+                                <field name="academic_group_id" readonly="1">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="tutor_id"/>
+                                        <field name="student_count"/>
+                                    </tree>
+                                </field>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Search para filtrar estudiantes -->
+    <record id="view_student_profile_search" model="ir.ui.view">
+        <field name="name">student.profile.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Alumnos">
+                <field name="name" string="Nombre" filter_domain="['|', ('name', 'ilike', self), ('email', 'ilike', self)]"/>
+                <field name="academic_group_id" string="Grupo"/>
+                <separator/>
+                <filter string="Con Email" name="filter_has_email" domain="[('email', '!=', False)]"/>
+                <filter string="Con Teléfono" name="filter_has_phone" domain="['|', ('phone', '!=', False), ('mobile', '!=', False)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Grupo Académico" name="group_by_academic_group" 
+                            context="{'group_by': 'academic_group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción removida - Los perfiles ahora se acceden desde el Dashboard HTML -->
+
+</odoo>

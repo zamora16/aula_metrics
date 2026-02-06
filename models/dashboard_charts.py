@@ -427,7 +427,7 @@ class DashboardCharts(models.TransientModel):
             {self._styles()}
         </head>
         <body>
-            {self._header(role_badge)}
+            {self._header(role_badge, role_info)}
             <div class="container-fluid mt-4">
                 {filter_controls}
                 <div class="text-center py-5">
@@ -463,7 +463,7 @@ class DashboardCharts(models.TransientModel):
             {self._styles()}
         </head>
         <body>
-            {self._header(role_badge)}
+            {self._header(role_badge, role_info)}
             <div class="container-fluid mt-4">
                 {filter_controls}
                 
@@ -771,8 +771,17 @@ class DashboardCharts(models.TransientModel):
     </style>
         """
 
-    def _header(self, role_badge):
+    def _header(self, role_badge, role_info=None):
         """Encabezado del dashboard."""
+        # Botón de perfiles solo para counselor/admin
+        profiles_btn = ''
+        if role_info and role_info.get('role') in ['admin', 'counselor']:
+            profiles_btn = '''
+            <a href="/aulametrics/students" class="btn btn-primary btn-sm ms-2">
+                <i class="fa-solid fa-users"></i> Perfiles de Alumnos
+            </a>
+            '''
+        
         return f"""
     <header class="dashboard-header">
         <div>
@@ -785,6 +794,7 @@ class DashboardCharts(models.TransientModel):
         </div>
         <div>
             {role_badge}
+            {profiles_btn}
             <a href="/web" class="btn btn-outline-secondary btn-sm ms-2">
                 <i class="fa-solid fa-arrow-left"></i> Volver
             </a>

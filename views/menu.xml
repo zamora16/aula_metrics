@@ -25,20 +25,33 @@
               groups="group_aulametrics_counselor,group_aulametrics_admin"
               sequence="20"/>
 
-    <!-- Dashboard de Métricas -->
-    <menuitem id="menu_aulametrics_dashboard" 
-              name="Dashboard" 
-              parent="menu_aulametrics_root"
-              action="action_dashboard_hub"
-              sequence="10"/>
-    
     <!-- Evaluaciones -->
     <menuitem id="menu_aulametrics_evaluations" 
               name="Evaluaciones" 
               parent="menu_aulametrics_root" 
               action="action_evaluation"
-              sequence="20"/>
+              sequence="10"/>
 
+    <!-- Resultados -->
+    <menuitem id="menu_aulametrics_results" 
+              name="Resultados" 
+              parent="menu_aulametrics_root"
+              sequence="20"/>
+    
+    <!-- Dashboard General -->
+    <menuitem id="menu_aulametrics_dashboard" 
+              name="Dashboard General" 
+              parent="menu_aulametrics_results"
+              action="action_dashboard_hub"
+              sequence="10"/>
+    
+    <!-- Resultados por Evaluación -->
+    <menuitem id="menu_aulametrics_reports" 
+              name="Resultados por Evaluación" 
+              parent="menu_aulametrics_results"
+              action="action_report"
+              sequence="20"/>
+    
     <!-- Alertas -->
     <menuitem id="menu_aulametrics_alerts" 
               name="Sistema de Alertas" 
@@ -56,13 +69,6 @@
               parent="menu_aulametrics_alerts"
               action="action_threshold"
               sequence="20"/>
-
-    <!-- Resultados -->
-    <menuitem id="menu_aulametrics_reports" 
-              name="Resultados" 
-              parent="menu_aulametrics_root"
-              action="action_report"
-              sequence="40"/>
 
     <!-- Configuración -->
     <menuitem id="menu_aulametrics_config" 
