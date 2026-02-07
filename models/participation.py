@@ -64,7 +64,6 @@ class Participation(models.Model):
         help='Fecha y hora en que el alumno finalizó el cuestionario'
     )
     
-    # Relación a valores de métricas (nuevo sistema flexible)
     metric_value_ids = fields.One2many(
         'aulametrics.metric_value',
         compute='_compute_metric_value_ids',
@@ -133,8 +132,6 @@ class Participation(models.Model):
         """Marca la participación como completada y calcula puntuaciones"""
         self.ensure_one()
         if self.state == 'pending':
-            # Calcular puntuaciones antes de marcar como completada
-            self._calculate_scores()
             
             self.write({
                 'state': 'completed',
@@ -148,40 +145,69 @@ class Participation(models.Model):
         """
         self.ensure_one()
         
+        if not self.evaluation_id or not self.evaluation_id.survey_ids:
+            return
+        
         surveys = self.evaluation_id.survey_ids
         MetricValue = self.env['aulametrics.metric_value']
         
         for survey in surveys:
-            # Buscar la respuesta del alumno a este survey DURANTE esta evaluación
-            user_input = self.env['survey.user_input'].search([
-                ('partner_id', '=', self.student_id.id),
-                ('survey_id', '=', survey.id),
-                ('state', '=', 'done'),
-                ('create_date', '>=', self.evaluation_id.date_start)
-            ], limit=1)
+            try:
+                # Buscar la respuesta del alumno a este survey DURANTE esta evaluación
+                user_input = self.env['survey.user_input'].search([
+                    ('partner_id', '=', self.student_id.id),
+                    ('survey_id', '=', survey.id),
+                    ('state', '=', 'done'),
+                    ('create_date', '>=', self.evaluation_id.date_start)
+                ], limit=1)
+                
+                if not user_input:
+                    continue
+                
+                # Delegar el cálculo al propio survey (ahora retorna lista de métricas)
+                metrics = survey.calculate_scores(user_input)
+                
+                # Crear registros de metric_value para cada métrica (evitar duplicados)
+                if metrics:
+                    for metric in metrics:
+                        # Validar que la métrica tenga los campos requeridos
+                        if not metric.get('metric_name') or not metric.get('metric_label'):
+                            continue
+                        
+                        # Verificar si ya existe este metric_value para evitar duplicados
+                        existing = MetricValue.search([
+                            ('student_id', '=', self.student_id.id),
+                            ('evaluation_id', '=', self.evaluation_id.id),
+                            ('survey_id', '=', survey.id),
+                            ('metric_name', '=', metric.get('metric_name'))
+                        ], limit=1)
+                        
+                        if existing:
+                            # Actualizar el existente en vez de crear duplicado
+                            existing.write({
+                                'value_float': metric.get('value_float'),
+                                'value_text': metric.get('value_text'),
+                                'value_json': metric.get('value_json'),
+                                'timestamp': fields.Datetime.now(),
+                            })
+                        else:
+                            # Crear nuevo
+                            MetricValue.create({
+                                'survey_id': survey.id,
+                                'student_id': self.student_id.id,
+                                'evaluation_id': self.evaluation_id.id,
+                                'user_input_id': user_input.id,
+                                'question_id': metric.get('question_id'),
+                                'metric_name': metric.get('metric_name'),
+                                'metric_label': metric.get('metric_label'),
+                                'value_float': metric.get('value_float'),
+                                'value_text': metric.get('value_text'),
+                                'value_json': metric.get('value_json'),
+                                'timestamp': fields.Datetime.now(),
+                            })
             
-            if not user_input:
+            except Exception:
                 continue
-            
-            # Delegar el cálculo al propio survey (ahora retorna lista de métricas)
-            metrics = survey.calculate_scores(user_input)
-            
-            # Crear registros de metric_value para cada métrica
-            if metrics:
-                for metric in metrics:
-                    MetricValue.create({
-                        'survey_id': survey.id,
-                        'student_id': self.student_id.id,
-                        'evaluation_id': self.evaluation_id.id,
-                        'user_input_id': user_input.id,
-                        'question_id': metric.get('question_id'),  # Puede ser None para métricas agregadas
-                        'metric_name': metric.get('metric_name'),
-                        'metric_label': metric.get('metric_label'),
-                        'value_float': metric.get('value_float'),
-                        'value_text': metric.get('value_text'),
-                        'value_json': metric.get('value_json'),
-                        'timestamp': fields.Datetime.now(),
-                    })
     
     def check_alerts(self):
         """Verifica si las puntuaciones actuales generan alertas"""

@@ -66,7 +66,7 @@
                                             <div class="row">
                                                 <div class="col-8">
                                                     <strong><field name="name"/></strong><br/>
-                                                    <small><field name="survey_id"/> - <field name="score_field"/></small><br/>
+                                                    <small><field name="score_field"/></small><br/>
                                                     <span class="badge" t-attf-class="badge bg-{{ {'low': 'success', 'moderate': 'warning', 'high': 'danger'}[record.severity] }}">
                                                         <field name="severity"/>
                                                     </span>
@@ -83,7 +83,6 @@
                             </kanban>
                             <tree string="Umbrales Configurados" create="true" edit="true" delete="true">
                                 <field name="name"/>
-                                <field name="survey_id"/>
                                 <field name="score_field"/>
                                 <field name="threshold_value"/>
                                 <field name="operator"/>
@@ -94,7 +93,6 @@
                             <form string="Umbral">
                                 <group>
                                     <field name="name"/>
-                                    <field name="survey_id" domain="[('is_aulametrics', '=', True)]"/>
                                     <field name="score_field"/>
                                     <field name="operator"/>
                                     <field name="threshold_value"/>

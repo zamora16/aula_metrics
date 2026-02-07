@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+import re
 
 class Alert(models.Model):
     _name = 'aulametrics.alert'
@@ -36,15 +37,51 @@ class Alert(models.Model):
         help='Fecha y hora en que se resolvió la alerta'
     )
     
-    def _compute_name(self):
+    # Campo computado para mostrar curso general (sin especificar A/B/C)
+    course_level_general = fields.Char(
+        string='Curso General',
+        compute='_compute_course_level_general',
+        store=False
+    )
+    
+    def _compute_course_level_general(self):
+        """Extrae solo el nivel de curso (Primero, Segundo...) sin la letra del grupo."""
         for alert in self:
-            can_see_student = self.env.user.has_group('aulametrics.group_aulametrics_admin') or self.env.user.has_group('aulametrics.group_aulametrics_counselor')
-            if alert.alert_level == 'group':
-                alert.name = f"{alert.threshold_id.name} - Grupo {alert.academic_group_id.name}"
+            if alert.academic_group_id and alert.academic_group_id.course_level:
+                course = alert.academic_group_id.course_level
+                match = re.match(r'^(.*?)\s*[A-Z]?$', course)
+                alert.course_level_general = match.group(1).strip() if match else course
             else:
-                if can_see_student and alert.student_id:
-                    alert.name = f"{alert.threshold_id.name} - {alert.student_id.name}"
+                alert.course_level_general = 'Sin curso'
+    
+    def _compute_name(self):
+        """Computa el nombre de la alerta según permisos del usuario."""
+        for alert in self:
+            user = self.env.user
+            is_counselor_or_admin = user.has_group('aulametrics.group_aulametrics_admin') or user.has_group('aulametrics.group_aulametrics_counselor')
+            is_management = user.has_group('aulametrics.group_aulametrics_management')
+            
+            if alert.alert_level == 'group':
+                # Alertas grupales
+                if is_counselor_or_admin:
+                    # Counselor/Admin: ven grupo específico (2A, 2B)
+                    alert.name = f"{alert.threshold_id.name} - Grupo {alert.academic_group_id.name}"
+                elif is_management:
+                    # Management: solo curso general sin letra del grupo
+                    alert.name = f"{alert.threshold_id.name} - Alerta Grupal ({alert.course_level_general})"
                 else:
+                    # Tutor: ve su grupo específico
+                    alert.name = f"{alert.threshold_id.name} - Grupo {alert.academic_group_id.name}"
+            else:
+                # Alertas individuales
+                if is_counselor_or_admin and alert.student_id:
+                    # Counselor/Admin: ven nombre del estudiante
+                    alert.name = f"{alert.threshold_id.name} - {alert.student_id.name}"
+                elif is_management:
+                    # Management: solo ven curso general sin grupo específico
+                    alert.name = f"{alert.threshold_id.name} - {alert.course_level_general}"
+                else:
+                    # Tutor: nombre genérico sin identificar
                     alert.name = f"{alert.threshold_id.name} - Alerta Individual"
     
     @api.model
@@ -126,7 +163,6 @@ class Alert(models.Model):
         if not thresholds:
             return
         
-        # Obtener conteos de alertas activas individuales por threshold en este grupo
         domain = [
             ('threshold_id', 'in', thresholds.ids),
             ('academic_group_id', '=', group.id),

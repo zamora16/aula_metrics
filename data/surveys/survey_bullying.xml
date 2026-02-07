@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- ========================================== -->
-    <!--Bullying (Victimización y Agresión) -->
+    <!-- Cuestionario de Bullying (unificado) -->
     <!-- ========================================== -->
     <record id="survey_bullying" model="survey.survey">
-        <field name="title">Cuestionario de Conductas de Victimización y Agresión</field>
+        <field name="title">Bullying</field>
         <field name="is_aulametrics" eval="True"/>
         <field name="survey_code">BULLYING_VA</field>
-        <field name="description">A continuación se presentan una serie de situaciones. Indica con qué frecuencia te han ocurrido en los últimos dos meses.</field>
+        <field name="description">A continuación se presentan una serie de situaciones. Indica con qué frecuencia te han ocurrido o has realizado en los últimos dos meses.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">page_per_section</field>
         <field name="users_can_go_back" eval="True"/>
@@ -17,17 +17,17 @@
         <field name="users_login_required" eval="False"/>
     </record>
 
-    <!-- Página 1: Victimización (solo contenedor) -->
-    <record id="survey_bullying_page_victimization" model="survey.question">
+    <!-- Página única: Durante los últimos dos meses... -->
+    <record id="survey_bullying_page_main" model="survey.question">
         <field name="survey_id" ref="survey_bullying"/>
         <field name="is_page" eval="True"/>
-        <field name="title">Victimización</field>
+        <field name="title">Cuestionario de Bullying</field>
         <field name="sequence">1</field>
         <field name="description">Durante los últimos dos meses...</field>
     </record>
     
-    <!-- Pregunta matriz de Victimización -->
-    <record id="survey_bullying_matrix_victimization" model="survey.question">
+    <!-- Pregunta matriz unificada de Bullying -->
+    <record id="survey_bullying_matrix_unified" model="survey.question">
         <field name="survey_id" ref="survey_bullying"/>
         <field name="title">Durante los últimos dos meses...</field>
         <field name="question_type">matrix</field>
@@ -36,150 +36,104 @@
         <field name="constr_mandatory" eval="True"/>
     </record>
 
-    <!-- Opciones de respuesta para Victimización (columnas de la matriz) -->
+    <!-- Opciones de respuesta (columnas de la matriz) -->
     <record id="bullying_answer_0" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_victimization"/>
+        <field name="question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Nunca</field>
         <field name="sequence">0</field>
     </record>
     <record id="bullying_answer_1" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_victimization"/>
+        <field name="question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Casi nunca</field>
         <field name="sequence">1</field>
     </record>
     <record id="bullying_answer_2" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_victimization"/>
+        <field name="question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">A veces</field>
         <field name="sequence">2</field>
     </record>
     <record id="bullying_answer_3" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_victimization"/>
+        <field name="question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Casi siempre</field>
         <field name="sequence">3</field>
     </record>
     <record id="bullying_answer_4" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_victimization"/>
+        <field name="question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Siempre</field>
         <field name="sequence">4</field>
     </record>
 
-    <!-- Filas de la matriz Victimización (survey.question.answer con matrix_question_id) -->
-    <record id="bullying_row_vb1" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <!-- Filas de la matriz: Victimización (7 items) -->
+    <record id="bullying_row_v1" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Alguien me ha golpeado, pateado o empujado</field>
         <field name="sequence">10</field>
     </record>
-    <record id="bullying_row_vb2" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <record id="bullying_row_v2" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Alguien me ha insultado</field>
         <field name="sequence">11</field>
     </record>
-    <record id="bullying_row_vb3" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <record id="bullying_row_v3" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Alguien ha dicho a otras personas palabras malsonantes sobre mí</field>
         <field name="sequence">12</field>
     </record>
-    <record id="bullying_row_vb4" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <record id="bullying_row_v4" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Alguien me ha amenazado</field>
         <field name="sequence">13</field>
     </record>
-    <record id="bullying_row_vb5" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <record id="bullying_row_v5" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Alguien me ha robado o ha roto mis cosas</field>
         <field name="sequence">14</field>
     </record>
-    <record id="bullying_row_vb6" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <record id="bullying_row_v6" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He sido excluido/a o ignorado/a por otras personas</field>
         <field name="sequence">15</field>
     </record>
-    <record id="bullying_row_vb7" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_victimization"/>
+    <record id="bullying_row_v7" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">Alguien ha difundido rumores sobre mí</field>
         <field name="sequence">16</field>
     </record>
 
-    <!-- Página 2: Agresión (solo contenedor) -->
-    <record id="survey_bullying_page_aggression" model="survey.question">
-        <field name="survey_id" ref="survey_bullying"/>
-        <field name="is_page" eval="True"/>
-        <field name="title">Agresión</field>
-        <field name="sequence">100</field>
-        <field name="description">Durante los últimos dos meses...</field>
-    </record>
-    
-    <!-- Pregunta matriz de Agresión -->
-    <record id="survey_bullying_matrix_aggression" model="survey.question">
-        <field name="survey_id" ref="survey_bullying"/>
-        <field name="title">Durante los últimos dos meses...</field>
-        <field name="question_type">matrix</field>
-        <field name="matrix_subtype">simple</field>
-        <field name="sequence">101</field>
-        <field name="constr_mandatory" eval="True"/>
-    </record>
-
-    <!-- Opciones de respuesta para Agresión (columnas) -->
-    <record id="aggression_answer_0" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_aggression"/>
-        <field name="value">Nunca</field>
-        <field name="sequence">1</field>
-    </record>
-    <record id="aggression_answer_1" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_aggression"/>
-        <field name="value">Casi nunca</field>
-        <field name="sequence">2</field>
-    </record>
-    <record id="aggression_answer_2" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_aggression"/>
-        <field name="value">A veces</field>
-        <field name="sequence">3</field>
-    </record>
-    <record id="aggression_answer_3" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_aggression"/>
-        <field name="value">Casi siempre</field>
-        <field name="sequence">4</field>
-    </record>
-    <record id="aggression_answer_4" model="survey.question.answer">
-        <field name="question_id" ref="survey_bullying_matrix_aggression"/>
-        <field name="value">Siempre</field>
-        <field name="sequence">5</field>
-    </record>
-
-    <!-- Filas de la matriz Agresión -->
-    <record id="bullying_row_ab1" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <!-- Filas de la matriz: Agresión (7 items) -->
+    <record id="bullying_row_a1" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He golpeado, pateado o empujado a alguien</field>
-        <field name="sequence">10</field>
+        <field name="sequence">20</field>
     </record>
-    <record id="bullying_row_ab2" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <record id="bullying_row_a2" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He insultado o he dicho palabras malsonantes a alguien</field>
-        <field name="sequence">11</field>
+        <field name="sequence">21</field>
     </record>
-    <record id="bullying_row_ab3" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <record id="bullying_row_a3" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He dicho a otras personas palabras malsonantes sobre alguien</field>
-        <field name="sequence">12</field>
+        <field name="sequence">22</field>
     </record>
-    <record id="bullying_row_ab4" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <record id="bullying_row_a4" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He amenazado a alguien</field>
-        <field name="sequence">13</field>
+        <field name="sequence">23</field>
     </record>
-    <record id="bullying_row_ab5" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <record id="bullying_row_a5" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He robado o he estropeado algo de alguien</field>
-        <field name="sequence">14</field>
+        <field name="sequence">24</field>
     </record>
-    <record id="bullying_row_ab6" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <record id="bullying_row_a6" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He excluido o ignorado a alguien</field>
-        <field name="sequence">15</field>
+        <field name="sequence">25</field>
     </record>
-    <record id="bullying_row_ab7" model="survey.question.answer">
-        <field name="matrix_question_id" ref="survey_bullying_matrix_aggression"/>
+    <record id="bullying_row_a7" model="survey.question.answer">
+        <field name="matrix_question_id" ref="survey_bullying_matrix_unified"/>
         <field name="value">He difundido rumores sobre alguien</field>
-        <field name="sequence">16</field>
+        <field name="sequence">26</field>
     </record>
 </odoo>

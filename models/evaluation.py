@@ -2,9 +2,6 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
-# Importar configuración centralizada
-from .survey_config import SURVEY_METRICS, SURVEY_CODE_TO_FIELD
-
 class Evaluation(models.Model):
     """Evaluación Programada - Asignación de cuestionarios a grupos académicos"""
     _name = 'aulametrics.evaluation'
@@ -46,23 +43,6 @@ class Evaluation(models.Model):
     survey_count = fields.Integer(
         string='Nº Cuestionarios',
         compute='_compute_survey_count',
-        store=True
-    )
-
-    # Indicadores de surveys incluidos
-    has_who5 = fields.Boolean(
-        string='Incluye WHO-5',
-        compute='_compute_has_surveys',
-        store=True
-    )
-    has_bullying = fields.Boolean(
-        string='Incluye Bullying',
-        compute='_compute_has_surveys',
-        store=True
-    )
-    has_stress = fields.Boolean(
-        string='Incluye Estrés',
-        compute='_compute_has_surveys',
         store=True
     )
 
@@ -152,23 +132,6 @@ class Evaluation(models.Model):
     def _compute_survey_count(self):
         for evaluation in self:
             evaluation.survey_count = len(evaluation.survey_ids)
-
-    @api.depends('survey_ids.survey_code')
-    def _compute_has_surveys(self):
-        """Determina qué surveys están incluidos en la evaluación."""
-        for evaluation in self:
-            survey_codes = evaluation.survey_ids.mapped('survey_code')
-            
-            # Reset all flags
-            for field_name in SURVEY_CODE_TO_FIELD.values():
-                setattr(evaluation, field_name, False)
-            
-            # Set flags based on included surveys
-            for survey_code in SURVEY_METRICS.keys():
-                if survey_code in survey_codes:
-                    field_name = SURVEY_CODE_TO_FIELD.get(survey_code)
-                    if field_name:
-                        setattr(evaluation, field_name, True)
 
     @api.depends('academic_group_ids')
     def _compute_group_count(self):
@@ -260,12 +223,7 @@ class Evaluation(models.Model):
     
     def _send_tutor_emails(self, evaluation):
         """Envía emails a los tutores de los grupos asignados"""
-        # Obtener todos los tutores (con y sin email para debugging)
-        all_tutors = evaluation.academic_group_ids.mapped('tutor_id')
-        tutors_with_email = all_tutors.filtered(lambda t: t and t.email)
-        
-        # Filtrar solo tutores con email
-        tutors = tutors_with_email
+        tutors = evaluation.academic_group_ids.mapped('tutor_id').filtered(lambda t: t and t.email)
         
         for tutor in tutors:
             tutor_groups = evaluation.academic_group_ids.filtered(lambda g: g.tutor_id == tutor)

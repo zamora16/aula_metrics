@@ -25,10 +25,6 @@
         <field name="arch" type="xml">
             <form string="Resultados de Evaluación">
                 <sheet>
-                    <!-- Campos auxiliares para modifiers -->
-                    <field name="has_who5" invisible="1"/>
-                    <field name="has_bullying" invisible="1"/>
-                    <field name="has_stress" invisible="1"/>
                     <!-- Cabecera -->
                     <div class="oe_title">
                         <h1>
@@ -63,18 +59,15 @@
                     <group string="Estadísticas Globales (Promedios)">
                         <group>
                             <field name="avg_who5" widget="progressbar" 
-                                   options="{'max_value': 100}"
-                                   invisible="not has_who5"/>
+                                   options="{'max_value': 100}"/>
                         </group>
                         <group>
                             <field name="avg_bullying" widget="progressbar"
-                                   options="{'max_value': 100}"
-                                   invisible="not has_bullying"/>
+                                   options="{'max_value': 100}"/>
                         </group>
                         <group>
                             <field name="avg_stress" widget="progressbar"
-                                   options="{'max_value': 100}"
-                                   invisible="not has_stress"/>
+                                   options="{'max_value': 100}"/>
                         </group>
                     </group>
                 </sheet>

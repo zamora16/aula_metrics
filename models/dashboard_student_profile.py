@@ -4,9 +4,6 @@ Dashboard Student Profile - Perfil individual longitudinal de alumno
 """
 from odoo import models, api, fields
 import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
 import json
 
 
@@ -17,7 +14,7 @@ class DashboardStudentProfile(models.TransientModel):
     @api.model
     def generate_student_profile(self, student_id, role_info=None):
         """
-        Genera el dashboard de perfil individual de un estudiante.
+        Genera el dashboard de perfil individual de un estudiante con Chart.js.
         
         Args:
             student_id (int): ID del estudiante (res.partner)
@@ -29,43 +26,29 @@ class DashboardStudentProfile(models.TransientModel):
         if role_info is None:
             role_info = {'role': 'admin', 'anonymize_students': False}
 
-        # Verificar acceso al estudiante
         student = self.env['res.partner'].browse(student_id)
         if not student.exists():
             return self._error_html("Estudiante no encontrado")
 
-        # Validar permisos de acceso
         if not self._can_access_student(student, role_info):
             return self._error_html("No tiene permisos para ver este perfil")
 
-        # Obtener todas las métricas del estudiante
         metrics = self._get_student_metrics(student_id)
         
         if not metrics:
             return self._build_empty_profile(student, role_info)
 
-        # Preparar DataFrame
         df = self._prepare_metrics_dataframe(metrics)
         
-        # Generar componentes del dashboard
-        timeline_chart = self._generate_timeline_chart(df, student)
-        evolution_charts = self._generate_evolution_charts(df, student)
-        comparison_charts = self._generate_comparison_charts(student_id, df)
-        radar_chart = self._generate_radar_chart(student_id, df)
-        
-        # KPIs del estudiante
+        evolution_charts = self._generate_evolution_chartjs(df, student)
+        radar_chart = self._generate_radar_chart(df, student)
         kpis = self._generate_student_kpis(student, df)
-        
-        # Alertas activas
         alerts_html = self._get_student_alerts_html(student_id)
-        
-        # Histórico de participaciones
         participations_html = self._get_participations_html(student_id)
         
-        # Construir HTML final
-        return self._build_profile_html(
-            student, role_info, kpis, timeline_chart, evolution_charts,
-            comparison_charts, radar_chart, alerts_html, participations_html
+        return self._build_profile_html_chartjs(
+            student, role_info, kpis, '', 
+            evolution_charts, radar_chart, alerts_html, participations_html
         )
 
     @api.model
@@ -101,6 +84,7 @@ class DashboardStudentProfile(models.TransientModel):
         # Generar HTML
         return self._build_students_list_html(students, role_info)
 
+    @api.model
     def _can_access_student(self, student, role_info):
         """Verifica si el usuario tiene permisos para ver este estudiante."""
         role = role_info.get('role', 'tutor')
@@ -158,221 +142,17 @@ class DashboardStudentProfile(models.TransientModel):
         
         return pd.DataFrame(data)
 
-    def _generate_timeline_chart(self, df, student):
-        """Genera gráfico de timeline con todas las métricas."""
-        if df.empty:
-            return ''
-        
-        # Filtrar solo métricas numéricas
-        df_numeric = df[df['value_type'] == 'numeric'].copy()
-        if df_numeric.empty:
-            return ''
-        
-        fig = go.Figure()
-        
-        # Una línea por cada métrica
-        for metric in df_numeric['metric_label'].unique():
-            df_metric = df_numeric[df_numeric['metric_label'] == metric].sort_values('timestamp')
-            
-            fig.add_trace(go.Scatter(
-                x=df_metric['timestamp'],
-                y=df_metric['value'],
-                name=metric,
-                mode='lines+markers',
-                line=dict(width=2),
-                marker=dict(size=8)
-            ))
-        
-        fig.update_layout(
-            title=f'📈 Evolución Temporal de Métricas - {student.name}',
-            xaxis_title='Fecha',
-            yaxis_title='Puntuación',
-            height=400,
-            hovermode='x unified',
-            template='plotly_white',
-            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
-        )
-        
-        return fig.to_html(full_html=False, include_plotlyjs='cdn', div_id='timeline_chart')
-
-    def _generate_evolution_charts(self, df, student):
-        """Genera gráficos individuales de evolución por métrica."""
-        if df.empty:
-            return []
-        
-        charts = []
-        df_numeric = df[df['value_type'] == 'numeric'].copy()
-        
-        for metric_label in df_numeric['metric_label'].unique():
-            df_metric = df_numeric[df_numeric['metric_label'] == metric_label].sort_values('timestamp')
-            
-            # Buscar umbrales configurados
-            metric_name = df_metric.iloc[0]['metric_name']
-            threshold = self._get_metric_threshold(metric_name)
-            
-            fig = go.Figure()
-            
-            # Línea de evolución
-            fig.add_trace(go.Scatter(
-                x=df_metric['timestamp'],
-                y=df_metric['value'],
-                mode='lines+markers',
-                name='Valor',
-                line=dict(color='#667eea', width=3),
-                marker=dict(size=10)
-            ))
-            
-            # Línea de umbral si existe
-            if threshold:
-                fig.add_hline(
-                    y=threshold['value'],
-                    line_dash='dash',
-                    line_color='red',
-                    annotation_text=f"Umbral: {threshold['name']}",
-                    annotation_position='right'
-                )
-            
-            # Anotaciones con evaluaciones
-            for _, row in df_metric.iterrows():
-                fig.add_annotation(
-                    x=row['timestamp'],
-                    y=row['value'],
-                    text=row['evaluation_name'],
-                    showarrow=True,
-                    arrowhead=2,
-                    arrowsize=1,
-                    arrowwidth=1,
-                    ax=0,
-                    ay=-40,
-                    font=dict(size=9)
-                )
-            
-            fig.update_layout(
-                title=f'{metric_label}',
-                xaxis_title='Fecha',
-                yaxis_title='Puntuación',
-                height=300,
-                template='plotly_white',
-                showlegend=False
-            )
-            
-            charts.append(fig.to_html(full_html=False, include_plotlyjs=False, div_id=f'evolution_{metric_name}'))
-        
-        return charts
-
-    def _generate_comparison_charts(self, student_id, df_student):
-        """Genera comparativa del estudiante vs. su grupo y curso."""
-        charts = []
-        
-        student = self.env['res.partner'].browse(student_id)
-        if not student.academic_group_id:
-            return charts
-        
-        group_id = student.academic_group_id.id
-        
-        # Para cada métrica numérica del estudiante, comparar con grupo
-        df_numeric = df_student[df_student['value_type'] == 'numeric'].copy()
-        
-        for metric_name in df_numeric['metric_name'].unique():
-            # Obtener valor actual del estudiante
-            student_value = df_numeric[df_numeric['metric_name'] == metric_name].iloc[-1]['value']
-            metric_label = df_numeric[df_numeric['metric_name'] == metric_name].iloc[-1]['metric_label']
-            
-            # Obtener valores del grupo
-            MetricValue = self.env['aulametrics.metric_value']
-            group_metrics = MetricValue.search([
-                ('metric_name', '=', metric_name),
-                ('academic_group_id', '=', group_id)
-            ])
-            
-            if len(group_metrics) < 2:  # Necesitamos al menos 2 valores para comparar
-                continue
-            
-            group_values = [m.value_float for m in group_metrics if m.value_float]
-            
-            if not group_values:
-                continue
-            
-            # Box plot comparativo
-            fig = go.Figure()
-            
-            fig.add_trace(go.Box(
-                y=group_values,
-                name='Grupo',
-                marker_color='lightblue',
-                boxmean='sd'
-            ))
-            
-            fig.add_trace(go.Scatter(
-                x=['Grupo'],
-                y=[student_value],
-                mode='markers',
-                name=student.name,
-                marker=dict(size=15, color='red', symbol='star')
-            ))
-            
-            fig.update_layout(
-                title=f'{metric_label} - Comparativa con Grupo',
-                yaxis_title='Puntuación',
-                showlegend=True,
-                height=350,
-                template='plotly_white'
-            )
-            
-            charts.append(fig.to_html(full_html=False, include_plotlyjs=False, div_id=f'comparison_{metric_name}'))
-        
-        return charts
-
-    def _generate_radar_chart(self, student_id, df):
-        """Genera radar chart con perfil multidimensional del estudiante."""
-        if df.empty:
-            return ''
-        
-        df_numeric = df[df['value_type'] == 'numeric'].copy()
-        if len(df_numeric['metric_name'].unique()) < 3:
-            return ''  # Necesitamos al menos 3 métricas
-        
-        # Obtener valor más reciente de cada métrica
-        latest_values = df_numeric.groupby('metric_label').last().reset_index()
-        
-        # Normalizar valores a escala 0-100
-        latest_values['normalized'] = (latest_values['value'] / latest_values['value'].max()) * 100
-        
-        fig = go.Figure()
-        
-        fig.add_trace(go.Scatterpolar(
-            r=latest_values['normalized'].tolist(),
-            theta=latest_values['metric_label'].tolist(),
-            fill='toself',
-            name='Perfil Actual',
-            line_color='#667eea'
-        ))
-        
-        fig.update_layout(
-            polar=dict(
-                radialaxis=dict(
-                    visible=True,
-                    range=[0, 100]
-                )
-            ),
-            title='Perfil Multidimensional',
-            height=400,
-            template='plotly_white'
-        )
-        
-        return fig.to_html(full_html=False, include_plotlyjs=False, div_id='radar_chart')
-
     def _generate_student_kpis(self, student, df):
-        """Genera KPIs del estudiante."""
+        """Genera KPIs del estudiante - diseño profesional."""
         kpis = []
         
         # Total de evaluaciones completadas
         total_evals = df['evaluation_id'].nunique() if not df.empty else 0
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-clipboard-check"></i></div>
-            <div class="kpi-label">Evaluaciones Completadas</div>
-            <div class="kpi-number">{total_evals}</div>
+            <div class="kpi-label">Evaluaciones</div>
+            <div class="kpi-value">{total_evals}</div>
+            <div class="kpi-description">Completadas</div>
         </div>
         """)
         
@@ -380,9 +160,9 @@ class DashboardStudentProfile(models.TransientModel):
         total_metrics = len(df) if not df.empty else 0
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-chart-line"></i></div>
-            <div class="kpi-label">Métricas Registradas</div>
-            <div class="kpi-number">{total_metrics}</div>
+            <div class="kpi-label">Métricas</div>
+            <div class="kpi-value">{total_metrics}</div>
+            <div class="kpi-description">Registradas</div>
         </div>
         """)
         
@@ -390,9 +170,9 @@ class DashboardStudentProfile(models.TransientModel):
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-users"></i></div>
-            <div class="kpi-label">Grupo Académico</div>
-            <div class="kpi-number" style="font-size: 1.2rem;">{group_name}</div>
+            <div class="kpi-label">Grupo</div>
+            <div class="kpi-value" style="font-size: 22px; font-weight: 600;">{group_name}</div>
+            <div class="kpi-description">Académico</div>
         </div>
         """)
         
@@ -401,12 +181,11 @@ class DashboardStudentProfile(models.TransientModel):
             ('student_id', '=', student.id),
             ('status', '=', 'active')
         ])
-        alert_color = 'danger' if alerts_count > 0 else 'success'
         kpis.append(f"""
-        <div class="kpi-card kpi-{alert_color}">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-bell"></i></div>
-            <div class="kpi-label">Alertas Activas</div>
-            <div class="kpi-number">{alerts_count}</div>
+        <div class="kpi-card">
+            <div class="kpi-label">Alertas</div>
+            <div class="kpi-value" style="color: {'#ef4444' if alerts_count > 0 else '#10b981'};">{alerts_count}</div>
+            <div class="kpi-description">Activas</div>
         </div>
         """)
         
@@ -518,109 +297,39 @@ class DashboardStudentProfile(models.TransientModel):
     def _build_empty_profile(self, student, role_info):
         """HTML cuando el estudiante no tiene métricas."""
         role_badge = self._get_role_badge(role_info)
+        group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
         
         return f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="es">
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Perfil de {student.name} - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            {self._profile_styles()}
+            {self._profile_styles_chartjs()}
         </head>
         <body>
-            {self._profile_header(student, role_badge)}
-            <div class="container-fluid mt-4">
-                <div class="text-center py-5">
-                    <i class="fa-solid fa-user-slash fa-5x text-muted mb-4"></i>
-                    <h3 class="text-muted">Este estudiante aún no tiene métricas registradas</h3>
-                    <p class="text-muted">Complete una evaluación para comenzar a ver datos</p>
+            <div class="container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                    <div>
+                        <h1>{student.name}</h1>
+                        <p class="subtitle">{group_name} · {fields.Date.today().strftime('%d/%m/%Y')}</p>
+                    </div>
+                    <div>
+                        {role_badge}
+                        <a href="/aulametrics/students" style="margin-left: 12px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; text-decoration: none; color: #64748b; font-weight: 500; font-size: 14px;">
+                            <i class="fa-solid fa-users"></i> Lista
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card" style="text-align: center; padding: 60px 40px;">
+                    <i class="fa-solid fa-chart-line" style="font-size: 80px; color: #cbd5e1; margin-bottom: 24px;"></i>
+                    <h3 style="color: #64748b; margin-bottom: 12px;">Sin datos disponibles</h3>
+                    <p style="color: #94a3b8; font-size: 15px;">Este estudiante aún no tiene métricas registradas. Complete una evaluación para comenzar a ver datos.</p>
                 </div>
             </div>
-        </body>
-        </html>
-        """
-
-    def _build_profile_html(self, student, role_info, kpis, timeline, evolution_charts, 
-                           comparison_charts, radar, alerts, participations):
-        """Construye el HTML completo del perfil."""
-        role_badge = self._get_role_badge(role_info)
-        
-        evolution_html = '<div class="row">' + ''.join([
-            f'<div class="col-md-6 mb-4">{chart}</div>' for chart in evolution_charts
-        ]) + '</div>'
-        
-        comparison_html = '<div class="row">' + ''.join([
-            f'<div class="col-md-6 mb-4">{chart}</div>' for chart in comparison_charts
-        ]) + '</div>'
-        
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Perfil de {student.name} - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-            <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
-            {self._profile_styles()}
-        </head>
-        <body>
-            {self._profile_header(student, role_badge)}
-            
-            <div class="container-fluid mt-4">
-                <!-- KPIs -->
-                <div class="kpi-container mb-4">
-                    {kpis}
-                </div>
-                
-                <!-- Alertas -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5><i class="fa-solid fa-bell me-2"></i>Alertas Activas</h5>
-                    </div>
-                    <div class="card-body">
-                        {alerts}
-                    </div>
-                </div>
-                
-                <!-- Timeline general -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        {timeline}
-                    </div>
-                </div>
-                
-                <!-- Radar chart -->
-                {f'<div class="card mb-4"><div class="card-body">{radar}</div></div>' if radar else ''}
-                
-                <!-- Evolución por métrica -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5><i class="fa-solid fa-chart-line me-2"></i>Evolución por Métrica</h5>
-                    </div>
-                    <div class="card-body">
-                        {evolution_html}
-                    </div>
-                </div>
-                
-                <!-- Comparativa con grupo -->
-                {f'<div class="card mb-4"><div class="card-header"><h5><i class="fa-solid fa-users me-2"></i>Comparativa con Grupo</h5></div><div class="card-body">{comparison_html}</div></div>' if comparison_charts else ''}
-                
-                <!-- Histórico de participaciones -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5><i class="fa-solid fa-history me-2"></i>Histórico de Participaciones</h5>
-                    </div>
-                    <div class="card-body">
-                        {participations}
-                    </div>
-                </div>
-            </div>
-            
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         </body>
         </html>
         """
@@ -635,58 +344,6 @@ class DashboardStudentProfile(models.TransientModel):
             'tutor': '<span class="badge bg-success"><i class="fa-solid fa-chalkboard-user"></i> Tutor/a</span>',
         }
         return badges.get(role, '')
-
-    def _profile_header(self, student, role_badge):
-        """Encabezado del perfil."""
-        group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
-        
-        return f"""
-        <header class="dashboard-header">
-            <div>
-                <div class="header-title">
-                    <h1><i class="fa-solid fa-user me-2 text-primary"></i>Perfil de {student.name}</h1>
-                </div>
-                <div class="header-meta">
-                    {group_name} &bull; {fields.Date.today().strftime('%d/%m/%Y')}
-                </div>
-            </div>
-            <div>
-                {role_badge}
-                <a href="/web" class="btn btn-outline-secondary btn-sm ms-2">
-                    <i class="fa-solid fa-arrow-left"></i> Volver
-                </a>
-            </div>
-        </header>
-        """
-
-    def _profile_styles(self):
-        """Estilos CSS del perfil."""
-        return """
-        <style>
-            body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-bottom: 60px; color: #1e293b; }
-            .dashboard-header { background: white; padding: 1.5rem 2rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); }
-            .header-title h1 { font-size: 1.5rem; font-weight: 700; margin: 0; color: #0f172a; }
-            .header-meta { color: #64748b; font-size: 0.875rem; margin-top: 4px; }
-            
-            .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-            .kpi-card { background: white; border-radius: 16px; padding: 1.25rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: transform 0.2s; }
-            .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-            .kpi-card.kpi-danger { border-left: 4px solid #dc3545; }
-            .kpi-card.kpi-success { border-left: 4px solid #28a745; }
-            .kpi-icon-bg { position: absolute; right: -5px; top: -5px; font-size: 4rem; opacity: 0.05; transform: rotate(15deg); }
-            .kpi-label { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-            .kpi-number { font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0.25rem 0; }
-            
-            .card { border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
-            .card-header { background: white; border-bottom: 1px solid #e2e8f0; font-weight: 600; padding: 1rem 1.5rem; }
-            .card-body { padding: 1.5rem; }
-            
-            .alerts-container .alert { border-radius: 8px; margin-bottom: 1rem; }
-            
-            .table { margin-bottom: 0; }
-            .table thead th { background: #f8fafc; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
-        </style>
-        """
 
     def _build_students_list_html(self, students, role_info):
         """Construye el HTML de la lista de estudiantes."""
@@ -898,6 +555,918 @@ class DashboardStudentProfile(models.TransientModel):
             </script>
         </body>
         </html>
+        """
+
+    def _generate_timeline_chartjs(self, df, student):
+        """Timeline con Chart.js - estilo profesional."""
+        if df.empty:
+            return '<div class="alert alert-info">No hay datos temporales disponibles</div>'
+        
+        df_numeric = df[df['value_type'] == 'numeric'].copy()
+        if df_numeric.empty:
+            return '<div class="alert alert-info">No hay métricas numéricas para graficar</div>'
+        
+        # Paleta profesional estilo Stripe/Linear
+        colors = [
+            '#3b82f6',  # Blue
+            '#10b981',  # Green
+            '#f59e0b',  # Amber
+            '#8b5cf6',  # Purple
+            '#ef4444',  # Red
+            '#06b6d4',  # Cyan
+            '#ec4899',  # Pink
+            '#f97316',  # Orange
+        ]
+        
+        datasets = []
+        for idx, metric in enumerate(df_numeric['metric_label'].unique()[:5]):
+            df_metric = df_numeric[df_numeric['metric_label'] == metric].sort_values('timestamp')
+            
+            data_points = [
+                {'x': row['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), 'y': float(row['value'])}
+                for _, row in df_metric.iterrows()
+            ]
+            
+            color = colors[idx % len(colors)]
+            datasets.append({
+                'label': metric,
+                'data': data_points,
+                'borderColor': color,
+                'backgroundColor': 'transparent',
+                'borderWidth': 2,
+                'tension': 0.3,
+                'fill': False,
+                'pointRadius': 4,
+                'pointHoverRadius': 6,
+                'pointBackgroundColor': color,
+                'pointBorderColor': '#ffffff',
+                'pointBorderWidth': 2
+            })
+        
+        chart_id = f'timeline_{student.id}'
+        datasets_json = json.dumps(datasets)
+        
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Evolución Temporal</h5>
+                <p class="card-subtitle">Seguimiento longitudinal de métricas</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'line',
+            data: {{
+                datasets: {datasets_json}
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {{
+                    mode: 'index',
+                    intersect: false
+                }},
+                plugins: {{
+                    legend: {{
+                        display: true,
+                        position: 'bottom',
+                        labels: {{
+                            usePointStyle: true,
+                            padding: 16,
+                            font: {{
+                                size: 13,
+                                family: "'Inter', sans-serif",
+                                weight: '500'
+                            }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: {{
+                            size: 13,
+                            family: "'Inter', sans-serif",
+                            weight: '600'
+                        }},
+                        bodyFont: {{
+                            size: 13,
+                            family: "'Inter', sans-serif"
+                        }},
+                        cornerRadius: 6,
+                        displayColors: true,
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        callbacks: {{
+                            title: function(context) {{
+                                let date = new Date(context[0].parsed.x);
+                                return date.toLocaleDateString('es-ES', {{day: '2-digit', month: 'short', year: 'numeric'}});
+                            }}
+                        }}
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        type: 'time',
+                        time: {{
+                            unit: 'day',
+                            displayFormats: {{
+                                day: 'dd/MM'
+                            }}
+                        }},
+                        grid: {{
+                            display: false,
+                            drawBorder: false
+                        }},
+                        ticks: {{
+                            font: {{
+                                size: 12,
+                                family: "'Inter', sans-serif"
+                            }},
+                            color: '#94a3b8'
+                        }}
+                    }},
+                    y: {{
+                        beginAtZero: true,
+                        grid: {{
+                            color: '#f1f5f9',
+                            drawBorder: false
+                        }},
+                        ticks: {{
+                            font: {{
+                                size: 12,
+                                family: "'Inter', sans-serif"
+                            }},
+                            color: '#94a3b8'
+                        }}
+                    }}
+                }},
+                animation: {{
+                    duration: 750,
+                    easing: 'easeInOutCubic'
+                }}
+            }}
+        }});
+        </script>
+        '''
+
+    def _generate_evolution_chartjs(self, df, student):
+        """Gráficos individuales con contexto del grupo - estilo profesional."""
+        if df.empty:
+            return ''
+        
+        df_numeric = df[df['value_type'] == 'numeric'].copy()
+        if df_numeric.empty:
+            return ''
+        
+        # Obtener datos del grupo para contexto
+        group_data = self._get_group_context_data(student, df_numeric)
+        
+        charts_html = ''
+        
+        for idx, metric in enumerate(df_numeric['metric_label'].unique()[:4]):
+            df_metric = df_numeric[df_numeric['metric_label'] == metric].sort_values('timestamp')
+            metric_name = df_metric.iloc[0]['metric_name']
+            
+            # Solo mostrar si hay 2+ mediciones
+            if len(df_metric) < 2:
+                continue
+            
+            labels = [row['timestamp'].strftime('%d/%m') for _, row in df_metric.iterrows()]
+            values = [float(row['value']) for _, row in df_metric.iterrows()]
+            
+            # Calcular porcentaje de cambio entre primera y última medición
+            first_value = values[0]
+            last_value = values[-1]
+            percent_change = ((last_value - first_value) / first_value * 100) if first_value != 0 else 0
+            change_icon = '↑' if percent_change > 0 else '↓' if percent_change < 0 else '→'
+            change_color = '#10b981' if percent_change > 0 else '#ef4444' if percent_change < 0 else '#94a3b8'
+            change_text = f"<span style='color: {change_color}; font-weight: 600;'>{change_icon} {abs(percent_change):.1f}%</span>"
+            
+            # Colores semáforo por cada barra
+            colors = [self._get_semaphore_color(v) for v in values]
+            
+            # Obtener media del grupo en los mismos periodos si disponible
+            group_means = []
+            if metric_name in group_data:
+                for timestamp in df_metric['timestamp']:
+                    # Buscar mediciones del grupo cercanas a esta fecha (±7 días)
+                    group_vals = group_data[metric_name].get('values', [])
+                    matching = [v for t, v in group_vals if abs((t - timestamp).days) <= 7]
+                    if matching:
+                        group_means.append(sum(matching) / len(matching))
+                    else:
+                        group_means.append(None)
+            
+            chart_id = f'evolution_{student.id}_{idx}'
+            
+            # Crear datasets
+            datasets = [
+                {
+                    'label': 'Estudiante',
+                    'data': values,
+                    'backgroundColor': colors,
+                    'borderRadius': 6,
+                    'borderSkipped': False,
+                    'order': 2
+                }
+            ]
+            
+            # Agregar línea de media del grupo si hay datos
+            if group_means and any(v is not None for v in group_means):
+                datasets.append({
+                    'label': 'Media grupo',
+                    'data': group_means,
+                    'type': 'line',
+                    'borderColor': '#94a3b8',
+                    'backgroundColor': 'transparent',
+                    'borderWidth': 2,
+                    'borderDash': [5, 5],
+                    'pointRadius': 4,
+                    'pointBackgroundColor': '#94a3b8',
+                    'pointBorderColor': '#ffffff',
+                    'pointBorderWidth': 2,
+                    'order': 1,
+                    'tension': 0.3
+                })
+            
+            charts_html += f'''
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title-sm">{metric}</h6>
+                        <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0;">
+                            Evolución con contexto del grupo · Cambio: {change_text}
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="{chart_id}" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+            new Chart(document.getElementById('{chart_id}'), {{
+                type: 'bar',
+                data: {{
+                    labels: {json.dumps(labels)},
+                    datasets: {json.dumps(datasets)}
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {{
+                        legend: {{
+                            display: true,
+                            position: 'bottom',
+                            labels: {{
+                                usePointStyle: true,
+                                padding: 12,
+                                font: {{
+                                    size: 11,
+                                    family: "'Inter', sans-serif"
+                                }},
+                                color: '#64748b'
+                            }}
+                        }},
+                        tooltip: {{
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            cornerRadius: 6,
+                            titleFont: {{
+                                family: "'Inter', sans-serif",
+                                size: 12,
+                                weight: '600'
+                            }},
+                            bodyFont: {{
+                                family: "'Inter', sans-serif",
+                                size: 12
+                            }},
+                            callbacks: {{
+                                label: function(context) {{
+                                    let label = context.dataset.label || '';
+                                    if (label) {{
+                                        label += ': ';
+                                    }}
+                                    if (context.parsed.y !== null) {{
+                                        label += context.parsed.y.toFixed(1) + ' pts';
+                                    }}
+                                    return label;
+                                }}
+                            }}
+                        }}
+                    }},
+                    scales: {{
+                        x: {{
+                            grid: {{
+                                display: false,
+                                drawBorder: false
+                            }},
+                            ticks: {{
+                                font: {{
+                                    size: 11,
+                                    family: "'Inter', sans-serif"
+                                }},
+                                color: '#94a3b8'
+                            }}
+                        }},
+                        y: {{
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {{
+                                color: '#f1f5f9',
+                                drawBorder: false
+                            }},
+                            ticks: {{
+                                font: {{
+                                    size: 11,
+                                    family: "'Inter', sans-serif"
+                                }},
+                                color: '#94a3b8'
+                            }}
+                        }}
+                    }},
+                    animation: {{
+                        duration: 600,
+                        easing: 'easeInOutCubic'
+                    }}
+                }}
+            }});
+            </script>
+            '''
+        
+        if charts_html:
+            return f'<div class="row">{charts_html}</div>'
+        return ''
+    
+    def _get_semaphore_color(self, value):
+        """Retorna color semáforo según valor normalizado 0-100."""
+        if value >= 80:
+            return '#10b981'  # Verde - Excelente
+        elif value >= 60:
+            return '#3b82f6'  # Azul - Normal
+        elif value >= 40:
+            return '#f59e0b'  # Ámbar - Atención
+        else:
+            return '#ef4444'  # Rojo - Crítico
+    
+    def _get_group_context_data(self, student, df_student):
+        """Obtiene datos del grupo para contextualizar el perfil individual."""
+        if not student.academic_group_id:
+            return {}
+        
+        group_id = student.academic_group_id.id
+        group_data = {}
+        
+        # Para cada métrica del estudiante, obtener valores del grupo
+        for metric_name in df_student['metric_name'].unique():
+            MetricValue = self.env['aulametrics.metric_value']
+            group_metrics = MetricValue.search([
+                ('metric_name', '=', metric_name),
+                ('academic_group_id', '=', group_id)
+            ])
+            
+            if group_metrics:
+                values_with_ts = [
+                    (m.timestamp, m.value_float) 
+                    for m in group_metrics 
+                    if m.value_float is not None
+                ]
+                
+                if values_with_ts:
+                    group_data[metric_name] = {
+                        'values': values_with_ts,
+                        'mean': sum(v for _, v in values_with_ts) / len(values_with_ts)
+                    }
+        
+        return group_data
+    
+    def _get_center_context_data(self, student, df_student):
+        """Obtiene datos del centro completo para contextualizar el perfil."""
+        center_data = {}
+        
+        # Para cada métrica del estudiante, obtener valores de todo el centro
+        for metric_name in df_student['metric_name'].unique():
+            MetricValue = self.env['aulametrics.metric_value']
+            center_metrics = MetricValue.search([
+                ('metric_name', '=', metric_name)
+            ])
+            
+            if center_metrics:
+                values = [m.value_float for m in center_metrics if m.value_float is not None]
+                
+                if values:
+                    center_data[metric_name] = {
+                        'mean': sum(values) / len(values)
+                    }
+        
+        return center_data
+    
+    def _generate_radar_chart(self, df, student):
+        """Genera radar chart si hay 3+ métricas numéricas."""
+        if df.empty:
+            return ''
+        
+        df_numeric = df[df['value_type'] == 'numeric'].copy()
+        if df_numeric.empty:
+            return ''
+        
+        # Obtener último valor de cada métrica
+        latest_by_metric = df_numeric.groupby('metric_label').last().reset_index()
+        
+        # Necesitamos al menos 3 métricas
+        if len(latest_by_metric) < 3:
+            return ''
+        
+        # Obtener contexto del grupo y centro
+        group_data = self._get_group_context_data(student, df_numeric)
+        center_data = self._get_center_context_data(student, df_numeric)
+        
+        # Preparar datos del estudiante
+        student_labels = []
+        student_values = []
+        group_values = []
+        center_values = []
+        
+        for _, row in latest_by_metric.iterrows():
+            student_labels.append(row['metric_label'])
+            student_values.append(float(row['value']))
+            
+            # Media del grupo para esta métrica
+            metric_name = row['metric_name']
+            if metric_name in group_data:
+                group_values.append(group_data[metric_name]['mean'])
+            else:
+                group_values.append(None)
+            
+            # Media del centro para esta métrica
+            if metric_name in center_data:
+                center_values.append(center_data[metric_name]['mean'])
+            else:
+                center_values.append(None)
+        
+        chart_id = f'radar_{student.id}'
+        
+        datasets = [
+            {
+                'label': student.name,
+                'data': student_values,
+                'backgroundColor': 'rgba(59, 130, 246, 0.2)',
+                'borderColor': '#3b82f6',
+                'borderWidth': 2,
+                'pointBackgroundColor': '#3b82f6',
+                'pointBorderColor': '#ffffff',
+                'pointBorderWidth': 2,
+                'pointRadius': 4,
+                'pointHoverRadius': 6
+            }
+        ]
+        
+        # Agregar dataset del grupo si hay datos
+        if any(v is not None for v in group_values):
+            datasets.append({
+                'label': 'Media grupo',
+                'data': group_values,
+                'backgroundColor': 'rgba(148, 163, 184, 0.1)',
+                'borderColor': '#94a3b8',
+                'borderWidth': 2,
+                'borderDash': [5, 5],
+                'pointBackgroundColor': '#94a3b8',
+                'pointBorderColor': '#ffffff',
+                'pointBorderWidth': 2,
+                'pointRadius': 3,
+                'pointHoverRadius': 5
+            })
+        
+        # Agregar dataset del centro si hay datos
+        if any(v is not None for v in center_values):
+            datasets.append({
+                'label': 'Media centro',
+                'data': center_values,
+                'backgroundColor': 'rgba(16, 185, 129, 0.05)',
+                'borderColor': '#10b981',
+                'borderWidth': 2,
+                'borderDash': [2, 2],
+                'pointBackgroundColor': '#10b981',
+                'pointBorderColor': '#ffffff',
+                'pointBorderWidth': 2,
+                'pointRadius': 3,
+                'pointHoverRadius': 5
+            })
+        
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Perfil Multidimensional</h5>
+                <p class="card-subtitle">Comparativa visual con grupo y centro</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="220"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'radar',
+            data: {{
+                labels: {json.dumps(student_labels)},
+                datasets: {json.dumps(datasets)}
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {{
+                    legend: {{
+                        display: true,
+                        position: 'bottom',
+                        labels: {{
+                            usePointStyle: true,
+                            padding: 16,
+                            font: {{
+                                size: 13,
+                                family: "'Inter', sans-serif",
+                                weight: '500'
+                            }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        cornerRadius: 6,
+                        titleFont: {{
+                            family: "'Inter', sans-serif",
+                            size: 13,
+                            weight: '600'
+                        }},
+                        bodyFont: {{
+                            family: "'Inter', sans-serif",
+                            size: 12
+                        }},
+                        callbacks: {{
+                            label: function(context) {{
+                                return context.dataset.label + ': ' + context.parsed.r.toFixed(1) + ' pts';
+                            }}
+                        }}
+                    }}
+                }},
+                scales: {{
+                    r: {{
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {{
+                            stepSize: 20,
+                            font: {{
+                                size: 11,
+                                family: "'Inter', sans-serif"
+                            }},
+                            color: '#94a3b8'
+                        }},
+                        grid: {{
+                            color: '#e5e7eb'
+                        }},
+                        pointLabels: {{
+                            font: {{
+                                size: 12,
+                                family: "'Inter', sans-serif",
+                                weight: '500'
+                            }},
+                            color: '#475569'
+                        }}
+                    }}
+                }},
+                animation: {{
+                    duration: 800,
+                    easing: 'easeInOutCubic'
+                }}
+            }}
+        }});
+        </script>
+        '''
+
+    def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, participations):
+        """HTML del perfil con Chart.js - diseño profesional."""
+        role_badge = self._get_role_badge(role_info)
+        group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
+        
+        return f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Perfil de {student.name} - AulaMetrics</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+            {self._profile_styles_chartjs()}
+        </head>
+        <body>
+            <div class="container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                    <div>
+                        <h1>{student.name}</h1>
+                        <p class="subtitle">{group_name} · Visualizado el {fields.Date.today().strftime('%d/%m/%Y')}</p>
+                    </div>
+                    <div>
+                        {role_badge}
+                        <a href="/aulametrics/students" style="margin-left: 12px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; text-decoration: none; color: #64748b; font-weight: 500; font-size: 14px;">
+                            <i class="fa-solid fa-users"></i> Lista
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="kpi-grid">
+                    {kpis}
+                </div>
+                
+                {radar if radar else ''}
+                
+                {evolution}
+                
+                {timeline}
+                
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Alertas Activas</h5>
+                                <p class="card-subtitle">Puntos de atención identificados</p>
+                            </div>
+                            <div class="card-body">
+                                {alerts}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Histórico de Participación</h5>
+                                <p class="card-subtitle">Encuestas completadas</p>
+                            </div>
+                            <div class="card-body">
+                                {participations}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+    def _profile_styles_chartjs(self):
+        """Estilos profesionales estilo Stripe/Linear/Notion."""
+        return """
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background-color: #fafbfc;
+                color: #0f172a;
+                line-height: 1.6;
+                font-size: 15px;
+                padding-bottom: 80px;
+            }
+            
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 32px 24px;
+            }
+            
+            h1 {
+                font-size: 32px;
+                font-weight: 700;
+                color: #0f172a;
+                margin-bottom: 8px;
+                letter-spacing: -0.5px;
+            }
+            
+            .subtitle {
+                color: #64748b;
+                font-size: 16px;
+                font-weight: 400;
+                margin-bottom: 32px;
+            }
+            
+            .kpi-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 20px;
+                margin-bottom: 32px;
+            }
+            
+            .kpi-card {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                padding: 24px;
+                transition: all 0.2s ease;
+            }
+            
+            .kpi-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                border-color: #d1d5db;
+            }
+            
+            .kpi-label {
+                font-size: 13px;
+                font-weight: 500;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 8px;
+            }
+            
+            .kpi-value {
+                font-size: 36px;
+                font-weight: 700;
+                color: #0f172a;
+                line-height: 1;
+                margin-bottom: 4px;
+            }
+            
+            .kpi-description {
+                font-size: 13px;
+                color: #94a3b8;
+                font-weight: 400;
+            }
+            
+            .card {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                margin-bottom: 24px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            }
+            
+            .card-header {
+                padding: 20px 24px;
+                border-bottom: 1px solid #f1f5f9;
+                background: white;
+            }
+            
+            .card-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #0f172a;
+                margin: 0;
+            }
+            
+            .card-title-sm {
+                font-size: 15px;
+                font-weight: 600;
+                color: #0f172a;
+                margin: 0;
+            }
+            
+            .card-subtitle {
+                font-size: 13px;
+                color: #64748b;
+                margin: 4px 0 0 0;
+                font-weight: 400;
+            }
+            
+            .card-body {
+                padding: 24px;
+            }
+            
+            .alert {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px 20px;
+                color: #475569;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            
+            .alert-info {
+                background: #eff6ff;
+                border-color: #bfdbfe;
+                color: #1e40af;
+            }
+            
+            .alert-warning {
+                background: #fef3c7;
+                border-color: #fde68a;
+                color: #92400e;
+            }
+            
+            .alert-danger {
+                background: #fee2e2;
+                border-color: #fecaca;
+                color: #991b1b;
+            }
+            
+            .badge {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+                letter-spacing: 0.3px;
+            }
+            
+            .badge-info {
+                background: #dbeafe;
+                color: #1e40af;
+            }
+            
+            .badge-warning {
+                background: #fef3c7;
+                color: #92400e;
+            }
+            
+            .badge-danger {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+            
+            .row {
+                display: flex;
+                flex-wrap: wrap;
+                margin: 0 -12px;
+            }
+            
+            .col-lg-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+                padding: 0 12px;
+            }
+            
+            @media (max-width: 991px) {
+                .col-lg-6 {
+                    flex: 0 0 100%;
+                    max-width: 100%;
+                }
+            }
+            
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+            
+            thead {
+                background: #f8fafc;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            
+            th {
+                padding: 12px 16px;
+                text-align: left;
+                font-weight: 600;
+                color: #475569;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            td {
+                padding: 14px 16px;
+                border-bottom: 1px solid #f1f5f9;
+                color: #334155;
+            }
+            
+            tr:last-child td {
+                border-bottom: none;
+            }
+            
+            tbody tr:hover {
+                background: #fafbfc;
+            }
+            
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+            
+            li {
+                padding: 12px 0;
+                border-bottom: 1px solid #f1f5f9;
+                color: #334155;
+                font-size: 14px;
+            }
+            
+            li:last-child {
+                border-bottom: none;
+            }
+        </style>
         """
 
     def _error_html(self, message):

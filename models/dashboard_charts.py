@@ -4,7 +4,7 @@ Dashboard Charts - Generación de dashboard con métricas filtradas
 """
 from odoo import models, api, fields
 import pandas as pd
-import plotly.graph_objects as go
+import json
 
 
 class DashboardCharts(models.TransientModel):
@@ -53,7 +53,7 @@ class DashboardCharts(models.TransientModel):
         df = self._prepare_dataframe(metric_values, role_info)
         
         # Generar gráficos
-        charts = self._generate_charts(df, filters, available_metrics)
+        charts = self._generate_charts(df, filters, available_metrics, role_info)
         
         # Generar KPIs
         kpi_html = self._generate_kpis(df, filters, role_info)
@@ -235,8 +235,8 @@ class DashboardCharts(models.TransientModel):
         
         return pd.DataFrame(data)
 
-    def _generate_charts(self, df, filters, available_metrics):
-        """Genera gráficos según las métricas presentes en el DataFrame."""
+    def _generate_charts(self, df, filters, available_metrics, role_info):
+        """Genera gráficos según las métricas presentes en el DataFrame y rol del usuario."""
         charts = []
         
         # Obtener métricas únicas en el DataFrame
@@ -249,14 +249,14 @@ class DashboardCharts(models.TransientModel):
                 'type': row['metric_type']
             }
             
-            chart_html = self._generate_chart_by_metric_type(metric_info, df)
+            chart_html = self._generate_chart_by_metric_type(metric_info, df, role_info)
             if chart_html:
                 charts.append(chart_html)
         
         return charts
 
-    def _generate_chart_by_metric_type(self, metric_info, df):
-        """Genera el gráfico apropiado según el tipo de métrica."""
+    def _generate_chart_by_metric_type(self, metric_info, df, role_info):
+        """Genera el gráfico apropiado según el tipo de métrica y rol."""
         metric_name = metric_info['name']
         metric_label = metric_info['label']
         metric_type = metric_info['type']
@@ -264,7 +264,7 @@ class DashboardCharts(models.TransientModel):
         df_metric = df[df['metric_name'] == metric_name].copy()
         
         if metric_type == 'numeric':
-            return self._chart_numeric_metric(df_metric, metric_label)
+            return self._chart_numeric_metric(df_metric, metric_label, role_info)
         elif metric_type == 'json':
             return self._chart_json_metric(df_metric, metric_label)
         elif metric_type == 'text':
@@ -272,41 +272,1003 @@ class DashboardCharts(models.TransientModel):
         
         return ''
 
-    def _chart_numeric_metric(self, df, label):
-        """Gráfico de caja (box plot) para métricas numéricas agrupadas por curso."""
+    def _chart_numeric_metric(self, df, label, role_info):
+        """Gráfico adaptado según rol del usuario con colores semáforo."""
         if df.empty or df['value_numeric'].isna().all():
             return ''
         
-        # Agrupar por curso
-        cursos = df['curso'].unique()
+        role = role_info.get('role', 'counselor')
+        charts_html = ''
         
-        fig = go.Figure()
-        for curso in sorted(cursos):
+        # Detectar si hay múltiples mediciones temporales
+        evaluations = df['evaluation_name'].dropna().unique()
+        has_evolution = len(evaluations) >= 2
+        
+        # Gráfico principal según rol
+        if role == 'management':
+            charts_html += self._chart_numeric_by_course(df, label)
+            if has_evolution:
+                charts_html += self._chart_numeric_evolution_by_course(df, label)
+        elif role == 'tutor':
+            charts_html += self._chart_numeric_distribution(df, label)
+            if has_evolution:
+                charts_html += self._chart_numeric_evolution_distribution(df, label)
+        else:  # counselor/admin
+            charts_html += self._chart_numeric_by_groups(df, label)
+            if has_evolution:
+                charts_html += self._chart_numeric_evolution_by_groups(df, label)
+        
+        return charts_html
+    
+    def _get_semaphore_color(self, value):
+        """Retorna color semáforo según valor normalizado 0-100."""
+        if value >= 80:
+            return '#10b981'  # Verde - Excelente
+        elif value >= 60:
+            return '#3b82f6'  # Azul - Normal
+        elif value >= 40:
+            return '#f59e0b'  # Ámbar - Atención
+        else:
+            return '#ef4444'  # Rojo - Crítico
+    
+    def _get_thresholds_for_metric(self, metric_name):
+        """Obtiene umbrales activos configurados para una métrica.
+        
+        Args:
+            metric_name (str): Nombre de la métrica (ej: 'who5_score', 'asq14_total')
+        
+        Returns:
+            list: Lista de dicts con {value, operator, label, severity}
+        """
+        Threshold = self.env['aulametrics.threshold']
+        thresholds = Threshold.search([
+            ('active', '=', True),
+            ('score_field', '=', metric_name)
+        ])
+        
+        result = []
+        for t in thresholds:
+            result.append({
+                'value': t.threshold_value,
+                'operator': t.operator,
+                'label': t.name,
+                'severity': t.severity
+            })
+        
+        return result
+    
+    def _chart_numeric_evolution_by_course(self, df, label):
+        """Evolución temporal de la métrica por curso (Management)."""
+        # Agrupar por evaluación (no por timestamp individual)
+        evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
+        
+        if len(evaluations) < 2:
+            return ''
+        
+        cursos = sorted(df['curso'].unique())
+        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16']
+        
+        # Preparar datasets por curso
+        datasets = []
+        for idx, curso in enumerate(cursos):
             df_curso = df[df['curso'] == curso]
-            fig.add_trace(go.Box(
-                y=df_curso['value_numeric'],
-                name=curso,
-                boxmean='sd'
-            ))
+            data_points = []
+            
+            for eval_name, eval_date in evaluations.items():
+                df_eval = df_curso[df_curso['evaluation_name'] == eval_name]['value_numeric'].dropna()
+                if len(df_eval) > 0:
+                    data_points.append({
+                        'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
+                        'y': float(df_eval.mean())
+                    })
+            
+            if data_points:
+                datasets.append({
+                    'label': curso,
+                    'data': data_points,
+                    'borderColor': color_palette[idx % len(color_palette)],
+                    'backgroundColor': color_palette[idx % len(color_palette)] + '20',
+                    'tension': 0.3
+                })
         
-        fig.update_layout(
-            title=f'📊 {label}',
-            yaxis_title='Puntuación',
-            xaxis_title='Curso',
-            height=400,
-            showlegend=False,
-            template='plotly_white'
-        )
+        if not datasets:
+            return ''
         
-        return fig.to_html(full_html=False, include_plotlyjs='cdn', div_id=f'chart_{label.replace(" ", "_")}')
+        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Evolución: {label}</h5>
+                <p class="card-subtitle">Tendencia temporal por curso académico</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="240"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'line',
+            data: {{
+                datasets: {json.dumps(datasets)}
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {{
+                    legend: {{
+                        display: true,
+                        position: 'top',
+                        labels: {{
+                            usePointStyle: true,
+                            padding: 12,
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 14,
+                        cornerRadius: 8,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        callbacks: {{
+                            title: function(context) {{
+                                return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
+                            }},
+                            label: function(context) {{
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' pts';
+                            }}
+                        }}
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        type: 'time',
+                        time: {{
+                            unit: 'day',
+                            displayFormats: {{
+                                day: 'dd/MM/yyyy'
+                            }}
+                        }},
+                        grid: {{ display: false, drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    y: {{
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {{ color: '#f1f5f9', drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#94a3b8'
+                        }}
+                    }}
+                }}
+            }}
+        }});
+        </script>
+        '''
+    
+    def _chart_numeric_evolution_distribution(self, df, label):
+        """Evolución temporal de la media del grupo (Tutor - anónimo)."""
+        # Agrupar por evaluación (no por timestamp individual)
+        evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
+        
+        if len(evaluations) < 2:
+            return ''
+        
+        # Calcular media del grupo en cada evaluación
+        data_points = []
+        for eval_name, eval_date in evaluations.items():
+            df_eval = df[df['evaluation_name'] == eval_name]['value_numeric'].dropna()
+            if len(df_eval) > 0:
+                data_points.append({
+                    'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
+                    'y': float(df_eval.mean())
+                })
+        
+        if not data_points:
+            return ''
+        
+        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        
+        datasets = [{
+            'label': 'Media del grupo',
+            'data': data_points,
+            'borderColor': '#3b82f6',
+            'backgroundColor': '#3b82f620',
+            'tension': 0.3,
+            'fill': True
+        }]
+        
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Evolución: {label}</h5>
+                <p class="card-subtitle">Tendencia temporal de la media del grupo</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="240"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'line',
+            data: {{
+                datasets: {json.dumps(datasets)}
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {{
+                    legend: {{ display: false }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 14,
+                        cornerRadius: 8,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        callbacks: {{
+                            title: function(context) {{
+                                return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
+                            }},
+                            label: function(context) {{
+                                return 'Media: ' + context.parsed.y.toFixed(1) + ' pts';
+                            }}
+                        }}
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        type: 'time',
+                        time: {{
+                            unit: 'day',
+                            displayFormats: {{
+                                day: 'dd/MM/yyyy'
+                            }}
+                        }},
+                        grid: {{ display: false, drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    y: {{
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {{ color: '#f1f5f9', drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#94a3b8'
+                        }}
+                    }}
+                }}
+            }}
+        }});
+        </script>
+        '''
+    
+    def _chart_numeric_evolution_by_groups(self, df, label):
+        """Evolución temporal de la métrica por grupo (Counselor)."""
+        # Agrupar por evaluación (no por timestamp individual)
+        evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
+        
+        if len(evaluations) < 2:
+            return ''
+        
+        grupos = sorted(df['group_name'].unique())
+        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#f43f5e', '#14b8a6']
+        
+        # Preparar datasets por grupo
+        datasets = []
+        for idx, grupo in enumerate(grupos):
+            df_grupo = df[df['group_name'] == grupo]
+            data_points = []
+            
+            for eval_name, eval_date in evaluations.items():
+                df_eval = df_grupo[df_grupo['evaluation_name'] == eval_name]['value_numeric'].dropna()
+                if len(df_eval) > 0:
+                    data_points.append({
+                        'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
+                        'y': float(df_eval.mean())
+                    })
+            
+            if data_points:
+                datasets.append({
+                    'label': grupo,
+                    'data': data_points,
+                    'borderColor': color_palette[idx % len(color_palette)],
+                    'backgroundColor': color_palette[idx % len(color_palette)] + '20',
+                    'tension': 0.3
+                })
+        
+        if not datasets:
+            return ''
+        
+        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Evolución: {label}</h5>
+                <p class="card-subtitle">Tendencia temporal por grupo</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="260"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'line',
+            data: {{
+                datasets: {json.dumps(datasets)}
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {{
+                    legend: {{
+                        display: true,
+                        position: 'top',
+                        labels: {{
+                            usePointStyle: true,
+                            padding: 10,
+                            font: {{ size: 10, family: "'Inter', sans-serif" }},
+                            color: '#64748b',
+                            boxWidth: 8
+                        }}
+                    }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        cornerRadius: 6,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
+                        callbacks: {{
+                            title: function(context) {{
+                                return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
+                            }},
+                            label: function(context) {{
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' pts';
+                            }}
+                        }}
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        type: 'time',
+                        time: {{
+                            unit: 'day',
+                            displayFormats: {{
+                                day: 'dd/MM/yyyy'
+                            }}
+                        }},
+                        grid: {{ display: false, drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    y: {{
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {{ color: '#f1f5f9', drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#94a3b8'
+                        }}
+                    }}
+                }}
+            }}
+        }});
+        </script>
+        '''
+    
+    def _chart_numeric_by_course(self, df, label):
+        """Vista Management: Agregado por curso académico (barras compactas)."""
+        cursos = sorted(df['curso'].unique())
+        stats = []
+        
+        # Paleta de colores consistente para cursos
+        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16']
+        
+        # Preparar datos generales
+        for idx, curso in enumerate(cursos):
+            df_curso = df[df['curso'] == curso]['value_numeric'].dropna()
+            if len(df_curso) > 0:
+                mean_val = float(df_curso.mean())
+                n_alumnos = len(df_curso['student_id'].unique())
+                n_grupos = len(df_curso['group_id'].unique())
+                stats.append({
+                    'curso': curso,
+                    'mean': mean_val,
+                    'n_alumnos': n_alumnos,
+                    'n_grupos': n_grupos,
+                    'color': color_palette[idx % len(color_palette)]
+                })
+        
+        if not stats:
+            return ''
+        
+        # Preparar datos por género
+        stats_by_gender = {}
+        gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
+        for curso in cursos:
+            df_curso = df[df['curso'] == curso]
+            stats_by_gender[curso] = {}
+            for gender_key, gender_label in gender_map.items():
+                df_gender = df_curso[df_curso['student_gender'] == gender_key]
+                if len(df_gender) > 0:
+                    values = df_gender['value_numeric'].dropna()
+                    if len(values) > 0:
+                        stats_by_gender[curso][gender_label] = {
+                            'mean': float(values.mean()),
+                            'count': int(len(values))
+                        }
+        
+        chart_id = f'chart_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        labels = [s['curso'] for s in stats]
+        means = [s['mean'] for s in stats]
+        colors = [s['color'] for s in stats]
+        
+        # Obtener umbrales configurados para esta métrica
+        metric_name = df.iloc[0]['metric_name'] if not df.empty else None
+        thresholds = self._get_thresholds_for_metric(metric_name) if metric_name else []
+        
+        return f'''
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 class="card-title">{label}</h5>
+                    <p class="card-subtitle">Media por curso académico</p>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; cursor: pointer;">
+                        <input type="checkbox" id="gender_{chart_id}" style="cursor: pointer;">
+                        <span>⚧️ Dividir por género</span>
+                    </label>
+                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; color: #64748b;" title="Cambiar orden">
+                        ↕️ Orden
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="220"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        (function() {{
+            const chartData = {{
+                labels: {json.dumps(labels)},
+                means: {json.dumps(means)},
+                colors: {json.dumps(colors)},
+                statsByGender: {json.dumps(stats_by_gender)},
+                thresholds: {json.dumps(thresholds)}
+            }};
+            
+            let ascending = true;
+            let byGender = false;
+            
+            // Crear datasets de umbrales
+            function createThresholdDatasets(labelCount) {{
+                const thresholdDatasets = [];
+                chartData.thresholds.forEach((threshold, idx) => {{
+                    const thresholdData = Array(labelCount).fill(threshold.value);
+                    thresholdDatasets.push({{
+                        type: 'line',
+                        label: threshold.label + ' (' + threshold.operator + ' ' + threshold.value + ')',
+                        data: thresholdData,
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 0
+                    }});
+                }});
+                return thresholdDatasets;
+            }}
+            
+            const chart = new Chart(document.getElementById('{chart_id}'), {{
+                type: 'bar',
+                data: {{
+                    labels: chartData.labels,
+                    datasets: [
+                        {{
+                            label: 'Media',
+                            data: chartData.means,
+                            backgroundColor: chartData.colors,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            order: 1
+                        }},
+                        ...createThresholdDatasets(chartData.labels.length)
+                    ]
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {{
+                        legend: {{ display: false }},
+                        tooltip: {{
+                            backgroundColor: '#1e293b',
+                            padding: 14,
+                            cornerRadius: 8,
+                            titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
+                            bodyFont: {{ family: "'Inter', sans-serif", size: 13 }}
+                        }}
+                    }},
+                    scales: {{
+                        x: {{
+                            grid: {{ display: false, drawBorder: false }},
+                            ticks: {{
+                                font: {{ size: 12, family: "'Inter', sans-serif" }},
+                                color: '#64748b'
+                            }}
+                        }},
+                        y: {{
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {{ color: '#f1f5f9', drawBorder: false }},
+                            ticks: {{
+                                font: {{ size: 11, family: "'Inter', sans-serif" }},
+                                color: '#94a3b8'
+                            }}
+                        }}
+                    }}
+                }}
+            }});
+            
+            function updateChart() {{
+                let data = [];
+                let labels = [];
+                let colors = [];
+                
+                const entries = chartData.labels.map((label, i) => ({{
+                    label: label,
+                    value: chartData.means[i],
+                    color: chartData.colors[i]
+                }}));
+                
+                // Ordenar
+                entries.sort((a, b) => ascending ? a.value - b.value : b.value - a.value);
+                
+                if (byGender) {{
+                    // Dividir por género
+                    const genderColors = {{
+                        'Masculino': '#3b82f6',
+                        'Femenino': '#ec4899',
+                        'Otro': '#94a3b8',
+                        'Prefiere no decir': '#64748b'
+                    }};
+                    
+                    chart.data.labels = entries.map(e => e.label);
+                    chart.data.datasets = [];
+                    
+                    ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir'].forEach(gender => {{
+                        const genderData = entries.map(e => {{
+                            const stats = chartData.statsByGender[e.label];
+                            return stats && stats[gender] ? stats[gender].mean : null;
+                        }});
+                        
+                        if (genderData.some(v => v !== null)) {{
+                            chart.data.datasets.push({{
+                                label: gender,
+                                data: genderData,
+                                backgroundColor: genderColors[gender],
+                                borderRadius: 6,
+                                borderSkipped: false
+                            }});
+                        }}
+                    }});
+                    chart.options.plugins.legend.display = true;
+                    // Añadir umbrales
+                    chart.data.datasets.push(...createThresholdDatasets(chart.data.labels.length));
+                }} else {{
+                    // Vista normal
+                    chart.data.labels = entries.map(e => e.label);
+                    chart.data.datasets = [
+                        {{
+                            label: 'Media',
+                            data: entries.map(e => e.value),
+                            backgroundColor: entries.map(e => e.color),
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            order: 1
+                        }},
+                        ...createThresholdDatasets(entries.length)
+                    ];
+                    chart.options.plugins.legend.display = false;
+                }}
+                
+                chart.update();
+            }}
+            
+            document.getElementById('gender_{chart_id}').addEventListener('change', function(e) {{
+                byGender = e.target.checked;
+                updateChart();
+            }});
+            
+            document.getElementById('sort_{chart_id}').addEventListener('click', function() {{
+                ascending = !ascending;
+                this.innerHTML = ascending ? 'Orden: Ascendente' : 'Orden: Descendente';
+                updateChart();
+            }});
+        }})();
+        </script>
+        '''
+
+    def _chart_numeric_distribution(self, df, label):
+        """Vista Tutor: Distribución anónima del grupo (histogram)."""
+        values = df['value_numeric'].dropna()
+        if len(values) == 0:
+            return ''
+        
+        # Crear bins (rangos) para el histograma
+        bins = [0, 40, 60, 80, 100]
+        bin_labels = ['0-40 (Crítico)', '40-60 (Atención)', '60-80 (Normal)', '80-100 (Excelente)']
+        bin_colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+        
+        # Contar cuántos alumnos en cada rango
+        counts = []
+        for i in range(len(bins) - 1):
+            count = ((values >= bins[i]) & (values < bins[i+1])).sum()
+            # Para el último bin, incluir el límite superior
+            if i == len(bins) - 2:
+                count = ((values >= bins[i]) & (values <= bins[i+1])).sum()
+            counts.append(int(count))
+        
+        chart_id = f'chart_dist_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        total_alumnos = len(values)
+        mean_val = float(values.mean())
+        
+        # Texto descriptivo
+        desc_texts = []
+        if counts[0] > 0:
+            desc_texts.append(f"🔴 {counts[0]} alumno{'s' if counts[0] > 1 else ''} en situación crítica")
+        if counts[1] > 0:
+            desc_texts.append(f"🟡 {counts[1]} alumno{'s' if counts[1] > 1 else ''} requieren atención")
+        if counts[2] > 0:
+            desc_texts.append(f"🔵 {counts[2]} alumno{'s' if counts[2] > 1 else ''} en nivel aceptable")
+        if counts[3] > 0:
+            desc_texts.append(f"🟢 {counts[3]} alumno{'s' if counts[3] > 1 else ''} con nivel excelente")
+        
+        description = " · ".join(desc_texts) if desc_texts else "Sin datos suficientes"
+        
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">{label}</h5>
+                <p class="card-subtitle">Distribución anónima del grupo · Media: {mean_val:.1f} pts</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="280"></canvas>
+                <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #475569;">
+                    <strong>Interpretación:</strong> {description}
+                </div>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps(bin_labels)},
+                datasets: [{{
+                    label: 'Número de alumnos',
+                    data: {json.dumps(counts)},
+                    backgroundColor: {json.dumps(bin_colors)},
+                    borderRadius: 8,
+                    borderSkipped: false
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {{
+                    legend: {{ display: false }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 14,
+                        cornerRadius: 8,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        callbacks: {{
+                            label: function(context) {{
+                                let percentage = ({total_alumnos} > 0) ? ((context.parsed.y / {total_alumnos}) * 100).toFixed(1) : 0;
+                                return context.parsed.y + ' alumnos (' + percentage + '%)';
+                            }}
+                        }}
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        grid: {{ display: false, drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 11, family: "'Inter', sans-serif" }},
+                            color: '#64748b'
+                        }}
+                    }},
+                    y: {{
+                        beginAtZero: true,
+                        grid: {{ color: '#f1f5f9', drawBorder: false }},
+                        ticks: {{
+                            stepSize: 1,
+                            font: {{ size: 12, family: "'Inter', sans-serif" }},
+                            color: '#94a3b8'
+                        }}
+                    }}
+                }},
+                animation: {{
+                    duration: 600,
+                    easing: 'easeInOutCubic'
+                }}
+            }}
+        }});
+        </script>
+        '''
+    
+    def _chart_numeric_by_groups(self, df, label):
+        """Vista Counselor: Comparativa de grupos (barras horizontales compactas)."""
+        grupos = sorted(df['group_name'].unique())
+        stats = []
+        
+        # Paleta de colores para grupos
+        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#f43f5e', '#14b8a6']
+        
+        for idx, grupo in enumerate(grupos):
+            df_grupo = df[df['group_name'] == grupo]['value_numeric'].dropna()
+            if len(df_grupo) > 0:
+                mean_val = float(df_grupo.mean())
+                n_alumnos = int(len(df_grupo))
+                
+                stats.append({
+                    'grupo': grupo,
+                    'mean': mean_val,
+                    'n_alumnos': n_alumnos,
+                    'color': color_palette[idx % len(color_palette)]
+                })
+        
+        if not stats:
+            return ''
+        
+        # Preparar datos por género
+        stats_by_gender = {}
+        gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
+        for grupo in grupos:
+            df_grupo = df[df['group_name'] == grupo]
+            stats_by_gender[grupo] = {}
+            for gender_key, gender_label in gender_map.items():
+                df_gender = df_grupo[df_grupo['student_gender'] == gender_key]
+                if len(df_gender) > 0:
+                    values = df_gender['value_numeric'].dropna()
+                    if len(values) > 0:
+                        stats_by_gender[grupo][gender_label] = {
+                            'mean': float(values.mean()),
+                            'count': int(len(values))
+                        }
+        
+        # Ordenar por puntuación inicialmente
+        stats_sorted = sorted(stats, key=lambda x: x['mean'])
+        
+        chart_id = f'chart_grupos_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        labels = [s['grupo'] for s in stats_sorted]
+        means = [s['mean'] for s in stats_sorted]
+        colors = [s['color'] for s in stats_sorted]
+        
+        # Obtener umbrales configurados para esta métrica
+        metric_name = df.iloc[0]['metric_name'] if not df.empty else None
+        thresholds = self._get_thresholds_for_metric(metric_name) if metric_name else []
+        
+        # Altura dinámica pero controlada
+        chart_height = min(350, max(200, len(stats) * 25))
+        
+        return f'''
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h5 class="card-title">{label}</h5>
+                    <p class="card-subtitle">Comparativa por grupo</p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; cursor: pointer; background: #f8fafc; padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; transition: all 0.2s;">
+                        <input type="checkbox" id="gender_{chart_id}" style="cursor: pointer;">
+                        <span style="font-weight: 500;">Dividir por género</span>
+                    </label>
+                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                        Ordenar
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <canvas id="{chart_id}" height="{chart_height}"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        (function() {{
+            const chartData = {{
+                groups: {json.dumps([s['grupo'] for s in stats_sorted])},
+                means: {json.dumps([s['mean'] for s in stats_sorted])},
+                colors: {json.dumps([s['color'] for s in stats_sorted])},
+                statsByGender: {json.dumps(stats_by_gender)},
+                allGroups: {json.dumps([s['grupo'] for s in stats])},
+                allColors: {json.dumps({s['grupo']: s['color'] for s in stats})},
+                thresholds: {json.dumps(thresholds)}
+            }};
+            
+            let ascending = true;
+            let byGender = false;
+            
+            // Crear datasets de umbrales
+            function createThresholdDatasets(labelCount) {{
+                const thresholdDatasets = [];
+                chartData.thresholds.forEach((threshold, idx) => {{
+                    const thresholdData = Array(labelCount).fill(threshold.value);
+                    thresholdDatasets.push({{
+                        type: 'line',
+                        label: threshold.label + ' (' + threshold.operator + ' ' + threshold.value + ')',
+                        data: thresholdData,
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 0
+                    }});
+                }});
+                return thresholdDatasets;
+            }}
+            
+            const chart = new Chart(document.getElementById('{chart_id}'), {{
+                type: 'bar',
+                data: {{
+                    labels: chartData.groups,
+                    datasets: [
+                        {{
+                            label: 'Media',
+                            data: chartData.means,
+                            backgroundColor: chartData.colors,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            order: 1
+                        }},
+                        ...createThresholdDatasets(chartData.groups.length)
+                    ]
+                }},
+                options: {{
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {{
+                        legend: {{ display: false }},
+                        tooltip: {{
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            cornerRadius: 6,
+                            titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
+                            bodyFont: {{ family: "'Inter', sans-serif", size: 12 }}
+                        }}
+                    }},
+                    scales: {{
+                        x: {{
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {{ color: '#f1f5f9', drawBorder: false }},
+                            ticks: {{
+                                font: {{ size: 11, family: "'Inter', sans-serif" }},
+                                color: '#94a3b8'
+                            }}
+                        }},
+                        y: {{
+                            grid: {{ display: false, drawBorder: false }},
+                            ticks: {{
+                                font: {{ size: 11, family: "'Inter', sans-serif", weight: '500' }},
+                                color: '#0f172a'
+                            }}
+                        }}
+                    }}
+                }}
+            }});
+            
+            function updateChart() {{
+                let entries = chartData.allGroups.map(group => {{
+                    const stats = chartData.statsByGender[group] || {{}};
+                    let totalMean = 0;
+                    let count = 0;
+                    Object.values(stats).forEach(s => {{
+                        totalMean += s.mean * s.count;
+                        count += s.count;
+                    }});
+                    return {{
+                        group: group,
+                        mean: count > 0 ? totalMean / count : 0,
+                        color: chartData.allColors[group]
+                    }};
+                }});
+                
+                // Ordenar
+                entries.sort((a, b) => ascending ? a.mean - b.mean : b.mean - a.mean);
+                
+                if (byGender) {{
+                    // Dividir por género
+                    const genderColors = {{
+                        'Masculino': '#3b82f6',
+                        'Femenino': '#ec4899',
+                        'Otro': '#94a3b8',
+                        'Prefiere no decir': '#64748b'
+                    }};
+                    
+                    chart.data.labels = entries.map(e => e.group);
+                    chart.data.datasets = [];
+                    
+                    ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir'].forEach(gender => {{
+                        const genderData = entries.map(e => {{
+                            const stats = chartData.statsByGender[e.group];
+                            return stats && stats[gender] ? stats[gender].mean : null;
+                        }});
+                        
+                        if (genderData.some(v => v !== null)) {{
+                            chart.data.datasets.push({{
+                                label: gender,
+                                data: genderData,
+                                backgroundColor: genderColors[gender],
+                                borderRadius: 6,
+                                borderSkipped: false
+                            }});
+                        }}
+                    }});
+                    chart.options.plugins.legend.display = true;
+                    chart.options.plugins.legend.position = 'top';
+                    // Añadir umbrales
+                    chart.data.datasets.push(...createThresholdDatasets(chart.data.labels.length));
+                }} else {{
+                    // Vista normal
+                    chart.data.labels = entries.map(e => e.group);
+                    chart.data.datasets = [
+                        {{
+                            label: 'Media',
+                            data: entries.map(e => e.mean),
+                            backgroundColor: entries.map(e => e.color),
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            order: 1
+                        }},
+                        ...createThresholdDatasets(entries.length)
+                    ];
+                    chart.options.plugins.legend.display = false;
+                }}
+                
+                chart.update();
+            }}
+            
+            document.getElementById('gender_{chart_id}').addEventListener('change', function(e) {{
+                byGender = e.target.checked;
+                updateChart();
+            }});
+            
+            document.getElementById('sort_{chart_id}').addEventListener('click', function() {{
+                ascending = !ascending;
+                this.innerHTML = ascending ? 'Orden: Ascendente' : 'Orden: Descendente';
+                updateChart();
+            }});
+        }})();
+        </script>
+        '''
 
     def _chart_json_metric(self, df, label):
-        """Gráfico de barras para métricas JSON (respuestas múltiples)."""
+        """Gráfico de barras horizontales para métricas JSON."""
         if df.empty:
             return ''
         
         # Contar frecuencias de respuestas
-        import json
         responses = []
         for val in df['value_json'].dropna():
             try:
@@ -324,56 +1286,129 @@ class DashboardCharts(models.TransientModel):
         from collections import Counter
         counts = Counter(responses)
         
-        fig = go.Figure(data=[
-            go.Bar(
-                x=list(counts.keys()),
-                y=list(counts.values()),
-                marker_color='#667eea'
-            )
-        ])
+        # Ordenar por frecuencia descendente
+        sorted_items = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+        labels = [item[0] for item in sorted_items[:10]]  # Top 10
+        values = [item[1] for item in sorted_items[:10]]
         
-        fig.update_layout(
-            title=f'📊 {label}',
-            xaxis_title='Respuesta',
-            yaxis_title='Frecuencia',
-            height=400,
-            template='plotly_white'
-        )
+        chart_id = f'chart_{label.replace(" ", "_").replace("/", "_")}'
         
-        return fig.to_html(full_html=False, include_plotlyjs='cdn', div_id=f'chart_{label.replace(" ", "_")}')
+        return f'''
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">{label}</h5>
+                <p class="card-subtitle">Distribución de respuestas</p>
+            </div>
+            <div class="card-body">
+                <canvas id="{chart_id}" height="300"></canvas>
+            </div>
+        </div>
+        
+        <script>
+        new Chart(document.getElementById('{chart_id}'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps(labels)},
+                datasets: [{{
+                    label: 'Frecuencia',
+                    data: {json.dumps(values)},
+                    backgroundColor: '#10b981',
+                    borderRadius: 6,
+                    borderSkipped: false
+                }}]
+            }},
+            options: {{
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {{
+                    legend: {{ display: false }},
+                    tooltip: {{
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        cornerRadius: 6,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }}
+                    }}
+                }},
+                scales: {{
+                    x: {{
+                        beginAtZero: true,
+                        grid: {{ color: '#f1f5f9', drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 12, family: "'Inter', sans-serif" }},
+                            color: '#94a3b8'
+                        }}
+                    }},
+                    y: {{
+                        grid: {{ display: false, drawBorder: false }},
+                        ticks: {{
+                            font: {{ size: 12, family: "'Inter', sans-serif" }},
+                            color: '#94a3b8'
+                        }}
+                    }}
+                }},
+                animation: {{
+                    duration: 600,
+                    easing: 'easeInOutCubic'
+                }}
+            }}
+        }});
+        </script>
+        '''
 
     def _chart_text_metric(self, df, label):
-        """Tabla simple para métricas de texto."""
+        """Tabla profesional para métricas de texto."""
         if df.empty:
             return ''
         
         # Mostrar solo primeros 50 registros
         df_sample = df[['student_name', 'value_text']].head(50)
         
+        rows_html = ''
+        for _, row in df_sample.iterrows():
+            rows_html += f'''
+            <tr>
+                <td>{row['student_name']}</td>
+                <td>{row['value_text']}</td>
+            </tr>
+            '''
+        
         return f"""
-        <div class="card mb-4">
+        <div class="card">
             <div class="card-header">
-                <h5>📝 {label}</h5>
+                <h5 class="card-title">{label}</h5>
+                <p class="card-subtitle">Respuestas de texto</p>
             </div>
             <div class="card-body">
                 <div style="max-height: 400px; overflow-y: auto;">
-                    {df_sample.to_html(index=False, classes='table table-striped', border=0)}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Respuesta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows_html}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
         """
 
     def _generate_kpis(self, df, filters, role_info):
-        """Genera tarjetas KPI con estadísticas agregadas."""
+        """Genera tarjetas KPI con diseño profesional."""
         kpis = []
         
         # Total de estudiantes
         total_students = df['student_id'].nunique()
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-users"></i></div>
             <div class="kpi-label">Estudiantes</div>
-            <div class="kpi-number">{total_students}</div>
+            <div class="kpi-value">{total_students}</div>
+            <div class="kpi-description">Total analizados</div>
         </div>
         """)
         
@@ -381,9 +1416,9 @@ class DashboardCharts(models.TransientModel):
         total_groups = df['group_id'].nunique()
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-user-group"></i></div>
             <div class="kpi-label">Grupos</div>
-            <div class="kpi-number">{total_groups}</div>
+            <div class="kpi-value">{total_groups}</div>
+            <div class="kpi-description">Académicos</div>
         </div>
         """)
         
@@ -391,19 +1426,19 @@ class DashboardCharts(models.TransientModel):
         total_evals = df['evaluation_id'].nunique()
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-clipboard-check"></i></div>
             <div class="kpi-label">Evaluaciones</div>
-            <div class="kpi-number">{total_evals}</div>
+            <div class="kpi-value">{total_evals}</div>
+            <div class="kpi-description">Completadas</div>
         </div>
         """)
         
         # Total de métricas
-        total_metrics = df['metric_name'].nunique()
+        total_metrics = len(df)
         kpis.append(f"""
         <div class="kpi-card">
-            <div class="kpi-icon-bg"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-label">Métricas</div>
-            <div class="kpi-number">{total_metrics}</div>
+            <div class="kpi-value">{total_metrics}</div>
+            <div class="kpi-description">Registradas</div>
         </div>
         """)
         
@@ -416,27 +1451,24 @@ class DashboardCharts(models.TransientModel):
         
         return f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="es">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Dashboard de Métricas - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
             {self._styles()}
         </head>
         <body>
             {self._header(role_badge, role_info)}
             <div class="container-fluid mt-4">
                 {filter_controls}
-                <div class="text-center py-5">
-                    <i class="fa-solid fa-chart-line fa-5x text-muted mb-4"></i>
-                    <h3 class="text-muted">No hay datos disponibles para mostrar</h3>
-                    <p class="text-muted">Ajusta los filtros para ver resultados</p>
+                <div class="empty-state">
+                    <i class="fa-solid fa-chart-line fa-4x"></i>
+                    <h3>No hay datos disponibles</h3>
+                    <p>Ajusta los filtros para ver resultados</p>
                 </div>
             </div>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
             {self._scripts()}
         </body>
         </html>
@@ -451,15 +1483,14 @@ class DashboardCharts(models.TransientModel):
         
         return f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="es">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Dashboard de Métricas - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-            <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
             {self._styles()}
         </head>
         <body>
@@ -475,7 +1506,6 @@ class DashboardCharts(models.TransientModel):
                     {charts_html}
                 </div>
             </div>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
             {self._scripts()}
         </body>
         </html>
@@ -651,51 +1681,104 @@ class DashboardCharts(models.TransientModel):
         """
 
     def _styles(self):
-        """Estilos CSS del dashboard."""
+        """Estilos profesionales tipo Stripe/Linear/Notion."""
         return """
     <style>
-        body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-bottom: 60px; color: #1e293b; }
-        .dashboard-header { background: white; padding: 1.5rem 2rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); }
-        .header-title h1 { font-size: 1.5rem; font-weight: 700; margin: 0; color: #0f172a; }
-        .header-meta { color: #64748b; font-size: 0.875rem; margin-top: 4px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
-        .filter-panel { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
-        .filter-header { 
-            padding: 1.25rem 1.5rem; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #fafbfc;
+            color: #0f172a;
+            line-height: 1.6;
+            font-size: 15px;
+            padding-bottom: 80px;
+        }
+        
+        .dashboard-header {
+            background: white;
+            padding: 24px 32px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-meta {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        /* Filtros */
+        .filter-panel {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        
+        .filter-header {
+            padding: 16px 20px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .filter-header:hover {
+            background: #fafbfc;
+        }
+        
+        .filter-header h5 {
+            font-size: 15px;
             font-weight: 600;
-        }
-        .filter-header .badge { font-size: 0.75rem; font-weight: 600; }
-        .filter-header .btn-outline-secondary { 
-            color: white; 
-            border-color: rgba(255,255,255,0.5); 
-            background: rgba(255,255,255,0.1);
-        }
-        .filter-header .btn-outline-secondary:hover { 
-            background: rgba(255,255,255,0.2); 
-            border-color: white; 
+            color: #0f172a;
+            margin: 0;
         }
         
-        .filter-content { 
-            padding: 1.5rem; 
-            background: #f8fafc;
-            animation: slideDown 0.3s ease-out;
+        .filter-content {
+            padding: 24px;
+            background: white;
+            display: none;
         }
         
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .filter-content.show {
+            display: block;
         }
         
         .filter-section {
-            background: white;
-            padding: 1.25rem;
+            background: #fafbfc;
+            padding: 20px;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #f1f5f9;
             height: 100%;
         }
         
@@ -703,71 +1786,316 @@ class DashboardCharts(models.TransientModel):
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 0.75rem;
-            font-size: 0.95rem;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .filter-section .btn-link {
-            padding: 0 0.5rem;
+            padding: 0 8px;
             text-decoration: none;
-            color: #6366f1;
-            font-size: 0.8rem;
+            color: #3b82f6;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: none;
         }
+        
         .filter-section .btn-link:hover {
-            color: #4f46e5;
+            color: #2563eb;
             text-decoration: underline;
         }
         
         .checkbox-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 0.5rem;
+            gap: 8px;
         }
         
         .filter-checkbox {
-            padding: 0.5rem;
+            padding: 8px 12px;
             border-radius: 6px;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            background: white;
+            border: 1px solid transparent;
         }
         
         .filter-checkbox:hover {
-            background: #f1f5f9;
+            background: white;
+            border-color: #e5e7eb;
         }
         
-        .filter-checkbox input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+        .filter-checkbox input[type=\"checkbox\"] {
+            width: 16px;
+            height: 16px;
             cursor: pointer;
+            accent-color: #3b82f6;
         }
         
         .filter-checkbox label {
             cursor: pointer;
-            margin-left: 0.5rem;
+            margin-left: 8px;
             margin-bottom: 0;
-            font-size: 0.9rem;
+            font-size: 14px;
+            color: #334155;
             user-select: none;
         }
         
         .form-control, .form-select {
             border-radius: 6px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #e5e7eb;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
         }
         
         .form-control:focus, .form-select:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
         }
         
-        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { background: white; border-radius: 16px; padding: 1.25rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: transform 0.2s; }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .kpi-icon-bg { position: absolute; right: -5px; top: -5px; font-size: 4rem; opacity: 0.05; transform: rotate(15deg); }
-        .kpi-label { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-        .kpi-number { font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0.25rem 0; }
+        /* KPIs */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
         
-        .charts-container { display: grid; gap: 1.5rem; }
-        .card { border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card-header { background: white; border-bottom: 1px solid #e2e8f0; font-weight: 600; }
+        .kpi-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 24px;
+            transition: all 0.2s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #d1d5db;
+        }
+        
+        .kpi-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        
+        .kpi-description {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        
+        /* Tarjetas de gráficos */
+        .charts-container {
+            display: grid;
+            gap: 24px;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            background: white;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0;
+        }
+        
+        .card-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin: 4px 0 0 0;
+            font-weight: 400;
+        }
+        
+        .card-body {
+            padding: 24px;
+        }
+        
+        /* Tablas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        thead {
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tbody tr:hover {
+            background: #fafbfc;
+        }
+        
+        /* Botones */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .btn-outline-secondary {
+            background: white;
+            color: #64748b;
+            border-color: #e5e7eb;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: #fafbfc;
+            border-color: #d1d5db;
+            color: #475569;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        
+        .btn-lg {
+            padding: 12px 20px;
+            font-size: 15px;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .badge.bg-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .badge.bg-primary {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge.bg-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge.bg-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #94a3b8;
+        }
+        
+        .empty-state i {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        
+        /* Utilidades */
+        .mt-4 { margin-top: 24px; }
+        .my-4 { margin-top: 24px; margin-bottom: 24px; }
+        .ms-2 { margin-left: 8px; }
+        .me-2 { margin-right: 8px; }
+        .mb-4 { margin-bottom: 24px; }
+        .w-100 { width: 100%; }
+        .text-primary { color: #3b82f6; }
+        .text-muted { color: #94a3b8; }
+        .row { display: flex; flex-wrap: wrap; margin: 0 -12px; }
+        .col-12 { flex: 0 0 100%; max-width: 100%; padding: 0 12px; }
+        .col-md-4 { flex: 0 0 33.333%; max-width: 33.333%; padding: 0 12px; }
+        .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 12px; }
+        .g-2 { gap: 8px; }
+        
+        @media (max-width: 768px) {
+            .col-md-4, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
+        }
     </style>
         """
 

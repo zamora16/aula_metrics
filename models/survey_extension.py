@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-# Importar configuración centralizada
-from .survey_config import SURVEY_SCORING_CONFIGS
 from .survey_scoring_strategies import SCORING_STRATEGIES
 from odoo.exceptions import UserError
 
@@ -145,13 +143,24 @@ class SurveyExtension(models.Model):
             
             # 4. Validar opciones en preguntas cerradas
             questions_without_options = 0
+            matrix_questions = []
             for question in questions:
                 if question.question_type in ['simple_choice', 'multiple_choice', 'matrix']:
                     if len(question.suggested_answer_ids) < 2:
                         questions_without_options += 1
+                    elif question.question_type == 'matrix':
+                        # Detectar max_sequence de cada matriz
+                        sequences = [ans.sequence for ans in question.suggested_answer_ids if hasattr(ans, 'sequence') and ans.sequence]
+                        if sequences:
+                            max_seq = max(sequences)
+                            matrix_questions.append((question.title[:50], max_seq))
             
             if questions_without_options > 0:
                 warnings.append(f"{questions_without_options} pregunta(s) sin suficientes opciones (mínimo 2).")
+            
+            # 5. Información sobre normalización automática de matrices
+            if matrix_questions:
+                successes.append(f"Preguntas matriz: {len(matrix_questions)}. Se normalizarán automáticamente a 0-100. ✓")
             
             # Construir HTML
             html = "<div style='padding: 10px;'>"
@@ -172,6 +181,23 @@ class SurveyExtension(models.Model):
             
             if not warnings and not successes:
                 html += "<p style='color: #6c757d;'>Añade preguntas para ver el análisis de calidad.</p>"
+            
+            # Información sobre el sistema de scoring
+            if matrix_questions:
+                html += "<div style='background-color: #e7f3ff; border-left: 4px solid #2196F3; padding: 10px; margin-top: 10px;'>"
+                html += "<strong style='color: #0d47a1;'>ℹ️ Sistema de Scoring Automático</strong>"
+                html += "<ul style='margin: 5px 0; color: #0d47a1;'>"
+                html += "<li>Todas las preguntas matriz se normalizan automáticamente a escala 0-100</li>"
+                html += "<li>Cada pregunta genera una métrica individual que puede usarse en dashboards y alertas</li>"
+                html += "</ul>"
+                html += "<details style='margin-top: 5px;'><summary style='cursor: pointer; color: #1976d2;'>Ver escalas detectadas por pregunta ▼</summary>"
+                html += "<ul style='margin: 5px 0; font-size: 0.9em;'>"
+                for q_title, max_seq in matrix_questions[:10]:
+                    html += f"<li>'{q_title}...': Escala 1-{max_seq} → normalizada a 0-100</li>"
+                if len(matrix_questions) > 10:
+                    html += f"<li><em>... y {len(matrix_questions) - 10} más</em></li>"
+                html += "</ul></details>"
+                html += "</div>"
             
             html += "</div>"
             survey.quality_feedback = html
@@ -208,25 +234,28 @@ class SurveyExtension(models.Model):
     def calculate_scores(self, user_input):
         """
         Calcula las puntuaciones de este cuestionario para una respuesta dada.
-        Usa estrategia específica para oficiales o genérica para ad hoc.
+        v1.9.0: Todas las encuestas usan la estrategia universal (1 cuestionario = 1 métrica)
         """
         self.ensure_one()
         
-        # Si es ad hoc, usar estrategia genérica
-        if self.is_adhoc:
-            config = {'max_sequence': 5}  # Config por defecto para matriz
-            scoring_class = SCORING_STRATEGIES.get('ADHOC')
-            if scoring_class:
-                return scoring_class(self, config).calculate(user_input)
+        if not user_input:
             return []
         
-        # Si es oficial, usar estrategia específica
-        config = SURVEY_SCORING_CONFIGS.get(self.survey_code)
-        if not config:
-            return []
+        try:
+            # Determinar qué estrategia usar
+            if self.is_adhoc:
+                strategy_key = 'ADHOC'
+            elif self.survey_code:
+                strategy_key = self.survey_code
+            else:
+                return []
+            
+            # Obtener y ejecutar estrategia
+            scoring_class = SCORING_STRATEGIES.get(strategy_key)
+            if not scoring_class:
+                return []
+            
+            return scoring_class(self).calculate(user_input)
         
-        scoring_class = SCORING_STRATEGIES.get(self.survey_code)
-        if not scoring_class:
+        except Exception:
             return []
-        
-        return scoring_class(self, config).calculate(user_input)

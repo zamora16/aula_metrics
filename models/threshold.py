@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-# Importar configuración centralizada
-from .survey_config import SURVEY_METRICS
-
 class Threshold(models.Model):
     _name = 'aulametrics.threshold'
     _description = 'Umbral para Alertas'
 
     name = fields.Char(string='Nombre', required=True, help='Ej: Alto Estrés ASQ-14')
-    survey_id = fields.Many2one('survey.survey', string='Cuestionario', required=True, domain=[('is_aulametrics', '=', True)])
     score_field = fields.Selection(
         selection='_get_score_field_options',
         string='Campo de Puntuación',
@@ -22,11 +18,28 @@ class Threshold(models.Model):
 
     @api.model
     def _get_score_field_options(self):
-        """Genera opciones dinámicamente desde SURVEY_METRICS"""
+        """Genera opciones dinámicamente desde TODOS los cuestionarios AulaMetrics (oficiales y del centro)"""
         options = []
-        for survey_config in SURVEY_METRICS.values():
-            for field_name, label in survey_config['labels'].items():
-                options.append((field_name, label))
+        # Obtener todos los cuestionarios de AulaMetrics (oficiales y ad hoc)
+        surveys = self.env['survey.survey'].search([
+            ('is_aulametrics', '=', True)
+        ], order='is_adhoc, title')
+        
+        for survey in surveys:
+            # Para oficiales: usar survey_code
+            if survey.survey_code:
+                metric_name = survey.survey_code
+            # Para ad hoc: usar survey_{id}
+            else:
+                metric_name = f"survey_{survey.id}"
+            
+            # Añadir indicador de tipo para claridad
+            label = survey.title
+            if survey.is_adhoc:
+                label = f"{survey.title} - Cuestionario del centro"
+            
+            options.append((metric_name, label))
+        
         return options
     severity = fields.Selection([
         ('low', 'Leve'),

@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-# Importar configuración centralizada
-from .survey_config import SURVEY_METRICS
-
 
 class Report(models.Model):
     """
@@ -54,23 +51,6 @@ class Report(models.Model):
         string='Media Estrés',
         compute='_compute_statistics',
         digits=(5, 1)
-    )
-
-    # Indicadores de surveys incluidos
-    has_who5 = fields.Boolean(
-        related='evaluation_id.has_who5',
-        string='Incluye WHO-5',
-        store=True
-    )
-    has_bullying = fields.Boolean(
-        related='evaluation_id.has_bullying',
-        string='Incluye Bullying',
-        store=True
-    )
-    has_stress = fields.Boolean(
-        related='evaluation_id.has_stress',
-        string='Incluye Estrés',
-        store=True
     )
 
     @api.depends('evaluation_id.participation_ids.state')

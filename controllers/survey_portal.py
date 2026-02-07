@@ -137,7 +137,7 @@ class AulaMetricsSurveyPortal(http.Controller):
             
             return request.redirect(f'/evaluacion/{token}?msg=guardado')
             
-        except Exception as e:
+        except Exception:
             return request.render('aula_metrics.portal_error', {
                 'error_title': 'Error al guardar',
                 'error_message': 'Hubo un problema al guardar tus respuestas. Por favor, inténtalo de nuevo.'

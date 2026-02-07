@@ -8,56 +8,59 @@ class SurveyUserInput(models.Model):
     def _mark_done(self):
         """
         Override del método que marca una encuesta como completada.
-        Si la encuesta es de AulaMetrics y el alumno ha completado todos los 
-        cuestionarios de la evaluación, marca la participación como completada.
+        Calcula scores, verifica alertas y marca participación como completada si corresponde.
         """
         res = super(SurveyUserInput, self)._mark_done()
         
         for user_input in self:
-            # Solo procesar si es un cuestionario de AulaMetrics
-            if not user_input.survey_id.is_aulametrics:
-                continue
-            
-            # Buscar la participación correspondiente
-            # El partner_id del user_input corresponde al alumno
-            if not user_input.partner_id:
-                continue
-            
-            # Buscar evaluaciones activas que usen esta encuesta
-            evaluations = self.env['aulametrics.evaluation'].search([
-                ('state', 'in', ['scheduled', 'active']),
-                ('survey_ids', 'in', user_input.survey_id.id)
-            ])
-            
-            # Buscar la participación pendiente del alumno
-            for evaluation in evaluations:
-                participation = self.env['aulametrics.participation'].search([
-                    ('evaluation_id', '=', evaluation.id),
-                    ('student_id', '=', user_input.partner_id.id),
-                    ('state', '=', 'pending')
-                ], limit=1)
-                
-                if not participation:
+            try:
+                if not user_input.survey_id or not user_input.survey_id.is_aulametrics:
                     continue
                 
-                # 1. Calcular puntuaciones parciales inmediatamente
-                participation._calculate_scores()
+                if not user_input.partner_id:
+                    continue
                 
-                # 2. Verificar alertas inmediatamente
-                participation.check_alerts()
-                
-                # 3. Verificar si ha completado TODOS los cuestionarios de ESTA evaluación
-                # Solo contar user_inputs creados DESPUÉS del inicio de la evaluación
-                all_surveys = evaluation.survey_ids
-                completed_surveys = self.env['survey.user_input'].search_count([
-                    ('partner_id', '=', user_input.partner_id.id),
-                    ('survey_id', 'in', all_surveys.ids),
-                    ('state', '=', 'done'),
-                    ('create_date', '>=', evaluation.date_start)
+                evaluations = self.env['aulametrics.evaluation'].search([
+                    ('state', 'in', ['scheduled', 'active']),
+                    ('survey_ids', 'in', user_input.survey_id.id)
                 ])
                 
-                # Si completó todos los cuestionarios, marcar participación como completada
-                if completed_surveys == len(all_surveys):
-                    participation.action_complete()
+                if not evaluations:
+                    continue
+                
+                for evaluation in evaluations:
+                    participation = self.env['aulametrics.participation'].search([
+                        ('evaluation_id', '=', evaluation.id),
+                        ('student_id', '=', user_input.partner_id.id),
+                        ('state', '=', 'pending')
+                    ], limit=1)
+                    
+                    if not participation:
+                        continue
+                    
+                    # Calcular puntuaciones y verificar alertas
+                    try:
+                        participation._calculate_scores()
+                        participation.check_alerts()
+                    except Exception:
+                        pass
+                    
+                    # Verificar si completó todos los cuestionarios
+                    try:
+                        all_surveys = evaluation.survey_ids
+                        completed_surveys = self.env['survey.user_input'].search_count([
+                            ('partner_id', '=', user_input.partner_id.id),
+                            ('survey_id', 'in', all_surveys.ids),
+                            ('state', '=', 'done'),
+                            ('create_date', '>=', evaluation.date_start)
+                        ])
+                        
+                        if completed_surveys == len(all_surveys):
+                            participation.action_complete()
+                    except Exception:
+                        pass
+            
+            except Exception:
+                continue
         
         return res
