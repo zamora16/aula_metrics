@@ -1,93 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Vista Tree de Reportes -->
-    <record id="view_report_tree" model="ir.ui.view">
-        <field name="name">aulametrics.report.tree</field>
-        <field name="model">aulametrics.report</field>
-        <field name="arch" type="xml">
-            <tree string="Resultados de Evaluaciones" create="false" delete="false">
-                <field name="name"/>
-                <field name="state" widget="badge" 
-                       decoration-info="state == 'draft'" 
-                       decoration-warning="state == 'scheduled'" 
-                       decoration-success="state == 'active'" 
-                       decoration-muted="state in ('closed', 'cancelled')"/>
-                <field name="evaluation_id" column_invisible="1"/>
-                <field name="completion_rate" widget="progressbar"/>
-            </tree>
-        </field>
-    </record>
-
-    <!-- Vista Form de Reporte -->
-    <record id="view_report_form" model="ir.ui.view">
-        <field name="name">aulametrics.report.form</field>
-        <field name="model">aulametrics.report</field>
-        <field name="arch" type="xml">
-            <form string="Resultados de Evaluación">
-                <sheet>
-                    <!-- Cabecera -->
-                    <div class="oe_title">
-                        <h1>
-                            <field name="name" readonly="1"/>
-                        </h1>
-                    </div>
-
-                    <!-- Botones de acción -->
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_interactive_dashboard" type="object"
-                                class="oe_stat_button" icon="fa-line-chart">
-                            <span class="o_stat_text">Dashboard</span>
-                        </button>
-                        <button name="action_view_participations" type="object"
-                                class="oe_stat_button" icon="fa-users">
-                            <span class="o_stat_text">Puntuaciones</span>
-                        </button>
-                    </div>
-
-                    <!-- Info general -->
-                    <group>
-                        <group string="Información">
-                            <field name="evaluation_id" readonly="1"/>
-                            <field name="state" widget="badge"/>
-                        </group>
-                        <group string="Participación">
-                            <field name="completion_rate" widget="progressbar"/>
-                        </group>
-                    </group>
-
-                    <!-- Estadísticas de puntuaciones -->
-                    <group string="Estadísticas Globales (Promedios)">
-                        <group>
-                            <field name="avg_who5" widget="progressbar" 
-                                   options="{'max_value': 100}"/>
-                        </group>
-                        <group>
-                            <field name="avg_bullying" widget="progressbar"
-                                   options="{'max_value': 100}"/>
-                        </group>
-                        <group>
-                            <field name="avg_stress" widget="progressbar"
-                                   options="{'max_value': 100}"/>
-                        </group>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
-
-    <!-- Acción para abrir reportes -->
-    <record id="action_report" model="ir.actions.act_window">
-        <field name="name">Resultados</field>
-        <field name="res_model">aulametrics.report</field>
-        <field name="view_mode">tree,form</field>
-        <field name="context">{'create': False}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                No hay resultados disponibles
-            </p>
-            <p>
-                Los resultados aparecen automáticamente cuando las evaluaciones se activan.
-            </p>
-        </field>
-    </record>
+    <!-- 
+    VISTAS DESACTIVADAS - El acceso a reportes ahora es a través del Dashboard General
+    
+    Las vistas tree y form del modelo aulametrics.report ya no se usan en el menú.
+    El dashboard general proporciona toda la funcionalidad de análisis necesaria.
+    Se mantiene el modelo report.py para compatibilidad con evaluaciones existentes.
+    -->
 </odoo>

@@ -1457,18 +1457,38 @@ class DashboardCharts(models.TransientModel):
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Dashboard de Métricas - AulaMetrics</title>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             {self._styles()}
         </head>
         <body>
             {self._header(role_badge, role_info)}
-            <div class="container-fluid mt-4">
-                {filter_controls}
-                <div class="empty-state">
-                    <i class="fa-solid fa-chart-line fa-4x"></i>
-                    <h3>No hay datos disponibles</h3>
-                    <p>Ajusta los filtros para ver resultados</p>
+            
+            <!-- Contenido de las pestañas -->
+            <div class="tab-content" id="dashboardTabContent">
+                <!-- Pestaña Datos Cuantitativos -->
+                <div class="tab-pane fade show active" id="quantitative" role="tabpanel" aria-labelledby="quantitative-tab">
+                    <div class="container-fluid mt-4">
+                        {filter_controls}
+                        <div class="empty-state">
+                            <i class="fa-solid fa-chart-line fa-4x"></i>
+                            <h3>No hay datos disponibles</h3>
+                            <p>Ajusta los filtros para ver resultados</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pestaña Datos Cualitativos -->
+                <div class="tab-pane fade" id="qualitative" role="tabpanel" aria-labelledby="qualitative-tab">
+                    <div id="qualitativeContent">
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
+                            <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
             {self._scripts()}
         </body>
         </html>
@@ -1489,23 +1509,43 @@ class DashboardCharts(models.TransientModel):
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Dashboard de Métricas - AulaMetrics</title>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
             {self._styles()}
         </head>
         <body>
             {self._header(role_badge, role_info)}
-            <div class="container-fluid mt-4">
-                {filter_controls}
-                
-                <div class="kpi-container my-4">
-                    {kpi_html}
+            
+            <!-- Contenido de las pestañas -->
+            <div class="tab-content" id="dashboardTabContent">
+                <!-- Pestaña Datos Cuantitativos -->
+                <div class="tab-pane fade show active" id="quantitative" role="tabpanel" aria-labelledby="quantitative-tab">
+                    <div class="container-fluid mt-4">
+                        {filter_controls}
+                        
+                        <div class="kpi-container my-4">
+                            {kpi_html}
+                        </div>
+                        
+                        <div class="charts-container">
+                            {charts_html}
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="charts-container">
-                    {charts_html}
+                <!-- Pestaña Datos Cualitativos -->
+                <div class="tab-pane fade" id="qualitative" role="tabpanel" aria-labelledby="qualitative-tab">
+                    <div id="qualitativeContent">
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
+                            <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
             {self._scripts()}
         </body>
         </html>
@@ -2128,6 +2168,24 @@ class DashboardCharts(models.TransientModel):
             </a>
         </div>
     </header>
+    
+    <!-- Pestañas de navegación -->
+    <div class="container-fluid mt-3">
+        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="quantitative-tab" data-bs-toggle="tab" data-bs-target="#quantitative" 
+                        type="button" role="tab" aria-controls="quantitative" aria-selected="true">
+                    <i class="fa-solid fa-chart-line me-2"></i>Datos Cuantitativos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="qualitative-tab" data-bs-toggle="tab" data-bs-target="#qualitative" 
+                        type="button" role="tab" aria-controls="qualitative" aria-selected="false">
+                    <i class="fa-solid fa-comments me-2"></i>Datos Cualitativos
+                </button>
+            </li>
+        </ul>
+    </div>
         """
 
     def _scripts(self):
@@ -2190,6 +2248,57 @@ class DashboardCharts(models.TransientModel):
             const evalChecks = document.querySelectorAll('.eval-check:checked');
             const evalValues = Array.from(evalChecks).map(c => c.value);
             document.getElementById('evaluation_ids_input').value = evalValues.join(',');
+        });
+        
+        // Cargar contenido cualitativo cuando se activa la pestaña
+        let qualitativeLoaded = false;
+        document.getElementById('qualitative-tab').addEventListener('click', function() {
+            if (!qualitativeLoaded) {
+                qualitativeLoaded = true;
+                const contentDiv = document.getElementById('qualitativeContent');
+                
+                fetch('/aulametrics/qualitative/dashboard?embedded=true')
+                    .then(response => response.text())
+                    .then(html => {
+                        contentDiv.innerHTML = html;
+                        
+                        // Ejecutar scripts si los hay
+                        const scripts = contentDiv.querySelectorAll('script');
+                        scripts.forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            if (oldScript.src) {
+                                newScript.src = oldScript.src;
+                                // Si es una librería externa, esperar a que cargue
+                                if (oldScript.src.includes('d3')) {
+                                    newScript.onload = function() {
+                                        console.log('D3 cargado:', oldScript.src);
+                                    };
+                                }
+                            } else {
+                                newScript.textContent = oldScript.textContent;
+                            }
+                            oldScript.parentNode.replaceChild(newScript, oldScript);
+                        });
+                        
+                        // Dar tiempo a que los scripts se ejecuten y luego inicializar wordclouds
+                        setTimeout(() => {
+                            console.log('Intentando inicializar wordclouds...');
+                            if (typeof initWordcloudCounselor !== 'undefined') {
+                                console.log('Llamando a initWordcloudCounselor');
+                                initWordcloudCounselor();
+                            } else if (typeof initWordcloudTutor !== 'undefined') {
+                                console.log('Llamando a initWordcloudTutor');
+                                initWordcloudTutor();
+                            } else {
+                                console.log('No se encontraron funciones de inicialización de wordcloud');
+                            }
+                        }, 500);
+                    })
+                    .catch(error => {
+                        contentDiv.innerHTML = '<div style="text-align: center; padding: 60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 48px; color: #ef4444;"></i><p style="margin-top: 20px; color: #64748b;">Error al cargar datos cualitativos</p></div>';
+                        console.error('Error cargando datos cualitativos:', error);
+                    });
+            }
         });
     </script>
         """

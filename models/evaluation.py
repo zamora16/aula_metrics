@@ -102,12 +102,8 @@ class Evaluation(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Crear evaluación y su reporte asociado"""
+        """Crear evaluación"""
         evaluations = super().create(vals_list)
-        for evaluation in evaluations:
-            self.env['aulametrics.report'].create({
-                'evaluation_id': evaluation.id
-            })
         return evaluations
     
     participation_rate = fields.Float(

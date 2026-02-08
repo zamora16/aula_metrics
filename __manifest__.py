@@ -22,6 +22,7 @@
         'security/record_rules.xml',
         
         # 2. Datos
+        'data/alert_keywords.xml',
         'data/surveys/survey_bullying.xml',
         'data/surveys/survey_who5.xml',
         'data/surveys/survey_asq14.xml',
@@ -36,9 +37,9 @@
         'views/survey_extension_views.xml',
         'views/evaluation_views.xml',
         'views/participations_views.xml',
-        'views/report_views.xml',
         'views/threshold_views.xml',
         'views/alert_views.xml',
+        'views/alert_keyword_views.xml',
         'views/alerts_dashboard.xml',
         'views/survey_portal_templates.xml',
         'views/menu.xml',

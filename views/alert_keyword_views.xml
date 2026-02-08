@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Tree de Palabras Clave de Alerta -->
+    <record id="view_alert_keyword_tree" model="ir.ui.view">
+        <field name="name">alert.keyword.tree</field>
+        <field name="model">aulametrics.alert_keyword</field>
+        <field name="arch" type="xml">
+            <tree string="Palabras Clave de Alerta" decoration-muted="is_variant">
+                <field name="sequence" widget="handle"/>
+                <field name="keyword"/>
+                <field name="parent_keyword_id" optional="hide"/>
+                <field name="severity"/>
+                <field name="is_system_default"/>
+                <field name="is_variant"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista Form de Palabras Clave de Alerta -->
+    <record id="view_alert_keyword_form" model="ir.ui.view">
+        <field name="name">alert.keyword.form</field>
+        <field name="model">aulametrics.alert_keyword</field>
+        <field name="arch" type="xml">
+            <form string="Palabra Clave de Alerta">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <div class="alert alert-info w-100" role="alert" invisible="not is_system_default">
+                            <strong>ℹ️ Palabra del Sistema</strong><br/>
+                            Esta palabra clave es parte de la configuración por defecto.
+                            Puedes desactivarla pero no eliminarla.
+                        </div>
+                        <div class="alert alert-secondary w-100" role="alert" invisible="not is_variant">
+                            <strong>🔗 Variante Automática</strong><br/>
+                            Esta es una variante generada automáticamente de "<field name="parent_keyword_id" readonly="1" nolabel="1"/>"
+                        </div>
+                    </div>
+                    
+                    <field name="is_system_default" invisible="1"/>
+                    <field name="is_variant" invisible="1"/>
+                    
+                    <group>
+                        <group>
+                            <field name="keyword" placeholder="Ej: violencia, exclusión..." readonly="is_variant or is_system_default"/>
+                            <field name="severity"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <field name="description" placeholder="Contexto o razón de esta palabra clave..."/>
+                    </group>
+                    
+                    <notebook invisible="is_variant">
+                        <page string="Variantes Automáticas" name="variants">
+                            <div class="alert alert-info" role="alert">
+                                <strong>ℹ️ Generación Automática de Variantes</strong><br/>
+                                Al guardar esta palabra, el sistema genera automáticamente variantes ortográficas (con/sin tildes)
+                                y gramaticales (verbos, plurales, etc.) para mejorar la detección.
+                            </div>
+                            <field name="parent_keyword_id" invisible="1"/>
+                            <field name="id" invisible="1"/>
+                            <!-- Mostrar variantes de esta palabra -->
+                            <field name="id" invisible="1"/>
+                            <group>
+                                <field name="id" invisible="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para Palabras Clave de Alerta -->
+    <record id="action_alert_keyword" model="ir.actions.act_window">
+        <field name="name">Palabras Clave de Alerta</field>
+        <field name="res_model">aulametrics.alert_keyword</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Configura palabras clave para alertas automáticas</p>
+            <p>
+                Cuando un estudiante mencione estas palabras en respuestas cualitativas,
+                se generará una alerta automática para revisión.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -323,7 +323,7 @@
                             <h2 class="sf-page-title"><t t-out="q['title']"/></h2>
                         </t>
 
-                        <!-- Pregunta tipo Matrix -->
+                        <!-- Preguntas -->
                         <t t-if="q['type'] == 'question'">
                             <div class="sf-question">
                                 <div class="sf-question-title">
@@ -331,31 +331,105 @@
                                     <t t-if="q['constr_mandatory']"><span class="required">*</span></t>
                                 </div>
 
-                                <table class="sf-matrix">
-                                    <thead>
-                                        <tr>
-                                            <th></th>
-                                            <t t-foreach="q['suggested_answer_ids']" t-as="col">
-                                                <th><t t-out="col.value"/></th>
-                                            </t>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="q['matrix_row_ids']" t-as="row">
+                                <!-- Pregunta tipo texto largo (textarea) -->
+                                <t t-if="q['question_type'] == 'text_box'">
+                                    <textarea class="sf-input" 
+                                              t-attf-name="question_#{q['id']}"
+                                              t-att-required="q['constr_mandatory']"
+                                              placeholder="Escribe tu respuesta aquí..."></textarea>
+                                </t>
+
+                                <!-- Pregunta tipo texto corto (input) -->
+                                <t t-if="q['question_type'] == 'char_box'">
+                                    <input type="text" 
+                                           class="sf-input" 
+                                           t-attf-name="question_#{q['id']}"
+                                           t-att-required="q['constr_mandatory']"
+                                           placeholder="Escribe tu respuesta..."/>
+                                </t>
+
+                                <!-- Pregunta tipo numérico -->
+                                <t t-if="q['question_type'] == 'numerical_box'">
+                                    <input type="number" 
+                                           class="sf-input" 
+                                           t-attf-name="question_#{q['id']}"
+                                           t-att-required="q['constr_mandatory']"
+                                           placeholder="Ingresa un número..."/>
+                                </t>
+
+                                <!-- Pregunta tipo fecha -->
+                                <t t-if="q['question_type'] == 'date'">
+                                    <input type="date" 
+                                           class="sf-input" 
+                                           t-attf-name="question_#{q['id']}"
+                                           t-att-required="q['constr_mandatory']"/>
+                                </t>
+
+                                <!-- Pregunta tipo fecha y hora -->
+                                <t t-if="q['question_type'] == 'datetime'">
+                                    <input type="datetime-local" 
+                                           class="sf-input" 
+                                           t-attf-name="question_#{q['id']}"
+                                           t-att-required="q['constr_mandatory']"/>
+                                </t>
+
+                                <!-- Pregunta tipo selección simple (radio) -->
+                                <t t-if="q['question_type'] == 'simple_choice'">
+                                    <div class="sf-options">
+                                        <t t-foreach="q['suggested_answer_ids']" t-as="answer">
+                                            <label class="sf-option">
+                                                <input type="radio" 
+                                                       t-attf-name="question_#{q['id']}"
+                                                       t-att-value="answer.id"
+                                                       t-att-required="q['constr_mandatory']"/>
+                                                <span><t t-out="answer.value"/></span>
+                                            </label>
+                                        </t>
+                                    </div>
+                                </t>
+
+                                <!-- Pregunta tipo selección múltiple (checkbox) -->
+                                <t t-if="q['question_type'] == 'multiple_choice'">
+                                    <div class="sf-options">
+                                        <t t-foreach="q['suggested_answer_ids']" t-as="answer">
+                                            <label class="sf-option">
+                                                <input type="checkbox" 
+                                                       t-attf-name="question_#{q['id']}_answer_#{answer.id}"
+                                                       t-att-value="answer.id"/>
+                                                <span><t t-out="answer.value"/></span>
+                                            </label>
+                                        </t>
+                                    </div>
+                                </t>
+
+                                <!-- Pregunta tipo Matrix -->
+                                <t t-if="q['question_type'] == 'matrix'">
+                                    <table class="sf-matrix">
+                                        <thead>
                                             <tr>
-                                                <td><t t-out="row.value"/></td>
+                                                <th></th>
                                                 <t t-foreach="q['suggested_answer_ids']" t-as="col">
-                                                    <td>
-                                                        <input type="radio" 
-                                                               t-attf-name="question_#{q['id']}_row_#{row.id}"
-                                                               t-att-value="col.id"
-                                                               t-att-required="q['constr_mandatory']"/>
-                                                    </td>
+                                                    <th><t t-out="col.value"/></th>
                                                 </t>
                                             </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="q['matrix_row_ids']" t-as="row">
+                                                <tr>
+                                                    <td><t t-out="row.value"/></td>
+                                                    <t t-foreach="q['suggested_answer_ids']" t-as="col">
+                                                        <td>
+                                                            <input type="radio" 
+                                                                   t-attf-name="question_#{q['id']}_row_#{row.id}"
+                                                                   t-att-value="col.id"
+                                                                   t-att-required="q['constr_mandatory']"/>
+                                                        </td>
+                                                    </t>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
                             </div>
                         </t>
                     </t>

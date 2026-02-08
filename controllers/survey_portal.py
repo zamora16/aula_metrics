@@ -237,7 +237,7 @@ class AulaMetricsSurveyPortal(http.Controller):
         return questions
     
     def _process_answers(self, survey, user_input, post):
-        """Procesa y guarda respuestas del formulario (solo tipo Matrix)."""
+        """Procesa y guarda respuestas del formulario."""
         SurveyLine = request.env['survey.user_input.line'].sudo()
         
         # Eliminar respuestas anteriores (para permitir re-edición antes de completar)
@@ -246,8 +246,107 @@ class AulaMetricsSurveyPortal(http.Controller):
         for question in survey.question_ids:
             if question.is_page:
                 continue
+            
+            # Procesar según tipo de pregunta
             if question.question_type == 'matrix':
                 self._process_matrix_answer(question, user_input, post, SurveyLine)
+            elif question.question_type in ('text_box', 'char_box'):
+                self._process_text_answer(question, user_input, post, SurveyLine)
+            elif question.question_type == 'simple_choice':
+                self._process_simple_choice_answer(question, user_input, post, SurveyLine)
+            elif question.question_type == 'multiple_choice':
+                self._process_multiple_choice_answer(question, user_input, post, SurveyLine)
+            elif question.question_type == 'numerical_box':
+                self._process_numerical_answer(question, user_input, post, SurveyLine)
+            elif question.question_type in ('date', 'datetime'):
+                self._process_date_answer(question, user_input, post, SurveyLine)
+    
+    def _process_text_answer(self, question, user_input, post, SurveyLine):
+        """Procesa respuestas de texto (text_box, char_box)."""
+        answer_key = f'question_{question.id}'
+        answer_value = post.get(answer_key, '').strip()
+        
+        if answer_value:
+            data = {
+                'user_input_id': user_input.id,
+                'question_id': question.id,
+                'answer_type': question.question_type,  # 'text_box' o 'char_box'
+            }
+            
+            if question.question_type == 'text_box':
+                data['value_text_box'] = answer_value
+            else:
+                data['value_char_box'] = answer_value
+            
+            SurveyLine.create(data)
+    
+    def _process_simple_choice_answer(self, question, user_input, post, SurveyLine):
+        """Procesa respuestas de selección simple (radio)."""
+        answer_key = f'question_{question.id}'
+        answer_value = post.get(answer_key)
+        
+        if answer_value:
+            try:
+                answer_id = int(answer_value)
+                SurveyLine.create({
+                    'user_input_id': user_input.id,
+                    'question_id': question.id,
+                    'answer_type': 'suggestion',
+                    'suggested_answer_id': answer_id,
+                })
+            except (ValueError, TypeError):
+                pass
+    
+    def _process_multiple_choice_answer(self, question, user_input, post, SurveyLine):
+        """Procesa respuestas de selección múltiple (checkbox)."""
+        for key, value in post.items():
+            if key.startswith(f'question_{question.id}_answer_'):
+                try:
+                    answer_id = int(value)
+                    SurveyLine.create({
+                        'user_input_id': user_input.id,
+                        'question_id': question.id,
+                        'answer_type': 'suggestion',
+                        'suggested_answer_id': answer_id,
+                    })
+                except (ValueError, TypeError):
+                    pass
+    
+    def _process_numerical_answer(self, question, user_input, post, SurveyLine):
+        """Procesa respuestas numéricas."""
+        answer_key = f'question_{question.id}'
+        answer_value = post.get(answer_key)
+        
+        if answer_value:
+            try:
+                number = float(answer_value)
+                SurveyLine.create({
+                    'user_input_id': user_input.id,
+                    'question_id': question.id,
+                    'answer_type': 'numerical_box',
+                    'value_numerical_box': number,
+                })
+            except (ValueError, TypeError):
+                pass
+    
+    def _process_date_answer(self, question, user_input, post, SurveyLine):
+        """Procesa respuestas de fecha/datetime."""
+        answer_key = f'question_{question.id}'
+        answer_value = post.get(answer_key)
+        
+        if answer_value:
+            data = {
+                'user_input_id': user_input.id,
+                'question_id': question.id,
+                'answer_type': question.question_type,
+            }
+            
+            if question.question_type == 'date':
+                data['value_date'] = answer_value
+            else:
+                data['value_datetime'] = answer_value
+            
+            SurveyLine.create(data)
     
     def _process_matrix_answer(self, question, user_input, post, SurveyLine):
         """Procesa respuestas de preguntas tipo matriz."""

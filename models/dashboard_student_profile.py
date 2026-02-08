@@ -45,10 +45,11 @@ class DashboardStudentProfile(models.TransientModel):
         kpis = self._generate_student_kpis(student, df)
         alerts_html = self._get_student_alerts_html(student_id)
         participations_html = self._get_participations_html(student_id)
+        qualitative_html = self._get_qualitative_responses_html(student_id)
         
         return self._build_profile_html_chartjs(
             student, role_info, kpis, '', 
-            evolution_charts, radar_chart, alerts_html, participations_html
+            evolution_charts, radar_chart, alerts_html, participations_html, qualitative_html
         )
 
     @api.model
@@ -276,6 +277,58 @@ class DashboardStudentProfile(models.TransientModel):
             </table>
         </div>
         """
+        return html
+
+    def _get_qualitative_responses_html(self, student_id):
+        """Obtiene HTML con las respuestas cualitativas del estudiante."""
+        QualitativeResponse = self.env['aulametrics.qualitative_response']
+        responses = QualitativeResponse.search([
+            ('student_id', '=', student_id)
+        ], order='response_date desc', limit=20)
+        
+        if not responses:
+            return '<p class="text-muted">No hay respuestas cualitativas registradas</p>'
+        
+        html = '<div class="qualitative-responses">'
+        
+        for resp in responses:
+            alert_class = 'alert-warning' if resp.has_alert_keywords else ''
+            alert_badge = '<span class="badge bg-danger">Alerta</span>' if resp.has_alert_keywords else '<span class="badge bg-success">OK</span>'
+            
+            # Información de la pregunta
+            question_title = resp.question_id.title if resp.question_id else 'Pregunta sin título'
+            evaluation_name = resp.evaluation_id.name if resp.evaluation_id else 'Sin evaluación'
+            date_str = resp.response_date.strftime('%d/%m/%Y') if resp.response_date else 'Sin fecha'
+            
+            # Detectar keywords encontradas
+            keywords_html = ''
+            if resp.has_alert_keywords and resp.detected_keywords:
+                try:
+                    import json
+                    detected = json.loads(resp.detected_keywords)
+                    if detected:
+                        keywords_list = ', '.join([f'<strong>{kw}</strong>' for kw in detected])
+                        keywords_html = f'<div class="mt-2"><small class="text-danger">Palabras detectadas: {keywords_list}</small></div>'
+                except:
+                    pass
+            
+            html += f"""
+            <div class="card mb-3 {alert_class}">
+                <div class="card-header d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">{question_title}</h6>
+                        <small class="text-muted">{evaluation_name} · {date_str} · {resp.word_count} palabras</small>
+                    </div>
+                    {alert_badge}
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{resp.response_text}</p>
+                    {keywords_html}
+                </div>
+            </div>
+            """
+        
+        html += '</div>'
         return html
 
     def _get_metric_threshold(self, metric_name):
@@ -1148,7 +1201,7 @@ class DashboardStudentProfile(models.TransientModel):
         </script>
         '''
 
-    def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, participations):
+    def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, participations, qualitative=''):
         """HTML del perfil con Chart.js - diseño profesional."""
         role_badge = self._get_role_badge(role_info)
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
@@ -1210,6 +1263,20 @@ class DashboardStudentProfile(models.TransientModel):
                             </div>
                             <div class="card-body">
                                 {participations}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Respuestas Cualitativas</h5>
+                                <p class="card-subtitle">Textos y comentarios abiertos</p>
+                            </div>
+                            <div class="card-body">
+                                {qualitative}
                             </div>
                         </div>
                     </div>

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Palabras Clave de Alerta por Defecto (Sistema) -->
+        <!-- Las variantes ortográficas y gramaticales se generan automáticamente -->
+        
+        <!-- Críticas: Suicidio y autolesión -->
+        <record id="alert_keyword_suicidio" model="aulametrics.alert_keyword">
+            <field name="keyword">suicidio</field>
+            <field name="description">Mención de ideación o planes suicidas (auto-genera: suicida, suicidar, etc.)</field>
+            <field name="severity">critical</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">1</field>
+        </record>
+        
+        <record id="alert_keyword_muerte" model="aulametrics.alert_keyword">
+            <field name="keyword">muerte</field>
+            <field name="description">Referencias a muerte (auto-genera: morir, muerto, muriendo, etc.)</field>
+            <field name="severity">critical</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">2</field>
+        </record>
+        
+        <record id="alert_keyword_matar" model="aulametrics.alert_keyword">
+            <field name="keyword">matar</field>
+            <field name="description">Expresiones de violencia letal (auto-genera: matarme, matarse, etc.)</field>
+            <field name="severity">critical</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">3</field>
+        </record>
+        
+        <record id="alert_keyword_cortar" model="aulametrics.alert_keyword">
+            <field name="keyword">cortar</field>
+            <field name="description">Autolesión no letal (auto-genera: cortarme, cortarse, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">4</field>
+        </record>
+        
+        <!-- Altas: Salud mental -->
+        <record id="alert_keyword_depresion" model="aulametrics.alert_keyword">
+            <field name="keyword">depresión</field>
+            <field name="description">Mención de depresión clínica (auto-genera: depresion, depresivo, deprimido, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">10</field>
+        </record>
+        
+        <record id="alert_keyword_ansiedad" model="aulametrics.alert_keyword">
+            <field name="keyword">ansiedad</field>
+            <field name="description">Referencias a ansiedad clínica (auto-genera: ansioso, ansiosa, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">11</field>
+        </record>
+        
+        <record id="alert_keyword_panico" model="aulametrics.alert_keyword">
+            <field name="keyword">pánico</field>
+            <field name="description">Crisis de pánico (auto-genera: panico, pánicos, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">12</field>
+        </record>
+        
+        <!-- Altas: Acoso y violencia -->
+        <record id="alert_keyword_acoso" model="aulametrics.alert_keyword">
+            <field name="keyword">acoso</field>
+            <field name="description">Situaciones de acoso escolar (auto-genera: acosar, acosado, acosador, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">20</field>
+        </record>
+        
+        <record id="alert_keyword_bullying" model="aulametrics.alert_keyword">
+            <field name="keyword">bullying</field>
+            <field name="description">Término inglés para acoso (auto-genera: bully, bullyng)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">21</field>
+        </record>
+        
+        <record id="alert_keyword_pegar" model="aulametrics.alert_keyword">
+            <field name="keyword">pegar</field>
+            <field name="description">Violencia física (auto-genera: pego, pegado, pegando, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">22</field>
+        </record>
+        
+        <record id="alert_keyword_golpear" model="aulametrics.alert_keyword">
+            <field name="keyword">golpear</field>
+            <field name="description">Violencia física (auto-genera: golpe, golpeado, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">23</field>
+        </record>
+        
+        <record id="alert_keyword_amenaza" model="aulametrics.alert_keyword">
+            <field name="keyword">amenaza</field>
+            <field name="description">Amenazas o intimidación (auto-genera: amenazar, amenazado, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">24</field>
+        </record>
+        
+        <!-- Moderadas: Aislamiento social y emocional -->
+        <record id="alert_keyword_soledad" model="aulametrics.alert_keyword">
+            <field name="keyword">soledad</field>
+            <field name="description">Aislamiento social (auto-genera: solo, sola, solos, etc.)</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">30</field>
+        </record>
+        
+        <record id="alert_keyword_tristeza" model="aulametrics.alert_keyword">
+            <field name="keyword">tristeza</field>
+            <field name="description">Estado emocional negativo (auto-genera: triste, tristes, etc.)</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">31</field>
+        </record>
+        
+        <record id="alert_keyword_llorar" model="aulametrics.alert_keyword">
+            <field name="keyword">llorar</field>
+            <field name="description">Llanto frecuente (auto-genera: lloro, llorando, etc.)</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">32</field>
+        </record>
+        
+        <record id="alert_keyword_ayuda" model="aulametrics.alert_keyword">
+            <field name="keyword">ayuda</field>
+            <field name="description">Solicitud explícita de ayuda</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">33</field>
+        </record>
+        
+        <!-- Altas: Abuso y maltrato -->
+        <record id="alert_keyword_maltrato" model="aulametrics.alert_keyword">
+            <field name="keyword">maltrato</field>
+            <field name="description">Maltrato físico o psicológico (auto-genera: maltratar, maltratado, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">40</field>
+        </record>
+        
+        <record id="alert_keyword_abuso" model="aulametrics.alert_keyword">
+            <field name="keyword">abuso</field>
+            <field name="description">Abuso de cualquier tipo (auto-genera: abusar, abusado, abusivo, etc.)</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">41</field>
+        </record>
+        
+        <record id="alert_keyword_violacion" model="aulametrics.alert_keyword">
+            <field name="keyword">violación</field>
+            <field name="description">Agresión sexual grave (auto-genera: violacion sin tilde)</field>
+            <field name="severity">critical</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">42</field>
+        </record>
+        
+        <!-- Bajas: Sentimientos negativos generales -->
+        <record id="alert_keyword_miedo" model="aulametrics.alert_keyword">
+            <field name="keyword">miedo</field>
+            <field name="description">Miedo o temor (auto-genera: miedos, miedoso, temer, etc.)</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">50</field>
+        </record>
+        
+        <record id="alert_keyword_odio" model="aulametrics.alert_keyword">
+            <field name="keyword">odio</field>
+            <field name="description">Sentimientos intensos de odio (auto-genera: odiar, odiado, etc.)</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">51</field>
+        </record>
+        
+        <record id="alert_keyword_preocupado" model="aulametrics.alert_keyword">
+            <field name="keyword">preocupado</field>
+            <field name="description">Preocupación excesiva</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">52</field>
+        </record>
+        
+    </data>
+</odoo>
