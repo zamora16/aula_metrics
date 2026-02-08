@@ -6,6 +6,9 @@ from odoo import models, api, fields
 import pandas as pd
 import json
 
+# Importar utilidades compartidas del dashboard
+from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_layout, dashboard_helpers
+
 
 class DashboardStudentProfile(models.TransientModel):
     _name = 'aulametrics.dashboard.student_profile'
@@ -349,7 +352,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _build_empty_profile(self, student, role_info):
         """HTML cuando el estudiante no tiene métricas."""
-        role_badge = self._get_role_badge(role_info)
+        role_badge = dashboard_helpers.get_role_badge(role_info)
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
         
         return f"""
@@ -387,20 +390,14 @@ class DashboardStudentProfile(models.TransientModel):
         </html>
         """
 
-    def _get_role_badge(self, role_info):
-        """Genera el badge de rol."""
-        role = role_info.get('role', 'tutor')
-        badges = {
-            'admin': '<span class="badge bg-danger"><i class="fa-solid fa-shield-halved"></i> Administrador</span>',
-            'counselor': '<span class="badge bg-primary"><i class="fa-solid fa-user-tie"></i> Orientador/a</span>',
-            'management': '<span class="badge bg-warning text-dark"><i class="fa-solid fa-briefcase"></i> Equipo Directivo</span>',
-            'tutor': '<span class="badge bg-success"><i class="fa-solid fa-chalkboard-user"></i> Tutor/a</span>',
-        }
-        return badges.get(role, '')
+    # Método obsoleto - usar dashboard_helpers.get_role_badge() en su lugar
+    # def _get_role_badge(self, role_info):
+    #     ...
 
     def _build_students_list_html(self, students, role_info):
-        """Construye el HTML de la lista de estudiantes."""
-        role_badge = self._get_role_badge(role_info)
+        """Construye el HTML de la lista de estudiantes con layout del dashboard."""
+        role_badge = dashboard_helpers.get_role_badge(role_info)
+        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
         
         # Obtener grupos únicos para el filtro
         groups = {}
@@ -477,15 +474,11 @@ class DashboardStudentProfile(models.TransientModel):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Perfiles de Alumnos - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+            {dashboard_styles.get_common_styles()}
             <style>
-                body {{ background: #f1f5f9; font-family: 'Inter', sans-serif; color: #1e293b; }}
-                .dashboard-header {{ background: white; padding: 1.5rem 2rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }}
-                .header-title h1 {{ font-size: 1.75rem; font-weight: 700; margin: 0; color: #0f172a; }}
-                .header-meta {{ color: #64748b; font-size: 0.875rem; margin-top: 4px; }}
-                
                 .card {{ border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: white; }}
                 .card-header {{ background: white; border-bottom: 1px solid #e2e8f0; font-weight: 600; padding: 1.25rem 1.5rem; }}
                 .table {{ margin-bottom: 0; }}
@@ -503,27 +496,24 @@ class DashboardStudentProfile(models.TransientModel):
             </style>
         </head>
         <body>
-            <header class="dashboard-header">
-                <div>
-                    <div class="header-title">
-                        <h1><i class="fa-solid fa-users me-2 text-primary"></i>Perfiles de Alumnos</h1>
+            <div class="dashboard-layout">
+                {sidebar_html}
+                
+                <main class="main-content">
+                    <div class="topbar">
+                        <div>
+                            <h3 id="sectionTitle">Perfiles de Alumnos</h3>
+                            <span class="breadcrumbs">
+                                <i class="fa-solid fa-users me-2"></i>Listado de estudiantes · {fields.Date.today().strftime('%d/%m/%Y')}
+                            </span>
+                        </div>
+                        <div class="topbar-actions">
+                            {role_badge}
+                        </div>
                     </div>
-                    <div class="header-meta">
-                        Listado de estudiantes con acceso a perfil individual &bull; {fields.Date.today().strftime('%d/%m/%Y')}
-                    </div>
-                </div>
-                <div>
-                    {role_badge}
-                    <a href="/aulametrics/dashboard" class="btn btn-outline-primary btn-sm ms-2">
-                        <i class="fa-solid fa-gauge-high"></i> Dashboard
-                    </a>
-                    <a href="/web" class="btn btn-outline-secondary btn-sm ms-2">
-                        <i class="fa-solid fa-arrow-left"></i> Volver
-                    </a>
-                </div>
-            </header>
-            
-            <div class="container-fluid px-4">
+                    
+                    <div class="content-wrapper">
+                        <div class="container-fluid">
                 <div class="filters-bar">
                     <div class="flex-grow-1">
                         <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar por nombre, email o grupo...">
@@ -558,9 +548,12 @@ class DashboardStudentProfile(models.TransientModel):
                         </div>
                     </div>
                 </div>
+                        </div>
+                    </div>
+                </main>
             </div>
             
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             <script>
                 // Función para aplicar todos los filtros
                 function applyFilters() {{
@@ -801,7 +794,7 @@ class DashboardStudentProfile(models.TransientModel):
             change_text = f"<span style='color: {change_color}; font-weight: 600;'>{change_icon} {abs(percent_change):.1f}%</span>"
             
             # Colores semáforo por cada barra
-            colors = [self._get_semaphore_color(v) for v in values]
+            colors = [dashboard_helpers.get_semaphore_color(v) for v in values]
             
             # Obtener media del grupo en los mismos periodos si disponible
             group_means = []
@@ -956,16 +949,9 @@ class DashboardStudentProfile(models.TransientModel):
             return f'<div class="row">{charts_html}</div>'
         return ''
     
-    def _get_semaphore_color(self, value):
-        """Retorna color semáforo según valor normalizado 0-100."""
-        if value >= 80:
-            return '#10b981'  # Verde - Excelente
-        elif value >= 60:
-            return '#3b82f6'  # Azul - Normal
-        elif value >= 40:
-            return '#f59e0b'  # Ámbar - Atención
-        else:
-            return '#ef4444'  # Rojo - Crítico
+    # Método obsoleto - usar dashboard_helpers.get_semaphore_color() en su lugar
+    # def _get_semaphore_color(self, value):
+    #     ...
     
     def _get_group_context_data(self, student, df_student):
         """Obtiene datos del grupo para contextualizar el perfil individual."""
@@ -1202,9 +1188,10 @@ class DashboardStudentProfile(models.TransientModel):
         '''
 
     def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, participations, qualitative=''):
-        """HTML del perfil con Chart.js - diseño profesional."""
-        role_badge = self._get_role_badge(role_info)
+        """HTML del perfil con Chart.js - diseño profesional con layout del dashboard."""
+        role_badge = dashboard_helpers.get_role_badge(role_info)
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
+        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
         
         return f"""
         <!DOCTYPE html>
@@ -1213,74 +1200,86 @@ class DashboardStudentProfile(models.TransientModel):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Perfil de {student.name} - AulaMetrics</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+            {dashboard_styles.get_common_styles()}
             {self._profile_styles_chartjs()}
         </head>
         <body>
-            <div class="container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-                    <div>
-                        <h1>{student.name}</h1>
-                        <p class="subtitle">{group_name} · Visualizado el {fields.Date.today().strftime('%d/%m/%Y')}</p>
+            <div class="dashboard-layout">
+                {sidebar_html}
+                
+                <main class="main-content">
+                    <div class="topbar">
+                        <div>
+                            <h3>{student.name}</h3>
+                            <span class="breadcrumbs">
+                                <i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime('%d/%m/%Y')}
+                            </span>
+                        </div>
+                        <div class="topbar-actions">
+                            {role_badge}
+                            <a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa-solid fa-users"></i> Lista
+                            </a>
+                        </div>
                     </div>
-                    <div>
-                        {role_badge}
-                        <a href="/aulametrics/students" style="margin-left: 12px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; text-decoration: none; color: #64748b; font-weight: 500; font-size: 14px;">
-                            <i class="fa-solid fa-users"></i> Lista
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="kpi-grid">
-                    {kpis}
-                </div>
-                
-                {radar if radar else ''}
-                
-                {evolution}
-                
-                {timeline}
-                
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Alertas Activas</h5>
-                                <p class="card-subtitle">Puntos de atención identificados</p>
+                    
+                    <div class="content-wrapper">
+                        <div class="container-fluid">
+                            <div class="kpi-grid">
+                                {kpis}
                             </div>
-                            <div class="card-body">
-                                {alerts}
+                            
+                            {radar if radar else ''}
+                            
+                            {evolution}
+                            
+                            {timeline}
+                            
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title">Alertas Activas</h5>
+                                            <p class="card-subtitle">Puntos de atención identificados</p>
+                                        </div>
+                                        <div class="card-body">
+                                            {alerts}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title">Histórico de Participación</h5>
+                                            <p class="card-subtitle">Encuestas completadas</p>
+                                        </div>
+                                        <div class="card-body">
+                                            {participations}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title">Respuestas Cualitativas</h5>
+                                            <p class="card-subtitle">Textos y comentarios abiertos</p>
+                                        </div>
+                                        <div class="card-body">
+                                            {qualitative}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Histórico de Participación</h5>
-                                <p class="card-subtitle">Encuestas completadas</p>
-                            </div>
-                            <div class="card-body">
-                                {participations}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title">Respuestas Cualitativas</h5>
-                                <p class="card-subtitle">Textos y comentarios abiertos</p>
-                            </div>
-                            <div class="card-body">
-                                {qualitative}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </main>
             </div>
         </body>
         </html>
@@ -1558,3 +1557,12 @@ class DashboardStudentProfile(models.TransientModel):
         </body>
         </html>
         """
+
+
+    # Método obsoleto - usar dashboard_layout.get_sidebar() en su lugar
+    # def _get_sidebar_html(self, role_info):
+    #     ...
+
+    # Método obsoleto - usar dashboard_styles.get_common_styles() en su lugar
+    # def _get_dashboard_styles(self):
+    #     ...

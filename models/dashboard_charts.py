@@ -6,6 +6,11 @@ from odoo import models, api, fields
 import pandas as pd
 import json
 
+# Importar utilidades compartidas
+from odoo.addons.aula_metrics.utils import dashboard_styles
+from odoo.addons.aula_metrics.utils import dashboard_layout
+from odoo.addons.aula_metrics.utils import dashboard_helpers
+
 
 class DashboardCharts(models.TransientModel):
     _name = 'aulametrics.dashboard.charts'
@@ -136,16 +141,16 @@ class DashboardCharts(models.TransientModel):
         else:
             groups = AcademicGroup.search([])
         
-        return [{'id': g.id, 'name': g.name, 'course': g.course_level} for g in groups]
+        return [{'id': g.id, 'name': g.name, 'course': g.course_level, 'student_count': g.student_count} for g in groups]
 
     def _get_available_evaluations(self, role_info):
         """Obtiene las evaluaciones disponibles según el rol."""
         Evaluation = self.env['aulametrics.evaluation']
         
         # Las record rules ya aplican filtros, simplemente buscamos todas
-        evaluations = Evaluation.search([])
+        evaluations = Evaluation.search([], order='date_start desc')
         
-        return [{'id': e.id, 'name': e.name, 'state': e.state} for e in evaluations]
+        return [{'id': e.id, 'name': e.name, 'state': e.state, 'date_start': e.date_start} for e in evaluations]
 
     def _query_metric_values(self, filters, role_info):
         """Consulta los valores de métricas aplicando todos los filtros."""
@@ -267,8 +272,7 @@ class DashboardCharts(models.TransientModel):
             return self._chart_numeric_metric(df_metric, metric_label, role_info)
         elif metric_type == 'json':
             return self._chart_json_metric(df_metric, metric_label)
-        elif metric_type == 'text':
-            return self._chart_text_metric(df_metric, metric_label)
+        # Las métricas de texto no se muestran aquí, se gestionan en la pestaña cualitativa
         
         return ''
 
@@ -1357,47 +1361,6 @@ class DashboardCharts(models.TransientModel):
         </script>
         '''
 
-    def _chart_text_metric(self, df, label):
-        """Tabla profesional para métricas de texto."""
-        if df.empty:
-            return ''
-        
-        # Mostrar solo primeros 50 registros
-        df_sample = df[['student_name', 'value_text']].head(50)
-        
-        rows_html = ''
-        for _, row in df_sample.iterrows():
-            rows_html += f'''
-            <tr>
-                <td>{row['student_name']}</td>
-                <td>{row['value_text']}</td>
-            </tr>
-            '''
-        
-        return f"""
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{label}</h5>
-                <p class="card-subtitle">Respuestas de texto</p>
-            </div>
-            <div class="card-body">
-                <div style="max-height: 400px; overflow-y: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Estudiante</th>
-                                <th>Respuesta</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows_html}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        """
-
     def _generate_kpis(self, df, filters, role_info):
         """Genera tarjetas KPI con diseño profesional."""
         kpis = []
@@ -1446,121 +1409,129 @@ class DashboardCharts(models.TransientModel):
 
     def _build_html_empty(self, metrics, groups, evaluations, filters, role_info):
         """HTML cuando no hay datos disponibles."""
-        role_badge = self._get_role_badge(role_info)
+        # Usar utilidades compartidas
+        role_badge = dashboard_helpers.get_role_badge(role_info)
         filter_controls = self._build_filter_controls(metrics, groups, evaluations, filters)
+        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='home')
         
-        return f"""
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Dashboard de Métricas - AulaMetrics</title>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-            {self._styles()}
-        </head>
-        <body>
-            {self._header(role_badge, role_info)}
+        # Topbar con fecha
+        date_str = dashboard_helpers.format_date(fields.Date.today())
+        topbar_html = dashboard_layout.get_topbar(
+            title='Inicio',
+            subtitle=f'<i class="fa-regular fa-calendar me-2"></i>{date_str}',
+            role_badge=role_badge
+        )
+        
+        home_html = self._home_section(metrics, groups, evaluations, filters, role_info)
+        
+        # Construir contenido de las secciones
+        content = f"""
+            <!-- Sección Home -->
+            <div class="content-section active" id="section-home">
+                {home_html}
+            </div>
             
-            <!-- Contenido de las pestañas -->
-            <div class="tab-content" id="dashboardTabContent">
-                <!-- Pestaña Datos Cuantitativos -->
-                <div class="tab-pane fade show active" id="quantitative" role="tabpanel" aria-labelledby="quantitative-tab">
-                    <div class="container-fluid mt-4">
-                        {filter_controls}
-                        <div class="empty-state">
-                            <i class="fa-solid fa-chart-line fa-4x"></i>
-                            <h3>No hay datos disponibles</h3>
-                            <p>Ajusta los filtros para ver resultados</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Pestaña Datos Cualitativos -->
-                <div class="tab-pane fade" id="qualitative" role="tabpanel" aria-labelledby="qualitative-tab">
-                    <div id="qualitativeContent">
-                        <div style="text-align: center; padding: 60px 20px;">
-                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
-                            <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
-                        </div>
-                    </div>
+            <!-- Sección Datos Cuantitativos -->
+            <div class="content-section" id="section-quantitative">
+                <div class="container-fluid">
+                    {filter_controls}
+                    {dashboard_layout.get_empty_state('chart-line', 'No hay datos disponibles', 'Ajusta los filtros para ver resultados')}
                 </div>
             </div>
             
-            {self._scripts()}
-        </body>
-        </html>
+            <!-- Sección Datos Cualitativos -->
+            <div class="content-section" id="section-qualitative">
+                <div id="qualitativeContent">
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
+                        <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
+                    </div>
+                </div>
+            </div>
         """
+        
+        # Usar wrapper para estructura completa
+        bootstrap_js = '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>'
+        
+        return dashboard_layout.get_html_wrapper(
+            title='Dashboard de Métricas',
+            content=content,
+            sidebar_html=sidebar_html,
+            topbar_html=topbar_html,
+            styles=dashboard_styles.get_common_styles(),
+            scripts=self._scripts(),
+            head_extra=bootstrap_js
+        )
 
     def _build_html(self, metrics, groups, evaluations, filters, role_info, kpi_html, charts):
         """Construye el HTML completo del dashboard."""
-        role_badge = self._get_role_badge(role_info)
+        # Usar utilidades compartidas
+        role_badge = dashboard_helpers.get_role_badge(role_info)
         filter_controls = self._build_filter_controls(metrics, groups, evaluations, filters)
+        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='home')
+        
+        # Topbar con fecha
+        date_str = dashboard_helpers.format_date(fields.Date.today())
+        topbar_html = dashboard_layout.get_topbar(
+            title='Inicio',
+            subtitle=f'<i class="fa-regular fa-calendar me-2"></i>{date_str}',
+            role_badge=role_badge
+        )
+        
+        home_html = self._home_section(metrics, groups, evaluations, filters, role_info)
         
         charts_html = '\n'.join(charts) if charts else '<p class="text-muted">No hay gráficos para mostrar</p>'
         
-        return f"""
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Dashboard de Métricas - AulaMetrics</title>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-            {self._styles()}
-        </head>
-        <body>
-            {self._header(role_badge, role_info)}
+        # Construir contenido de las secciones
+        content = f"""
+            <!-- Sección Home -->
+            <div class="content-section active" id="section-home">
+                {home_html}
+            </div>
             
-            <!-- Contenido de las pestañas -->
-            <div class="tab-content" id="dashboardTabContent">
-                <!-- Pestaña Datos Cuantitativos -->
-                <div class="tab-pane fade show active" id="quantitative" role="tabpanel" aria-labelledby="quantitative-tab">
-                    <div class="container-fluid mt-4">
-                        {filter_controls}
-                        
-                        <div class="kpi-container my-4">
-                            {kpi_html}
-                        </div>
-                        
-                        <div class="charts-container">
-                            {charts_html}
-                        </div>
+            <!-- Sección Datos Cuantitativos -->
+            <div class="content-section" id="section-quantitative">
+                <div class="container-fluid">
+                    {filter_controls}
+                    
+                    <div class="kpi-container my-4">
+                        {kpi_html}
                     </div>
-                </div>
-                
-                <!-- Pestaña Datos Cualitativos -->
-                <div class="tab-pane fade" id="qualitative" role="tabpanel" aria-labelledby="qualitative-tab">
-                    <div id="qualitativeContent">
-                        <div style="text-align: center; padding: 60px 20px;">
-                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
-                            <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
-                        </div>
+                    
+                    <div class="charts-container">
+                        {charts_html}
                     </div>
                 </div>
             </div>
             
-            {self._scripts()}
-        </body>
-        </html>
+            <!-- Sección Datos Cualitativos -->
+            <div class="content-section" id="section-qualitative">
+                <div id="qualitativeContent">
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
+                        <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
+                    </div>
+                </div>
+            </div>
         """
+        
+        # Usar wrapper con Chart.js incluido
+        chart_libs = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>\n' + \
+                     '<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>'
+        
+        return dashboard_layout.get_html_wrapper(
+            title='Dashboard de Métricas',
+            content=content,
+            sidebar_html=sidebar_html,
+            topbar_html=topbar_html,
+            styles=dashboard_styles.get_common_styles(),
+            scripts=self._scripts(),
+            head_extra=chart_libs
+        )
 
-    def _get_role_badge(self, role_info):
-        """Genera el badge de rol del usuario."""
-        role = role_info.get('role', 'tutor')
-        badges = {
-            'admin': '<span class="badge bg-danger"><i class="fa-solid fa-shield-halved"></i> Administrador</span>',
-            'counselor': '<span class="badge bg-primary"><i class="fa-solid fa-user-tie"></i> Orientador/a</span>',
-            'management': '<span class="badge bg-warning text-dark"><i class="fa-solid fa-briefcase"></i> Equipo Directivo</span>',
-            'tutor': '<span class="badge bg-success"><i class="fa-solid fa-chalkboard-user"></i> Tutor/a</span>',
-        }
-        return badges.get(role, '')
+    # Método obsoleto - usar dashboard_helpers.get_role_badge() en su lugar
+    # def _get_role_badge(self, role_info):
+    #     ...
 
     def _build_filter_controls(self, metrics, groups, evaluations, filters):
         """Construye los controles de filtrado."""
@@ -1720,471 +1691,21 @@ class DashboardCharts(models.TransientModel):
         </div>
         """
 
-    def _styles(self):
-        """Estilos profesionales tipo Stripe/Linear/Notion."""
-        return """
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: #fafbfc;
-            color: #0f172a;
-            line-height: 1.6;
-            font-size: 15px;
-            padding-bottom: 80px;
-        }
-        
-        .dashboard-header {
-            background: white;
-            padding: 24px 32px;
-            border-bottom: 1px solid #e5e7eb;
-            margin-bottom: 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        }
-        
-        .header-title h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            color: #0f172a;
-            letter-spacing: -0.5px;
-        }
-        
-        .header-meta {
-            color: #64748b;
-            font-size: 14px;
-            margin-top: 4px;
-        }
-        
-        .container-fluid {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-        
-        /* Filtros */
-        .filter-panel {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        
-        .filter-header {
-            padding: 16px 20px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .filter-header:hover {
-            background: #fafbfc;
-        }
-        
-        .filter-header h5 {
-            font-size: 15px;
-            font-weight: 600;
-            color: #0f172a;
-            margin: 0;
-        }
-        
-        .filter-content {
-            padding: 24px;
-            background: white;
-            display: none;
-        }
-        
-        .filter-content.show {
-            display: block;
-        }
-        
-        .filter-section {
-            background: #fafbfc;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #f1f5f9;
-            height: 100%;
-        }
-        
-        .filter-section .form-label {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .filter-section .btn-link {
-            padding: 0 8px;
-            text-decoration: none;
-            color: #3b82f6;
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: none;
-        }
-        
-        .filter-section .btn-link:hover {
-            color: #2563eb;
-            text-decoration: underline;
-        }
-        
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 8px;
-        }
-        
-        .filter-checkbox {
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: all 0.2s;
-            background: white;
-            border: 1px solid transparent;
-        }
-        
-        .filter-checkbox:hover {
-            background: white;
-            border-color: #e5e7eb;
-        }
-        
-        .filter-checkbox input[type=\"checkbox\"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            accent-color: #3b82f6;
-        }
-        
-        .filter-checkbox label {
-            cursor: pointer;
-            margin-left: 8px;
-            margin-bottom: 0;
-            font-size: 14px;
-            color: #334155;
-            user-select: none;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 6px;
-            border: 1px solid #e5e7eb;
-            padding: 8px 12px;
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            outline: none;
-        }
-        
-        /* KPIs */
-        .kpi-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 32px;
-        }
-        
-        .kpi-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 24px;
-            transition: all 0.2s ease;
-        }
-        
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border-color: #d1d5db;
-        }
-        
-        .kpi-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-        
-        .kpi-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #0f172a;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-        
-        .kpi-description {
-            font-size: 13px;
-            color: #94a3b8;
-            font-weight: 400;
-        }
-        
-        /* Tarjetas de gráficos */
-        .charts-container {
-            display: grid;
-            gap: 24px;
-        }
-        
-        .card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        
-        .card-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid #f1f5f9;
-            background: white;
-        }
-        
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #0f172a;
-            margin: 0;
-        }
-        
-        .card-subtitle {
-            font-size: 13px;
-            color: #64748b;
-            margin: 4px 0 0 0;
-            font-weight: 400;
-        }
-        
-        .card-body {
-            padding: 24px;
-        }
-        
-        /* Tablas */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        
-        thead {
-            background: #f8fafc;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        th {
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            color: #475569;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
-        }
-        
-        tr:last-child td {
-            border-bottom: none;
-        }
-        
-        tbody tr:hover {
-            background: #fafbfc;
-        }
-        
-        /* Botones */
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: 'Inter', sans-serif;
-            border: 1px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        
-        .btn-primary:hover {
-            background: #2563eb;
-            border-color: #2563eb;
-        }
-        
-        .btn-outline-secondary {
-            background: white;
-            color: #64748b;
-            border-color: #e5e7eb;
-        }
-        
-        .btn-outline-secondary:hover {
-            background: #fafbfc;
-            border-color: #d1d5db;
-            color: #475569;
-        }
-        
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-        
-        .btn-lg {
-            padding: 12px 20px;
-            font-size: 15px;
-        }
-        
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-        
-        .badge.bg-danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .badge.bg-primary {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .badge.bg-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .badge.bg-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            color: #94a3b8;
-        }
-        
-        .empty-state i {
-            color: #cbd5e1;
-            margin-bottom: 20px;
-        }
-        
-        .empty-state h3 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 8px;
-        }
-        
-        .empty-state p {
-            font-size: 14px;
-            color: #94a3b8;
-        }
-        
-        /* Utilidades */
-        .mt-4 { margin-top: 24px; }
-        .my-4 { margin-top: 24px; margin-bottom: 24px; }
-        .ms-2 { margin-left: 8px; }
-        .me-2 { margin-right: 8px; }
-        .mb-4 { margin-bottom: 24px; }
-        .w-100 { width: 100%; }
-        .text-primary { color: #3b82f6; }
-        .text-muted { color: #94a3b8; }
-        .row { display: flex; flex-wrap: wrap; margin: 0 -12px; }
-        .col-12 { flex: 0 0 100%; max-width: 100%; padding: 0 12px; }
-        .col-md-4 { flex: 0 0 33.333%; max-width: 33.333%; padding: 0 12px; }
-        .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 12px; }
-        .g-2 { gap: 8px; }
-        
-        @media (max-width: 768px) {
-            .col-md-4, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
-        }
-    </style>
-        """
-
-    def _header(self, role_badge, role_info=None):
-        """Encabezado del dashboard."""
-        # Botón de perfiles solo para counselor/admin
-        profiles_btn = ''
-        if role_info and role_info.get('role') in ['admin', 'counselor']:
-            profiles_btn = '''
-            <a href="/aulametrics/students" class="btn btn-primary btn-sm ms-2">
-                <i class="fa-solid fa-users"></i> Perfiles de Alumnos
-            </a>
-            '''
-        
-        return f"""
-    <header class="dashboard-header">
-        <div>
-            <div class="header-title">
-                <h1><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Dashboard de Métricas</h1>
-            </div>
-            <div class="header-meta">
-                Análisis global con filtros dinámicos &bull; {fields.Date.today().strftime('%d/%m/%Y')}
-            </div>
-        </div>
-        <div>
-            {role_badge}
-            {profiles_btn}
-            <a href="/web" class="btn btn-outline-secondary btn-sm ms-2">
-                <i class="fa-solid fa-arrow-left"></i> Volver
-            </a>
-        </div>
-    </header>
+    # Método obsoleto - usar dashboard_styles.get_common_styles() en su lugar
+    # def _styles(self):
+    #     ...
     
-    <!-- Pestañas de navegación -->
-    <div class="container-fluid mt-3">
-        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="quantitative-tab" data-bs-toggle="tab" data-bs-target="#quantitative" 
-                        type="button" role="tab" aria-controls="quantitative" aria-selected="true">
-                    <i class="fa-solid fa-chart-line me-2"></i>Datos Cuantitativos
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="qualitative-tab" data-bs-toggle="tab" data-bs-target="#qualitative" 
-                        type="button" role="tab" aria-controls="qualitative" aria-selected="false">
-                    <i class="fa-solid fa-comments me-2"></i>Datos Cualitativos
-                </button>
-            </li>
-        </ul>
+    def _home_section(self, metrics, groups, evaluations, filters, role_info):
+        """Sección Home simplificada."""
+        return f"""
+    <div class="home-section">
+        <div class="welcome-banner">
+            <h2>
+                <i class="fa-solid fa-hand-wave me-3" style="color: #f59e0b;"></i>
+                Bienvenido al Dashboard
+            </h2>
+            <p>Utiliza el menú lateral para navegar entre las diferentes secciones</p>
+        </div>
     </div>
         """
 
@@ -2250,55 +1771,79 @@ class DashboardCharts(models.TransientModel):
             document.getElementById('evaluation_ids_input').value = evalValues.join(',');
         });
         
-        // Cargar contenido cualitativo cuando se activa la pestaña
-        let qualitativeLoaded = false;
-        document.getElementById('qualitative-tab').addEventListener('click', function() {
-            if (!qualitativeLoaded) {
-                qualitativeLoaded = true;
-                const contentDiv = document.getElementById('qualitativeContent');
-                
-                fetch('/aulametrics/qualitative/dashboard?embedded=true')
-                    .then(response => response.text())
-                    .then(html => {
-                        contentDiv.innerHTML = html;
-                        
-                        // Ejecutar scripts si los hay
-                        const scripts = contentDiv.querySelectorAll('script');
-                        scripts.forEach(oldScript => {
-                            const newScript = document.createElement('script');
-                            if (oldScript.src) {
-                                newScript.src = oldScript.src;
-                                // Si es una librería externa, esperar a que cargue
-                                if (oldScript.src.includes('d3')) {
-                                    newScript.onload = function() {
-                                        console.log('D3 cargado:', oldScript.src);
-                                    };
-                                }
-                            } else {
-                                newScript.textContent = oldScript.textContent;
-                            }
-                            oldScript.parentNode.replaceChild(newScript, oldScript);
-                        });
-                        
-                        // Dar tiempo a que los scripts se ejecuten y luego inicializar wordclouds
-                        setTimeout(() => {
-                            console.log('Intentando inicializar wordclouds...');
-                            if (typeof initWordcloudCounselor !== 'undefined') {
-                                console.log('Llamando a initWordcloudCounselor');
-                                initWordcloudCounselor();
-                            } else if (typeof initWordcloudTutor !== 'undefined') {
-                                console.log('Llamando a initWordcloudTutor');
-                                initWordcloudTutor();
-                            } else {
-                                console.log('No se encontraron funciones de inicialización de wordcloud');
-                            }
-                        }, 500);
-                    })
-                    .catch(error => {
-                        contentDiv.innerHTML = '<div style="text-align: center; padding: 60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 48px; color: #ef4444;"></i><p style="margin-top: 20px; color: #64748b;">Error al cargar datos cualitativos</p></div>';
-                        console.error('Error cargando datos cualitativos:', error);
-                    });
+        // Navegación entre secciones
+        function navigateTo(section) {
+            // Actualizar items del sidebar
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${section}"]`).classList.add('active');
+            
+            // Actualizar secciones de contenido
+            document.querySelectorAll('.content-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(`section-${section}`).classList.add('active');
+            
+            // Actualizar título
+            const titles = {
+                'home': 'Inicio',
+                'quantitative': 'Datos Cuantitativos',
+                'qualitative': 'Datos Cualitativos'
+            };
+            document.getElementById('sectionTitle').textContent = titles[section] || section;
+            
+            // Cargar contenido cualitativo si es necesario
+            if (section === 'qualitative' && !window.qualitativeLoaded) {
+                loadQualitativeContent();
             }
-        });
+        }
+        
+        // Cargar contenido cualitativo
+        function loadQualitativeContent() {
+            window.qualitativeLoaded = true;
+            const contentDiv = document.getElementById('qualitativeContent');
+            
+            fetch('/aulametrics/qualitative/dashboard?embedded=true')
+                .then(response => response.text())
+                .then(html => {
+                    contentDiv.innerHTML = html;
+                    
+                    // Ejecutar scripts si los hay
+                    const scripts = contentDiv.querySelectorAll('script');
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        if (oldScript.src) {
+                            newScript.src = oldScript.src;
+                            if (oldScript.src.includes('d3')) {
+                                newScript.onload = function() {
+                                    console.log('D3 cargado:', oldScript.src);
+                                };
+                            }
+                        } else {
+                            newScript.textContent = oldScript.textContent;
+                        }
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+                    
+                    // Inicializar wordclouds
+                    setTimeout(() => {
+                        console.log('Intentando inicializar wordclouds...');
+                        if (typeof initWordcloudCounselor !== 'undefined') {
+                            console.log('Llamando a initWordcloudCounselor');
+                            initWordcloudCounselor();
+                        } else if (typeof initWordcloudTutor !== 'undefined') {
+                            console.log('Llamando a initWordcloudTutor');
+                            initWordcloudTutor();
+                        } else {
+                            console.log('No se encontraron funciones de inicialización de wordcloud');
+                        }
+                    }, 500);
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = '<div style="text-align: center; padding: 60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 48px; color: #ef4444;"></i><p style="margin-top: 20px; color: #64748b;">Error al cargar datos cualitativos</p></div>';
+                    console.error('Error cargando datos cualitativos:', error);
+                });
+        }
     </script>
         """
