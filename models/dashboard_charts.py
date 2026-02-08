@@ -1535,45 +1535,42 @@ class DashboardCharts(models.TransientModel):
 
     def _build_filter_controls(self, metrics, groups, evaluations, filters):
         """Construye los controles de filtrado."""
-        # Checkboxes de métricas
+        # Pills de métricas
         metric_checks = ''
         selected_metrics = filters.get('metric_names', [])
         for m in metrics:
-            checked = 'checked' if m['name'] in selected_metrics or not selected_metrics else ''
+            active = 'active' if m['name'] in selected_metrics or not selected_metrics else ''
             metric_checks += f"""
-            <div class="filter-checkbox">
-                <input class="form-check-input metric-check" type="checkbox" 
-                       id="metric_{m['name']}" name="metric_{m['name']}" value="{m['name']}" {checked}>
-                <label class="form-check-label" for="metric_{m['name']}">{m['label']}</label>
-            </div>
+            <span class="filter-pill metric-pill {active}" data-type="metric" data-value="{m['name']}" onclick="togglePill(this)">
+                {m['label']}
+            </span>
+            <input type="hidden" class="metric-input" name="metric_{m['name']}" value="{m['name']}" {'disabled' if not active else ''}>
             """
 
-        # Checkboxes de grupos
+        # Pills de grupos
         groups_checks = ''
         selected_groups = filters.get('group_ids', [])
         for g in groups:
-            checked = 'checked' if g['id'] in selected_groups or not selected_groups else ''
+            active = 'active' if g['id'] in selected_groups or not selected_groups else ''
             
             groups_checks += f"""
-            <div class="filter-checkbox">
-                <input class="form-check-input group-check" type="checkbox" 
-                       id="group_{g['id']}" name="group_{g['id']}" value="{g['id']}" {checked}>
-                <label class="form-check-label" for="group_{g['id']}">{g['name']}</label>
-            </div>
+            <span class="filter-pill group-pill {active}" data-type="group" data-value="{g['id']}" onclick="togglePill(this)">
+                {g['name']}
+            </span>
+            <input type="hidden" class="group-input" name="group_{g['id']}" value="{g['id']}" {'disabled' if not active else ''}>
             """
 
-        # Checkboxes de evaluaciones
+        # Pills de evaluaciones
         eval_checks = ''
         selected_evals = filters.get('evaluation_ids', [])
         for e in evaluations:
-            checked = 'checked' if e['id'] in selected_evals or not selected_evals else ''
+            active = 'active' if e['id'] in selected_evals or not selected_evals else ''
             
             eval_checks += f"""
-            <div class="filter-checkbox">
-                <input class="form-check-input eval-check" type="checkbox" 
-                       id="eval_{e['id']}" name="eval_{e['id']}" value="{e['id']}" {checked}>
-                <label class="form-check-label" for="eval_{e['id']}">{e['name']}</label>
-            </div>
+            <span class="filter-pill eval-pill {active}" data-type="eval" data-value="{e['id']}" onclick="togglePill(this)">
+                {e['name']}
+            </span>
+            <input type="hidden" class="eval-input" name="eval_{e['id']}" value="{e['id']}" {'disabled' if not active else ''}>
             """
 
         # Fechas
@@ -1616,7 +1613,7 @@ class DashboardCharts(models.TransientModel):
                                         <button type="button" class="btn btn-link btn-sm" onclick="selectNoneMetrics()">Ninguna</button>
                                     </div>
                                 </label>
-                                <div class="checkbox-grid">
+                                <div class="filter-pills-container">
                                     {metric_checks}
                                 </div>
                             </div>
@@ -1632,7 +1629,7 @@ class DashboardCharts(models.TransientModel):
                                         <button type="button" class="btn btn-link btn-sm" onclick="selectNoneGroups()">Ninguno</button>
                                     </div>
                                 </label>
-                                <div class="checkbox-grid">
+                                <div class="filter-pills-container">
                                     {groups_checks}
                                 </div>
                             </div>
@@ -1648,7 +1645,7 @@ class DashboardCharts(models.TransientModel):
                                         <button type="button" class="btn btn-link btn-sm" onclick="selectNoneEvals()">Ninguna</button>
                                     </div>
                                 </label>
-                                <div class="checkbox-grid">
+                                <div class="filter-pills-container">
                                     {eval_checks}
                                 </div>
                             </div>
@@ -1686,6 +1683,7 @@ class DashboardCharts(models.TransientModel):
                     <input type="hidden" name="metric_names" id="metric_names_input">
                     <input type="hidden" name="group_ids" id="group_ids_input">
                     <input type="hidden" name="evaluation_ids" id="evaluation_ids_input">
+                    <input type="hidden" name="section" id="section_input" value="quantitative">
                 </form>
             </div>
         </div>
@@ -1727,28 +1725,61 @@ class DashboardCharts(models.TransientModel):
             }
         }
         
+        function togglePill(pill) {
+            pill.classList.toggle('active');
+            // Encontrar el input hidden asociado
+            const input = pill.nextElementSibling;
+            if (input && input.tagName === 'INPUT') {
+                input.disabled = !pill.classList.contains('active');
+            }
+        }
+        
         function selectAllMetrics() {
-            document.querySelectorAll('.metric-check').forEach(cb => cb.checked = true);
+            document.querySelectorAll('.metric-pill').forEach(pill => {
+                pill.classList.add('active');
+                const input = pill.nextElementSibling;
+                if (input && input.tagName === 'INPUT') input.disabled = false;
+            });
         }
         
         function selectNoneMetrics() {
-            document.querySelectorAll('.metric-check').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.metric-pill').forEach(pill => {
+                pill.classList.remove('active');
+                const input = pill.nextElementSibling;
+                if (input && input.tagName === 'INPUT') input.disabled = true;
+            });
         }
         
         function selectAllGroups() {
-            document.querySelectorAll('.group-check').forEach(cb => cb.checked = true);
+            document.querySelectorAll('.group-pill').forEach(pill => {
+                pill.classList.add('active');
+                const input = pill.nextElementSibling;
+                if (input && input.tagName === 'INPUT') input.disabled = false;
+            });
         }
         
         function selectNoneGroups() {
-            document.querySelectorAll('.group-check').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.group-pill').forEach(pill => {
+                pill.classList.remove('active');
+                const input = pill.nextElementSibling;
+                if (input && input.tagName === 'INPUT') input.disabled = true;
+            });
         }
         
         function selectAllEvals() {
-            document.querySelectorAll('.eval-check').forEach(cb => cb.checked = true);
+            document.querySelectorAll('.eval-pill').forEach(pill => {
+                pill.classList.add('active');
+                const input = pill.nextElementSibling;
+                if (input && input.tagName === 'INPUT') input.disabled = false;
+            });
         }
         
         function selectNoneEvals() {
-            document.querySelectorAll('.eval-check').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.eval-pill').forEach(pill => {
+                pill.classList.remove('active');
+                const input = pill.nextElementSibling;
+                if (input && input.tagName === 'INPUT') input.disabled = true;
+            });
         }
         
         function clearDates() {
@@ -1757,18 +1788,22 @@ class DashboardCharts(models.TransientModel):
         }
         
         document.getElementById('hub-filters').addEventListener('submit', function(e) {
-            // Consolidar checkboxes en hidden inputs
-            const metricChecks = document.querySelectorAll('.metric-check:checked');
-            const metricValues = Array.from(metricChecks).map(c => c.value);
+            // Consolidar pills activas en hidden inputs
+            const metricPills = document.querySelectorAll('.metric-pill.active');
+            const metricValues = Array.from(metricPills).map(p => p.dataset.value);
             document.getElementById('metric_names_input').value = metricValues.join(',');
             
-            const groupChecks = document.querySelectorAll('.group-check:checked');
-            const groupValues = Array.from(groupChecks).map(c => c.value);
+            const groupPills = document.querySelectorAll('.group-pill.active');
+            const groupValues = Array.from(groupPills).map(p => p.dataset.value);
             document.getElementById('group_ids_input').value = groupValues.join(',');
             
-            const evalChecks = document.querySelectorAll('.eval-check:checked');
-            const evalValues = Array.from(evalChecks).map(c => c.value);
+            const evalPills = document.querySelectorAll('.eval-pill.active');
+            const evalValues = Array.from(evalPills).map(p => p.dataset.value);
             document.getElementById('evaluation_ids_input').value = evalValues.join(',');
+            
+            // Guardar la sección actual
+            const activeSection = document.querySelector('.sidebar-item.active')?.dataset.section || 'quantitative';
+            document.getElementById('section_input').value = activeSection;
         });
         
         // Navegación entre secciones
@@ -1845,5 +1880,68 @@ class DashboardCharts(models.TransientModel):
                     console.error('Error cargando datos cualitativos:', error);
                 });
         }
+        
+        // Al cargar la página, navegar a la sección indicada en la URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+            if (section && ['home', 'quantitative', 'qualitative'].includes(section)) {
+                navigateTo(section);
+            }
+            
+            // Event delegation para formulario cualitativo (interceptar submit)
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                
+                // Solo interceptar si es el formulario cualitativo embebido
+                if (form.id === 'qualitativeFiltersForm') {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(form);
+                    const params = new URLSearchParams();
+                    
+                    for (const [key, value] of formData.entries()) {
+                        if (value) params.append(key, value);
+                    }
+                    params.append('embedded', 'true');
+                    
+                    const url = '/aulametrics/qualitative/dashboard?' + params.toString();
+                    
+                    fetch(url)
+                        .then(response => response.text())
+                        .then(html => {
+                            const contentDiv = document.getElementById('qualitativeContent');
+                            if (contentDiv) {
+                                contentDiv.innerHTML = html;
+                                
+                                // Re-ejecutar scripts
+                                const scripts = contentDiv.querySelectorAll('script');
+                                scripts.forEach(oldScript => {
+                                    const newScript = document.createElement('script');
+                                    if (oldScript.src) {
+                                        newScript.src = oldScript.src;
+                                    } else {
+                                        newScript.textContent = oldScript.textContent;
+                                    }
+                                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                                });
+                                
+                                // Reinicializar wordclouds
+                                setTimeout(() => {
+                                    if (typeof initWordcloudCounselor !== 'undefined') {
+                                        initWordcloudCounselor();
+                                    } else if (typeof initWordcloudTutor !== 'undefined') {
+                                        initWordcloudTutor();
+                                    }
+                                }, 300);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al filtrar datos cualitativos:', error);
+                            alert('Error al aplicar filtros');
+                        });
+                }
+            });
+        });
     </script>
         """

@@ -318,25 +318,45 @@ def get_common_styles():
             margin-bottom: 12px;
         }
         
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 8px;
-        }
-        
-        .checkbox-grid label {
+        .filter-pills-container {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 8px;
-            padding: 8px;
-            border-radius: 6px;
-            transition: background 0.2s;
-            cursor: pointer;
-            font-weight: normal;
         }
         
-        .checkbox-grid label:hover {
-            background: #f8fafc;
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: #f1f5f9;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 20px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            white-space: nowrap;
+        }
+        
+        .filter-pill:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #475569;
+            transform: translateY(-1px);
+        }
+        
+        .filter-pill.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        
+        .filter-pill.active:hover {
+            background: #2563eb;
+            border-color: #2563eb;
         }
         
         /* ==================== ESTADO VACÍO ==================== */
@@ -395,7 +415,44 @@ def get_common_styles():
         /* ==================== CHARTS ==================== */
         .charts-container {
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
             gap: 24px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            height: fit-content;
+        }
+        
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 4px 0;
+        }
+        
+        .card-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin: 0;
+        }
+        
+        .card-body {
+            padding: 20px;
+            max-height: 400px;
+            overflow: auto;
+        }
+        
+        .card-body canvas {
+            max-height: 360px;
         }
         
         /* ==================== RESPONSIVE ==================== */

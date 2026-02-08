@@ -296,7 +296,7 @@ class DashboardStudentProfile(models.TransientModel):
         
         for resp in responses:
             alert_class = 'alert-warning' if resp.has_alert_keywords else ''
-            alert_badge = '<span class="badge bg-danger">Alerta</span>' if resp.has_alert_keywords else '<span class="badge bg-success">OK</span>'
+            alert_badge = '<span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Alerta</span>' if resp.has_alert_keywords else '<span class="badge" style="background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;"><i class="fa-solid fa-check"></i></span>'
             
             # Información de la pregunta
             question_title = resp.question_id.title if resp.question_id else 'Pregunta sin título'
@@ -439,9 +439,9 @@ class DashboardStudentProfile(models.TransientModel):
                 # Badge de alertas
                 alerts_badge = ''
                 if alerts_count > 0:
-                    alerts_badge = f'<span class="badge bg-danger">{alerts_count} alerta(s)</span>'
+                    alerts_badge = f'<span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">{alerts_count} alerta(s)</span>'
                 else:
-                    alerts_badge = '<span class="badge bg-success">Sin alertas</span>'
+                    alerts_badge = '<span class="badge" style="background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;"><i class="fa-solid fa-check"></i></span>'
                 
                 students_rows += f'''
                 <tr data-group-id="{group_id}">
@@ -460,7 +460,7 @@ class DashboardStudentProfile(models.TransientModel):
                     <td class="text-center">{metrics_count}</td>
                     <td>{alerts_badge}</td>
                     <td class="text-end">
-                        <a href="/aulametrics/student/{student.id}" class="btn btn-sm btn-primary">
+                        <a href="/aulametrics/student/{student.id}" class="btn btn-sm btn-outline-primary">
                             <i class="fa-solid fa-chart-line me-1"></i> Ver Perfil
                         </a>
                     </td>

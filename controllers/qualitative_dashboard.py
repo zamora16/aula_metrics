@@ -90,7 +90,7 @@ class QualitativeDashboardController(http.Controller):
             return 'management'
     
     def _get_available_evaluations(self, role):
-        """Obtiene evaluaciones disponibles según rol."""
+        """Obtiene evaluaciones disponibles según rol - solo las que tienen preguntas abiertas."""
         domain = [('state', 'in', ['scheduled', 'active', 'completed'])]
         
         if role == 'tutor':
@@ -101,10 +101,31 @@ class QualitativeDashboardController(http.Controller):
             ])
             domain.append(('academic_group_ids', 'in', tutor_groups.ids))
         
-        return request.env['aulametrics.evaluation'].search(
+        all_evaluations = request.env['aulametrics.evaluation'].search(
             domain,
             order='date_start desc'
         )
+        
+        # Filtrar solo evaluaciones con preguntas de texto libre
+        evaluations_with_text_questions = request.env['aulametrics.evaluation']
+        for evaluation in all_evaluations:
+            # Verificar si alguna encuesta tiene preguntas de texto libre
+            has_text_questions = False
+            for survey in evaluation.survey_ids:
+                # Buscar preguntas de tipo texto en la encuesta
+                text_questions = request.env['survey.question'].search([
+                    ('survey_id', '=', survey.id),
+                    ('question_type', 'in', ['text_box', 'char_box'])
+                ], limit=1)
+                
+                if text_questions:
+                    has_text_questions = True
+                    break
+            
+            if has_text_questions:
+                evaluations_with_text_questions |= evaluation
+        
+        return evaluations_with_text_questions
     
     def _get_available_questions(self, responses):
         """Obtiene preguntas que tienen respuestas."""
@@ -395,7 +416,7 @@ class QualitativeDashboardController(http.Controller):
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <form method="get" action="/aulametrics/qualitative/dashboard" class="row g-3">
+                        <form method="get" action="/aulametrics/qualitative/dashboard" class="row g-3" id="qualitativeFiltersForm">
                             <div class="col-md-5">
                                 <label class="form-label">Evaluación</label>
                                 <select name="evaluation_id" class="form-select">
@@ -438,7 +459,7 @@ class QualitativeDashboardController(http.Controller):
         else:
             for resp in responses:
                 alert_class = 'table-warning' if resp['has_alerts'] else ''
-                alert_badge = '''<span class="badge bg-danger">Alerta</span>''' if resp['has_alerts'] else '''<span class="badge bg-success">OK</span>'''
+                alert_badge = '''<span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Alerta</span>''' if resp['has_alerts'] else '''<span class="badge" style="background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;"><i class="fa-solid fa-check"></i></span>'''
                 
                 # Respuesta con expand si es larga
                 response_html = resp['response']
@@ -450,7 +471,7 @@ class QualitativeDashboardController(http.Controller):
                 rows_html += f'''
                 <tr class="{alert_class}">
                     <td><a href="/aulametrics/student/{resp['student_id']}" class="fw-bold">{resp['student_name']}</a></td>
-                    <td><span class="badge bg-secondary">{resp['group_name']}</span></td>
+                    <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">{resp['group_name']}</span></td>
                     <td><small>{resp['date']}</small></td>
                     <td>{response_html}</td>
                     <td class="text-center">{resp['word_count']}</td>
@@ -491,8 +512,8 @@ class QualitativeDashboardController(http.Controller):
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table>
-                                <thead>
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Alumno</th>
                                         <th>Grupo</th>

@@ -39,10 +39,10 @@ def get_sidebar(role_info=None, active_section='home'):
         quant_link = f'<a href="#" class="sidebar-item {quant_active}" data-section="quantitative" onclick="navigateTo(\'quantitative\'); return false;">'
         qual_link = f'<a href="#" class="sidebar-item {qual_active}" data-section="qualitative" onclick="navigateTo(\'qualitative\'); return false;">'
     else:
-        # Vistas externas (perfiles): enlaces href normales
-        home_link = '<a href="/aulametrics/dashboard" class="sidebar-item">'
-        quant_link = '<a href="/aulametrics/dashboard" class="sidebar-item">'
-        qual_link = '<a href="/aulametrics/dashboard" class="sidebar-item">'
+        # Vistas externas (perfiles): enlaces href normales con parámetro section
+        home_link = '<a href="/aulametrics/dashboard?section=home" class="sidebar-item">'
+        quant_link = '<a href="/aulametrics/dashboard?section=quantitative" class="sidebar-item">'
+        qual_link = '<a href="/aulametrics/dashboard?section=qualitative" class="sidebar-item">'
     
     return f"""
     <aside class="sidebar">
