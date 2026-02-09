@@ -190,7 +190,7 @@ class SurveyUserInput(models.Model):
                 continue
             
             metric_name = f'question_{question.id}_choices'
-            metric_label = (question.title or f'Pregunta {question.id}')[:100]
+            metric_label = question.metric_label[:100]
             
             # Evitar duplicados
             existing = MetricValue.search([

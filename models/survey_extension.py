@@ -259,3 +259,14 @@ class SurveyExtension(models.Model):
         
         except Exception:
             return []
+
+
+class SurveyQuestionExtension(models.Model):
+    """Extensión del modelo de preguntas de encuesta para AulaMetrics"""
+    _inherit = 'survey.question'
+    
+    metric_label = fields.Char(
+        string='Métrica',
+        required=True,
+        help='Nombre corto que identifica esta métrica en dashboards, gráficos y reportes de análisis.'
+    )

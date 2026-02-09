@@ -245,7 +245,7 @@ class DashboardCharts(models.TransientModel):
             if options_set:
                 variables.append({
                     'value': metric_name,
-                    'label': question.title,
+                    'label': question.metric_label,
                     'type': 'metric_json',
                     'options': sorted(list(options_set))
                 })

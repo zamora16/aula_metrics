@@ -117,7 +117,7 @@ class UniversalMatrixScoring:
                 continue
             
             metric_name = f"adhoc_q{question.id}"
-            metric_label = question.title[:100] if question.title else f"Pregunta {question.sequence}"
+            metric_label = question.metric_label[:100]
             
             try:
                 # Texto libre

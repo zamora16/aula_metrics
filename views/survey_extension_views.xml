@@ -205,4 +205,27 @@
             <p>WHO-5, ASQ-14, Bullying VA validados científicamente.</p>
         </field>
     </record>
+
+    <!-- ========================================== -->
+    <!-- EXTENSIÓN DE VISTAS DE PREGUNTAS -->
+    <!-- ========================================== -->
+    
+    <!-- Heredar vista de formulario de survey.question para añadir metric_label -->
+    <record id="view_survey_question_form_inherit_aulametrics" model="ir.ui.view">
+        <field name="name">survey.question.form.inherit.aulametrics</field>
+        <field name="model">survey.question</field>
+        <field name="inherit_id" ref="survey.survey_question_form"/>
+        <field name="arch" type="xml">
+            <!-- Cambiar etiqueta de title y añadir metric_label -->
+            <xpath expr="//field[@name='title']" position="attributes">
+                <attribute name="placeholder">Este será el enunciado de tu pregunta</attribute>
+            </xpath>
+            <xpath expr="//field[@name='title']" position="after">
+                <label for="metric_label" string="Nombre de la métrica:"/>
+                <field name="metric_label" 
+                       required="1"
+                       placeholder="ej: Nivel económico, Zona, Estado ánimo"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>
