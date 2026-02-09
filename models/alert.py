@@ -8,8 +8,9 @@ class Alert(models.Model):
     _order = 'alert_date desc'
     
     name = fields.Char(string='Título', compute='_compute_name')
-    threshold_id = fields.Many2one('aulametrics.threshold', string='Umbral', required=True, ondelete='cascade')
+    threshold_id = fields.Many2one('aulametrics.threshold', string='Umbral', ondelete='cascade')
     participation_id = fields.Many2one('aulametrics.participation', string='Participación', ondelete='cascade')
+    qualitative_response_id = fields.Many2one('aulametrics.qualitative_response', string='Respuesta Cualitativa', ondelete='cascade')
     student_id = fields.Many2one('res.partner', string='Alumno')
     academic_group_id = fields.Many2one('aulametrics.academic_group', string='Grupo Académico')
     score_value = fields.Float(string='Valor de Puntuación', required=True)
@@ -19,12 +20,20 @@ class Alert(models.Model):
         ('resolved', 'Resuelta'),
         ('dismissed', 'Descartada'),
     ], string='Estado', default='active', required=True)
-    message = fields.Text(string='Mensaje', related='threshold_id.alert_message', readonly=True)
+    message = fields.Text(string='Mensaje', compute='_compute_message', store=True)
     alert_level = fields.Selection([
         ('individual', 'Individual'),
         ('group', 'Grupal'),
     ], string='Nivel de Alerta', default='individual', required=True)
-    severity = fields.Selection(related='threshold_id.severity', string='Severidad', readonly=True, store=True)
+    alert_type = fields.Selection([
+        ('quantitative', 'Cuantitativa'),
+        ('qualitative', 'Cualitativa')
+    ], string='Tipo de Alerta', compute='_compute_alert_type', store=True)
+    severity = fields.Selection([
+        ('low', 'Baja'),
+        ('moderate', 'Moderada'),
+        ('high', 'Alta')
+    ], string='Severidad', compute='_compute_severity', store=True)
     
     # Campos de resolución
     resolution_action = fields.Text(
@@ -54,6 +63,63 @@ class Alert(models.Model):
             else:
                 alert.course_level_general = 'Sin curso'
     
+    @api.depends('qualitative_response_id', 'threshold_id')
+    def _compute_alert_type(self):
+        """Determina si la alerta es cuantitativa o cualitativa."""
+        for alert in self:
+            alert.alert_type = 'qualitative' if alert.qualitative_response_id else 'quantitative'
+    
+    @api.depends('threshold_id', 'qualitative_response_id')
+    def _compute_severity(self):
+        """Calcula severidad: desde threshold para cuantitativas, desde keywords para cualitativas."""
+        for alert in self:
+            if alert.qualitative_response_id and alert.qualitative_response_id.detected_keywords:
+                # Alerta cualitativa: usar severidad más alta de keywords detectadas
+                try:
+                    import json
+                    keywords_list = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
+                    
+                    # Buscar keywords en BD para obtener sus severidades
+                    keywords = self.env['aulametrics.alert_keyword'].search([
+                        ('keyword', 'in', keywords_list),
+                        ('active', '=', True)
+                    ])
+                    
+                    if keywords:
+                        # Ordenar por severidad (high > moderate > low)
+                        severity_order = {'high': 3, 'moderate': 2, 'low': 1}
+                        max_severity = max(keywords.mapped('severity'), 
+                                         key=lambda s: severity_order.get(s, 0))
+                        alert.severity = max_severity
+                    else:
+                        alert.severity = 'moderate'  # Default si no se encuentran keywords
+                except:
+                    alert.severity = 'moderate'
+            elif alert.threshold_id:
+                # Alerta cuantitativa: usar severidad del threshold
+                alert.severity = alert.threshold_id.severity
+            else:
+                alert.severity = False
+    
+    @api.depends('threshold_id', 'qualitative_response_id')
+    def _compute_message(self):
+        """Computa el mensaje de alerta según el tipo."""
+        for alert in self:
+            if alert.qualitative_response_id:
+                # Alerta cualitativa: mensaje personalizado con keywords
+                try:
+                    import json
+                    keywords = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
+                    keywords_str = ', '.join(keywords)
+                    alert.message = f"Se detectaron palabras de alerta en una respuesta cualitativa: {keywords_str}"
+                except:
+                    alert.message = "Se detectaron palabras de alerta en una respuesta cualitativa"
+            elif alert.threshold_id:
+                # Alerta cuantitativa: mensaje del threshold
+                alert.message = alert.threshold_id.alert_message
+            else:
+                alert.message = False
+    
     def _compute_name(self):
         """Computa el nombre de la alerta según permisos del usuario."""
         for alert in self:
@@ -61,28 +127,70 @@ class Alert(models.Model):
             is_counselor_or_admin = user.has_group('aulametrics.group_aulametrics_admin') or user.has_group('aulametrics.group_aulametrics_counselor')
             is_management = user.has_group('aulametrics.group_aulametrics_management')
             
+            # Nombre base según tipo de alerta
+            if alert.alert_type == 'qualitative':
+                base_name = 'Alerta Cualitativa'
+            else:
+                base_name = alert.threshold_id.name if alert.threshold_id else 'Alerta'
+            
             if alert.alert_level == 'group':
                 # Alertas grupales
                 if is_counselor_or_admin:
                     # Counselor/Admin: ven grupo específico (2A, 2B)
-                    alert.name = f"{alert.threshold_id.name} - Grupo {alert.academic_group_id.name}"
+                    alert.name = f"{base_name} - Grupo {alert.academic_group_id.name}"
                 elif is_management:
                     # Management: solo curso general sin letra del grupo
-                    alert.name = f"{alert.threshold_id.name} - Alerta Grupal ({alert.course_level_general})"
+                    alert.name = f"{base_name} - Alerta Grupal ({alert.course_level_general})"
                 else:
                     # Tutor: ve su grupo específico
-                    alert.name = f"{alert.threshold_id.name} - Grupo {alert.academic_group_id.name}"
+                    alert.name = f"{base_name} - Grupo {alert.academic_group_id.name}"
             else:
                 # Alertas individuales
                 if is_counselor_or_admin and alert.student_id:
                     # Counselor/Admin: ven nombre del estudiante
-                    alert.name = f"{alert.threshold_id.name} - {alert.student_id.name}"
+                    alert.name = f"{base_name} - {alert.student_id.name}"
                 elif is_management:
                     # Management: solo ven curso general sin grupo específico
-                    alert.name = f"{alert.threshold_id.name} - {alert.course_level_general}"
+                    alert.name = f"{base_name} - {alert.course_level_general}"
                 else:
                     # Tutor: nombre genérico sin identificar
-                    alert.name = f"{alert.threshold_id.name} - Alerta Individual"
+                    alert.name = f"{base_name} - Alerta Individual"
+    
+    @api.model
+    def create_qualitative_alert(self, qualitative_response):
+        """Crea alerta formal desde respuesta cualitativa con keywords."""
+        if not qualitative_response.has_alert_keywords:
+            return
+        
+        # Verificar si ya existe alerta para esta respuesta
+        existing = self.search([
+            ('qualitative_response_id', '=', qualitative_response.id),
+            ('status', '=', 'active')
+        ], limit=1)
+        
+        if existing:
+            return existing
+        
+        # Contar keywords como score_value
+        try:
+            import json
+            keywords = json.loads(qualitative_response.detected_keywords or '[]')
+            score_value = float(len(keywords))
+        except:
+            score_value = 1.0
+        
+        # Crear alerta SIN threshold (severity se calculará desde keywords)
+        alert = self.create({
+            'qualitative_response_id': qualitative_response.id,
+            'student_id': qualitative_response.student_id.id,
+            'academic_group_id': qualitative_response.academic_group_id.id,
+            'threshold_id': False,  # No usar threshold
+            'score_value': score_value,
+            'alert_level': 'individual',
+            'status': 'active',
+        })
+        
+        return alert
     
     @api.model
     def check_alerts_for_participation(self, participation):

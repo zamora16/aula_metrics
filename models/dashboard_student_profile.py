@@ -47,12 +47,13 @@ class DashboardStudentProfile(models.TransientModel):
         radar_chart = self._generate_radar_chart(df, student)
         kpis = self._generate_student_kpis(student, df)
         alerts_html = self._get_student_alerts_html(student_id)
+        alerts_history_html = self._get_student_alerts_history_html(student_id)
         participations_html = self._get_participations_html(student_id)
         qualitative_html = self._get_qualitative_responses_html(student_id)
         
         return self._build_profile_html_chartjs(
             student, role_info, kpis, '', 
-            evolution_charts, radar_chart, alerts_html, participations_html, qualitative_html
+            evolution_charts, radar_chart, alerts_html, alerts_history_html, participations_html, qualitative_html
         )
 
     @api.model
@@ -208,22 +209,87 @@ class DashboardStudentProfile(models.TransientModel):
         
         html = '<div class="alerts-container">'
         for alert in alerts:
-            severity_icons = {
-                'low': ('info', 'fa-info-circle'),
-                'medium': ('warning', 'fa-exclamation-triangle'),
-                'high': ('danger', 'fa-exclamation-circle'),
-                'critical': ('danger', 'fa-skull-crossbones')
+            severity_classes = {
+                'low': 'info',
+                'moderate': 'warning',
+                'high': 'danger'
             }
-            badge_class, icon = severity_icons.get(alert.severity, ('secondary', 'fa-question'))
+            severity_labels = {
+                'low': 'Baja',
+                'moderate': 'Moderada',
+                'high': 'Alta'
+            }
+            badge_class = severity_classes.get(alert.severity, 'secondary')
+            severity_label = severity_labels.get(alert.severity, alert.severity)
             
             html += f"""
             <div class="alert alert-{badge_class} d-flex justify-content-between align-items-start">
                 <div>
-                    <h6><i class="fa-solid {icon} me-2"></i>{alert.name}</h6>
+                    <h6>{alert.name}</h6>
                     <p class="mb-1">{alert.message or ''}</p>
                     <small class="text-muted">Creada: {alert.alert_date.strftime('%d/%m/%Y %H:%M')}</small>
                 </div>
-                <span class="badge bg-{badge_class}">{alert.severity.upper()}</span>
+                <span class="badge bg-{badge_class}">{severity_label}</span>
+            </div>
+            """
+        
+        html += '</div>'
+        return html
+
+    def _get_student_alerts_history_html(self, student_id):
+        """Obtiene HTML con el historial de alertas resueltas/descartadas del estudiante."""
+        Alert = self.env['aulametrics.alert']
+        alerts = Alert.search([
+            ('student_id', '=', student_id),
+            ('status', 'in', ['resolved', 'dismissed'])
+        ], order='resolution_date desc, alert_date desc', limit=20)
+        
+        if not alerts:
+            return '<div class="alert alert-light">No hay historial de alertas</div>'
+        
+        html = '<div class="alerts-history-container">'
+        for alert in alerts:
+            severity_classes = {
+                'low': 'info',
+                'moderate': 'warning',
+                'high': 'danger'
+            }
+            severity_labels = {
+                'low': 'Baja',
+                'moderate': 'Moderada',
+                'high': 'Alta'
+            }
+            status_labels = {
+                'resolved': 'Resuelta',
+                'dismissed': 'Descartada'
+            }
+            status_colors = {
+                'resolved': 'success',
+                'dismissed': 'secondary'
+            }
+            
+            badge_class = severity_classes.get(alert.severity, 'secondary')
+            severity_label = severity_labels.get(alert.severity, alert.severity)
+            status_label = status_labels.get(alert.status, alert.status)
+            status_color = status_colors.get(alert.status, 'secondary')
+            
+            resolution_info = ''
+            if alert.resolution_date:
+                resolution_info = f'<small class="text-muted d-block">Resuelta: {alert.resolution_date.strftime("%d/%m/%Y %H:%M")}</small>'
+            if alert.resolution_action:
+                resolution_info += f'<small class="text-muted d-block mt-1"><strong>Acción:</strong> {alert.resolution_action}</small>'
+            
+            html += f"""
+            <div class="alert alert-light border-start border-{badge_class} border-3 mb-2">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">{alert.name} <span class="badge bg-{status_color} ms-2">{status_label}</span></h6>
+                        <p class="mb-1 text-muted small">{alert.message or ''}</p>
+                        <small class="text-muted">Creada: {alert.alert_date.strftime('%d/%m/%Y %H:%M')}</small>
+                        {resolution_info}
+                    </div>
+                    <span class="badge bg-{badge_class} ms-2">{severity_label}</span>
+                </div>
             </div>
             """
         
@@ -354,6 +420,11 @@ class DashboardStudentProfile(models.TransientModel):
         """HTML cuando el estudiante no tiene métricas."""
         role_badge = dashboard_helpers.get_role_badge(role_info)
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
+        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
+        
+        # Obtener alertas aunque no haya métricas
+        alerts_html = self._get_student_alerts_html(student.id)
+        alerts_history_html = self._get_student_alerts_history_html(student.id)
         
         return f"""
         <!DOCTYPE html>
@@ -362,30 +433,68 @@ class DashboardStudentProfile(models.TransientModel):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Perfil de {student.name} - AulaMetrics</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            {dashboard_styles.get_common_styles()}
             {self._profile_styles_chartjs()}
         </head>
         <body>
-            <div class="container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-                    <div>
-                        <h1>{student.name}</h1>
-                        <p class="subtitle">{group_name} · {fields.Date.today().strftime('%d/%m/%Y')}</p>
-                    </div>
-                    <div>
-                        {role_badge}
-                        <a href="/aulametrics/students" style="margin-left: 12px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; text-decoration: none; color: #64748b; font-weight: 500; font-size: 14px;">
-                            <i class="fa-solid fa-users"></i> Lista
-                        </a>
-                    </div>
-                </div>
+            <div class="dashboard-layout">
+                {sidebar_html}
                 
-                <div class="card" style="text-align: center; padding: 60px 40px;">
-                    <i class="fa-solid fa-chart-line" style="font-size: 80px; color: #cbd5e1; margin-bottom: 24px;"></i>
-                    <h3 style="color: #64748b; margin-bottom: 12px;">Sin datos disponibles</h3>
-                    <p style="color: #94a3b8; font-size: 15px;">Este estudiante aún no tiene métricas registradas. Complete una evaluación para comenzar a ver datos.</p>
-                </div>
+                <main class="main-content">
+                    <div class="topbar">
+                        <div>
+                            <h3>{student.name}</h3>
+                            <span class="breadcrumbs">
+                                <i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime('%d/%m/%Y')}
+                            </span>
+                        </div>
+                        <div class="topbar-actions">
+                            {role_badge}
+                            <a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa-solid fa-users"></i> Lista
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="content-wrapper">
+                        <div class="container-fluid">
+                            <div class="card" style="text-align: center; padding: 60px 40px;">
+                                <i class="fa-solid fa-chart-line" style="font-size: 80px; color: #cbd5e1; margin-bottom: 24px;"></i>
+                                <h3 style="color: #64748b; margin-bottom: 12px;">Sin datos de métricas disponibles</h3>
+                                <p style="color: #94a3b8; font-size: 15px;">Este estudiante aún no tiene métricas registradas. Complete una evaluación para comenzar a ver datos.</p>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title">Alertas Activas</h5>
+                                            <p class="card-subtitle">Puntos de atención identificados</p>
+                                        </div>
+                                        <div class="card-body">
+                                            {alerts_html}
+                                            
+                                            <div class="mt-3">
+                                                <button class="btn btn-outline-secondary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#alertsHistory" aria-expanded="false" aria-controls="alertsHistory">
+                                                    <i class="fa-solid fa-clock-rotate-left me-2"></i>Ver Historial de Alertas
+                                                </button>
+                                                <div class="collapse mt-3" id="alertsHistory">
+                                                    <hr>
+                                                    <h6 class="text-muted mb-3">Historial de Alertas Resueltas/Descartadas</h6>
+                                                    {alerts_history_html}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
             </div>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         </body>
         </html>
         """
@@ -1187,7 +1296,7 @@ class DashboardStudentProfile(models.TransientModel):
         </script>
         '''
 
-    def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, participations, qualitative=''):
+    def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, alerts_history, participations, qualitative=''):
         """HTML del perfil con Chart.js - diseño profesional con layout del dashboard."""
         role_badge = dashboard_helpers.get_role_badge(role_info)
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
@@ -1248,6 +1357,17 @@ class DashboardStudentProfile(models.TransientModel):
                                         </div>
                                         <div class="card-body">
                                             {alerts}
+                                            
+                                            <div class="mt-3">
+                                                <button class="btn btn-outline-secondary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#alertsHistory" aria-expanded="false" aria-controls="alertsHistory">
+                                                    <i class="fa-solid fa-clock-rotate-left me-2"></i>Ver Historial de Alertas
+                                                </button>
+                                                <div class="collapse mt-3" id="alertsHistory">
+                                                    <hr>
+                                                    <h6 class="text-muted mb-3">Historial de Alertas Resueltas/Descartadas</h6>
+                                                    {alerts_history}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1281,6 +1401,7 @@ class DashboardStudentProfile(models.TransientModel):
                     </div>
                 </main>
             </div>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         </body>
         </html>
         """

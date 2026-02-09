@@ -7,10 +7,11 @@
         <field name="arch" type="xml">
             <tree string="Alertas">
                 <field name="name"/>
+                <field name="alert_type"/>
                 <field name="alert_date"/>
                 <field name="status"/>
                 <field name="alert_level"/>
-                <field name="threshold_id"/>
+                <field name="threshold_id" optional="hide"/>
             </tree>
         </field>
     </record>
@@ -34,15 +35,18 @@
                         <field name="alert_date" readonly="1"/>
                         <field name="status"/>
                         <field name="alert_level" readonly="1"/>
-                        <field name="threshold_id" readonly="1"/>
+                        <field name="alert_type" readonly="1"/>
+                        <field name="threshold_id" readonly="1" invisible="alert_type == 'qualitative'"/>
                         <field name="severity"/>
                     </group>
                     <group>
                         <field name="message" readonly="1"/>
-                        <field name="score_value" readonly="1"/>
+                        <field name="score_value" readonly="1" string="Valor" 
+                               help="Para alertas cuantitativas: valor de la métrica. Para cualitativas: número de palabras clave detectadas."/>
                     </group>
-                    <group string="Detalles">
-                        <field name="participation_id" readonly="1"/>
+                    <group string="Origen">
+                        <field name="participation_id" readonly="1" invisible="alert_type == 'qualitative'"/>
+                        <field name="qualitative_response_id" readonly="1" invisible="alert_type == 'quantitative'"/>
                         <field name="student_id" readonly="1"/>
                         <field name="academic_group_id" readonly="1"/>
                     </group>

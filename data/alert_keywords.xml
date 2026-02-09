@@ -4,11 +4,11 @@
         <!-- Palabras Clave de Alerta por Defecto (Sistema) -->
         <!-- Las variantes ortográficas y gramaticales se generan automáticamente -->
         
-        <!-- Críticas: Suicidio y autolesión -->
+        <!-- Altas: Suicidio y autolesión -->
         <record id="alert_keyword_suicidio" model="aulametrics.alert_keyword">
             <field name="keyword">suicidio</field>
             <field name="description">Mención de ideación o planes suicidas (auto-genera: suicida, suicidar, etc.)</field>
-            <field name="severity">critical</field>
+            <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">1</field>
         </record>
@@ -16,7 +16,7 @@
         <record id="alert_keyword_muerte" model="aulametrics.alert_keyword">
             <field name="keyword">muerte</field>
             <field name="description">Referencias a muerte (auto-genera: morir, muerto, muriendo, etc.)</field>
-            <field name="severity">critical</field>
+            <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">2</field>
         </record>
@@ -24,7 +24,7 @@
         <record id="alert_keyword_matar" model="aulametrics.alert_keyword">
             <field name="keyword">matar</field>
             <field name="description">Expresiones de violencia letal (auto-genera: matarme, matarse, etc.)</field>
-            <field name="severity">critical</field>
+            <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">3</field>
         </record>
@@ -156,7 +156,7 @@
         <record id="alert_keyword_violacion" model="aulametrics.alert_keyword">
             <field name="keyword">violación</field>
             <field name="description">Agresión sexual grave (auto-genera: violacion sin tilde)</field>
-            <field name="severity">critical</field>
+            <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">42</field>
         </record>

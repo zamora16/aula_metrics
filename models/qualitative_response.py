@@ -66,6 +66,10 @@ class QualitativeResponse(models.Model):
             
             record.has_alert_keywords = bool(found)
             record.detected_keywords = json.dumps(found, ensure_ascii=False) if found else False
+            
+            # Si se detectaron keywords, crear alerta formal
+            if record.has_alert_keywords and record.id:
+                self.env['aulametrics.alert'].sudo().create_qualitative_alert(record)
     
     @api.depends('student_id')
     def _compute_display_name(self):
@@ -102,8 +106,7 @@ class AlertKeyword(models.Model):
     severity = fields.Selection([
         ('low', 'Baja'),
         ('moderate', 'Moderada'),
-        ('high', 'Alta'),
-        ('critical', 'Crítica')
+        ('high', 'Alta')
     ], string='Gravedad', default='moderate', required=True)
     
     is_system_default = fields.Boolean('Palabra del Sistema', default=False, readonly=True, 
