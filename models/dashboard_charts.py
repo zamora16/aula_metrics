@@ -34,6 +34,7 @@ class DashboardCharts(models.TransientModel):
         available_metrics = self._get_available_metrics(filters, role_info)
         available_groups = self._get_available_groups(role_info)
         available_evaluations = self._get_available_evaluations(role_info)
+        segmentation_vars = self._get_segmentation_variables(filters, role_info)
 
         # Si no hay datos disponibles, mostrar mensaje
         if not available_metrics:
@@ -55,7 +56,7 @@ class DashboardCharts(models.TransientModel):
         df = self._prepare_dataframe(metric_values, role_info)
         
         # Generar gráficos
-        charts = self._generate_charts(df, filters, available_metrics, role_info)
+        charts = self._generate_charts(df, filters, available_metrics, role_info, segmentation_vars)
         
         # Generar KPIs
         kpi_html = self._generate_kpis(df, filters, role_info)
@@ -163,6 +164,108 @@ class DashboardCharts(models.TransientModel):
         
         return [{'id': e.id, 'name': e.name, 'state': e.state, 'date_start': e.date_start} for e in evaluations]
 
+    def _get_segmentation_variables(self, filters, role_info):
+        """Obtiene variables de segmentación disponibles dinámicamente.
+        
+        Args:
+            filters (dict): Filtros actuales aplicados
+            role_info (dict): Información del rol del usuario
+        
+        Returns:
+            list: Lista de dicts con estructura {value, label, type, options}
+                - value: identificador ('gender' o 'question_123_choices')
+                - label: nombre legible para mostrar
+                - type: 'partner_field' o 'metric_json'
+                - options: lista de valores posibles ['Masculino', 'Femenino', ...]
+        """
+        variables = []
+        
+        # 1. Género (siempre disponible desde res.partner)
+        variables.append({
+            'value': 'gender',
+            'label': 'Género',
+            'type': 'partner_field',
+            'options': ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir']
+        })
+        
+        # 2. Preguntas de opciones múltiples (dinámicas desde metric_value)
+        MetricValue = self.env['aulametrics.metric_value']
+        SurveyQuestion = self.env['survey.question']
+        
+        # Dominio base respetando permisos de rol
+        domain = [('metric_name', 'like', 'question_%_choices')]
+        
+        if role_info.get('role') == 'tutor':
+            allowed_groups = role_info.get('allowed_group_ids', [])
+            if allowed_groups:
+                domain.append(('academic_group_id', 'in', allowed_groups))
+            else:
+                return variables  # Solo retorna género si tutor sin grupos
+        
+        # Aplicar filtros adicionales si existen
+        if filters.get('evaluation_ids'):
+            domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
+        if filters.get('date_from'):
+            domain.append(('timestamp', '>=', fields.Datetime.to_string(filters['date_from'])))
+        if filters.get('date_to'):
+            domain.append(('timestamp', '<=', fields.Datetime.to_string(filters['date_to'])))
+        
+        # Buscar métricas agrupadas por metric_name
+        result = MetricValue.read_group(
+            domain,
+            ['metric_name'],
+            ['metric_name']
+        )
+        
+        for r in result:
+            metric_name = r['metric_name']
+            
+            # Extraer question_id del patrón 'question_{id}_choices'
+            try:
+                question_id = int(metric_name.split('_')[1])
+            except (IndexError, ValueError):
+                continue
+            
+            # Obtener pregunta para nombre legible
+            question = SurveyQuestion.browse(question_id).exists()
+            if not question:
+                continue
+            
+            # Extraer opciones únicas de todos los registros
+            all_records = MetricValue.search([
+                ('metric_name', '=', metric_name),
+                ('value_json', '!=', False)
+            ] + domain)
+            
+            options_set = set()
+            for record in all_records:
+                if record.value_json:
+                    options_set.update(record.value_json)
+            
+            if options_set:
+                variables.append({
+                    'value': metric_name,
+                    'label': question.title,
+                    'type': 'metric_json',
+                    'options': sorted(list(options_set))
+                })
+        
+        return variables
+
+    def _build_segment_options_html(self, segmentation_vars):
+        """Construye el HTML del selector de segmentación.
+        
+        Args:
+            segmentation_vars (list): Lista de variables de segmentación
+        
+        Returns:
+            str: HTML con opciones del selector
+        """
+        options_html = '<option value="">Sin segmentar</option>'
+        for seg_var in segmentation_vars:
+            options_html += f'<option value="{seg_var["value"]}">{seg_var["label"]}</option>'
+        return options_html
+
     def _query_metric_values(self, filters, role_info):
         """Consulta los valores de métricas aplicando todos los filtros."""
         MetricValue = self.env['aulametrics.metric_value']
@@ -251,7 +354,7 @@ class DashboardCharts(models.TransientModel):
         
         return pd.DataFrame(data)
 
-    def _generate_charts(self, df, filters, available_metrics, role_info):
+    def _generate_charts(self, df, filters, available_metrics, role_info, segmentation_vars):
         """Genera gráficos según las métricas presentes en el DataFrame y rol del usuario."""
         charts = []
         
@@ -265,13 +368,13 @@ class DashboardCharts(models.TransientModel):
                 'type': row['metric_type']
             }
             
-            chart_html = self._generate_chart_by_metric_type(metric_info, df, role_info)
+            chart_html = self._generate_chart_by_metric_type(metric_info, df, role_info, segmentation_vars)
             if chart_html:
                 charts.append(chart_html)
         
         return charts
 
-    def _generate_chart_by_metric_type(self, metric_info, df, role_info):
+    def _generate_chart_by_metric_type(self, metric_info, df, role_info, segmentation_vars):
         """Genera el gráfico apropiado según el tipo de métrica y rol."""
         metric_name = metric_info['name']
         metric_label = metric_info['label']
@@ -280,14 +383,14 @@ class DashboardCharts(models.TransientModel):
         df_metric = df[df['metric_name'] == metric_name].copy()
         
         if metric_type == 'numeric':
-            return self._chart_numeric_metric(df_metric, metric_label, role_info)
+            return self._chart_numeric_metric(df_metric, metric_label, role_info, segmentation_vars)
         elif metric_type == 'json':
             return self._chart_json_metric(df_metric, metric_label)
         # Las métricas de texto no se muestran aquí, se gestionan en la pestaña cualitativa
         
         return ''
 
-    def _chart_numeric_metric(self, df, label, role_info):
+    def _chart_numeric_metric(self, df, label, role_info, segmentation_vars):
         """Gráfico adaptado según rol del usuario con colores semáforo."""
         if df.empty or df['value_numeric'].isna().all():
             return ''
@@ -301,15 +404,15 @@ class DashboardCharts(models.TransientModel):
         
         # Gráfico principal según rol
         if role == 'management':
-            charts_html += self._chart_numeric_by_course(df, label)
+            charts_html += self._chart_numeric_by_course(df, label, segmentation_vars)
             if has_evolution:
                 charts_html += self._chart_numeric_evolution_by_course(df, label)
         elif role == 'tutor':
-            charts_html += self._chart_numeric_distribution(df, label)
+            charts_html += self._chart_numeric_distribution(df, label, segmentation_vars)
             if has_evolution:
                 charts_html += self._chart_numeric_evolution_distribution(df, label)
         else:  # counselor/admin
-            charts_html += self._chart_numeric_by_groups(df, label)
+            charts_html += self._chart_numeric_by_groups(df, label, segmentation_vars)
             if has_evolution:
                 charts_html += self._chart_numeric_evolution_by_groups(df, label)
         
@@ -685,7 +788,7 @@ class DashboardCharts(models.TransientModel):
         </script>
         '''
     
-    def _chart_numeric_by_course(self, df, label):
+    def _chart_numeric_by_course(self, df, label, segmentation_vars):
         """Vista Management: Agregado por curso académico (barras compactas)."""
         cursos = sorted(df['curso'].unique())
         stats = []
@@ -711,21 +814,66 @@ class DashboardCharts(models.TransientModel):
         if not stats:
             return ''
         
-        # Preparar datos por género
-        stats_by_gender = {}
-        gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
-        for curso in cursos:
-            df_curso = df[df['curso'] == curso]
-            stats_by_gender[curso] = {}
-            for gender_key, gender_label in gender_map.items():
-                df_gender = df_curso[df_curso['student_gender'] == gender_key]
-                if len(df_gender) > 0:
-                    values = df_gender['value_numeric'].dropna()
-                    if len(values) > 0:
-                        stats_by_gender[curso][gender_label] = {
-                            'mean': float(values.mean()),
-                            'count': int(len(values))
-                        }
+        # Preparar datos de segmentación para TODAS las variables disponibles
+        stats_by_segmentation = {}
+        MetricValue = self.env['aulametrics.metric_value']
+        
+        for seg_var in segmentation_vars:
+            var_value = seg_var['value']
+            var_type = seg_var['type']
+            var_options = seg_var['options']
+            
+            stats_by_segmentation[var_value] = {}
+            
+            for curso in cursos:
+                df_curso = df[df['curso'] == curso]
+                stats_by_segmentation[var_value][curso] = {}
+                
+                if var_type == 'partner_field' and var_value == 'gender':
+                    # Género desde res.partner
+                    gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
+                    for gender_key, gender_label in gender_map.items():
+                        df_segment = df_curso[df_curso['student_gender'] == gender_key]
+                        values = df_segment['value_numeric'].dropna()
+                        if len(values) > 0:
+                            stats_by_segmentation[var_value][curso][gender_label] = {
+                                'mean': float(values.mean()),
+                                'count': int(len(values))
+                            }
+                
+                elif var_type == 'metric_json':
+                    # Variable de opciones múltiples desde metric_value
+                    for student_id in df_curso['student_id'].unique():
+                        if student_id == "***":  # Skip anonymized
+                            continue
+                        
+                        # Buscar el valor de la variable de segmentación para este estudiante
+                        seg_records = MetricValue.search([
+                            ('student_id', '=', int(student_id)),
+                            ('metric_name', '=', var_value),
+                            ('value_json', '!=', False)
+                        ], limit=1)
+                        
+                        if seg_records and seg_records.value_json:
+                            selected_options = seg_records.value_json
+                            student_value = df_curso[df_curso['student_id'] == student_id]['value_numeric'].iloc[0]
+                            
+                            if pd.notna(student_value):
+                                for option in selected_options:
+                                    if option not in stats_by_segmentation[var_value][curso]:
+                                        stats_by_segmentation[var_value][curso][option] = {
+                                            'sum': 0.0,
+                                            'count': 0
+                                        }
+                                    stats_by_segmentation[var_value][curso][option]['sum'] += float(student_value)
+                                    stats_by_segmentation[var_value][curso][option]['count'] += 1
+                    
+                    # Calcular medias
+                    for option in stats_by_segmentation[var_value][curso]:
+                        data = stats_by_segmentation[var_value][curso][option]
+                        if data['count'] > 0:
+                            data['mean'] = data['sum'] / data['count']
+                            del data['sum']
         
         chart_id = f'chart_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
         labels = [s['curso'] for s in stats]
@@ -736,6 +884,8 @@ class DashboardCharts(models.TransientModel):
         metric_name = df.iloc[0]['metric_name'] if not df.empty else None
         thresholds = self._get_thresholds_for_metric(metric_name) if metric_name else []
         
+        segment_options_html = self._build_segment_options_html(segmentation_vars)
+        
         return f'''
         <div class="card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -744,10 +894,9 @@ class DashboardCharts(models.TransientModel):
                     <p class="card-subtitle">Media por curso académico</p>
                 </div>
                 <div style="display: flex; gap: 12px; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; cursor: pointer;">
-                        <input type="checkbox" id="gender_{chart_id}" style="cursor: pointer;">
-                        <span>⚧️ Dividir por género</span>
-                    </label>
+                    <select id="segment_{chart_id}" style="padding: 6px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; color: #64748b; min-width: 160px;">
+                        {segment_options_html}
+                    </select>
                     <button id="sort_{chart_id}" style="padding: 6px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; color: #64748b;" title="Cambiar orden">
                         ↕️ Orden
                     </button>
@@ -764,12 +913,22 @@ class DashboardCharts(models.TransientModel):
                 labels: {json.dumps(labels)},
                 means: {json.dumps(means)},
                 colors: {json.dumps(colors)},
-                statsByGender: {json.dumps(stats_by_gender)},
+                statsBySegmentation: {json.dumps(stats_by_segmentation)},
+                segmentationVars: {json.dumps(segmentation_vars)},
                 thresholds: {json.dumps(thresholds)}
             }};
             
             let ascending = true;
-            let byGender = false;
+            let currentSegmentation = '';
+            
+            // Paleta de colores para segmentos
+            const segmentColors = {{
+                'Masculino': '#3b82f6',
+                'Femenino': '#ec4899',
+                'Otro': '#94a3b8',
+                'Prefiere no decir': '#64748b',
+                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
+            }};
             
             // Crear datasets de umbrales
             function createThresholdDatasets(labelCount) {{
@@ -842,10 +1001,6 @@ class DashboardCharts(models.TransientModel):
             }});
             
             function updateChart() {{
-                let data = [];
-                let labels = [];
-                let colors = [];
-                
                 const entries = chartData.labels.map((label, i) => ({{
                     label: label,
                     value: chartData.means[i],
@@ -855,39 +1010,44 @@ class DashboardCharts(models.TransientModel):
                 // Ordenar
                 entries.sort((a, b) => ascending ? a.value - b.value : b.value - a.value);
                 
-                if (byGender) {{
-                    // Dividir por género
-                    const genderColors = {{
-                        'Masculino': '#3b82f6',
-                        'Femenino': '#ec4899',
-                        'Otro': '#94a3b8',
-                        'Prefiere no decir': '#64748b'
-                    }};
-                    
+                if (currentSegmentation && chartData.statsBySegmentation[currentSegmentation]) {{
+                    // Dividir por segmento seleccionado
                     chart.data.labels = entries.map(e => e.label);
                     chart.data.datasets = [];
                     
-                    ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir'].forEach(gender => {{
-                        const genderData = entries.map(e => {{
-                            const stats = chartData.statsByGender[e.label];
-                            return stats && stats[gender] ? stats[gender].mean : null;
+                    // Obtener todas las opciones únicas del segmento
+                    const allOptions = new Set();
+                    entries.forEach(e => {{
+                        const stats = chartData.statsBySegmentation[currentSegmentation][e.label] || {{}};
+                        Object.keys(stats).forEach(opt => allOptions.add(opt));
+                    }});
+                    
+                    // Crear dataset para cada opción
+                    const optionsArray = Array.from(allOptions);
+                    optionsArray.forEach((option, idx) => {{
+                        const segmentData = entries.map(e => {{
+                            const stats = chartData.statsBySegmentation[currentSegmentation][e.label];
+                            return stats && stats[option] ? stats[option].mean : null;
                         }});
                         
-                        if (genderData.some(v => v !== null)) {{
+                        if (segmentData.some(v => v !== null)) {{
+                            const color = segmentColors[option] || segmentColors.default[idx % segmentColors.default.length];
+                            
                             chart.data.datasets.push({{
-                                label: gender,
-                                data: genderData,
-                                backgroundColor: genderColors[gender],
+                                label: option,
+                                data: segmentData,
+                                backgroundColor: color,
                                 borderRadius: 6,
                                 borderSkipped: false
                             }});
                         }}
                     }});
+                    
                     chart.options.plugins.legend.display = true;
                     // Añadir umbrales
                     chart.data.datasets.push(...createThresholdDatasets(chart.data.labels.length));
                 }} else {{
-                    // Vista normal
+                    // Vista normal sin segmentación
                     chart.data.labels = entries.map(e => e.label);
                     chart.data.datasets = [
                         {{
@@ -906,8 +1066,8 @@ class DashboardCharts(models.TransientModel):
                 chart.update();
             }}
             
-            document.getElementById('gender_{chart_id}').addEventListener('change', function(e) {{
-                byGender = e.target.checked;
+            document.getElementById('segment_{chart_id}').addEventListener('change', function(e) {{
+                currentSegmentation = e.target.value;
                 updateChart();
             }});
             
@@ -920,7 +1080,7 @@ class DashboardCharts(models.TransientModel):
         </script>
         '''
 
-    def _chart_numeric_distribution(self, df, label):
+    def _chart_numeric_distribution(self, df, label, segmentation_vars):
         """Vista Tutor: Distribución anónima del grupo (histogram)."""
         values = df['value_numeric'].dropna()
         if len(values) == 0:
@@ -940,6 +1100,65 @@ class DashboardCharts(models.TransientModel):
                 count = ((values >= bins[i]) & (values <= bins[i+1])).sum()
             counts.append(int(count))
         
+        # Preparar datos de segmentación
+        distribution_by_segmentation = {}
+        MetricValue = self.env['aulametrics.metric_value']
+        
+        for seg_var in segmentation_vars:
+            var_value = seg_var['value']
+            var_type = seg_var['type']
+            
+            distribution_by_segmentation[var_value] = {}
+            
+            if var_type == 'partner_field' and var_value == 'gender':
+                # Género desde res.partner
+                gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
+                for gender_key, gender_label in gender_map.items():
+                    df_segment = df[df['student_gender'] == gender_key]
+                    seg_values = df_segment['value_numeric'].dropna()
+                    
+                    if len(seg_values) > 0:
+                        seg_counts = []
+                        for i in range(len(bins) - 1):
+                            count = ((seg_values >= bins[i]) & (seg_values < bins[i+1])).sum()
+                            if i == len(bins) - 2:
+                                count = ((seg_values >= bins[i]) & (seg_values <= bins[i+1])).sum()
+                            seg_counts.append(int(count))
+                        distribution_by_segmentation[var_value][gender_label] = seg_counts
+            
+            elif var_type == 'metric_json':
+                # Variable de opciones múltiples desde metric_value
+                student_segments = {}
+                
+                for student_id in df['student_id'].unique():
+                    if student_id == "***":  # Skip anonymized
+                        continue
+                    
+                    seg_records = MetricValue.search([
+                        ('student_id', '=', int(student_id)),
+                        ('metric_name', '=', var_value),
+                        ('value_json', '!=', False)
+                    ], limit=1)
+                    
+                    if seg_records and seg_records.value_json:
+                        for option in seg_records.value_json:
+                            student_segments[student_id] = option
+                            break  # Tomar solo la primera opción si hay múltiples
+                
+                # Calcular distribución por cada opción
+                for option in seg_var['options']:
+                    df_segment = df[df['student_id'].isin([sid for sid, opt in student_segments.items() if opt == option])]
+                    seg_values = df_segment['value_numeric'].dropna()
+                    
+                    if len(seg_values) > 0:
+                        seg_counts = []
+                        for i in range(len(bins) - 1):
+                            count = ((seg_values >= bins[i]) & (seg_values < bins[i+1])).sum()
+                            if i == len(bins) - 2:
+                                count = ((seg_values >= bins[i]) & (seg_values <= bins[i+1])).sum()
+                            seg_counts.append(int(count))
+                        distribution_by_segmentation[var_value][option] = seg_counts
+        
         chart_id = f'chart_dist_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
         total_alumnos = len(values)
         mean_val = float(values.mean())
@@ -957,80 +1176,149 @@ class DashboardCharts(models.TransientModel):
         
         description = " · ".join(desc_texts) if desc_texts else "Sin datos suficientes"
         
+        segment_options_html = self._build_segment_options_html(segmentation_vars)
+        
         return f'''
         <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{label}</h5>
-                <p class="card-subtitle">Distribución anónima del grupo · Media: {mean_val:.1f} pts</p>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h5 class="card-title">{label}</h5>
+                    <p class="card-subtitle">Distribución anónima del grupo · Media: {mean_val:.1f} pts</p>
+                </div>
+                <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
+                    {segment_options_html}
+                </select>
             </div>
             <div class="card-body">
                 <canvas id="{chart_id}" height="280"></canvas>
                 <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #475569;">
-                    <strong>Interpretación:</strong> {description}
+                    <strong>Interpretación:</strong> <span id="desc_{chart_id}">{description}</span>
                 </div>
             </div>
         </div>
         
         <script>
-        new Chart(document.getElementById('{chart_id}'), {{
-            type: 'bar',
-            data: {{
+        (function() {{
+            const chartData = {{
                 labels: {json.dumps(bin_labels)},
-                datasets: [{{
-                    label: 'Número de alumnos',
-                    data: {json.dumps(counts)},
-                    backgroundColor: {json.dumps(bin_colors)},
-                    borderRadius: 8,
-                    borderSkipped: false
-                }}]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {{
-                    legend: {{ display: false }},
-                    tooltip: {{
-                        backgroundColor: '#1e293b',
-                        padding: 14,
-                        cornerRadius: 8,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
-                        callbacks: {{
-                            label: function(context) {{
-                                let percentage = ({total_alumnos} > 0) ? ((context.parsed.y / {total_alumnos}) * 100).toFixed(1) : 0;
-                                return context.parsed.y + ' alumnos (' + percentage + '%)';
+                counts: {json.dumps(counts)},
+                bin_colors: {json.dumps(bin_colors)},
+                distributionBySegmentation: {json.dumps(distribution_by_segmentation)},
+                segmentationVars: {json.dumps(segmentation_vars)},
+                totalAlumnos: {total_alumnos}
+            }};
+            
+            let currentSegmentation = '';
+            
+            // Paleta de colores para segmentos
+            const segmentColors = {{
+                'Masculino': '#3b82f6',
+                'Femenino': '#ec4899',
+                'Otro': '#94a3b8',
+                'Prefiere no decir': '#64748b',
+                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
+            }};
+            
+            const chart = new Chart(document.getElementById('{chart_id}'), {{
+                type: 'bar',
+                data: {{
+                    labels: chartData.labels,
+                    datasets: [{{
+                        label: 'Número de alumnos',
+                        data: chartData.counts,
+                        backgroundColor: chartData.bin_colors,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }}]
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {{
+                        legend: {{ display: false }},
+                        tooltip: {{
+                            backgroundColor: '#1e293b',
+                            padding: 14,
+                            cornerRadius: 8,
+                            titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
+                            bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                            callbacks: {{
+                                label: function(context) {{
+                                    let percentage = (chartData.totalAlumnos > 0) ? ((context.parsed.y / chartData.totalAlumnos) * 100).toFixed(1) : 0;
+                                    return context.parsed.y + ' alumnos (' + percentage + '%)';
+                                }}
                             }}
                         }}
-                    }}
-                }},
-                scales: {{
-                    x: {{
-                        grid: {{ display: false, drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#64748b'
+                    }},
+                    scales: {{
+                        x: {{
+                            grid: {{ display: false, drawBorder: false }},
+                            ticks: {{
+                                font: {{ size: 11, family: "'Inter', sans-serif" }},
+                                color: '#64748b'
+                            }}
+                        }},
+                        y: {{
+                            beginAtZero: true,
+                            grid: {{ color: '#f1f5f9', drawBorder: false }},
+                            ticks: {{
+                                stepSize: 1,
+                                font: {{ size: 12, family: "'Inter', sans-serif" }},
+                                color: '#94a3b8'
+                            }}
                         }}
                     }},
-                    y: {{
-                        beginAtZero: true,
-                        grid: {{ color: '#f1f5f9', drawBorder: false }},
-                        ticks: {{
-                            stepSize: 1,
-                            font: {{ size: 12, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8'
-                        }}
+                    animation: {{
+                        duration: 600,
+                        easing: 'easeInOutCubic'
                     }}
-                }},
-                animation: {{
-                    duration: 600,
-                    easing: 'easeInOutCubic'
                 }}
+            }});
+            
+            function updateChart() {{
+                if (currentSegmentation && chartData.distributionBySegmentation[currentSegmentation]) {{
+                    // Mostrar distribución segmentada
+                    const segments = chartData.distributionBySegmentation[currentSegmentation];
+                    chart.data.datasets = [];
+                    
+                    const segmentKeys = Object.keys(segments);
+                    segmentKeys.forEach((segment, idx) => {{
+                        const color = segmentColors[segment] || segmentColors.default[idx % segmentColors.default.length];
+                        chart.data.datasets.push({{
+                            label: segment,
+                            data: segments[segment],
+                            backgroundColor: color,
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }});
+                    }});
+                    
+                    chart.options.plugins.legend.display = true;
+                    chart.options.plugins.legend.position = 'top';
+                }} else {{
+                    // Vista normal sin segmentación
+                    chart.data.datasets = [{{
+                        label: 'Número de alumnos',
+                        data: chartData.counts,
+                        backgroundColor: chartData.bin_colors,
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }}];
+                    chart.options.plugins.legend.display = false;
+                }}
+                
+                chart.update();
             }}
-        }});
+            
+            document.getElementById('segment_{chart_id}').addEventListener('change', function(e) {{
+                currentSegmentation = e.target.value;
+                updateChart();
+            }});
+        }})();
         </script>
         '''
     
-    def _chart_numeric_by_groups(self, df, label):
+    def _chart_numeric_by_groups(self, df, label, segmentation_vars):
         """Vista Counselor: Comparativa de grupos (barras horizontales compactas)."""
         grupos = sorted(df['group_name'].unique())
         stats = []
@@ -1054,21 +1342,68 @@ class DashboardCharts(models.TransientModel):
         if not stats:
             return ''
         
-        # Preparar datos por género
-        stats_by_gender = {}
-        gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
-        for grupo in grupos:
-            df_grupo = df[df['group_name'] == grupo]
-            stats_by_gender[grupo] = {}
-            for gender_key, gender_label in gender_map.items():
-                df_gender = df_grupo[df_grupo['student_gender'] == gender_key]
-                if len(df_gender) > 0:
-                    values = df_gender['value_numeric'].dropna()
-                    if len(values) > 0:
-                        stats_by_gender[grupo][gender_label] = {
-                            'mean': float(values.mean()),
-                            'count': int(len(values))
-                        }
+        # Preparar datos de segmentación para TODAS las variables disponibles
+        stats_by_segmentation = {}
+        MetricValue = self.env['aulametrics.metric_value']
+        
+        for seg_var in segmentation_vars:
+            var_value = seg_var['value']  # 'gender' o 'question_116_choices'
+            var_type = seg_var['type']    # 'partner_field' o 'metric_json'
+            var_options = seg_var['options']
+            
+            stats_by_segmentation[var_value] = {}
+            
+            for grupo in grupos:
+                df_grupo = df[df['group_name'] == grupo]
+                stats_by_segmentation[var_value][grupo] = {}
+                
+                if var_type == 'partner_field' and var_value == 'gender':
+                    # Género desde res.partner
+                    gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
+                    for gender_key, gender_label in gender_map.items():
+                        df_segment = df_grupo[df_grupo['student_gender'] == gender_key]
+                        values = df_segment['value_numeric'].dropna()
+                        if len(values) > 0:
+                            stats_by_segmentation[var_value][grupo][gender_label] = {
+                                'mean': float(values.mean()),
+                                'count': int(len(values))
+                            }
+                
+                elif var_type == 'metric_json':
+                    # Variable de opciones múltiples desde metric_value
+                    # Necesitamos cruzar con metric_value para obtener las opciones elegidas
+                    for student_id in df_grupo['student_id'].unique():
+                        if student_id == "***":  # Skip anonymized
+                            continue
+                        
+                        # Buscar el valor de la variable de segmentación para este estudiante
+                        seg_records = MetricValue.search([
+                            ('student_id', '=', int(student_id)),
+                            ('metric_name', '=', var_value),
+                            ('value_json', '!=', False)
+                        ], limit=1)
+                        
+                        if seg_records and seg_records.value_json:
+                            # value_json es una lista como ['Bajo'] o ['Urbano']
+                            selected_options = seg_records.value_json
+                            student_value = df_grupo[df_grupo['student_id'] == student_id]['value_numeric'].iloc[0]
+                            
+                            if pd.notna(student_value):
+                                for option in selected_options:
+                                    if option not in stats_by_segmentation[var_value][grupo]:
+                                        stats_by_segmentation[var_value][grupo][option] = {
+                                            'sum': 0.0,
+                                            'count': 0
+                                        }
+                                    stats_by_segmentation[var_value][grupo][option]['sum'] += float(student_value)
+                                    stats_by_segmentation[var_value][grupo][option]['count'] += 1
+                    
+                    # Calcular medias
+                    for option in stats_by_segmentation[var_value][grupo]:
+                        data = stats_by_segmentation[var_value][grupo][option]
+                        if data['count'] > 0:
+                            data['mean'] = data['sum'] / data['count']
+                            del data['sum']  # Limpiar campo temporal
         
         # Ordenar por puntuación inicialmente
         stats_sorted = sorted(stats, key=lambda x: x['mean'])
@@ -1082,8 +1417,8 @@ class DashboardCharts(models.TransientModel):
         metric_name = df.iloc[0]['metric_name'] if not df.empty else None
         thresholds = self._get_thresholds_for_metric(metric_name) if metric_name else []
         
-        # Altura dinámica pero controlada
         chart_height = min(350, max(200, len(stats) * 25))
+        segment_options_html = self._build_segment_options_html(segmentation_vars)
         
         return f'''
         <div class="card">
@@ -1093,10 +1428,9 @@ class DashboardCharts(models.TransientModel):
                     <p class="card-subtitle">Comparativa por grupo</p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #475569; cursor: pointer; background: #f8fafc; padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; transition: all 0.2s;">
-                        <input type="checkbox" id="gender_{chart_id}" style="cursor: pointer;">
-                        <span style="font-weight: 500;">Dividir por género</span>
-                    </label>
+                    <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
+                        {segment_options_html}
+                    </select>
                     <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
                         Ordenar
                     </button>
@@ -1113,14 +1447,25 @@ class DashboardCharts(models.TransientModel):
                 groups: {json.dumps([s['grupo'] for s in stats_sorted])},
                 means: {json.dumps([s['mean'] for s in stats_sorted])},
                 colors: {json.dumps([s['color'] for s in stats_sorted])},
-                statsByGender: {json.dumps(stats_by_gender)},
+                statsBySegmentation: {json.dumps(stats_by_segmentation)},
+                segmentationVars: {json.dumps(segmentation_vars)},
                 allGroups: {json.dumps([s['grupo'] for s in stats])},
                 allColors: {json.dumps({s['grupo']: s['color'] for s in stats})},
                 thresholds: {json.dumps(thresholds)}
             }};
             
             let ascending = true;
-            let byGender = false;
+            let currentSegmentation = '';
+            
+            // Paleta de colores para segmentos
+            const segmentColors = {{
+                'Masculino': '#3b82f6',
+                'Femenino': '#ec4899',
+                'Otro': '#94a3b8',
+                'Prefiere no decir': '#64748b',
+                // Colores para otras opciones
+                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
+            }};
             
             // Crear datasets de umbrales
             function createThresholdDatasets(labelCount) {{
@@ -1194,17 +1539,30 @@ class DashboardCharts(models.TransientModel):
             }});
             
             function updateChart() {{
+                // Calcular medias totales por grupo
                 let entries = chartData.allGroups.map(group => {{
-                    const stats = chartData.statsByGender[group] || {{}};
+                    // Si hay segmentación seleccionada, calcular media ponderada
                     let totalMean = 0;
                     let count = 0;
-                    Object.values(stats).forEach(s => {{
-                        totalMean += s.mean * s.count;
-                        count += s.count;
-                    }});
+                    
+                    if (currentSegmentation && chartData.statsBySegmentation[currentSegmentation]) {{
+                        const stats = chartData.statsBySegmentation[currentSegmentation][group] || {{}};
+                        Object.values(stats).forEach(s => {{
+                            if (s.mean !== undefined && s.count !== undefined) {{
+                                totalMean += s.mean * s.count;
+                                count += s.count;
+                            }}
+                        }});
+                    }} else {{
+                        // Sin segmentación, usar media total
+                        const originalStat = chartData.allGroups.indexOf(group);
+                        totalMean = chartData.means[originalStat] || 0;
+                        count = 1;
+                    }}
+                    
                     return {{
                         group: group,
-                        mean: count > 0 ? totalMean / count : 0,
+                        mean: count > 0 ? totalMean / count : chartData.allColors[group] ? chartData.means[chartData.groups.indexOf(group)] : 0,
                         color: chartData.allColors[group]
                     }};
                 }});
@@ -1212,40 +1570,46 @@ class DashboardCharts(models.TransientModel):
                 // Ordenar
                 entries.sort((a, b) => ascending ? a.mean - b.mean : b.mean - a.mean);
                 
-                if (byGender) {{
-                    // Dividir por género
-                    const genderColors = {{
-                        'Masculino': '#3b82f6',
-                        'Femenino': '#ec4899',
-                        'Otro': '#94a3b8',
-                        'Prefiere no decir': '#64748b'
-                    }};
-                    
+                if (currentSegmentation && chartData.statsBySegmentation[currentSegmentation]) {{
+                    // Dividir por segmento seleccionado
                     chart.data.labels = entries.map(e => e.group);
                     chart.data.datasets = [];
                     
-                    ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir'].forEach(gender => {{
-                        const genderData = entries.map(e => {{
-                            const stats = chartData.statsByGender[e.group];
-                            return stats && stats[gender] ? stats[gender].mean : null;
+                    // Obtener todas las opciones únicas del segmento
+                    const allOptions = new Set();
+                    entries.forEach(e => {{
+                        const stats = chartData.statsBySegmentation[currentSegmentation][e.group] || {{}};
+                        Object.keys(stats).forEach(opt => allOptions.add(opt));
+                    }});
+                    
+                    // Crear dataset para cada opción
+                    const optionsArray = Array.from(allOptions);
+                    optionsArray.forEach((option, idx) => {{
+                        const segmentData = entries.map(e => {{
+                            const stats = chartData.statsBySegmentation[currentSegmentation][e.group];
+                            return stats && stats[option] ? stats[option].mean : null;
                         }});
                         
-                        if (genderData.some(v => v !== null)) {{
+                        if (segmentData.some(v => v !== null)) {{
+                            // Elegir color
+                            const color = segmentColors[option] || segmentColors.default[idx % segmentColors.default.length];
+                            
                             chart.data.datasets.push({{
-                                label: gender,
-                                data: genderData,
-                                backgroundColor: genderColors[gender],
+                                label: option,
+                                data: segmentData,
+                                backgroundColor: color,
                                 borderRadius: 6,
                                 borderSkipped: false
                             }});
                         }}
                     }});
+                    
                     chart.options.plugins.legend.display = true;
                     chart.options.plugins.legend.position = 'top';
                     // Añadir umbrales
                     chart.data.datasets.push(...createThresholdDatasets(chart.data.labels.length));
                 }} else {{
-                    // Vista normal
+                    // Vista normal sin segmentación
                     chart.data.labels = entries.map(e => e.group);
                     chart.data.datasets = [
                         {{
@@ -1264,8 +1628,8 @@ class DashboardCharts(models.TransientModel):
                 chart.update();
             }}
             
-            document.getElementById('gender_{chart_id}').addEventListener('change', function(e) {{
-                byGender = e.target.checked;
+            document.getElementById('segment_{chart_id}').addEventListener('change', function(e) {{
+                currentSegmentation = e.target.value;
                 updateChart();
             }});
             
