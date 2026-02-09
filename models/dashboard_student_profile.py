@@ -7,7 +7,7 @@ import pandas as pd
 import json
 
 # Importar utilidades compartidas del dashboard
-from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_layout, dashboard_helpers
+from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers
 
 
 class DashboardStudentProfile(models.TransientModel):
@@ -1678,12 +1678,3 @@ class DashboardStudentProfile(models.TransientModel):
         </body>
         </html>
         """
-
-
-    # Método obsoleto - usar dashboard_layout.get_sidebar() en su lugar
-    # def _get_sidebar_html(self, role_info):
-    #     ...
-
-    # Método obsoleto - usar dashboard_styles.get_common_styles() en su lugar
-    # def _get_dashboard_styles(self):
-    #     ...

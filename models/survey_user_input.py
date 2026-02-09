@@ -8,8 +8,7 @@ class SurveyUserInput(models.Model):
     def _mark_done(self):
         """
         Override del método que marca una encuesta como completada.
-        Calcula scores, verifica alertas y marca participación como completada si corresponde.
-        También captura respuestas cualitativas (texto abierto).
+        Calcula scores, verifica alertas y marca participación.
         """
         res = super(SurveyUserInput, self)._mark_done()
         
@@ -21,9 +20,14 @@ class SurveyUserInput(models.Model):
                 if not user_input.partner_id:
                     continue
                 
-                # Capturar respuestas cualitativas (texto)
+                # Capturar respuestas cualitativas y de opciones múltiples
                 try:
                     user_input._save_qualitative_responses()
+                except Exception:
+                    pass
+                
+                try:
+                    user_input._save_multiplechoice_responses()
                 except Exception:
                     pass
                 
@@ -72,26 +76,17 @@ class SurveyUserInput(models.Model):
         
         return res
     
-    def _save_qualitative_responses(self):
-        """Extrae y guarda respuestas de preguntas de texto abierto."""
+    def _get_evaluation_context(self):
+        """Obtiene la evaluación y participación activa para este user_input."""
         self.ensure_one()
         
-        # Obtener preguntas de texto del survey
-        text_questions = self.survey_id.question_ids.filtered(
-            lambda q: q.question_type in ['text_box', 'char_box']
-        )
-        
-        if not text_questions:
-            return
-        
-        # Obtener participación asociada (última evaluación activa con este survey)
         evaluation = self.env['aulametrics.evaluation'].search([
             ('state', 'in', ['scheduled', 'active']),
             ('survey_ids', 'in', self.survey_id.id)
         ], order='date_start desc', limit=1)
         
         if not evaluation:
-            return
+            return None, None
         
         participation = self.env['aulametrics.participation'].search([
             ('evaluation_id', '=', evaluation.id),
@@ -99,14 +94,28 @@ class SurveyUserInput(models.Model):
         ], limit=1)
         
         if not participation or not participation.student_id.academic_group_id:
+            return None, None
+        
+        return evaluation, participation
+    
+    def _save_qualitative_responses(self):
+        """Extrae y guarda respuestas de preguntas de texto abierto."""
+        self.ensure_one()
+        
+        text_questions = self.survey_id.question_ids.filtered(
+            lambda q: q.question_type in ['text_box', 'char_box']
+        )
+        
+        if not text_questions:
             return
         
-        academic_group = participation.student_id.academic_group_id
+        evaluation, participation = self._get_evaluation_context()
+        if not evaluation or not participation:
+            return
         
         QualitativeResponse = self.env['aulametrics.qualitative_response']
         
         for question in text_questions:
-            # Buscar respuesta del usuario
             line = self.user_input_line_ids.filtered(
                 lambda l: l.question_id == question and (l.value_text_box or l.value_char_box)
             )
@@ -114,20 +123,18 @@ class SurveyUserInput(models.Model):
             if not line:
                 continue
             
-            # Obtener el texto según el tipo de pregunta
             response_text = (line[0].value_text_box or line[0].value_char_box or '').strip()
             
-            # Validar límite de palabras (300 máximo)
+            # Truncar a 300 palabras si excede
             word_count = len(response_text.split())
             if word_count > 300:
-                # Truncar a 300 palabras
                 words = response_text.split()[:300]
                 response_text = ' '.join(words) + '...'
             
             if not response_text:
                 continue
             
-            # Verificar si ya existe (evitar duplicados)
+            # Evitar duplicados
             existing = QualitativeResponse.search([
                 ('user_input_id', '=', self.id),
                 ('question_id', '=', question.id)
@@ -136,10 +143,9 @@ class SurveyUserInput(models.Model):
             if existing:
                 continue
             
-            # Crear registro cualitativo
             QualitativeResponse.create({
                 'student_id': self.partner_id.id,
-                'academic_group_id': academic_group.id,
+                'academic_group_id': participation.student_id.academic_group_id.id,
                 'evaluation_id': evaluation.id,
                 'survey_id': self.survey_id.id,
                 'question_id': question.id,
@@ -147,3 +153,68 @@ class SurveyUserInput(models.Model):
                 'response_text': response_text,
                 'response_date': self.create_date or fields.Datetime.now()
             })
+    
+    def _save_multiplechoice_responses(self):
+        """Extrae y guarda respuestas de opción múltiple como métricas JSON."""
+        self.ensure_one()
+        
+        choice_questions = self.survey_id.question_ids.filtered(
+            lambda q: q.question_type in ['simple_choice', 'multiple_choice']
+        )
+        
+        if not choice_questions:
+            return
+        
+        evaluation, participation = self._get_evaluation_context()
+        if not evaluation or not participation:
+            return
+        
+        MetricValue = self.env['aulametrics.metric_value']
+        
+        for question in choice_questions:
+            lines = self.user_input_line_ids.filtered(
+                lambda l: l.question_id == question and l.suggested_answer_id
+            )
+            
+            if not lines:
+                continue
+            
+            # Recopilar opciones seleccionadas
+            selected_options = [
+                line.suggested_answer_id.value 
+                for line in lines 
+                if line.suggested_answer_id and line.suggested_answer_id.value
+            ]
+            
+            if not selected_options:
+                continue
+            
+            metric_name = f'question_{question.id}_choices'
+            metric_label = (question.title or f'Pregunta {question.id}')[:100]
+            
+            # Evitar duplicados
+            existing = MetricValue.search([
+                ('survey_id', '=', self.survey_id.id),
+                ('student_id', '=', self.partner_id.id),
+                ('evaluation_id', '=', evaluation.id),
+                ('question_id', '=', question.id),
+                ('metric_name', '=', metric_name)
+            ], limit=1)
+            
+            if existing:
+                existing.write({
+                    'value_json': selected_options,
+                    'timestamp': self.create_date or fields.Datetime.now()
+                })
+            else:
+                MetricValue.create({
+                    'survey_id': self.survey_id.id,
+                    'student_id': self.partner_id.id,
+                    'evaluation_id': evaluation.id,
+                    'question_id': question.id,
+                    'user_input_id': self.id,
+                    'metric_name': metric_name,
+                    'metric_label': metric_label,
+                    'value_json': selected_options,
+                    'timestamp': self.create_date or fields.Datetime.now()
+                })

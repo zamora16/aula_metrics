@@ -12,9 +12,9 @@ class QualitativeResponse(models.Model):
     # Relaciones
     student_id = fields.Many2one('res.partner', string='Estudiante', required=True, ondelete='cascade', index=True)
     academic_group_id = fields.Many2one('aulametrics.academic_group', string='Grupo Académico', required=True, index=True)
-    evaluation_id = fields.Many2one('aulametrics.evaluation', string='Evaluación', required=True, index=True)
-    survey_id = fields.Many2one('survey.survey', string='Cuestionario', required=True)
-    question_id = fields.Many2one('survey.question', string='Pregunta', required=True)
+    evaluation_id = fields.Many2one('aulametrics.evaluation', string='Evaluación', required=True, ondelete='cascade', index=True)
+    survey_id = fields.Many2one('survey.survey', string='Cuestionario', required=True, ondelete='restrict')
+    question_id = fields.Many2one('survey.question', string='Pregunta', required=True, ondelete='restrict')
     user_input_id = fields.Many2one('survey.user_input', string='Respuesta de Usuario', ondelete='cascade')
     
     # Contenido

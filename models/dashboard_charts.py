@@ -7,10 +7,7 @@ import pandas as pd
 import json
 
 # Importar utilidades compartidas
-from odoo.addons.aula_metrics.utils import dashboard_styles
-from odoo.addons.aula_metrics.utils import dashboard_layout
-from odoo.addons.aula_metrics.utils import dashboard_helpers
-
+from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers
 
 class DashboardCharts(models.TransientModel):
     _name = 'aulametrics.dashboard.charts'
@@ -108,10 +105,24 @@ class DashboardCharts(models.TransientModel):
             name = r['metric_name']
             if name not in seen:
                 seen.add(name)
-                # Buscar un registro para obtener el label y detectar tipo
+                # Buscar un registro con datos para obtener el label y detectar tipo
+                # Priorizar registros que realmente tienen valores
                 sample = MetricValue.search([
-                    ('metric_name', '=', name)
+                    ('metric_name', '=', name),
+                    '|', '|',
+                    ('value_float', '!=', False),
+                    ('value_json', '!=', False),
+                    ('value_text', '!=', False)
                 ] + domain, limit=1)
+                
+                # Si no hay registro con datos, buscar cualquiera
+                if not sample:
+                    sample = MetricValue.search([
+                        ('metric_name', '=', name)
+                    ] + domain, limit=1)
+                
+                if not sample:
+                    continue
                 
                 # Detectar tipo según qué campo tiene valor
                 if sample.value_float:
@@ -121,7 +132,7 @@ class DashboardCharts(models.TransientModel):
                 elif sample.value_text:
                     metric_type = 'text'
                 else:
-                    metric_type = 'numeric'  # default
+                    continue  # Saltar si no tiene ningún valor
                 
                 metrics.append({
                     'name': name,
@@ -1268,13 +1279,16 @@ class DashboardCharts(models.TransientModel):
         '''
 
     def _chart_json_metric(self, df, label):
-        """Gráfico de barras horizontales para métricas JSON."""
+        """Gráfico de barras horizontales para métricas JSON (opciones múltiples)."""
         if df.empty:
             return ''
         
         # Contar frecuencias de respuestas
         responses = []
+        total_respondents = 0
+        
         for val in df['value_json'].dropna():
+            total_respondents += 1
             try:
                 parsed = json.loads(val) if isinstance(val, str) else val
                 if isinstance(parsed, list):
@@ -1292,19 +1306,22 @@ class DashboardCharts(models.TransientModel):
         
         # Ordenar por frecuencia descendente
         sorted_items = sorted(counts.items(), key=lambda x: x[1], reverse=True)
-        labels = [item[0] for item in sorted_items[:10]]  # Top 10
-        values = [item[1] for item in sorted_items[:10]]
+        labels_list = [item[0] for item in sorted_items[:15]]  # Top 15 opciones
+        values = [item[1] for item in sorted_items[:15]]
         
-        chart_id = f'chart_{label.replace(" ", "_").replace("/", "_")}'
+        # Calcular porcentajes
+        percentages = [round((v / total_respondents * 100), 1) for v in values]
+        
+        chart_id = f'chart_{label.replace(" ", "_").replace("/", "_").replace(".", "_").replace("?", "").replace("¿", "")}'
         
         return f'''
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">{label}</h5>
-                <p class="card-subtitle">Distribución de respuestas</p>
+                <p class="card-subtitle">Distribución de respuestas • {total_respondents} estudiante{'s' if total_respondents != 1 else ''}</p>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="300"></canvas>
+                <canvas id="{chart_id}" height="350"></canvas>
             </div>
         </div>
         
@@ -1312,11 +1329,11 @@ class DashboardCharts(models.TransientModel):
         new Chart(document.getElementById('{chart_id}'), {{
             type: 'bar',
             data: {{
-                labels: {json.dumps(labels)},
+                labels: {json.dumps(labels_list)},
                 datasets: [{{
-                    label: 'Frecuencia',
+                    label: 'Respuestas',
                     data: {json.dumps(values)},
-                    backgroundColor: '#10b981',
+                    backgroundColor: '#3b82f6',
                     borderRadius: 6,
                     borderSkipped: false
                 }}]
@@ -1332,7 +1349,14 @@ class DashboardCharts(models.TransientModel):
                         padding: 12,
                         cornerRadius: 6,
                         titleFont: {{ family: "'Inter', sans-serif", size: 13 }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }}
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        callbacks: {{
+                            label: function(context) {{
+                                const value = context.parsed.x;
+                                const percent = {json.dumps(percentages)}[context.dataIndex];
+                                return 'Respuestas: ' + value + ' (' + percent + '%)';
+                            }}
+                        }}
                     }}
                 }},
                 scales: {{
@@ -1341,14 +1365,16 @@ class DashboardCharts(models.TransientModel):
                         grid: {{ color: '#f1f5f9', drawBorder: false }},
                         ticks: {{
                             font: {{ size: 12, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8'
+                            color: '#94a3b8',
+                            precision: 0
                         }}
                     }},
                     y: {{
                         grid: {{ display: false, drawBorder: false }},
                         ticks: {{
                             font: {{ size: 12, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8'
+                            color: '#475569',
+                            crossAlign: 'far'
                         }}
                     }}
                 }},

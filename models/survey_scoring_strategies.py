@@ -96,7 +96,10 @@ class UniversalMatrixScoring:
         return None
     
     def _process_non_matrix_questions(self, user_input):
-        """Procesa preguntas no-matriz (texto, opciones simples) - van como métricas separadas"""
+        """Procesa preguntas tipo texto libre.
+        
+        Nota: Opciones múltiples se procesan en survey_user_input._save_multiplechoice_responses()
+        """
         metrics = []
         
         for line in user_input.user_input_line_ids:
@@ -109,24 +112,16 @@ class UniversalMatrixScoring:
             if question.question_type == 'matrix':
                 continue
             
+            # Skip opciones múltiples (procesadas en _save_multiplechoice_responses)
+            if question.question_type in ['simple_choice', 'multiple_choice']:
+                continue
+            
             metric_name = f"adhoc_q{question.id}"
             metric_label = question.title[:100] if question.title else f"Pregunta {question.sequence}"
             
             try:
-                # Opciones simples/múltiples
-                if question.question_type in ['simple_choice', 'multiple_choice']:
-                    if line.suggested_answer_id and line.suggested_answer_id.value:
-                        metrics.append({
-                            'metric_name': metric_name,
-                            'metric_label': metric_label,
-                            'value_float': None,
-                            'value_text': line.suggested_answer_id.value,
-                            'value_json': None,
-                            'question_id': question.id
-                        })
-                
                 # Texto libre
-                elif question.question_type in ['char_box', 'text_box']:
+                if question.question_type in ['char_box', 'text_box']:
                     text_value = None
                     if hasattr(line, 'value_char_box') and line.value_char_box:
                         text_value = line.value_char_box

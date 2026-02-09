@@ -144,3 +144,52 @@ class MetricValue(models.Model):
             'min': min(values),
             'max': max(values)
         }
+    
+    @api.model
+    def clean_duplicate_metrics(self):
+        """
+        Limpia métricas duplicadas, manteniendo solo el registro con datos.
+        Útil para limpiar duplicados creados por errores de guardado múltiple.
+        """
+        # Buscar todos los registros
+        all_records = self.search([], order='id')
+        
+        # Agrupar por la clave única
+        groups = {}
+        for record in all_records:
+            key = (
+                record.survey_id.id,
+                record.student_id.id,
+                record.evaluation_id.id,
+                record.metric_name,
+                record.question_id.id if record.question_id else False
+            )
+            
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(record)
+        
+        # Eliminar duplicados de cada grupo
+        deleted_count = 0
+        for key, records in groups.items():
+            if len(records) > 1:
+                # Ordenar por prioridad: primero los que tienen datos
+                records_sorted = sorted(records, key=lambda r: (
+                    bool(r.value_float or r.value_json or r.value_text),
+                    r.timestamp,
+                    r.id
+                ), reverse=True)
+                
+                # Mantener el primero (el que tiene datos más recientes)
+                keep = records_sorted[0]
+                to_delete = records_sorted[1:]
+                
+                # Eliminar los demás
+                for record in to_delete:
+                    try:
+                        record.unlink()
+                        deleted_count += 1
+                    except:
+                        pass
+        
+        return deleted_count

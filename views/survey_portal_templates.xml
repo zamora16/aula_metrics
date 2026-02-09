@@ -242,15 +242,39 @@
                         display: flex;
                         align-items: center;
                         gap: 0.75rem;
-                        padding: 0.75rem 1rem;
-                        border: 1px solid var(--border);
-                        border-radius: 6px;
+                        padding: 0.875rem 1.125rem;
+                        border: 2px solid var(--border);
+                        border-radius: 8px;
                         cursor: pointer;
-                        transition: all 0.15s;
+                        transition: all 0.2s ease;
+                        background: var(--card);
                     }
-                    .sf-option:hover { border-color: var(--accent); background: #f8fafc; }
-                    .sf-option input { margin: 0; }
-                    .sf-option span { flex: 1; }
+                    .sf-option:hover { 
+                        border-color: var(--accent); 
+                        background: #f0f9ff;
+                        transform: translateX(2px);
+                    }
+                    .sf-option input[type="radio"],
+                    .sf-option input[type="checkbox"] { 
+                        margin: 0;
+                        width: 20px;
+                        height: 20px;
+                        cursor: pointer;
+                        accent-color: var(--accent);
+                    }
+                    .sf-option input:checked {
+                        transform: scale(1.1);
+                    }
+                    .sf-option:has(input:checked) {
+                        border-color: var(--accent);
+                        background: #eff6ff;
+                        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+                    }
+                    .sf-option span { 
+                        flex: 1;
+                        font-size: 0.95rem;
+                        line-height: 1.4;
+                    }
                     /* Matrix styles */
                     .sf-matrix { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
                     .sf-matrix th, .sf-matrix td {
