@@ -106,9 +106,6 @@
                                 </tree>
                             </field>
                         </page>
-                        <page string="📊 Análisis de Calidad" name="quality">
-                            <field name="quality_feedback" widget="html" nolabel="1"/>
-                        </page>
                     </notebook>
                 </sheet>
             </form>
