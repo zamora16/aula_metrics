@@ -106,6 +106,31 @@ class Evaluation(models.Model):
         evaluations = super().create(vals_list)
         return evaluations
     
+    def copy(self, default=None):
+        """Al duplicar, agregar sufijo al nombre para evitar conflictos"""
+        self.ensure_one()
+        if default is None:
+            default = {}
+        
+        if 'name' not in default:
+            # Buscar un nombre único agregando sufijo
+            base_name = self.name
+            counter = 1
+            new_name = f"{base_name} (Copia)"
+            
+            # Si ya existe, incrementar contador
+            while self.search([('name', '=', new_name)], limit=1):
+                counter += 1
+                new_name = f"{base_name} (Copia {counter})"
+            
+            default['name'] = new_name
+        
+        # Resetear estado a borrador al duplicar
+        if 'state' not in default:
+            default['state'] = 'draft'
+        
+        return super().copy(default)
+    
     participation_rate = fields.Float(
         string='Tasa de Participación (%)',
         compute='_compute_participation_metrics',
@@ -159,6 +184,16 @@ class Evaluation(models.Model):
                     _('La fecha de fin debe ser posterior a la fecha de inicio.')
                 )
     
+    def _check_start_date_not_past(self):
+        """Valida que la fecha de inicio no sea en el pasado al activar/programar"""
+        now = fields.Datetime.now()
+        for evaluation in self:
+            if evaluation.date_start < now:
+                raise ValidationError(
+                    _('No se puede activar una evaluación con fecha de inicio en el pasado. '
+                      'La fecha de inicio debe ser mayor o igual a la fecha actual.')
+                )
+    
     # Acciones de estado
     def action_schedule(self):
         """Programar evaluación (draft -> scheduled)"""
@@ -168,11 +203,17 @@ class Evaluation(models.Model):
         if not self.academic_group_ids:
             raise ValidationError(_('Debe asignar al menos un grupo académico.'))
         
+        # Validar que la fecha de inicio no sea en el pasado
+        self._check_start_date_not_past()
+        
         self.state = 'scheduled'
         self._create_participations()
     
     def action_activate(self):
         """Activar evaluación (scheduled -> active) y enviar emails de notificación"""
+        # Validar que la fecha de inicio no sea en el pasado
+        self._check_start_date_not_past()
+        
         self.write({'state': 'active'})
         self._send_activation_emails()
     
