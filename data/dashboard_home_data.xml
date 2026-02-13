@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Banner de Bienvenida (Sequence 1) -->
+        <record id="dashboard_card_welcome_banner" model="aulametrics.dashboard.home">
+            <field name="sequence">1</field>
+            <field name="name">Bienvenido a AulaMetrics</field>
+            <field name="description">Sistema integral de evaluación del bienestar psicosocial estudiantil. Gestiona cuestionarios, programa evaluaciones, analiza métricas y detecta alertas para intervenciones tempranas.</field>
+            <field name="icon">fa-heartbeat</field>
+            <field name="color">#764ba2</field>
+        </record>
+
+        <!-- Tarjetas del Dashboard de Inicio -->
+        
+        <!-- 1. Cuestionarios (Primera fila, primera columna) -->
+        <record id="dashboard_card_surveys" model="aulametrics.dashboard.home">
+            <field name="sequence">10</field>
+            <field name="name">Cuestionarios</field>
+            <field name="description">Gestiona cuestionarios validados y crea nuevos cuestionarios.</field>
+            <field name="icon">fa-clipboard</field>
+            <field name="color">#4facfe</field>
+            <field name="action_id" ref="action_survey_official"/>
+        </record>
+        
+        <!-- 2. Evaluaciones (Primera fila, segunda columna) -->
+        <record id="dashboard_card_evaluations" model="aulametrics.dashboard.home">
+            <field name="sequence">20</field>
+            <field name="name">Evaluaciones</field>
+            <field name="description">Programa y gestiona evaluaciones asignando cuestionarios a grupos académicos.</field>
+            <field name="icon">fa-calendar-check-o</field>
+            <field name="color">#667eea</field>
+            <field name="action_id" ref="action_evaluation"/>
+        </record>
+        
+        <!-- 3. Dashboard de Métricas (Segunda fila, primera columna) -->
+        <record id="dashboard_card_metrics" model="aulametrics.dashboard.home">
+            <field name="sequence">30</field>
+            <field name="name">Dashboard de Métricas</field>
+            <field name="description">Visualiza los resultados de tus evaluaciones.</field>
+            <field name="icon">fa-line-chart</field>
+            <field name="color">#43e97b</field>
+            <field name="action_id" ref="action_dashboard_hub"/>
+        </record>
+        
+        <!-- 4. Sistema de Alertas (Segunda fila, segunda columna) -->
+        <record id="dashboard_card_alerts" model="aulametrics.dashboard.home">
+            <field name="sequence">40</field>
+            <field name="name">Sistema de Alertas</field>
+            <field name="description">Gestiona alertas de indicadores de riesgo.</field>
+            <field name="icon">fa-exclamation-triangle</field>
+            <field name="color">#fa709a</field>
+            <field name="action_id" ref="action_alert"/>
+        </record>
+        
+    </data>
+</odoo>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Kanban del Dashboard de Inicio -->
+    <record id="view_dashboard_home_kanban" model="ir.ui.view">
+        <field name="name">aulametrics.dashboard.home.kanban</field>
+        <field name="model">aulametrics.dashboard.home</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_dashboard am_dashboard_view" create="false" edit="false" delete="false">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="icon"/>
+                <field name="color"/>
+                <field name="action_id"/>
+                
+                <templates>
+                    <t t-name="kanban-box">
+                        <!-- BANNER: Sin action_id -->
+                        <t t-if="!record.action_id.raw_value">
+                            <div class="am_dashboard_banner">
+                                <div class="am_banner_content">
+                                    <h1>
+                                        <field name="name"/>
+                                    </h1>
+                                    <p>
+                                        <field name="description"/>
+                                    </p>
+                                </div>
+                            </div>
+                        </t>
+                        
+                        <!-- CARDS: Con action_id -->
+                        <t t-if="record.action_id.raw_value">
+                            <button name="action_open_menu" type="object" class="am_dashboard_card">
+                                <div class="am_card_header" 
+                                     t-attf-style="background-color: #{record.color.raw_value}; background: linear-gradient(135deg, #{record.color.raw_value} 0%, #{record.color.raw_value}CC 100%);">
+                                    <i t-attf-class="fa #{record.icon.raw_value}"/>
+                                </div>
+                                
+                                <div class="am_card_body">
+                                    <h3 class="am_card_title"><field name="name"/></h3>
+                                    <p class="am_card_desc"><field name="description"/></p>
+                                    
+                                    <div class="am_card_action">
+                                        Acceder <i class="fa fa-arrow-right"/>
+                                    </div>
+                                </div>
+                            </button>
+                        </t>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Acción para abrir el Dashboard de Inicio -->
+    <record id="action_dashboard_home" model="ir.actions.act_window">
+        <field name="name">Inicio AulaMetrics</field>
+        <field name="res_model">aulametrics.dashboard.home</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_dashboard_home_kanban"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Bienvenido a AulaMetrics
+            </p>
+            <p>
+                Las tarjetas de navegación se cargarán automáticamente.
+            </p>
+        </field>
+    </record>
+
+</odoo>

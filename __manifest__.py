@@ -31,6 +31,7 @@
         'data/demo/users_groups.xml',
         
         # 3. Vistas
+        'views/dashboard_home_views.xml',
         'views/dashboard.xml',
         'views/dashboard_hub.xml',
         'views/academic_group_views.xml',
@@ -44,13 +45,21 @@
         'views/survey_portal_templates.xml',
         'views/menu.xml',
         
-        # 4. Wizards
+        # 4. Datos de Dashboard
+        'data/dashboard_home_data.xml',
+        
+        # 5. Wizards
         'wizards/resolve_alert_wizard_views.xml',
 
     ],
     'demo': [
         'demo/demo.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'aula_metrics/static/src/scss/dashboard_home.scss',
+        ],
+    },
     'installable': True,
     'application': True,
     'auto_install': False,

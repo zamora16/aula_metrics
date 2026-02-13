@@ -12,5 +12,6 @@ from . import alert
 from . import alerts_dashboard
 from . import dashboard_charts
 from . import dashboard_student_profile
+from . import dashboard_home
 from . import survey_scoring_strategies
 from . import qualitative_response

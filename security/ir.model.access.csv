@@ -50,3 +50,7 @@ access_alert_keyword_admin,access.alert.keyword.admin,model_aulametrics_alert_ke
 access_alert_keyword_counselor,access.alert.keyword.counselor,model_aulametrics_alert_keyword,group_aulametrics_counselor,1,1,1,1
 access_alert_keyword_tutor,access.alert.keyword.tutor,model_aulametrics_alert_keyword,group_aulametrics_tutor,1,0,0,0
 access_alert_keyword_management,access.alert.keyword.management,model_aulametrics_alert_keyword,group_aulametrics_management,1,0,0,0
+access_dashboard_home_admin,access.dashboard.home.admin,model_aulametrics_dashboard_home,group_aulametrics_admin,1,1,1,1
+access_dashboard_home_counselor,access.dashboard.home.counselor,model_aulametrics_dashboard_home,group_aulametrics_counselor,1,0,0,0
+access_dashboard_home_tutor,access.dashboard.home.tutor,model_aulametrics_dashboard_home,group_aulametrics_tutor,1,0,0,0
+access_dashboard_home_management,access.dashboard.home.management,model_aulametrics_dashboard_home,group_aulametrics_management,1,0,0,0

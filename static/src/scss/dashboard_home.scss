@@ -1,0 +1,226 @@
+// Variables
+$am-card-radius: 16px;
+$am-card-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+$am-card-hover-shadow: 0 20px 60px -12px rgba(0,0,0,0.12);
+$am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+// Main Container Reset
+.o_kanban_view.am_dashboard_view {
+    padding: 2rem !important;
+    background-color: #f8f9fc !important;
+    
+    // Hide Control Panel
+    .o_control_panel {
+        display: none !important;
+    }
+
+    .o_kanban_renderer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        justify-content: flex-start; 
+        align-items: stretch;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100%;
+        
+        &::after { display: none; }
+    }
+}
+
+// Reset Odoo Native Kanban Record Styles
+.am_dashboard_view .o_kanban_record {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100%; 
+    flex: 0 0 100%;
+    
+    &:focus, &:focus-within {
+        outline: none !important;
+    }
+}
+
+// --- BANNER STYLE ---
+.am_dashboard_banner {
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 1rem 0 3rem 0;
+    
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+
+    &::before, &::after { display: none; }
+    
+    .am_banner_content {
+        width: 100%;
+        max-width: 900px;
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            color: #64748b;
+            line-height: 1.6;
+            font-weight: 400;
+            margin: 0;
+            max-width: 700px;
+        }
+    }
+}
+
+// --- CARD STYLE ---
+.am_dashboard_card {
+    // Button Reset
+    width: 100%;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    text-align: inherit;
+    font: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    
+    height: 100%;
+    min-height: 280px;
+    background: white;
+    border-radius: $am-card-radius;
+    box-shadow: $am-card-shadow;
+    transition: $am-transition;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    
+    &:hover {
+        transform: translateY(-8px);
+        box-shadow: $am-card-hover-shadow;
+        
+        .am_card_header i {
+            transform: scale(1.1) rotate(5deg);
+        }
+    }
+
+    .am_card_header {
+        padding: 2.5rem 1.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        
+        i {
+            font-size: 3.5rem;
+            color: white;
+            transition: $am-transition;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        
+        // Curved separator
+        &::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: white;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            transform: translateY(50%);
+        }
+    }
+
+    .am_card_body {
+        padding: 2rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding-top: 1rem;
+        
+        .am_card_title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.75rem;
+        }
+        
+        .am_card_desc {
+            font-size: 0.95rem;
+            color: #718096;
+            line-height: 1.5;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .am_card_action {
+            margin-top: 1.5rem;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.9rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: $am-transition;
+            
+            i { margin-left: 5px; }
+        }
+    }
+    
+    &:hover .am_card_action {
+        opacity: 1;
+        transform: translateY(0);
+        color: #4a00e0; 
+    }
+}
+
+// --- RESPONSIVE GRID SYSTEM ---
+
+// Banner Full Width
+.am_dashboard_view .o_kanban_record:has(.am_dashboard_banner) {
+     flex: 0 0 100% !important;
+     width: 100% !important;
+     margin-bottom: 2rem !important;
+}
+
+.am_dashboard_view .o_kanban_record:not(:has(.am_dashboard_banner)) {
+    // Desktop (Large): 4 cols
+    flex: 0 0 calc(25% - 1.5rem) !important;
+    max-width: calc(25% - 1.5rem) !important;
+    
+    // Tablet / Small Desktop: 2 cols
+    @media (max-width: 1400px) {
+        flex: 0 0 calc(50% - 1rem) !important;
+        max-width: calc(50% - 1rem) !important;
+    }
+    
+    // Mobile: 1 col
+    @media (max-width: 768px) {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 1rem;
+    }
+}
