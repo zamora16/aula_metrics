@@ -32,7 +32,7 @@ class DashboardCharts(models.TransientModel):
 
         # Obtener opciones disponibles para los filtros
         available_metrics = self._get_available_metrics(filters, role_info)
-        available_groups = self._get_available_groups(role_info)
+        available_groups = self._get_available_groups(filters, role_info)
         available_evaluations = self._get_available_evaluations(role_info)
         segmentation_vars = self._get_segmentation_variables(filters, role_info)
 
@@ -64,7 +64,7 @@ class DashboardCharts(models.TransientModel):
         # Construir HTML final
         return self._build_html(
             available_metrics, available_groups, available_evaluations, 
-            filters, role_info, kpi_html, charts
+            filters, role_info, kpi_html, charts, segmentation_vars
         )
 
     def _get_available_metrics(self, filters, role_info):
@@ -143,15 +143,38 @@ class DashboardCharts(models.TransientModel):
         
         return sorted(metrics, key=lambda x: x['label'])
 
-    def _get_available_groups(self, role_info):
-        """Obtiene los grupos académicos disponibles según el rol."""
-        AcademicGroup = self.env['aulametrics.academic_group']
+    def _get_available_groups(self, filters, role_info):
+        """Obtiene los grupos académicos derivados de las evaluaciones filtradas según el rol.
         
-        if role_info.get('role') == 'tutor':
-            allowed = role_info.get('allowed_group_ids', [])
-            groups = AcademicGroup.browse(allowed)
+        Los grupos se derivan automáticamente de las evaluaciones seleccionadas,
+        mostrando solo aquellos que tienen participación en dichas evaluaciones.
+        """
+        AcademicGroup = self.env['aulametrics.academic_group']
+        MetricValue = self.env['aulametrics.metric_value']
+        
+        # Si hay evaluaciones filtradas, derivar grupos desde ellas
+        if filters.get('evaluation_ids'):
+            # Buscar grupos únicos que participan en las evaluaciones filtradas
+            domain = [('evaluation_id', 'in', filters['evaluation_ids'])]
+            
+            # Aplicar restricciones de rol
+            if role_info.get('role') == 'tutor':
+                allowed = role_info.get('allowed_group_ids', [])
+                if allowed:
+                    domain.append(('academic_group_id', 'in', allowed))
+                else:
+                    return []  # Tutor sin grupos asignados
+            
+            # Obtener IDs de grupos con participación
+            group_ids = MetricValue.search(domain).mapped('academic_group_id').ids
+            groups = AcademicGroup.browse(list(set(group_ids)))
         else:
-            groups = AcademicGroup.search([])
+            # Sin filtro de evaluaciones, mostrar todos los grupos permitidos
+            if role_info.get('role') == 'tutor':
+                allowed = role_info.get('allowed_group_ids', [])
+                groups = AcademicGroup.browse(allowed)
+            else:
+                groups = AcademicGroup.search([])
         
         return [{'id': g.id, 'name': g.name, 'course': g.course_level, 'student_count': g.student_count} for g in groups]
 
@@ -202,15 +225,11 @@ class DashboardCharts(models.TransientModel):
             else:
                 return variables  # Solo retorna género si tutor sin grupos
         
-        # Aplicar filtros adicionales si existen
-        if filters.get('evaluation_ids'):
-            domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
-        if filters.get('date_from'):
-            domain.append(('timestamp', '>=', fields.Datetime.to_string(filters['date_from'])))
-        if filters.get('date_to'):
-            domain.append(('timestamp', '<=', fields.Datetime.to_string(filters['date_to'])))
+        # NO aplicar filtros de evaluaciones/fechas para obtener TODAS las métricas JSON históricas
+        # Esto permite segmentación completa independientemente de los filtros aplicados
         
-        # Buscar métricas agrupadas por metric_name
+        # Buscar TODAS las métricas JSON históricas (sin filtrar por evaluaciones)
+        # para proporcionar segmentación completa independientemente de los filtros
         result = MetricValue.read_group(
             domain,
             ['metric_name'],
@@ -265,37 +284,74 @@ class DashboardCharts(models.TransientModel):
         for seg_var in segmentation_vars:
             options_html += f'<option value="{seg_var["value"]}">{seg_var["label"]}</option>'
         return options_html
+    
+    def _build_global_segmentation_selector(self, segmentation_vars):
+        """Construye el selector de segmentación global que afecta a todas las gráficas.
+        
+        Args:
+            segmentation_vars (list): Lista de variables de segmentación históricas
+        
+        Returns:
+            str: HTML del selector global con JavaScript para sincronizar todas las gráficas
+        """
+        if not segmentation_vars:
+            return ''
+        
+        segment_options_html = self._build_segment_options_html(segmentation_vars)
+        
+        return f"""
+        <div class="global-segmentation-bar mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 8px;">
+                        <i class="fa-solid fa-layer-group" style="font-size: 24px; color: white;"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0" style="color: white; font-weight: 600;">Segmentación Global</h6>
+                        <p class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 13px;">Divide los datos en todas las gráficas comparativas</p>
+                    </div>
+                </div>
+                <select id="globalSegmentationSelector" class="form-select" style="max-width: 300px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.95); font-weight: 500;">
+                    {segment_options_html}
+                </select>
+            </div>
+        </div>
+        
+        <script>
+        (function() {{
+            const globalSelector = document.getElementById('globalSegmentationSelector');
+            
+            // Escuchar cambios en el selector global
+            globalSelector.addEventListener('change', function(e) {{
+                const selectedSegmentation = e.target.value;
+                
+                // Disparar evento personalizado que todas las gráficas escucharán
+                document.dispatchEvent(new CustomEvent('globalSegmentationChange', {{
+                    detail: {{ segmentation: selectedSegmentation }}
+                }}));
+            }});
+        }})();
+        </script>
+        """
 
     def _query_metric_values(self, filters, role_info):
-        """Consulta los valores de métricas aplicando todos los filtros."""
+        """Consulta los valores de métricas. Las métricas y grupos se derivan automáticamente de las evaluaciones."""
         MetricValue = self.env['aulametrics.metric_value']
         
         domain = []
         
-        # Filtro por métricas específicas
-        if filters.get('metric_names'):
-            domain.append(('metric_name', 'in', filters['metric_names']))
-        
-        # Filtro por grupos académicos
-        if filters.get('group_ids'):
-            domain.append(('academic_group_id', 'in', filters['group_ids']))
-        elif role_info.get('role') == 'tutor':
-            # Tutores: solo sus grupos
-            allowed = role_info.get('allowed_group_ids', [])
-            if allowed:
-                domain.append(('academic_group_id', 'in', allowed))
-            else:
-                return self.env['aulametrics.metric_value']
-        
-        # Filtro por evaluaciones
+        # Filtro por evaluaciones (filtro maestro)
         if filters.get('evaluation_ids'):
             domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
         
-        # Filtro por fechas
-        if filters.get('date_from'):
-            domain.append(('timestamp', '>=', fields.Datetime.to_string(filters['date_from'])))
-        if filters.get('date_to'):
-            domain.append(('timestamp', '<=', fields.Datetime.to_string(filters['date_to'])))
+        # Restricciones de rol: Tutores ven solo sus grupos asignados
+        if role_info.get('role') == 'tutor':
+            allowed_groups = role_info.get('allowed_group_ids', [])
+            if allowed_groups:
+                domain.append(('academic_group_id', 'in', allowed_groups))
+            else:
+                # Si no tiene grupos, no ve nada
+                return self.env['aulametrics.metric_value']
         
         return MetricValue.search(domain)
 
@@ -385,7 +441,8 @@ class DashboardCharts(models.TransientModel):
         if metric_type == 'numeric':
             return self._chart_numeric_metric(df_metric, metric_label, role_info, segmentation_vars)
         elif metric_type == 'json':
-            return self._chart_json_metric(df_metric, metric_label)
+            # Las métricas JSON solo se usan para segmentación, no generan cards propias
+            return ''
         # Las métricas de texto no se muestran aquí, se gestionan en la pestaña cualitativa
         
         return ''
@@ -1952,7 +2009,7 @@ class DashboardCharts(models.TransientModel):
             head_extra=bootstrap_js
         )
 
-    def _build_html(self, metrics, groups, evaluations, filters, role_info, kpi_html, charts):
+    def _build_html(self, metrics, groups, evaluations, filters, role_info, kpi_html, charts, segmentation_vars):
         """Construye el HTML completo del dashboard."""
         # Usar utilidades compartidas
         role_badge = dashboard_helpers.get_role_badge(role_info)
@@ -2023,32 +2080,7 @@ class DashboardCharts(models.TransientModel):
     #     ...
 
     def _build_filter_controls(self, metrics, groups, evaluations, filters):
-        """Construye los controles de filtrado."""
-        # Pills de métricas
-        metric_checks = ''
-        selected_metrics = filters.get('metric_names', [])
-        for m in metrics:
-            active = 'active' if m['name'] in selected_metrics or not selected_metrics else ''
-            metric_checks += f"""
-            <span class="filter-pill metric-pill {active}" data-type="metric" data-value="{m['name']}" onclick="togglePill(this)">
-                {m['label']}
-            </span>
-            <input type="hidden" class="metric-input" name="metric_{m['name']}" value="{m['name']}" {'disabled' if not active else ''}>
-            """
-
-        # Pills de grupos
-        groups_checks = ''
-        selected_groups = filters.get('group_ids', [])
-        for g in groups:
-            active = 'active' if g['id'] in selected_groups or not selected_groups else ''
-            
-            groups_checks += f"""
-            <span class="filter-pill group-pill {active}" data-type="group" data-value="{g['id']}" onclick="togglePill(this)">
-                {g['name']}
-            </span>
-            <input type="hidden" class="group-input" name="group_{g['id']}" value="{g['id']}" {'disabled' if not active else ''}>
-            """
-
+        """Construye controles de filtrado compactos (solo evaluaciones)."""
         # Pills de evaluaciones
         eval_checks = ''
         selected_evals = filters.get('evaluation_ids', [])
@@ -2062,119 +2094,68 @@ class DashboardCharts(models.TransientModel):
             <input type="hidden" class="eval-input" name="eval_{e['id']}" value="{e['id']}" {'disabled' if not active else ''}>
             """
 
-        # Fechas
-        date_from = filters.get('date_from', '')
-        date_to = filters.get('date_to', '')
-        if date_from:
-            date_from = date_from.strftime('%Y-%m-%d') if hasattr(date_from, 'strftime') else str(date_from)
-        if date_to:
-            date_to = date_to.strftime('%Y-%m-%d') if hasattr(date_to, 'strftime') else str(date_to)
-
-        # Calcular cuántos están seleccionados
-        num_metrics = len(selected_metrics) if selected_metrics else len(metrics)
-        num_groups = len(selected_groups) if selected_groups else len(groups)
+        # Calcular cuántas evaluaciones están seleccionadas
         num_evals = len(selected_evals) if selected_evals else len(evaluations)
+        
+        style_css = """
+        .filter-pill {
+            display: inline-block;
+            padding: 6px 14px;
+            background: #f1f5f9;
+            color: #64748b;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 500;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+        .filter-pill:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .filter-pill.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+        }
+        """
 
         return f"""
-        <div class="filter-panel mb-4">
-            <div class="filter-header">
-                <div>
-                    <i class="fa-solid fa-filter me-2"></i>
-                    <strong>Filtros</strong>
-                    <span class="badge bg-light text-dark ms-2">{num_metrics} métricas</span>
-                    <span class="badge bg-light text-dark ms-1">{num_groups} grupos</span>
-                    <span class="badge bg-light text-dark ms-1">{num_evals} evaluaciones</span>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleFilters()">
-                    <i class="fa-solid fa-chevron-down" id="toggleIcon"></i>
-                </button>
-            </div>
-            <div class="filter-content collapse" id="filterContent">
-                <form id="hub-filters" method="get" action="/aulametrics/dashboard">
-                    <div class="row g-3">
-                        <!-- Métricas -->
-                        <div class="col-md-6">
-                            <div class="filter-section">
-                                <label class="form-label">
-                                    <i class="fa-solid fa-chart-line me-2"></i>Métricas
-                                    <div>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="selectAllMetrics()">Todas</button>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="selectNoneMetrics()">Ninguna</button>
-                                    </div>
-                                </label>
-                                <div class="filter-pills-container">
-                                    {metric_checks}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Grupos -->
-                        <div class="col-md-6">
-                            <div class="filter-section">
-                                <label class="form-label">
-                                    <i class="fa-solid fa-user-group me-2"></i>Grupos
-                                    <div>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="selectAllGroups()">Todos</button>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="selectNoneGroups()">Ninguno</button>
-                                    </div>
-                                </label>
-                                <div class="filter-pills-container">
-                                    {groups_checks}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Evaluaciones -->
-                        <div class="col-12">
-                            <div class="filter-section">
-                                <label class="form-label">
-                                    <i class="fa-solid fa-clipboard-check me-2"></i>Evaluaciones
-                                    <div>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="selectAllEvals()">Todas</button>
-                                        <button type="button" class="btn btn-link btn-sm" onclick="selectNoneEvals()">Ninguna</button>
-                                    </div>
-                                </label>
-                                <div class="filter-pills-container">
-                                    {eval_checks}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Fechas -->
-                        <div class="col-12">
-                            <div class="filter-section">
-                                <label class="form-label">
-                                    <i class="fa-solid fa-calendar me-2"></i>Rango de fechas
-                                    <button type="button" class="btn btn-link btn-sm" onclick="clearDates()">
-                                        <i class="fa-solid fa-xmark"></i> Limpiar
-                                    </button>
-                                </label>
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <input type="date" class="form-control" id="date_from" name="date_from" value="{date_from}" placeholder="Desde">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="date" class="form-control" id="date_to" name="date_to" value="{date_to}" placeholder="Hasta">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Botón Aplicar -->
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
-                                <i class="fa-solid fa-magnifying-glass me-2"></i>Aplicar Filtros
-                            </button>
+        <style>{style_css}</style>
+        <div class="filter-panel-compact mb-4" style="background: white; padding: 20px 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+            <form id="hub-filters" method="get" action="/aulametrics/dashboard">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 0 0 auto;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-clipboard-check" style="color: #3b82f6; font-size: 20px;"></i>
+                            <span style="font-weight: 600; color: #1e293b; font-size: 15px;">Evaluaciones</span>
+                            <span class="badge" style="background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{num_evals}</span>
                         </div>
                     </div>
                     
-                    <!-- Hidden inputs para enviar datos -->
-                    <input type="hidden" name="metric_names" id="metric_names_input">
-                    <input type="hidden" name="group_ids" id="group_ids_input">
-                    <input type="hidden" name="evaluation_ids" id="evaluation_ids_input">
-                    <input type="hidden" name="section" id="section_input" value="quantitative">
-                </form>
-            </div>
+                    <div style="flex: 1; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0;">
+                        {eval_checks}
+                    </div>
+                    
+                    <div style="flex: 0 0 auto; display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllEvals()" style="padding: 6px 14px; font-size: 13px; border-radius: 6px;">
+                            <i class="fa-solid fa-check-double me-1"></i>Todas
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNoneEvals()" style="padding: 6px 14px; font-size: 13px; border-radius: 6px;">
+                            <i class="fa-solid fa-xmark me-1"></i>Ninguna
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-primary" style="padding: 6px 18px; font-size: 13px; border-radius: 6px; font-weight: 600;">
+                            <i class="fa-solid fa-magnifying-glass me-1"></i>Aplicar
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Hidden inputs para enviar datos -->
+                <input type="hidden" name="evaluation_ids" id="evaluation_ids_input">
+                <input type="hidden" name="section" id="section_input" value="quantitative">
+            </form>
         </div>
         """
 
@@ -2197,23 +2178,9 @@ class DashboardCharts(models.TransientModel):
         """
 
     def _scripts(self):
-        """Scripts JavaScript del dashboard."""
+        """Scripts JavaScript del dashboard (SIMPLIFICADO: solo evaluaciones)."""
         return """
     <script>
-        function toggleFilters() {
-            const content = document.getElementById('filterContent');
-            const icon = document.getElementById('toggleIcon');
-            if (content.classList.contains('show')) {
-                content.classList.remove('show');
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            } else {
-                content.classList.add('show');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            }
-        }
-        
         function togglePill(pill) {
             pill.classList.toggle('active');
             // Encontrar el input hidden asociado
@@ -2221,38 +2188,6 @@ class DashboardCharts(models.TransientModel):
             if (input && input.tagName === 'INPUT') {
                 input.disabled = !pill.classList.contains('active');
             }
-        }
-        
-        function selectAllMetrics() {
-            document.querySelectorAll('.metric-pill').forEach(pill => {
-                pill.classList.add('active');
-                const input = pill.nextElementSibling;
-                if (input && input.tagName === 'INPUT') input.disabled = false;
-            });
-        }
-        
-        function selectNoneMetrics() {
-            document.querySelectorAll('.metric-pill').forEach(pill => {
-                pill.classList.remove('active');
-                const input = pill.nextElementSibling;
-                if (input && input.tagName === 'INPUT') input.disabled = true;
-            });
-        }
-        
-        function selectAllGroups() {
-            document.querySelectorAll('.group-pill').forEach(pill => {
-                pill.classList.add('active');
-                const input = pill.nextElementSibling;
-                if (input && input.tagName === 'INPUT') input.disabled = false;
-            });
-        }
-        
-        function selectNoneGroups() {
-            document.querySelectorAll('.group-pill').forEach(pill => {
-                pill.classList.remove('active');
-                const input = pill.nextElementSibling;
-                if (input && input.tagName === 'INPUT') input.disabled = true;
-            });
         }
         
         function selectAllEvals() {
@@ -2271,21 +2206,8 @@ class DashboardCharts(models.TransientModel):
             });
         }
         
-        function clearDates() {
-            document.getElementById('date_from').value = '';
-            document.getElementById('date_to').value = '';
-        }
-        
         document.getElementById('hub-filters').addEventListener('submit', function(e) {
-            // Consolidar pills activas en hidden inputs
-            const metricPills = document.querySelectorAll('.metric-pill.active');
-            const metricValues = Array.from(metricPills).map(p => p.dataset.value);
-            document.getElementById('metric_names_input').value = metricValues.join(',');
-            
-            const groupPills = document.querySelectorAll('.group-pill.active');
-            const groupValues = Array.from(groupPills).map(p => p.dataset.value);
-            document.getElementById('group_ids_input').value = groupValues.join(',');
-            
+            // Consolidar pills de evaluaciones activas en hidden input
             const evalPills = document.querySelectorAll('.eval-pill.active');
             const evalValues = Array.from(evalPills).map(p => p.dataset.value);
             document.getElementById('evaluation_ids_input').value = evalValues.join(',');

@@ -167,37 +167,12 @@ class DashboardChartsController(http.Controller):
                 )
 
     def _parse_hub_filters(self, kwargs):
-        """Parsea los parámetros GET a un dict de filtros."""
+        """Parsea los parámetros GET a un dict de filtros (SIMPLIFICADO: solo evaluaciones)."""
         filters = {
-            'metric_names': [],
-            'date_from': None,
-            'date_to': None,
-            'group_ids': [],
             'evaluation_ids': [],
         }
 
-        # Métricas
-        if kwargs.get('metric_names'):
-            filters['metric_names'] = [m.strip() for m in kwargs['metric_names'].split(',') if m.strip()]
-
-        # Fechas
-        if kwargs.get('date_from'):
-            try:
-                filters['date_from'] = datetime.strptime(kwargs['date_from'], '%Y-%m-%d').date()
-            except ValueError:
-                pass
-        if kwargs.get('date_to'):
-            try:
-                filters['date_to'] = datetime.strptime(kwargs['date_to'], '%Y-%m-%d').date()
-            except ValueError:
-                pass
-
-        # Grupos e evaluaciones (IDs enteros)
-        if kwargs.get('group_ids'):
-            try:
-                filters['group_ids'] = [int(g) for g in kwargs['group_ids'].split(',') if g.strip().isdigit()]
-            except (ValueError, AttributeError):
-                pass
+        # Solo evaluaciones (filtro maestro del que se derivan métricas y grupos)
         if kwargs.get('evaluation_ids'):
             try:
                 filters['evaluation_ids'] = [int(e) for e in kwargs['evaluation_ids'].split(',') if e.strip().isdigit()]
