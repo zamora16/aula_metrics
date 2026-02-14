@@ -64,10 +64,6 @@ class DashboardChartsController(http.Controller):
         Dashboard principal con filtros dinámicos.
         
         Parámetros GET:
-        - metric_names: lista CSV de nombres de métricas
-        - date_from: fecha inicio formato YYYY-MM-DD
-        - date_to: fecha fin formato YYYY-MM-DD
-        - group_ids: lista CSV de IDs de grupos académicos
         - evaluation_ids: lista CSV de IDs de evaluaciones
         """
         role_info = self._detect_user_role()
@@ -182,22 +178,13 @@ class DashboardChartsController(http.Controller):
         return filters
 
     def _apply_role_restrictions(self, filters, role_info):
-        """Aplica restricciones de rol a los filtros."""
-        role = role_info.get('role', 'tutor')
-
-        # Para tutores, forzar filtro a sus grupos permitidos
-        if role == 'tutor':
-            allowed = role_info.get('allowed_group_ids', [])
-            if allowed:
-                if filters['group_ids']:
-                    # Intersección: solo grupos que el tutor tiene permitidos Y que solicitó
-                    filters['group_ids'] = list(set(filters['group_ids']) & set(allowed))
-                else:
-                    # Sin filtro específico: mostrar todos sus grupos
-                    filters['group_ids'] = allowed
-            else:
-                # Tutor sin grupos asignados: sin datos
-                filters['group_ids'] = [-1]  # ID imposible para forzar resultado vacío
-
+        """
+        Aplica restricciones de rol a los filtros.
+        Con el sistema simplificado (solo filtro de evaluaciones), 
+        ya no es necesario filtrar por grupos aquí.
+        Las restricciones de rol se aplican a nivel de modelo.
+        """
+        # El método ahora es pass-through
+        # Las restricciones de datos por rol se manejan en el modelo generate_dashboard()
         return filters
 

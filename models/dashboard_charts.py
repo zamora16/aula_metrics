@@ -19,7 +19,7 @@ class DashboardCharts(models.TransientModel):
         Genera el dashboard de métricas con filtros dinámicos.
         
         Args:
-            filters (dict): Filtros aplicados {metric_names, date_from, date_to, group_ids, evaluation_ids}
+            filters (dict): Filtros aplicados {evaluation_ids}
             role_info (dict): Información de rol del usuario
         
         Returns:
@@ -85,12 +85,6 @@ class DashboardCharts(models.TransientModel):
         # Filtrar por evaluaciones si se especifica
         if filters.get('evaluation_ids'):
             domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
-        
-        # Filtrar por fechas
-        if filters.get('date_from'):
-            domain.append(('timestamp', '>=', fields.Datetime.to_string(filters['date_from'])))
-        if filters.get('date_to'):
-            domain.append(('timestamp', '<=', fields.Datetime.to_string(filters['date_to'])))
         
         # Agrupar por metric_name y obtener labels
         result = MetricValue.read_group(
@@ -2075,10 +2069,6 @@ class DashboardCharts(models.TransientModel):
             head_extra=chart_libs
         )
 
-    # Método obsoleto - usar dashboard_helpers.get_role_badge() en su lugar
-    # def _get_role_badge(self, role_info):
-    #     ...
-
     def _build_filter_controls(self, metrics, groups, evaluations, filters):
         """Construye controles de filtrado compactos (solo evaluaciones)."""
         # Pills de evaluaciones
@@ -2090,78 +2080,35 @@ class DashboardCharts(models.TransientModel):
             eval_checks += f"""
             <span class="filter-pill eval-pill {active}" data-type="eval" data-value="{e['id']}" onclick="togglePill(this)">
                 {e['name']}
-            </span>
-            <input type="hidden" class="eval-input" name="eval_{e['id']}" value="{e['id']}" {'disabled' if not active else ''}>
-            """
+            </span>"""
 
-        # Calcular cuántas evaluaciones están seleccionadas
-        num_evals = len(selected_evals) if selected_evals else len(evaluations)
-        
-        style_css = """
-        .filter-pill {
-            display: inline-block;
-            padding: 6px 14px;
-            background: #f1f5f9;
-            color: #64748b;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
-            font-weight: 500;
-            border: 2px solid transparent;
-            user-select: none;
-        }
-        .filter-pill:hover {
-            background: #e2e8f0;
-            transform: translateY(-1px);
-        }
-        .filter-pill.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #2563eb;
-        }
-        """
-
+        # Los estilos están definidos en dashboard_styles.py (get_common_styles)
         return f"""
-        <style>{style_css}</style>
-        <div class="filter-panel-compact mb-4" style="background: white; padding: 20px 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+        <div class="filter-panel-compact">
             <form id="hub-filters" method="get" action="/aulametrics/dashboard">
-                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <div style="flex: 0 0 auto;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-clipboard-check" style="color: #3b82f6; font-size: 20px;"></i>
-                            <span style="font-weight: 600; color: #1e293b; font-size: 15px;">Evaluaciones</span>
-                            <span class="badge" style="background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">{num_evals}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="flex: 1; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0;">
-                        {eval_checks}
-                    </div>
-                    
-                    <div style="flex: 0 0 auto; display: flex; gap: 8px;">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllEvals()" style="padding: 6px 14px; font-size: 13px; border-radius: 6px;">
-                            <i class="fa-solid fa-check-double me-1"></i>Todas
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNoneEvals()" style="padding: 6px 14px; font-size: 13px; border-radius: 6px;">
-                            <i class="fa-solid fa-xmark me-1"></i>Ninguna
-                        </button>
-                        <button type="submit" class="btn btn-sm btn-primary" style="padding: 6px 18px; font-size: 13px; border-radius: 6px; font-weight: 600;">
-                            <i class="fa-solid fa-magnifying-glass me-1"></i>Aplicar
-                        </button>
-                    </div>
+                <div class="filter-header">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Filtrar por Evaluaciones</span>
                 </div>
                 
-                <!-- Hidden inputs para enviar datos -->
-                <input type="hidden" name="evaluation_ids" id="evaluation_ids_input">
-                <input type="hidden" name="section" id="section_input" value="quantitative">
+                <div class="filter-pills-container">
+                    {eval_checks}
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="button" class="btn-filter-action" onclick="selectAllEvals()">
+                        <i class="fa-solid fa-check-double me-1"></i>Todas
+                    </button>
+                    <button type="button" class="btn-filter-action" onclick="selectNoneEvals()">
+                        <i class="fa-solid fa-xmark me-1"></i>Ninguna
+                    </button>
+                    <button type="submit" class="btn-filter-action btn-filter-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i>Aplicar Filtros
+                    </button>
+                </div>
             </form>
         </div>
         """
-
-    # Método obsoleto - usar dashboard_styles.get_common_styles() en su lugar
-    # def _styles(self):
-    #     ...
     
     def _home_section(self, metrics, groups, evaluations, filters, role_info):
         """Sección Home simplificada."""
@@ -2183,38 +2130,122 @@ class DashboardCharts(models.TransientModel):
     <script>
         function togglePill(pill) {
             pill.classList.toggle('active');
-            // Encontrar el input hidden asociado
-            const input = pill.nextElementSibling;
-            if (input && input.tagName === 'INPUT') {
-                input.disabled = !pill.classList.contains('active');
-            }
         }
         
         function selectAllEvals() {
             document.querySelectorAll('.eval-pill').forEach(pill => {
                 pill.classList.add('active');
-                const input = pill.nextElementSibling;
-                if (input && input.tagName === 'INPUT') input.disabled = false;
             });
         }
         
         function selectNoneEvals() {
             document.querySelectorAll('.eval-pill').forEach(pill => {
                 pill.classList.remove('active');
-                const input = pill.nextElementSibling;
-                if (input && input.tagName === 'INPUT') input.disabled = true;
             });
         }
         
         document.getElementById('hub-filters').addEventListener('submit', function(e) {
-            // Consolidar pills de evaluaciones activas en hidden input
+            e.preventDefault(); // Prevenir recarga de página
+            
+            // Obtener botón de submit
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnContent = submitBtn.innerHTML;
+            
+            // Cambiar botón a estado loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Cargando...';
+            
+            // Consolidar pills de evaluaciones activas
             const evalPills = document.querySelectorAll('.eval-pill.active');
             const evalValues = Array.from(evalPills).map(p => p.dataset.value);
-            document.getElementById('evaluation_ids_input').value = evalValues.join(',');
             
-            // Guardar la sección actual
-            const activeSection = document.querySelector('.sidebar-item.active')?.dataset.section || 'quantitative';
-            document.getElementById('section_input').value = activeSection;
+            // Construir URL con parámetros
+            const params = new URLSearchParams();
+            if (evalValues.length > 0) {
+                params.append('evaluation_ids', evalValues.join(','));
+            }
+            params.append('section', 'quantitative');
+            
+            const url = '/aulametrics/dashboard?' + params.toString();
+            
+            // Mostrar indicador de carga
+            const kpiContainer = document.querySelector('#section-quantitative .kpi-container');
+            const chartsContainer = document.querySelector('#section-quantitative .charts-container');
+            
+            if (kpiContainer) {
+                kpiContainer.style.opacity = '0.5';
+                kpiContainer.style.transition = 'opacity 0.3s';
+            }
+            if (chartsContainer) {
+                chartsContainer.style.opacity = '0.5';
+                chartsContainer.style.transition = 'opacity 0.3s';
+            }
+            
+            // Hacer petición AJAX
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    // Crear un elemento temporal para parsear el HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    
+                    // Extraer los KPIs
+                    const newKpis = tempDiv.querySelector('.kpi-container');
+                    if (newKpis && kpiContainer) {
+                        kpiContainer.innerHTML = newKpis.innerHTML;
+                        kpiContainer.style.opacity = '0';
+                        setTimeout(() => {
+                            kpiContainer.style.opacity = '1';
+                        }, 50);
+                    }
+                    
+                    // Extraer los gráficos
+                    const newCharts = tempDiv.querySelector('.charts-container');
+                    if (newCharts && chartsContainer) {
+                        chartsContainer.innerHTML = newCharts.innerHTML;
+                        chartsContainer.style.opacity = '0';
+                        
+                        // Re-ejecutar scripts de los gráficos
+                        const scripts = chartsContainer.querySelectorAll('script');
+                        scripts.forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            newScript.textContent = oldScript.textContent;
+                            oldScript.parentNode.replaceChild(newScript, oldScript);
+                        });
+                        
+                        setTimeout(() => {
+                            chartsContainer.style.opacity = '1';
+                        }, 50);
+                    }
+                    
+                    // Restaurar botón
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                    
+                    // Smooth scroll a los resultados
+                    if (kpiContainer) {
+                        kpiContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                    
+                    // Actualizar URL sin recargar
+                    history.pushState({}, '', url);
+                })
+                .catch(error => {
+                    console.error('Error al aplicar filtros:', error);
+                    
+                    // Restaurar botón
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                    
+                    // Mostrar error
+                    if (kpiContainer) {
+                        kpiContainer.style.opacity = '1';
+                        kpiContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 32px; color: #ef4444;"></i><p style="margin-top: 12px; color: #64748b;">Error al cargar datos. Intenta de nuevo.</p></div>';
+                    }
+                    if (chartsContainer) {
+                        chartsContainer.style.opacity = '1';
+                    }
+                });
         });
         
         // Navegación entre secciones
