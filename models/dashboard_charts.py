@@ -497,7 +497,7 @@ class DashboardCharts(models.TransientModel):
         if not evo_html:
             return by_groups_html
 
-        safe_id = label.replace(" ", "_").replace("/", "_").replace(".", "_")
+        safe_id = dashboard_helpers.sanitize_id(label)
         wrapper_by = f'view_by_{safe_id}'
         wrapper_evo = f'view_evo_{safe_id}'
         toggle_id = f'toggle_{safe_id}'
@@ -1106,7 +1106,7 @@ class DashboardCharts(models.TransientModel):
                             data['mean'] = data['sum'] / data['count']
                             del data['sum']
         
-        chart_id = f'chart_cursos_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        chart_id = f'chart_cursos_{dashboard_helpers.sanitize_id(label)}'
         labels = [s['curso'] for s in stats]
         means = [s['mean'] for s in stats]
         colors = [s['color'] for s in stats]
@@ -1118,15 +1118,17 @@ class DashboardCharts(models.TransientModel):
         chart_height = min(350, max(200, len(stats) * 25))
         segment_options_html = self._build_segment_options_html(segmentation_vars)
         
+        styles = dashboard_helpers.get_chart_card_styles()
+        
         return f'''
         <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="card-header" style="{styles['chart-card-header']}">
                 <div>
                     <h5 class="card-title">{label}</h5>
                     <p class="card-subtitle">Comparativa por curso</p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
+                    <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
                         {segment_options_html}
                     </select>
                     <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
@@ -1154,13 +1156,7 @@ class DashboardCharts(models.TransientModel):
             let currentSegmentation = '';
             
             // Paleta de colores para segmentos
-            const segmentColors = {{
-                'Masculino': '#3b82f6',
-                'Femenino': '#ec4899',
-                'Otro': '#94a3b8',
-                'Prefiere no decir': '#64748b',
-                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
-            }};
+            {dashboard_helpers.get_segment_colors_js()}
             
             // Crear datasets de umbrales
             function createThresholdDatasets(labelCount) {{
@@ -1400,20 +1396,21 @@ class DashboardCharts(models.TransientModel):
                             seg_counts.append(int(count))
                         distribution_by_segmentation[var_value][option] = seg_counts
         
-        chart_id = f'chart_dist_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        chart_id = f'chart_dist_{dashboard_helpers.sanitize_id(label)}'
         total_alumnos = len(values)
         mean_val = float(values.mean())
         
         segment_options_html = self._build_segment_options_html(segmentation_vars)
+        styles = dashboard_helpers.get_chart_card_styles()
         
         return f'''
         <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="card-header" style="{styles['chart-card-header']}">
                 <div>
                     <h5 class="card-title">{label}</h5>
                     <p class="card-subtitle">Distribución actual del grupo ({latest_evaluation}) · Media: {mean_val:.1f} pts</p>
                 </div>
-                <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
+                <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
                     {segment_options_html}
                 </select>
             </div>
@@ -1435,13 +1432,7 @@ class DashboardCharts(models.TransientModel):
             let currentSegmentation = '';
             
             // Paleta de colores para segmentos
-            const segmentColors = {{
-                'Masculino': '#3b82f6',
-                'Femenino': '#ec4899',
-                'Otro': '#94a3b8',
-                'Prefiere no decir': '#64748b',
-                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
-            }};
+            {dashboard_helpers.get_segment_colors_js()}
             
             const chart = new Chart(document.getElementById('{chart_id}'), {{
                 type: 'bar',
@@ -1628,7 +1619,7 @@ class DashboardCharts(models.TransientModel):
         # Ordenar por puntuación inicialmente
         stats_sorted = sorted(stats, key=lambda x: x['mean'])
         
-        chart_id = f'chart_grupos_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        chart_id = f'chart_grupos_{dashboard_helpers.sanitize_id(label)}'
         labels = [s['grupo'] for s in stats_sorted]
         means = [s['mean'] for s in stats_sorted]
         colors = [s['color'] for s in stats_sorted]
@@ -1639,16 +1630,17 @@ class DashboardCharts(models.TransientModel):
         
         chart_height = min(350, max(200, len(stats) * 25))
         segment_options_html = self._build_segment_options_html(segmentation_vars)
+        styles = dashboard_helpers.get_chart_card_styles()
         
         return f'''
         <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="card-header" style="{styles['chart-card-header']}">
                 <div>
                     <h5 class="card-title">{label}</h5>
                     <p class="card-subtitle">Comparativa por grupo</p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
+                    <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
                         {segment_options_html}
                     </select>
                     <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
@@ -1678,14 +1670,7 @@ class DashboardCharts(models.TransientModel):
             let currentSegmentation = '';
             
             // Paleta de colores para segmentos
-            const segmentColors = {{
-                'Masculino': '#3b82f6',
-                'Femenino': '#ec4899',
-                'Otro': '#94a3b8',
-                'Prefiere no decir': '#64748b',
-                // Colores para otras opciones
-                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
-            }};
+            {dashboard_helpers.get_segment_colors_js()}
             
             // Crear datasets de umbrales
             function createThresholdDatasets(labelCount) {{
@@ -1896,7 +1881,7 @@ class DashboardCharts(models.TransientModel):
         # Calcular porcentajes
         percentages = [round((v / total_respondents * 100), 1) for v in values]
         
-        chart_id = f'chart_{label.replace(" ", "_").replace("/", "_").replace(".", "_").replace("?", "").replace("¿", "")}'
+        chart_id = f'chart_{dashboard_helpers.sanitize_id(label)}'
         
         return f'''
         <div class="card">

@@ -26,12 +26,14 @@ class DashboardHome(models.Model):
         if not self.action_id:
             return {'type': 'ir.actions.act_window_close'}
             
-        # Obtener el tipo de acción correcto (ir.actions.act_window, ir.actions.act_url, etc.)
-        action_type = self.action_id.type
+        # Usar sudo() para acceder a la acción (solo lectura para navegación)
+        # Los usuarios necesitan leer ir.actions.actions para abrir el menú
+        action_sudo = self.action_id.sudo()
+        action_type = action_sudo.type
         
         try:
             # Browsing del modelo específico para asegurar que leemos todos los campos (res_model, view_mode, etc.)
-            real_action = self.env[action_type].browse(self.action_id.id)
+            real_action = self.env[action_type].sudo().browse(action_sudo.id)
             action_dict = real_action.read()[0]
             
             # Limpieza básica
