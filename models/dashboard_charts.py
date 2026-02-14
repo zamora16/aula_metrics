@@ -442,7 +442,7 @@ class DashboardCharts(models.TransientModel):
         return ''
 
     def _chart_numeric_metric(self, df, label, role_info, segmentation_vars):
-        """Gráfico adaptado según rol del usuario con colores semáforo."""
+        """Gráfico adaptado según rol del usuario con gradiente de colores."""
         if df.empty or df['value_numeric'].isna().all():
             return ''
         
@@ -582,15 +582,15 @@ class DashboardCharts(models.TransientModel):
         return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__SUBTITLE__', subtitle).replace('__COMPARATIVA_TITLE__', comparativa_title).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
 
     def _get_semaphore_color(self, value):
-        """Retorna color semáforo según valor normalizado 0-100."""
+        """Retorna color gradiente según valor normalizado 0-100."""
         if value >= 80:
-            return '#10b981'  # Verde - Excelente
+            return '#f97316'  # Naranja oscuro - Alto
         elif value >= 60:
-            return '#3b82f6'  # Azul - Normal
+            return '#fb923c'  # Naranja suave - Medio-Alto
         elif value >= 40:
-            return '#f59e0b'  # Ámbar - Atención
+            return '#60a5fa'  # Azul claro - Medio-Bajo
         else:
-            return '#ef4444'  # Rojo - Crítico
+            return '#3b82f6'  # Azul oscuro - Bajo
     
     def _get_thresholds_for_metric(self, metric_name):
         """Obtiene umbrales activos configurados para una métrica.
@@ -736,45 +736,92 @@ class DashboardCharts(models.TransientModel):
         '''
     
     def _chart_numeric_evolution_distribution(self, df, label):
-        """Evolución temporal de la media del grupo (Tutor - anónimo)."""
+        """Evolución temporal: trayectorias individuales + media del grupo (Tutor - anónimo)."""
         # Agrupar por evaluación (no por timestamp individual)
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
         
         if len(evaluations) < 2:
             return ''
         
-        # Calcular media del grupo en cada evaluación
-        data_points = []
+        # Dataset 1: Media del grupo en cada evaluación
+        group_data_points = []
         for eval_name, eval_date in evaluations.items():
             df_eval = df[df['evaluation_name'] == eval_name]['value_numeric'].dropna()
             if len(df_eval) > 0:
-                data_points.append({
+                group_data_points.append({
                     'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
                     'y': float(df_eval.mean())
                 })
         
-        if not data_points:
+        if not group_data_points:
             return ''
         
-        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        # Dataset 2: Trayectorias individuales de cada alumno (anonimizado)
+        individual_datasets = []
+        students = df['student_id'].unique()
+        total_students = len(students)
         
-        datasets = [{
+        for idx, student_id in enumerate(students, 1):
+            df_student = df[df['student_id'] == student_id]
+            student_data_points = []
+            
+            for eval_name, eval_date in evaluations.items():
+                df_student_eval = df_student[df_student['evaluation_name'] == eval_name]['value_numeric'].dropna()
+                if len(df_student_eval) > 0:
+                    student_data_points.append({
+                        'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
+                        'y': float(df_student_eval.iloc[0])
+                    })
+            
+            # Solo agregar si tiene al menos 2 puntos temporales
+            if len(student_data_points) >= 2:
+                # Generar color único para cada alumno usando HSL
+                hue = (idx * 360 / total_students) % 360
+                individual_datasets.append({
+                    'label': f'Alumno {idx}',
+                    'data': student_data_points,
+                    'borderColor': f'hsl({hue}, 70%, 55%)',
+                    'backgroundColor': 'transparent',
+                    'borderWidth': 2,
+                    'tension': 0.2,
+                    'pointRadius': 3,
+                    'pointHoverRadius': 5,
+                    'pointBackgroundColor': f'hsl({hue}, 70%, 55%)',
+                    'pointBorderColor': '#ffffff',
+                    'pointBorderWidth': 1
+                })
+        
+        # Dataset de media grupal (destacado con línea negra gruesa)
+        group_dataset = {
             'label': 'Media del grupo',
-            'data': data_points,
-            'borderColor': '#3b82f6',
-            'backgroundColor': '#3b82f620',
+            'data': group_data_points,
+            'borderColor': '#1e293b',
+            'backgroundColor': '#1e293b20',
+            'borderWidth': 4,
+            'borderDash': [],
             'tension': 0.3,
-            'fill': True
-        }]
+            'fill': True,
+            'pointRadius': 5,
+            'pointHoverRadius': 7,
+            'pointBackgroundColor': '#1e293b',
+            'pointBorderColor': '#ffffff',
+            'pointBorderWidth': 2,
+            'order': 0  # Dibujarse encima
+        }
+        
+        # Combinar: primero individuales (fondo), luego media (destacada)
+        all_datasets = individual_datasets + [group_dataset]
+        
+        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
         
         return f'''
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Evolución: {label}</h5>
-                <p class="card-subtitle">Tendencia temporal de la media del grupo</p>
+                <p class="card-subtitle">Trayectorias individuales (coloreadas) y media del grupo (negro)</p>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="240"></canvas>
+                <canvas id="{chart_id}" height="260"></canvas>
             </div>
         </div>
         
@@ -782,28 +829,47 @@ class DashboardCharts(models.TransientModel):
         new Chart(document.getElementById('{chart_id}'), {{
             type: 'line',
             data: {{
-                datasets: {json.dumps(datasets)}
+                datasets: {json.dumps(all_datasets)}
             }},
             options: {{
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {{
-                    legend: {{ display: false }},
+                    legend: {{ 
+                        display: true,
+                        position: 'top',
+                        labels: {{
+                            usePointStyle: true,
+                            padding: 10,
+                            font: {{ size: 10, family: "'Inter', sans-serif" }},
+                            color: '#64748b',
+                            boxWidth: 8
+                        }}
+                    }},
                     tooltip: {{
                         backgroundColor: '#1e293b',
-                        padding: 14,
-                        cornerRadius: 8,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        padding: 12,
+                        cornerRadius: 6,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
                         callbacks: {{
                             title: function(context) {{
                                 return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
                             }},
                             label: function(context) {{
-                                return 'Media: ' + context.parsed.y.toFixed(1) + ' pts';
+                                if (context.dataset.label === 'Media del grupo') {{
+                                    return 'Media: ' + context.parsed.y.toFixed(1) + ' pts';
+                                }} else {{
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' pts';
+                                }}
                             }}
                         }}
                     }}
+                }},
+                interaction: {{
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
                 }},
                 scales: {{
                     x: {{
@@ -1249,15 +1315,22 @@ class DashboardCharts(models.TransientModel):
         '''
 
     def _chart_numeric_distribution(self, df, label, segmentation_vars):
-        """Vista Tutor: Distribución anónima del grupo (histogram)."""
-        values = df['value_numeric'].dropna()
+        """Vista Tutor: Distribución anónima del grupo - SOLO evaluación más reciente."""
+        if df.empty:
+            return ''
+        
+        # FILTRAR: Solo la evaluación más reciente
+        latest_evaluation = df.sort_values('completed_at')['evaluation_name'].iloc[-1]
+        df_latest = df[df['evaluation_name'] == latest_evaluation]
+        
+        values = df_latest['value_numeric'].dropna()
         if len(values) == 0:
             return ''
         
         # Crear bins (rangos) para el histograma
         bins = [0, 40, 60, 80, 100]
-        bin_labels = ['0-40 (Crítico)', '40-60 (Atención)', '60-80 (Normal)', '80-100 (Excelente)']
-        bin_colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+        bin_labels = ['0-40 (Bajo)', '40-60 (Medio-Bajo)', '60-80 (Medio-Alto)', '80-100 (Alto)']
+        bin_colors = ['#3b82f6', '#60a5fa', '#fb923c', '#f97316']
         
         # Contar cuántos alumnos en cada rango
         counts = []
@@ -1268,7 +1341,7 @@ class DashboardCharts(models.TransientModel):
                 count = ((values >= bins[i]) & (values <= bins[i+1])).sum()
             counts.append(int(count))
         
-        # Preparar datos de segmentación
+        # Preparar datos de segmentación (también filtrados a evaluación más reciente)
         distribution_by_segmentation = {}
         MetricValue = self.env['aulametrics.metric_value']
         
@@ -1282,7 +1355,7 @@ class DashboardCharts(models.TransientModel):
                 # Género desde res.partner
                 gender_map = {'male': 'Masculino', 'female': 'Femenino', 'other': 'Otro', 'prefer_not_say': 'Prefiere no decir'}
                 for gender_key, gender_label in gender_map.items():
-                    df_segment = df[df['student_gender'] == gender_key]
+                    df_segment = df_latest[df_latest['student_gender'] == gender_key]
                     seg_values = df_segment['value_numeric'].dropna()
                     
                     if len(seg_values) > 0:
@@ -1298,7 +1371,7 @@ class DashboardCharts(models.TransientModel):
                 # Variable de opciones múltiples desde metric_value
                 student_segments = {}
                 
-                for student_id in df['student_id'].unique():
+                for student_id in df_latest['student_id'].unique():
                     if student_id == "***":  # Skip anonymized
                         continue
                     
@@ -1315,7 +1388,7 @@ class DashboardCharts(models.TransientModel):
                 
                 # Calcular distribución por cada opción
                 for option in seg_var['options']:
-                    df_segment = df[df['student_id'].isin([sid for sid, opt in student_segments.items() if opt == option])]
+                    df_segment = df_latest[df_latest['student_id'].isin([sid for sid, opt in student_segments.items() if opt == option])]
                     seg_values = df_segment['value_numeric'].dropna()
                     
                     if len(seg_values) > 0:
@@ -1331,37 +1404,21 @@ class DashboardCharts(models.TransientModel):
         total_alumnos = len(values)
         mean_val = float(values.mean())
         
-        # Texto descriptivo
-        desc_texts = []
-        if counts[0] > 0:
-            desc_texts.append(f"🔴 {counts[0]} alumno{'s' if counts[0] > 1 else ''} en situación crítica")
-        if counts[1] > 0:
-            desc_texts.append(f"🟡 {counts[1]} alumno{'s' if counts[1] > 1 else ''} requieren atención")
-        if counts[2] > 0:
-            desc_texts.append(f"🔵 {counts[2]} alumno{'s' if counts[2] > 1 else ''} en nivel aceptable")
-        if counts[3] > 0:
-            desc_texts.append(f"🟢 {counts[3]} alumno{'s' if counts[3] > 1 else ''} con nivel excelente")
-        
-        description = " · ".join(desc_texts) if desc_texts else "Sin datos suficientes"
-        
         segment_options_html = self._build_segment_options_html(segmentation_vars)
         
         return f'''
         <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
                     <h5 class="card-title">{label}</h5>
-                    <p class="card-subtitle">Distribución anónima del grupo · Media: {mean_val:.1f} pts</p>
+                    <p class="card-subtitle">Distribución actual del grupo ({latest_evaluation}) · Media: {mean_val:.1f} pts</p>
                 </div>
                 <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
                     {segment_options_html}
                 </select>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="280"></canvas>
-                <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #475569;">
-                    <strong>Interpretación:</strong> <span id="desc_{chart_id}">{description}</span>
-                </div>
+                <canvas id="{chart_id}" height="260"></canvas>
             </div>
         </div>
         
@@ -1372,7 +1429,6 @@ class DashboardCharts(models.TransientModel):
                 counts: {json.dumps(counts)},
                 bin_colors: {json.dumps(bin_colors)},
                 distributionBySegmentation: {json.dumps(distribution_by_segmentation)},
-                segmentationVars: {json.dumps(segmentation_vars)},
                 totalAlumnos: {total_alumnos}
             }};
             
@@ -1395,7 +1451,7 @@ class DashboardCharts(models.TransientModel):
                         label: 'Número de alumnos',
                         data: chartData.counts,
                         backgroundColor: chartData.bin_colors,
-                        borderRadius: 8,
+                        borderRadius: 6,
                         borderSkipped: false
                     }}]
                 }},
@@ -1406,10 +1462,10 @@ class DashboardCharts(models.TransientModel):
                         legend: {{ display: false }},
                         tooltip: {{
                             backgroundColor: '#1e293b',
-                            padding: 14,
-                            cornerRadius: 8,
-                            titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
-                            bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                            padding: 12,
+                            cornerRadius: 6,
+                            titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
+                            bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
                             callbacks: {{
                                 label: function(context) {{
                                     let percentage = (chartData.totalAlumnos > 0) ? ((context.parsed.y / chartData.totalAlumnos) * 100).toFixed(1) : 0;
@@ -1431,14 +1487,10 @@ class DashboardCharts(models.TransientModel):
                             grid: {{ color: '#f1f5f9', drawBorder: false }},
                             ticks: {{
                                 stepSize: 1,
-                                font: {{ size: 12, family: "'Inter', sans-serif" }},
+                                font: {{ size: 11, family: "'Inter', sans-serif" }},
                                 color: '#94a3b8'
                             }}
                         }}
-                    }},
-                    animation: {{
-                        duration: 600,
-                        easing: 'easeInOutCubic'
                     }}
                 }}
             }});
@@ -1469,7 +1521,7 @@ class DashboardCharts(models.TransientModel):
                         label: 'Número de alumnos',
                         data: chartData.counts,
                         backgroundColor: chartData.bin_colors,
-                        borderRadius: 8,
+                        borderRadius: 6,
                         borderSkipped: false
                     }}];
                     chart.options.plugins.legend.display = false;

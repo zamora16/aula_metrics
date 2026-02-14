@@ -3,7 +3,7 @@
     <!-- Dashboard de Alertas -->
     <record id="view_alerts_dashboard" model="ir.ui.view">
         <field name="name">aulametrics.alerts.dashboard</field>
-        <field name="model">alerts.dashboard</field>
+        <field name="model">aulametrics.alerts_dashboard</field>
         <field name="arch" type="xml">
             <form string="Sistema de Alertas" create="false" edit="false">
                 <div class="oe_title">
@@ -27,8 +27,8 @@
                                 <field name="student_id" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor"/>
                                 <field name="academic_group_id"/>
                                 <field name="score_value"/>
-                                <button name="action_resolve" string="Resolver" type="object" class="btn btn-success btn-sm"/>
-                                <button name="action_dismiss" string="Descartar" type="object" class="btn btn-warning btn-sm" confirm="¿Descartar esta alerta?"/>
+                                <button name="action_resolve" string="Resolver" type="object" class="btn btn-success btn-sm" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor,aulametrics.group_aulametrics_tutor"/>
+                                <button name="action_dismiss" string="Descartar" type="object" class="btn btn-warning btn-sm" confirm="¿Descartar esta alerta?" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor,aulametrics.group_aulametrics_tutor"/>
                             </tree>
                             <form string="Alerta">
                                 <group>
@@ -55,53 +55,28 @@
                     <!-- Pestaña de Configuración de Umbrales -->
                     <page string="Umbrales Configurados" name="threshold_config">
                         <div class="alert alert-info" role="alert">
-                            <strong>Umbrales Configurados:</strong> Aquí puedes ver los umbrales que activarán alertas automáticamente.
+                            <strong>Umbrales Configurados:</strong> Umbrales que activarán alertas automáticamente (solo lectura).
                         </div>
-                        <field name="thresholds" nolabel="1" mode="kanban,tree,form" context="{'create': True, 'edit': True, 'delete': True}">
-                            <kanban class="o_kanban_mobile" quick_create="false">
-                                <field name="id"/>
-                                <templates>
-                                    <t t-name="kanban-box">
-                                        <div class="oe_kanban_card">
-                                            <div class="row">
-                                                <div class="col-8">
-                                                    <strong><field name="name"/></strong><br/>
-                                                    <small><field name="score_field"/></small><br/>
-                                                    <span class="badge" t-attf-class="badge bg-{{ {'low': 'success', 'moderate': 'warning', 'high': 'danger'}[record.severity] }}">
-                                                        <field name="severity"/>
-                                                    </span>
-                                                </div>
-                                                <div class="col-4 text-end">
-                                                    <field name="threshold_value"/>
-                                                    <field name="operator"/><br/>
-                                                    <field name="active" widget="boolean_toggle"/>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </t>
-                                </templates>
-                            </kanban>
-                            <tree string="Umbrales Configurados" create="true" edit="true" delete="true">
+                        <field name="thresholds" nolabel="1" mode="tree,form" context="{'create': False, 'edit': False, 'delete': False}">
+                            <tree string="Umbrales Configurados" create="false" edit="false" delete="false">
                                 <field name="name"/>
                                 <field name="score_field"/>
                                 <field name="threshold_value"/>
                                 <field name="operator"/>
                                 <field name="severity"/>
                                 <field name="group_threshold_percentage" string="% Grupal"/>
-                                <field name="active" widget="boolean_toggle"/>
                             </tree>
-                            <form string="Umbral">
+                            <form string="Umbral" create="false" edit="false" delete="false">
                                 <group>
-                                    <field name="name"/>
-                                    <field name="score_field"/>
-                                    <field name="operator"/>
-                                    <field name="threshold_value"/>
-                                    <field name="severity"/>
-                                    <field name="group_threshold_percentage"/>
-                                    <field name="active"/>
+                                    <field name="name" readonly="1"/>
+                                    <field name="score_field" readonly="1"/>
+                                    <field name="operator" readonly="1"/>
+                                    <field name="threshold_value" readonly="1"/>
+                                    <field name="severity" readonly="1"/>
+                                    <field name="group_threshold_percentage" readonly="1"/>
                                 </group>
                                 <group>
-                                    <field name="alert_message" placeholder="Mensaje que aparecerá en las alertas..."/>
+                                    <field name="alert_message" readonly="1" placeholder="Mensaje que aparecerá en las alertas..."/>
                                 </group>
                             </form>
                         </field>
@@ -154,7 +129,7 @@
     <!-- Acción del Dashboard -->
     <record id="action_alerts_dashboard" model="ir.actions.act_window">
         <field name="name">Dashboard de Alertas</field>
-        <field name="res_model">alerts.dashboard</field>
+        <field name="res_model">aulametrics.alerts_dashboard</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="view_alerts_dashboard"/>
         <field name="target">current</field>

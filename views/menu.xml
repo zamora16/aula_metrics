@@ -62,6 +62,7 @@
               name="Configurar Umbrales" 
               parent="menu_aulametrics_alerts"
               action="action_threshold"
+              groups="group_aulametrics_admin,group_aulametrics_counselor"
               sequence="20"/>
               
     <menuitem id="menu_alert_keywords" 
