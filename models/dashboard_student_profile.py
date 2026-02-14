@@ -959,7 +959,7 @@ class DashboardStudentProfile(models.TransientModel):
                         </p>
                     </div>
                     <div class="card-body">
-                        <canvas id="{chart_id}" height="200"></canvas>
+                        <canvas id="{chart_id}" height="180"></canvas>
                     </div>
                 </div>
             </div>
@@ -1207,13 +1207,19 @@ class DashboardStudentProfile(models.TransientModel):
             })
         
         return f'''
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Perfil Multidimensional</h5>
-                <p class="card-subtitle">Comparativa visual con grupo y centro</p>
-            </div>
-            <div class="card-body">
-                <canvas id="{chart_id}" height="220"></canvas>
+        <div class="row mb-4">
+            <div class="col-md-10 col-lg-7 col-xl-6 mx-auto">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h5 class="card-title">Perfil Multidimensional</h5>
+                        <p class="card-subtitle">Comparativa visual con grupo y centro</p>
+                    </div>
+                    <div class="card-body" style="padding: 1.5rem; display: flex; justify-content: center; align-items: center;">
+                        <div style="width: 100%; max-width: 500px;">
+                            <canvas id="{chart_id}"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -1227,33 +1233,36 @@ class DashboardStudentProfile(models.TransientModel):
             options: {{
                 responsive: true,
                 maintainAspectRatio: true,
+                aspectRatio: 1.2,
                 plugins: {{
                     legend: {{
                         display: true,
                         position: 'bottom',
                         labels: {{
                             usePointStyle: true,
-                            padding: 16,
+                            padding: 12,
                             font: {{
-                                size: 13,
+                                size: 12,
                                 family: "'Inter', sans-serif",
                                 weight: '500'
                             }},
-                            color: '#64748b'
+                            color: '#64748b',
+                            boxWidth: 8,
+                            boxHeight: 8
                         }}
                     }},
                     tooltip: {{
                         backgroundColor: '#1e293b',
-                        padding: 12,
+                        padding: 10,
                         cornerRadius: 6,
                         titleFont: {{
                             family: "'Inter', sans-serif",
-                            size: 13,
+                            size: 12,
                             weight: '600'
                         }},
                         bodyFont: {{
                             family: "'Inter', sans-serif",
-                            size: 12
+                            size: 11
                         }},
                         callbacks: {{
                             label: function(context) {{
@@ -1267,28 +1276,30 @@ class DashboardStudentProfile(models.TransientModel):
                         beginAtZero: true,
                         max: 100,
                         ticks: {{
-                            stepSize: 20,
+                            stepSize: 25,
                             font: {{
-                                size: 11,
+                                size: 10,
                                 family: "'Inter', sans-serif"
                             }},
-                            color: '#94a3b8'
+                            color: '#94a3b8',
+                            backdropColor: 'transparent'
                         }},
                         grid: {{
                             color: '#e5e7eb'
                         }},
                         pointLabels: {{
                             font: {{
-                                size: 12,
+                                size: 11,
                                 family: "'Inter', sans-serif",
                                 weight: '500'
                             }},
-                            color: '#475569'
+                            color: '#475569',
+                            padding: 8
                         }}
                     }}
                 }},
                 animation: {{
-                    duration: 800,
+                    duration: 600,
                     easing: 'easeInOutCubic'
                 }}
             }}
@@ -1344,7 +1355,9 @@ class DashboardStudentProfile(models.TransientModel):
                             
                             {radar if radar else ''}
                             
+                            <div class="row">
                             {evolution}
+                            </div>
                             
                             {timeline}
                             
