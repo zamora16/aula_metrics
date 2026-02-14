@@ -412,12 +412,111 @@ class DashboardCharts(models.TransientModel):
             if has_evolution:
                 charts_html += self._chart_numeric_evolution_distribution(df, label)
         else:  # counselor/admin
-            charts_html += self._chart_numeric_by_groups(df, label, segmentation_vars)
-            if has_evolution:
-                charts_html += self._chart_numeric_evolution_by_groups(df, label)
-        
+            # Generar ambas vistas por separado y, si existen las dos, combinarlas
+            by_groups_html = self._chart_numeric_by_groups(df, label, segmentation_vars)
+            evo_html = self._chart_numeric_evolution_by_groups(df, label)
+
+            if by_groups_html and evo_html:
+                charts_html += self._chart_numeric_groups_with_toggle(by_groups_html, evo_html, label, segmentation_vars)
+            else:
+                charts_html += by_groups_html or evo_html
+
         return charts_html
-    
+
+    def _chart_numeric_groups_with_toggle(self, by_groups_html, evo_html, label, segmentation_vars):
+        """Combina la card de comparativa por grupo y la de evolución en una sola card con un switch.
+
+        - Preserva IDs de canvas/controls ya generados por las funciones hijas.
+        - Oculta los headers internos (solo se muestra el header combinado).
+        - Fuerza resize/update de Chart.js al alternar vistas.
+        """
+        if not by_groups_html and not evo_html:
+            return ''
+        if not by_groups_html:
+            return evo_html
+        if not evo_html:
+            return by_groups_html
+
+        safe_id = label.replace(" ", "_").replace("/", "_").replace(".", "_")
+        wrapper_by = f'view_by_{safe_id}'
+        wrapper_evo = f'view_evo_{safe_id}'
+        toggle_id = f'toggle_{safe_id}'
+
+        html = '''
+        <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <div>
+                    <h5 class="card-title">__LABEL__</h5>
+                    <p class="card-subtitle">Comparativa por grupo · Evolución temporal</p>
+                </div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <button id="__TOGGLE_ID___bars" class="btn btn-sm btn-outline-primary active" style="padding:6px 10px;" title="Comparativa por grupo">
+                        <i class="fa fa-bar-chart"></i>
+                    </button>
+                    <button id="__TOGGLE_ID___lines" class="btn btn-sm btn-outline-primary" style="padding:6px 10px;" title="Evolución temporal">
+                        <i class="fa fa-line-chart"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding:0;">
+                <div id="__WRAP_BY__">__BY_HTML__</div>
+                <div id="__WRAP_EVO__" style="display:none;">__EVO_HTML__</div>
+            </div>
+        </div>
+
+        <style>
+        /* Ocultar header interno SOLO de la vista de evolución (la comparativa mantiene sus controles) */
+        #__WRAP_EVO__ .card-header { display: none; }
+        /* Ocultar título/subtítulo de la header de la comparativa embebida pero conservar controles */
+        #__WRAP_BY__ .card-header .card-title, #__WRAP_BY__ .card-header .card-subtitle { display: none; }
+        /* Ajustes visuales para que el contenido embebido se vea consistente */
+        #__WRAP_BY__ .card-body, #__WRAP_EVO__ .card-body { padding: 16px; }
+        </style>
+
+        <script>
+        (function() {
+            const btnBars = document.getElementById('__TOGGLE_ID___bars');
+            const btnLines = document.getElementById('__TOGGLE_ID___lines');
+            const viewBy = document.getElementById('__WRAP_BY__');
+            const viewEvo = document.getElementById('__WRAP_EVO__');
+
+            function setView(showEvo) {
+                viewBy.style.display = showEvo ? 'none' : 'block';
+                viewEvo.style.display = showEvo ? 'block' : 'none';
+                
+                // Actualizar botones
+                if (showEvo) {
+                    btnBars.classList.remove('active');
+                    btnLines.classList.add('active');
+                } else {
+                    btnBars.classList.add('active');
+                    btnLines.classList.remove('active');
+                }
+
+                // Forzar resize/update de Chart.js para asegurar render correcto
+                try {
+                    const byCanvas = viewBy.querySelector('canvas');
+                    const evoCanvas = viewEvo.querySelector('canvas');
+                    if (byCanvas) {
+                        const ch = Chart.getChart(byCanvas.id);
+                        if (ch) { ch.resize(); ch.update(); }
+                    }
+                    if (evoCanvas) {
+                        const ch2 = Chart.getChart(evoCanvas.id);
+                        if (ch2) { ch2.resize(); ch2.update(); }
+                    }
+                } catch (err) { console.warn('chart toggle resize error', err); }
+            }
+
+            btnBars.addEventListener('click', function() { setView(false); });
+            btnLines.addEventListener('click', function() { setView(true); });
+            // Por defecto: mostrar comparativa por grupo
+            setView(false);
+        })();
+        </script>
+        '''
+        return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
+
     def _get_semaphore_color(self, value):
         """Retorna color semáforo según valor normalizado 0-100."""
         if value >= 80:
