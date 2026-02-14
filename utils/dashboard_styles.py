@@ -275,88 +275,120 @@ def get_common_styles():
             color: #475569;
         }
         
-        /* ==================== FILTROS ==================== */
-        .filter-panel {
-            background: white;
-            border-radius: 12px;
+        /* ==================== FILTROS MODERNOS ==================== */
+        .filter-panel-compact {
+            background: linear-gradient(to bottom, #ffffff, #f8fafc);
             border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 24px 28px;
             margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .filter-header {
-            padding: 16px 20px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            cursor: pointer;
-            user-select: none;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #e2e8f0;
         }
         
-        .filter-content {
-            padding: 20px;
-            border-top: 1px solid #e2e8f0;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
+        .filter-header i {
+            color: #3b82f6;
+            font-size: 18px;
+            flex-shrink: 0;
         }
         
-        .filter-content.show {
-            max-height: 2000px;
-        }
-        
-        .filter-section {
-            margin-bottom: 20px;
-        }
-        
-        .filter-section label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .filter-header span {
             font-weight: 600;
             color: #0f172a;
-            margin-bottom: 12px;
+            font-size: 15px;
+            letter-spacing: -0.01em;
+            flex-shrink: 0;
         }
         
         .filter-pills-container {
             display: flex;
-            flex-wrap: wrap;
             gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            min-height: 38px;
         }
         
         .filter-pill {
             display: inline-flex;
             align-items: center;
             padding: 8px 16px;
-            background: #f1f5f9;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 20px;
-            color: #64748b;
-            font-size: 13px;
-            font-weight: 500;
+            background: #f8fafc;
+            color: #475569;
+            border-radius: 24px;
             cursor: pointer;
             transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+            border: 2px solid #e2e8f0;
             user-select: none;
-            white-space: nowrap;
         }
         
         .filter-pill:hover {
-            background: #e2e8f0;
-            border-color: #cbd5e1;
-            color: #475569;
-            transform: translateY(-1px);
+            background: #e0e7ff;
+            border-color: #c7d2fe;
+            color: #3730a3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
         }
         
         .filter-pill.active {
-            background: #3b82f6;
-            border-color: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+            border-color: #2563eb;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
         }
         
-        .filter-pill.active:hover {
-            background: #2563eb;
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+        
+        .btn-filter-action {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-filter-action:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        
+        .btn-filter-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
             border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        .btn-filter-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-filter-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         /* ==================== ESTADO VACÍO ==================== */
