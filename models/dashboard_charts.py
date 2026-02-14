@@ -207,7 +207,7 @@ class DashboardCharts(models.TransientModel):
         
         # 2. Preguntas de opciones múltiples (dinámicas desde metric_value)
         MetricValue = self.env['aulametrics.metric_value']
-        SurveyQuestion = self.env['survey.question']
+        SurveyQuestion = self.env['survey.question'].sudo()  # sudo() para lectura de metadatos de encuestas
         
         # Dominio base respetando permisos de rol
         domain = [('metric_name', 'like', 'question_%_choices')]
@@ -455,9 +455,15 @@ class DashboardCharts(models.TransientModel):
         
         # Gráfico principal según rol
         if role == 'management':
-            charts_html += self._chart_numeric_by_course(df, label, segmentation_vars)
-            if has_evolution:
-                charts_html += self._chart_numeric_evolution_by_course(df, label)
+            # Management usa la misma UI que counselor pero con datos por curso
+            by_courses_html = self._chart_numeric_by_course(df, label, segmentation_vars)
+            evo_html = self._chart_numeric_evolution_by_course(df, label) if has_evolution else ''
+            
+            if by_courses_html and evo_html:
+                charts_html += self._chart_numeric_with_toggle(by_courses_html, evo_html, label, 'curso')
+            else:
+                charts_html += by_courses_html or evo_html
+                
         elif role == 'tutor':
             charts_html += self._chart_numeric_distribution(df, label, segmentation_vars)
             if has_evolution:
@@ -465,21 +471,24 @@ class DashboardCharts(models.TransientModel):
         else:  # counselor/admin
             # Generar ambas vistas por separado y, si existen las dos, combinarlas
             by_groups_html = self._chart_numeric_by_groups(df, label, segmentation_vars)
-            evo_html = self._chart_numeric_evolution_by_groups(df, label)
+            evo_html = self._chart_numeric_evolution_by_groups(df, label) if has_evolution else ''
 
             if by_groups_html and evo_html:
-                charts_html += self._chart_numeric_groups_with_toggle(by_groups_html, evo_html, label, segmentation_vars)
+                charts_html += self._chart_numeric_with_toggle(by_groups_html, evo_html, label, 'grupo')
             else:
                 charts_html += by_groups_html or evo_html
 
         return charts_html
 
-    def _chart_numeric_groups_with_toggle(self, by_groups_html, evo_html, label, segmentation_vars):
-        """Combina la card de comparativa por grupo y la de evolución en una sola card con un switch.
+    def _chart_numeric_with_toggle(self, by_groups_html, evo_html, label, tipo='grupo'):
+        """Combina la card de comparativa por grupo/curso y la de evolución en una sola card con un switch.
 
         - Preserva IDs de canvas/controls ya generados por las funciones hijas.
         - Oculta los headers internos (solo se muestra el header combinado).
         - Fuerza resize/update de Chart.js al alternar vistas.
+        
+        Args:
+            tipo: 'grupo' para counselor o 'curso' para management
         """
         if not by_groups_html and not evo_html:
             return ''
@@ -492,16 +501,20 @@ class DashboardCharts(models.TransientModel):
         wrapper_by = f'view_by_{safe_id}'
         wrapper_evo = f'view_evo_{safe_id}'
         toggle_id = f'toggle_{safe_id}'
+        
+        # Subtítulo dinámico según el tipo
+        subtitle = f"Comparativa por {tipo} · Evolución temporal"
+        comparativa_title = f"Comparativa por {tipo}"
 
         html = '''
         <div class="card">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
                 <div>
                     <h5 class="card-title">__LABEL__</h5>
-                    <p class="card-subtitle">Comparativa por grupo · Evolución temporal</p>
+                    <p class="card-subtitle">__SUBTITLE__</p>
                 </div>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <button id="__TOGGLE_ID___bars" class="btn btn-sm btn-outline-primary active" style="padding:6px 10px;" title="Comparativa por grupo">
+                    <button id="__TOGGLE_ID___bars" class="btn btn-sm btn-outline-primary active" style="padding:6px 10px;" title="__COMPARATIVA_TITLE__">
                         <i class="fa fa-bar-chart"></i>
                     </button>
                     <button id="__TOGGLE_ID___lines" class="btn btn-sm btn-outline-primary" style="padding:6px 10px;" title="Evolución temporal">
@@ -561,12 +574,12 @@ class DashboardCharts(models.TransientModel):
 
             btnBars.addEventListener('click', function() { setView(false); });
             btnLines.addEventListener('click', function() { setView(true); });
-            // Por defecto: mostrar comparativa por grupo
+            // Por defecto: mostrar comparativa por grupo/curso
             setView(false);
         })();
         </script>
         '''
-        return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
+        return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__SUBTITLE__', subtitle).replace('__COMPARATIVA_TITLE__', comparativa_title).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
 
     def _get_semaphore_color(self, value):
         """Retorna color semáforo según valor normalizado 0-100."""
@@ -651,7 +664,7 @@ class DashboardCharts(models.TransientModel):
                 <p class="card-subtitle">Tendencia temporal por curso académico</p>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="240"></canvas>
+                <canvas id="{chart_id}" height="260"></canvas>
             </div>
         </div>
         
@@ -670,17 +683,18 @@ class DashboardCharts(models.TransientModel):
                         position: 'top',
                         labels: {{
                             usePointStyle: true,
-                            padding: 12,
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#64748b'
+                            padding: 10,
+                            font: {{ size: 10, family: "'Inter', sans-serif" }},
+                            color: '#64748b',
+                            boxWidth: 8
                         }}
                     }},
                     tooltip: {{
                         backgroundColor: '#1e293b',
-                        padding: 14,
-                        cornerRadius: 8,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        padding: 12,
+                        cornerRadius: 6,
+                        titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
+                        bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
                         callbacks: {{
                             title: function(context) {{
                                 return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
@@ -948,9 +962,10 @@ class DashboardCharts(models.TransientModel):
         
         # Preparar datos generales
         for idx, curso in enumerate(cursos):
-            df_curso = df[df['curso'] == curso]['value_numeric'].dropna()
-            if len(df_curso) > 0:
-                mean_val = float(df_curso.mean())
+            df_curso = df[df['curso'] == curso]
+            df_curso_values = df_curso['value_numeric'].dropna()
+            if len(df_curso_values) > 0:
+                mean_val = float(df_curso_values.mean())
                 n_alumnos = len(df_curso['student_id'].unique())
                 n_grupos = len(df_curso['group_id'].unique())
                 stats.append({
@@ -1025,7 +1040,7 @@ class DashboardCharts(models.TransientModel):
                             data['mean'] = data['sum'] / data['count']
                             del data['sum']
         
-        chart_id = f'chart_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        chart_id = f'chart_cursos_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
         labels = [s['curso'] for s in stats]
         means = [s['mean'] for s in stats]
         colors = [s['color'] for s in stats]
@@ -1034,26 +1049,27 @@ class DashboardCharts(models.TransientModel):
         metric_name = df.iloc[0]['metric_name'] if not df.empty else None
         thresholds = self._get_thresholds_for_metric(metric_name) if metric_name else []
         
+        chart_height = min(350, max(200, len(stats) * 25))
         segment_options_html = self._build_segment_options_html(segmentation_vars)
         
         return f'''
         <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
                     <h5 class="card-title">{label}</h5>
-                    <p class="card-subtitle">Media por curso académico</p>
+                    <p class="card-subtitle">Comparativa por curso</p>
                 </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <select id="segment_{chart_id}" style="padding: 6px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; color: #64748b; min-width: 160px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="segment_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;">
                         {segment_options_html}
                     </select>
-                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; color: #64748b;" title="Cambiar orden">
-                        ↕️ Orden
+                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                        Ordenar
                     </button>
                 </div>
             </div>
-            <div class="card-body">
-                <canvas id="{chart_id}" height="220"></canvas>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <canvas id="{chart_id}" height="{chart_height}"></canvas>
             </div>
         </div>
         
@@ -1117,33 +1133,34 @@ class DashboardCharts(models.TransientModel):
                     ]
                 }},
                 options: {{
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {{
                         legend: {{ display: false }},
                         tooltip: {{
                             backgroundColor: '#1e293b',
-                            padding: 14,
-                            cornerRadius: 8,
-                            titleFont: {{ family: "'Inter', sans-serif", size: 14, weight: '600' }},
-                            bodyFont: {{ family: "'Inter', sans-serif", size: 13 }}
+                            padding: 12,
+                            cornerRadius: 6,
+                            titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
+                            bodyFont: {{ family: "'Inter', sans-serif", size: 12 }}
                         }}
                     }},
                     scales: {{
                         x: {{
-                            grid: {{ display: false, drawBorder: false }},
-                            ticks: {{
-                                font: {{ size: 12, family: "'Inter', sans-serif" }},
-                                color: '#64748b'
-                            }}
-                        }},
-                        y: {{
                             beginAtZero: true,
                             max: 100,
                             grid: {{ color: '#f1f5f9', drawBorder: false }},
                             ticks: {{
                                 font: {{ size: 11, family: "'Inter', sans-serif" }},
                                 color: '#94a3b8'
+                            }}
+                        }},
+                        y: {{
+                            grid: {{ display: false, drawBorder: false }},
+                            ticks: {{
+                                font: {{ size: 11, family: "'Inter', sans-serif", weight: '500' }},
+                                color: '#0f172a'
                             }}
                         }}
                     }}
@@ -1194,6 +1211,7 @@ class DashboardCharts(models.TransientModel):
                     }});
                     
                     chart.options.plugins.legend.display = true;
+                    chart.options.plugins.legend.position = 'top';
                     // Añadir umbrales
                     chart.data.datasets.push(...createThresholdDatasets(chart.data.labels.length));
                 }} else {{

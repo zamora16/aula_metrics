@@ -113,7 +113,7 @@ class QualitativeDashboardController(http.Controller):
             has_text_questions = False
             for survey in evaluation.survey_ids:
                 # Buscar preguntas de tipo texto en la encuesta
-                text_questions = request.env['survey.question'].search([
+                text_questions = request.env['survey.question'].sudo().search([
                     ('survey_id', '=', survey.id),
                     ('question_type', 'in', ['text_box', 'char_box'])
                 ], limit=1)

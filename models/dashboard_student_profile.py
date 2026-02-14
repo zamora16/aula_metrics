@@ -625,7 +625,7 @@ class DashboardStudentProfile(models.TransientModel):
                         <div class="container-fluid">
                 <div class="filters-bar">
                     <div class="flex-grow-1">
-                        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar por nombre, email o grupo...">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre...">
                     </div>
                     <div style="min-width: 250px;">
                         <select id="groupFilter" class="form-select">

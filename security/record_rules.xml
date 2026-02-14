@@ -13,12 +13,12 @@
             <field name="perm_unlink" eval="False"/>
         </record>
 
-        <!-- Los orientadores y administradores ven todos los grupos -->
+        <!-- Los orientadores, dirección y administradores ven todos los grupos -->
         <record id="academic_group_counselor_admin_rule" model="ir.rule">
-            <field name="name">Orientadores/Admins: todos los grupos</field>
+            <field name="name">Orientadores/Admins/Dirección: todos los grupos</field>
             <field name="model_id" ref="model_aulametrics_academic_group"/>
             <field name="domain_force">[(1, '=', 1)]</field>
-            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
         </record>
 
         <!-- Umbrales: todos los grupos pueden ver todos los umbrales -->
@@ -64,7 +64,7 @@
         <!-- Dashboard de Alertas: acceso global para todos los grupos -->
         <record id="alerts_dashboard_all_rule" model="ir.rule">
             <field name="name">Dashboard Alertas: acceso global</field>
-            <field name="model_id" ref="model_alerts_dashboard"/>
+            <field name="model_id" ref="model_aulametrics_alerts_dashboard"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_tutor')), (4, ref('group_aulametrics_management'))]"/>
         </record>
