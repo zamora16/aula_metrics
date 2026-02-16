@@ -422,12 +422,12 @@ def get_common_styles():
         }
         
         .welcome-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
             padding: 48px 40px;
             border-radius: 16px;
             margin-bottom: 32px;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
         }
         
         .welcome-banner h2 {
@@ -442,6 +442,236 @@ def get_common_styles():
             font-size: 16px;
             opacity: 0.95;
             margin: 0;
+        }
+        
+        /* ==================== ESTADÍSTICAS RÁPIDAS ==================== */
+        .quick-stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .stat-icon.blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .stat-icon.green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .stat-icon.red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .stat-icon.purple {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .stat-content {
+            flex: 1;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1;
+        }
+        
+        /* ==================== EVALUACIONES ACTIVAS ==================== */
+        .evaluations-section {
+            margin-top: 32px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #3b82f6;
+        }
+        
+        .evaluations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        .evaluation-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .evaluation-card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+        
+        .evaluation-card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .evaluation-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .evaluation-card-body {
+            padding: 20px;
+        }
+        
+        .evaluation-info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #475569;
+        }
+        
+        .evaluation-info-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .evaluation-info-item i {
+            width: 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 16px;
+        }
+        
+        .evaluation-info-label {
+            font-weight: 500;
+            color: #64748b;
+            min-width: 100px;
+        }
+        
+        .evaluation-info-value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        
+        .participation-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .participation-badge.high {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .participation-badge.medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .participation-badge.low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .alerts-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .alerts-badge.zero {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .empty-evaluations {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        
+        .empty-evaluations i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+        
+        .empty-evaluations h3 {
+            color: #64748b;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 16px 0 8px;
+        }
+        
+        .empty-evaluations p {
+            color: #94a3b8;
+            font-size: 14px;
         }
         
         /* ==================== CHARTS ==================== */
@@ -552,6 +782,22 @@ def get_common_styles():
             
             .kpi-container {
                 grid-template-columns: 1fr;
+            }
+            
+            .evaluations-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .welcome-banner {
+                padding: 32px 24px;
+            }
+            
+            .welcome-banner h2 {
+                font-size: 24px;
             }
         }
         

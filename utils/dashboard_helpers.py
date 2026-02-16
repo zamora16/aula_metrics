@@ -238,3 +238,97 @@ def sanitize_id(text):
         str: ID válido
     """
     return text.replace(' ', '_').replace('/', '_').replace('.', '_').replace('(', '').replace(')', '')
+
+
+# ==================== HTML BUILDER HELPERS ====================
+
+def build_chart_card_header(label, subtitle, chart_id, segment_options_html=''):
+    """
+    Genera el header de una card de chart con título, subtítulo y selector de segmentación.
+    
+    Args:
+        label (str): Título de la card
+        subtitle (str): Subtítulo/descripción
+        chart_id (str): ID único del chart (para vincular al selector)
+        segment_options_html (str): HTML de opciones de segmentación (opcional)
+    
+    Returns:
+        str: HTML del card-header completo
+    """
+    segment_selector = ''
+    if segment_options_html:
+        segment_selector = f'''
+                <select id="segment_{chart_id}" class="chart-segment-selector">
+                    {segment_options_html}
+                </select>'''
+    
+    return f'''
+            <div class="card-header chart-card-header">
+                <div>
+                    <h5 class="card-title">{label}</h5>
+                    <p class="card-subtitle">{subtitle}</p>
+                </div>{segment_selector}
+            </div>'''
+
+
+def get_segment_colors_js():
+    """
+    Retorna el objeto JavaScript de colores para segmentación.
+    Esta es la paleta estándar usada en todos los charts.
+    
+    Returns:
+        str: Código JavaScript del objeto segmentColors
+    """
+    return """const segmentColors = {
+                'Masculino': '#3b82f6',
+                'Femenino': '#ec4899',
+                'Otro': '#94a3b8',
+                'Prefiere no decir': '#64748b',
+                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
+            };"""
+
+
+def get_chart_card_styles():
+    """
+    Retorna los estilos CSS para elementos de chart cards.
+    Estos estilos se aplican inline para charts dinámicos.
+    
+    Returns:
+        dict: Diccionario con clases CSS como keys y estilos como values
+    """
+    return {
+        'chart-card-header': 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;',
+        'chart-segment-selector': 'padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;'
+    }
+
+
+def format_participation_rate(rate):
+    """
+    Formatea un porcentaje de participación.
+    
+    Args:
+        rate (float): Porcentaje (0-100)
+    
+    Returns:
+        str: Porcentaje formateado como "XX.X%"
+    """
+    try:
+        return f"{float(rate):.1f}%"
+    except (ValueError, TypeError):
+        return "0.0%"
+
+
+def format_date_range(date_start, date_end):
+    """
+    Formatea un rango de fechas.
+    
+    Args:
+        date_start: Fecha de inicio (date, datetime o string)
+        date_end: Fecha de fin (date, datetime o string)
+    
+    Returns:
+        str: Rango formateado como "DD/MM/YYYY - DD/MM/YYYY"
+    """
+    start_formatted = format_date(date_start, '%d/%m/%Y')
+    end_formatted = format_date(date_end, '%d/%m/%Y')
+    return f"{start_formatted} - {end_formatted}"

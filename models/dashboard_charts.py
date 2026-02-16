@@ -2166,6 +2166,270 @@ class DashboardCharts(models.TransientModel):
         """
     
     def _home_section(self, metrics, groups, evaluations, filters, role_info):
+        """Sección Home con evaluaciones activas y estadísticas."""
+        try:
+            # Obtener evaluaciones activas
+            active_evaluations = self._get_active_evaluations(role_info)
+            
+            # Generar tarjetas de evaluación
+            evaluation_cards_html = self._build_evaluation_cards(active_evaluations, role_info)
+            
+            # Generar estadísticas rápidas
+            quick_stats_html = self._build_quick_stats(active_evaluations, role_info)
+            
+            return f"""
+    <div class="home-section">
+        <div class="welcome-banner">
+            <h2>
+                <i class="fa-solid fa-hand-wave me-3" style="color: #fbbf24;"></i>
+                Bienvenido al Dashboard de AulaMetrics
+            </h2>
+            <p>Panel de control para el seguimiento del bienestar del alumnado</p>
+        </div>
+        
+        {quick_stats_html}
+        
+        <div class="evaluations-section">
+            <h3 class="section-title">
+                <i class="fa-solid fa-clipboard-check"></i>
+                Evaluaciones Activas
+            </h3>
+            {evaluation_cards_html}
+        </div>
+    </div>
+            """
+        except Exception as e:
+            # Si ocurre error, mostrar vista simplificada con estilos
+            return f"""
+    <div class="home-section">
+        <div class="welcome-banner">
+            <h2>
+                <i class="fa-solid fa-hand-wave me-3" style="color: #fbbf24;"></i>
+                Bienvenido al Dashboard de AulaMetrics
+            </h2>
+            <p>Utiliza el menú lateral para navegar entre las diferentes secciones</p>
+        </div>
+        <div class="empty-state">
+            <i class="fa-solid fa-exclamation-triangle fa-3x"></i>
+            <h3>Error al cargar las evaluaciones</h3>
+            <p>Por favor, contacte al administrador del sistema</p>
+        </div>
+    </div>
+            """
+    
+    def _get_active_evaluations(self, role_info):
+        """
+        Obtiene las evaluaciones activas filtradas por rol.
+        
+        Args:
+            role_info (dict): Información del rol del usuario
+        
+        Returns:
+            list: Lista de dicts con información de evaluaciones activas
+        """
+        Evaluation = self.env['aulametrics.evaluation']
+        
+        # Filtro base: solo evaluaciones activas
+        domain = [('state', '=', 'active')]
+        
+        # Filtrar por rol tutor: solo evaluaciones de sus grupos
+        if role_info.get('role') == 'tutor':
+            allowed_groups = role_info.get('allowed_group_ids', [])
+            if allowed_groups:
+                domain.append(('academic_group_ids', 'in', allowed_groups))
+            else:
+                return []  # Tutor sin grupos asignados
+        
+        # Buscar evaluaciones
+        evaluations = Evaluation.search(domain, order='date_start desc')
+        
+        result = []
+        for evaluation in evaluations:
+            eval_data = {
+                'id': evaluation.id,
+                'name': evaluation.name,
+                'date_start': evaluation.date_start,
+                'date_end': evaluation.date_end,
+                'participation_rate': evaluation.participation_rate,
+                'total_students': evaluation.total_students,
+                'completed_students': evaluation.completed_students,
+            }
+            
+            # Contar alertas activas relacionadas (solo para counselor/admin)
+            if role_info.get('role') in ['admin', 'counselor']:
+                Alert = self.env['aulametrics.alert']
+                alert_count = Alert.search_count([
+                    ('participation_id.evaluation_id', '=', evaluation.id),
+                    ('status', '=', 'active')
+                ])
+                eval_data['alert_count'] = alert_count
+            
+            result.append(eval_data)
+        
+        return result
+    
+    def _build_evaluation_cards(self, evaluations, role_info):
+        """
+        Construye el HTML de las tarjetas de evaluaciones.
+        
+        Args:
+            evaluations (list): Lista de evaluaciones
+            role_info (dict): Información del rol del usuario
+        
+        Returns:
+            str: HTML de las tarjetas
+        """
+        if not evaluations:
+            return """
+            <div class="empty-evaluations">
+                <i class="fa-solid fa-clipboard-question"></i>
+                <h3>No hay evaluaciones activas</h3>
+                <p>No se encontraron evaluaciones activas en este momento</p>
+            </div>
+            """
+        
+        cards_html = '<div class="evaluations-grid">'
+        
+        for evaluation in evaluations:
+            # Formatear datos
+            date_range = dashboard_helpers.format_date_range(
+                evaluation['date_start'], 
+                evaluation['date_end']
+            )
+            participation = dashboard_helpers.format_participation_rate(
+                evaluation['participation_rate']
+            )
+            
+            # Determinar clase de badge de participación
+            rate = evaluation['participation_rate']
+            if rate >= 80:
+                participation_class = 'high'
+            elif rate >= 50:
+                participation_class = 'medium'
+            else:
+                participation_class = 'low'
+            
+            # HTML de alertas (solo para counselor/admin)
+            alerts_html = ''
+            if role_info.get('role') in ['admin', 'counselor']:
+                alert_count = evaluation.get('alert_count', 0)
+                alert_badge_class = 'zero' if alert_count == 0 else ''
+                alert_icon = 'fa-check-circle' if alert_count == 0 else 'fa-exclamation-triangle'
+                alerts_html = f"""
+                <div class="evaluation-info-item">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="evaluation-info-label">Alertas:</span>
+                    <span class="alerts-badge {alert_badge_class}">
+                        <i class="fa-solid {alert_icon}"></i>
+                        {alert_count}
+                    </span>
+                </div>
+                """
+            
+            cards_html += f"""
+            <div class="evaluation-card">
+                <div class="evaluation-card-header">
+                    <h4 class="evaluation-card-title">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        {evaluation['name']}
+                    </h4>
+                </div>
+                <div class="evaluation-card-body">
+                    <div class="evaluation-info-item">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span class="evaluation-info-label">Período:</span>
+                        <span class="evaluation-info-value">{date_range}</span>
+                    </div>
+                    <div class="evaluation-info-item">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span class="evaluation-info-label">Participación:</span>
+                        <span class="participation-badge {participation_class}">{participation}</span>
+                    </div>
+                    <div class="evaluation-info-item">
+                        <i class="fa-solid fa-users"></i>
+                        <span class="evaluation-info-label">Completados:</span>
+                        <span class="evaluation-info-value">{evaluation['completed_students']} / {evaluation['total_students']}</span>
+                    </div>
+                    {alerts_html}
+                </div>
+            </div>
+            """
+        
+        cards_html += '</div>'
+        return cards_html
+    
+    def _build_quick_stats(self, evaluations, role_info):
+        """
+        Genera las estadísticas rápidas.
+        
+        Args:
+            evaluations (list): Lista de evaluaciones
+            role_info (dict): Información del rol del usuario
+        
+        Returns:
+            str: HTML de las estadísticas
+        """
+        # Calcular estadísticas
+        total_evaluations = len(evaluations)
+        
+        # Participación promedio
+        if evaluations:
+            avg_participation = sum(e['participation_rate'] for e in evaluations) / len(evaluations)
+        else:
+            avg_participation = 0.0
+        
+        # Total de alertas (solo para counselor/admin)
+        total_alerts = 0
+        if role_info.get('role') in ['admin', 'counselor']:
+            total_alerts = sum(e.get('alert_count', 0) for e in evaluations)
+        
+        # Construir HTML
+        stats_html = '<div class="quick-stats-container">'
+        
+        # Stat 1: Total evaluaciones activas
+        stats_html += f"""
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Evaluaciones Activas</div>
+                <div class="stat-value">{total_evaluations}</div>
+            </div>
+        </div>
+        """
+        
+        # Stat 2: Participación promedio
+        stats_html += f"""
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Participación Promedio</div>
+                <div class="stat-value">{dashboard_helpers.format_participation_rate(avg_participation)}</div>
+            </div>
+        </div>
+        """
+        
+        # Stat 3: Alertas activas (solo counselor/admin)
+        if role_info.get('role') in ['admin', 'counselor']:
+            stats_html += f"""
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Alertas Activas</div>
+                <div class="stat-value">{total_alerts}</div>
+            </div>
+        </div>
+            """
+        
+        stats_html += '</div>'
+        return stats_html
+
+    def _home_section_old(self, metrics, groups, evaluations, filters, role_info):
         """Sección Home simplificada."""
         return f"""
     <div class="home-section">

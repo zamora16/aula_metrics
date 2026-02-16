@@ -47,8 +47,9 @@ def get_sidebar(role_info=None, active_section='home'):
     return f"""
     <aside class="sidebar">
         <div class="sidebar-header">
-            <i class="fa-solid fa-gauge-high"></i>
-            <span>AulaMetrics</span>
+            <img src="/aula_metrics/static/src/img/Logo_1024.png" 
+                 alt="AulaMetrics" 
+                 style="max-width: 180px; height: auto; display: block; margin: 0 auto;"/>
         </div>
         
         <nav class="sidebar-nav">
