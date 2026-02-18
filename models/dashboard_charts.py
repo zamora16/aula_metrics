@@ -7,7 +7,7 @@ import pandas as pd
 import json
 
 # Importar utilidades compartidas
-from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers
+from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
 
 class DashboardCharts(models.TransientModel):
     _name = 'aulametrics.dashboard.charts'
@@ -627,7 +627,7 @@ class DashboardCharts(models.TransientModel):
             return ''
         
         cursos = sorted(df['curso'].unique())
-        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16']
+        color_palette = palette.METRICS_PALETTE
         
         # Preparar datasets por curso
         datasets = []
@@ -910,7 +910,7 @@ class DashboardCharts(models.TransientModel):
             return ''
         
         grupos = sorted(df['group_name'].unique())
-        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#f43f5e', '#14b8a6']
+        color_palette = palette.METRICS_PALETTE
         
         # Preparar datasets por grupo
         datasets = []
@@ -1024,7 +1024,7 @@ class DashboardCharts(models.TransientModel):
         stats = []
         
         # Paleta de colores consistente para cursos
-        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16']
+        color_palette = palette.METRICS_PALETTE
         
         # Preparar datos generales
         for idx, curso in enumerate(cursos):
@@ -1131,7 +1131,7 @@ class DashboardCharts(models.TransientModel):
                     <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
                         {segment_options_html}
                     </select>
-                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-primary-100')" onmouseout="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-bg')">
                         Ordenar
                     </button>
                 </div>
@@ -1326,7 +1326,7 @@ class DashboardCharts(models.TransientModel):
         # Crear bins (rangos) para el histograma
         bins = [0, 40, 60, 80, 100]
         bin_labels = ['0-40 (Bajo)', '40-60 (Medio-Bajo)', '60-80 (Medio-Alto)', '80-100 (Alto)']
-        bin_colors = ['#3b82f6', '#60a5fa', '#fb923c', '#f97316']
+        bin_colors = palette.BIN_COLORS
         
         # Contar cuántos alumnos en cada rango
         counts = []
@@ -1535,7 +1535,7 @@ class DashboardCharts(models.TransientModel):
         stats = []
         
         # Paleta de colores para grupos
-        color_palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#f43f5e', '#14b8a6']
+        color_palette = palette.METRICS_PALETTE
         
         for idx, grupo in enumerate(grupos):
             df_grupo = df[df['group_name'] == grupo]['value_numeric'].dropna()
@@ -1643,7 +1643,7 @@ class DashboardCharts(models.TransientModel):
                     <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
                         {segment_options_html}
                     </select>
-                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-primary-100')" onmouseout="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-bg')">
                         Ordenar
                     </button>
                 </div>
@@ -2038,8 +2038,8 @@ class DashboardCharts(models.TransientModel):
             <div class="content-section" id="section-qualitative">
                 <div id="qualitativeContent">
                     <div style="text-align: center; padding: 60px 20px;">
-                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
-                        <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: var(--am-primary);"></i>
+                        <p style="margin-top: 20px; color: var(--am-muted);">Cargando datos cualitativos...</p>
                     </div>
                 </div>
             </div>
@@ -2103,8 +2103,8 @@ class DashboardCharts(models.TransientModel):
             <div class="content-section" id="section-qualitative">
                 <div id="qualitativeContent">
                     <div style="text-align: center; padding: 60px 20px;">
-                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
-                        <p style="margin-top: 20px; color: #64748b;">Cargando datos cualitativos...</p>
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 48px; color: var(--am-primary);"></i>
+                        <p style="margin-top: 20px; color: var(--am-muted);">Cargando datos cualitativos...</p>
                     </div>
                 </div>
             </div>
@@ -2191,7 +2191,6 @@ class DashboardCharts(models.TransientModel):
         
         <div class="evaluations-section">
             <h3 class="section-title">
-                <i class="fa-solid fa-clipboard-check"></i>
                 Evaluaciones Activas
             </h3>
             {evaluation_cards_html}
@@ -2559,7 +2558,7 @@ class DashboardCharts(models.TransientModel):
                     // Mostrar error
                     if (kpiContainer) {
                         kpiContainer.style.opacity = '1';
-                        kpiContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 32px; color: #ef4444;"></i><p style="margin-top: 12px; color: #64748b;">Error al cargar datos. Intenta de nuevo.</p></div>';
+                        kpiContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 32px; color: var(--am-danger);"></i><p style="margin-top: 12px; color: var(--am-muted);">Error al cargar datos. Intenta de nuevo.</p></div>'; 
                     }
                     if (chartsContainer) {
                         chartsContainer.style.opacity = '1';
@@ -2637,7 +2636,7 @@ class DashboardCharts(models.TransientModel):
                     }, 500);
                 })
                 .catch(error => {
-                    contentDiv.innerHTML = '<div style="text-align: center; padding: 60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 48px; color: #ef4444;"></i><p style="margin-top: 20px; color: #64748b;">Error al cargar datos cualitativos</p></div>';
+                    contentDiv.innerHTML = '<div style="text-align: center; padding: 60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size: 48px; color: var(--am-danger);"></i><p style="margin-top: 20px; color: var(--am-muted);">Error al cargar datos cualitativos</p></div>'; 
                     console.error('Error cargando datos cualitativos:', error);
                 });
         }

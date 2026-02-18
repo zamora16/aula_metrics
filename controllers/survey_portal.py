@@ -54,12 +54,12 @@ class AulaMetricsSurveyPortal(http.Controller):
                 'error_title': 'Evaluación no disponible',
                 'error_message': 'Esta evaluación aún no está disponible.'
             })
-        
+
         survey_status = self._get_surveys_status(participation)
         completed_count = len([s for s in survey_status if s['completed']])
         total_count = len(survey_status)
         progress = int((completed_count / total_count * 100) if total_count > 0 else 0)
-        
+
         return request.render('aula_metrics.portal_evaluacion', {
             'participation': participation.sudo(),
             'evaluation': evaluation,
@@ -89,10 +89,27 @@ class AulaMetricsSurveyPortal(http.Controller):
                 'error_message': 'La encuesta solicitada no está disponible.'
             })
         
-        user_input = self._get_or_create_user_input(participation, survey)
-        
-        if user_input.state == 'done':
+        # If any completed user_input exists for this student/survey during the evaluation window,
+        # redirect immediately (prevents reopening a survey that was just finished).
+        # If there exists any completed user_input within the evaluation window (or if evaluation is active, up to date_end), prevent re-opening
+        eval_rec = participation.evaluation_id
+        done_domain = [
+            ('partner_id', '=', participation.student_id.id),
+            ('survey_id', '=', survey.id),
+            ('state', '=', 'done'),
+        ]
+        if eval_rec and eval_rec.state == 'active':
+            if eval_rec.date_end:
+                done_domain.append(('create_date', '<=', eval_rec.date_end))
+        else:
+            if eval_rec and eval_rec.date_start:
+                done_domain.append(('create_date', '>=', eval_rec.date_start))
+
+        done_exists = request.env['survey.user_input'].sudo().search_count(done_domain)
+        if done_exists:
             return request.redirect(f'/evaluacion/{token}?msg=completada')
+
+        user_input = self._get_or_create_user_input(participation, survey)
         
         questions_data = self._prepare_questions_data(survey, user_input)
         
@@ -132,9 +149,10 @@ class AulaMetricsSurveyPortal(http.Controller):
         
         try:
             self._process_answers(survey, user_input, post)
-            user_input.sudo().write({'state': 'done'})
-            user_input.sudo()._mark_done()
-            
+            user_input = user_input.sudo()
+            user_input.write({'state': 'done'})
+            user_input._mark_done()
+
             return request.redirect(f'/evaluacion/{token}?msg=guardado')
             
         except Exception:
@@ -156,18 +174,49 @@ class AulaMetricsSurveyPortal(http.Controller):
         result = []
         
         for survey in surveys:
-            user_input = request.env['survey.user_input'].sudo().search([
-                ('partner_id', '=', participation.student_id.id),
-                ('survey_id', '=', survey.id),
-                ('create_date', '>=', participation.evaluation_id.date_start)
-            ], limit=1)
-            
-            is_completed = user_input.state == 'done' if user_input else False
-            
+            # Prefer the most recent 'done' user_input for completion status; otherwise return the most recent user_input
+            # Determine evaluation window rules: when evaluation is already 'active'
+            # accept any recent 'done' user_input up to date_end; otherwise restrict to create_date >= date_start.
+            eval_rec = participation.evaluation_id
+            if eval_rec and eval_rec.state == 'active':
+                done_domain = [
+                    ('partner_id', '=', participation.student_id.id),
+                    ('survey_id', '=', survey.id),
+                    ('state', '=', 'done')
+                ]
+                if eval_rec.date_end:
+                    done_domain.append(('create_date', '<=', eval_rec.date_end))
+                done_ui = request.env['survey.user_input'].sudo().search(done_domain, order='create_date desc', limit=1)
+            else:
+                done_ui = request.env['survey.user_input'].sudo().search([
+                    ('partner_id', '=', participation.student_id.id),
+                    ('survey_id', '=', survey.id),
+                    ('state', '=', 'done'),
+                    ('create_date', '>=', participation.evaluation_id.date_start)
+                ], order='create_date desc', limit=1)
+
+            if done_ui:
+                is_completed = True
+                ui_for_return = done_ui
+            else:
+                # fallback: most recent user_input for this student/survey (respecting evaluation window when not active)
+                if eval_rec and eval_rec.state == 'active':
+                    ui_for_return = request.env['survey.user_input'].sudo().search([
+                        ('partner_id', '=', participation.student_id.id),
+                        ('survey_id', '=', survey.id),
+                    ], order='create_date desc', limit=1)
+                else:
+                    ui_for_return = request.env['survey.user_input'].sudo().search([
+                        ('partner_id', '=', participation.student_id.id),
+                        ('survey_id', '=', survey.id),
+                        ('create_date', '>=', participation.evaluation_id.date_start)
+                    ], order='create_date desc', limit=1)
+                is_completed = False
+
             result.append({
                 'survey': survey.sudo(),
                 'completed': is_completed,
-                'user_input': user_input,
+                'user_input': ui_for_return,
                 'url': f'/evaluacion/{participation.evaluation_token}/encuesta/{survey.id}'
             })
         
@@ -177,12 +226,20 @@ class AulaMetricsSurveyPortal(http.Controller):
         """Obtiene o crea user_input para la participación."""
         SurveyUserInput = request.env['survey.user_input'].sudo()
         
-        user_input = SurveyUserInput.search([
-            ('partner_id', '=', participation.student_id.id),
-            ('survey_id', '=', survey.id),
-            ('create_date', '>=', participation.evaluation_id.date_start)
-        ], limit=1)
-        
+        # Prefer most recent user_input; when evaluation is not active restrict to those created during the evaluation window
+        eval_rec = participation.evaluation_id
+        if eval_rec and eval_rec.state == 'active':
+            user_input = SurveyUserInput.search([
+                ('partner_id', '=', participation.student_id.id),
+                ('survey_id', '=', survey.id),
+            ], order='create_date desc', limit=1)
+        else:
+            user_input = SurveyUserInput.search([
+                ('partner_id', '=', participation.student_id.id),
+                ('survey_id', '=', survey.id),
+                ('create_date', '>=', participation.evaluation_id.date_start)
+            ], order='create_date desc', limit=1)
+
         if not user_input:
             user_input = SurveyUserInput.create({
                 'survey_id': survey.id,
@@ -192,7 +249,7 @@ class AulaMetricsSurveyPortal(http.Controller):
             })
         elif user_input.state == 'new':
             user_input.write({'state': 'in_progress'})
-        
+
         return user_input
     
     def _prepare_questions_data(self, survey, user_input):

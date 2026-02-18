@@ -4,6 +4,7 @@ Funciones auxiliares compartidas para dashboards de AulaMetrics
 Incluye: badges, formatters, validadores, etc.
 """
 from datetime import datetime
+import json
 
 
 def get_role_badge(role_info):
@@ -274,18 +275,20 @@ def build_chart_card_header(label, subtitle, chart_id, segment_options_html=''):
 def get_segment_colors_js():
     """
     Retorna el objeto JavaScript de colores para segmentación.
-    Esta es la paleta estándar usada en todos los charts.
-    
-    Returns:
-        str: Código JavaScript del objeto segmentColors
+    Usa los valores definidos en `utils.palette` para mantener un único punto de verdad.
     """
-    return """const segmentColors = {
-                'Masculino': '#3b82f6',
-                'Femenino': '#ec4899',
-                'Otro': '#94a3b8',
-                'Prefiere no decir': '#64748b',
-                'default': ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6']
-            };"""
+    from . import palette
+    seg = palette.SEGMENT_COLORS
+    default = palette.DEFAULT_PALETTE
+    return (
+        "const segmentColors = {\n"
+        f"  'Masculino': '{seg['Masculino']}',\n"
+        f"  'Femenino': '{seg['Femenino']}',\n"
+        f"  'Otro': '{seg['Otro']}',\n"
+        f"  'Prefiere no decir': '{seg['Prefiere no decir']}',\n"
+        f"  'default': {json.dumps(default)}\n"
+        "};"
+    )
 
 
 def get_chart_card_styles():
@@ -298,7 +301,7 @@ def get_chart_card_styles():
     """
     return {
         'chart-card-header': 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;',
-        'chart-segment-selector': 'padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; color: #475569; font-weight: 500; min-width: 160px;'
+        'chart-segment-selector': 'padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); font-weight: 500; min-width: 160px;'
     }
 
 

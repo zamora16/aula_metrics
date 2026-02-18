@@ -97,12 +97,14 @@
                                 <tree decoration-success="state == 'completed'" 
                                       decoration-warning="state == 'pending'"
                                       decoration-danger="state == 'expired'">
-                                    <field name="student_id"/>
-                                    <field name="state" widget="badge" 
+                                    <!-- Mostrar sólo: Alumno | Grupo | Estado | Completada -->
+                                    <field name="student_id" string="Alumno"/>
+                                    <field name="academic_group_id" string="Grupo"/>
+                                    <field name="state" string="Estado" widget="badge" 
                                            decoration-success="state == 'completed'"
                                            decoration-warning="state == 'pending'"
                                            decoration-danger="state == 'expired'"/>
-                                    <field name="completed_at"/>
+                                    <field name="completed_at" string="Completada" widget="date"/>
                                 </tree>
                             </field>
                         </page>

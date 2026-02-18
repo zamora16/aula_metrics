@@ -59,13 +59,23 @@ class SurveyUserInput(models.Model):
                     # Verificar si completó todos los cuestionarios
                     try:
                         all_surveys = evaluation.survey_ids
-                        completed_surveys = self.env['survey.user_input'].search_count([
+                        # Count 'done' user_inputs that belong to this evaluation window.
+                        # If the evaluation is active, accept the most recent 'done' entries up to date_end;
+                        # otherwise require responses to be on/after the configured date_start.
+                        domain = [
                             ('partner_id', '=', user_input.partner_id.id),
                             ('survey_id', 'in', all_surveys.ids),
                             ('state', '=', 'done'),
-                            ('create_date', '>=', evaluation.date_start)
-                        ])
-                        
+                        ]
+                        if evaluation and evaluation.state == 'active':
+                            if evaluation.date_end:
+                                domain.append(('create_date', '<=', evaluation.date_end))
+                        else:
+                            if evaluation and evaluation.date_start:
+                                domain.append(('create_date', '>=', evaluation.date_start))
+
+                        completed_surveys = self.env['survey.user_input'].search_count(domain)
+
                         if completed_surveys == len(all_surveys):
                             participation.action_complete()
                     except Exception:

@@ -7,7 +7,7 @@ import pandas as pd
 import json
 
 # Importar utilidades compartidas del dashboard
-from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers
+from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
 
 
 class DashboardStudentProfile(models.TransientModel):
@@ -189,7 +189,7 @@ class DashboardStudentProfile(models.TransientModel):
         kpis.append(f"""
         <div class="kpi-card">
             <div class="kpi-label">Alertas</div>
-            <div class="kpi-value" style="color: {'#ef4444' if alerts_count > 0 else '#10b981'};">{alerts_count}</div>
+            <div class="kpi-value" style="color: {palette.UI_DANGER if alerts_count > 0 else palette.UI_SUCCESS};">{alerts_count}</div>
             <div class="kpi-description">Activas</div>
         </div>
         """)
@@ -362,7 +362,8 @@ class DashboardStudentProfile(models.TransientModel):
         
         for resp in responses:
             alert_class = 'alert-warning' if resp.has_alert_keywords else ''
-            alert_badge = '<span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Alerta</span>' if resp.has_alert_keywords else '<span class="badge" style="background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;"><i class="fa-solid fa-check"></i></span>'
+            # Usar clases de badge para heredar tema centralizado
+            alert_badge = '<span class="badge bg-danger">Alerta</span>' if resp.has_alert_keywords else '<span class="badge bg-success"><i class="fa-solid fa-check"></i></span>'
             
             # Información de la pregunta
             question_title = resp.question_id.title if resp.question_id else 'Pregunta sin título'
@@ -461,9 +462,9 @@ class DashboardStudentProfile(models.TransientModel):
                     <div class="content-wrapper">
                         <div class="container-fluid">
                             <div class="card" style="text-align: center; padding: 60px 40px;">
-                                <i class="fa-solid fa-chart-line" style="font-size: 80px; color: #cbd5e1; margin-bottom: 24px;"></i>
-                                <h3 style="color: #64748b; margin-bottom: 12px;">Sin datos de métricas disponibles</h3>
-                                <p style="color: #94a3b8; font-size: 15px;">Este estudiante aún no tiene métricas registradas. Complete una evaluación para comenzar a ver datos.</p>
+                                <i class="fa-solid fa-chart-line" style="font-size: 80px; color: var(--am-light); margin-bottom: 24px;"></i>
+                                <h3 style="color: var(--am-muted); margin-bottom: 12px;">Sin datos de métricas disponibles</h3>
+                                <p style="color: var(--am-muted); font-size: 15px;">Este estudiante aún no tiene métricas registradas. Complete una evaluación para comenzar a ver datos.</p>
                             </div>
                             
                             <div class="row mt-4">
@@ -548,9 +549,9 @@ class DashboardStudentProfile(models.TransientModel):
                 # Badge de alertas
                 alerts_badge = ''
                 if alerts_count > 0:
-                    alerts_badge = f'<span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">{alerts_count} alerta(s)</span>'
+                    alerts_badge = f'<span class="badge bg-danger">{alerts_count} alerta(s)</span>'
                 else:
-                    alerts_badge = '<span class="badge" style="background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;"><i class="fa-solid fa-check"></i></span>'
+                    alerts_badge = '<span class="badge bg-success"><i class="fa-solid fa-check"></i></span>'
                 
                 students_rows += f'''
                 <tr data-group-id="{group_id}">
@@ -588,20 +589,20 @@ class DashboardStudentProfile(models.TransientModel):
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
             {dashboard_styles.get_common_styles()}
             <style>
-                .card {{ border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: white; }}
-                .card-header {{ background: white; border-bottom: 1px solid #e2e8f0; font-weight: 600; padding: 1.25rem 1.5rem; }}
+                .card {{ border-radius: 12px; border: 1px solid var(--am-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: var(--am-surface); }}
+                .card-header {{ background: var(--am-surface); border-bottom: 1px solid var(--am-border); font-weight: 600; padding: 1.25rem 1.5rem; }}
                 .table {{ margin-bottom: 0; }}
-                .table thead th {{ background: #f8fafc; font-weight: 600; border-bottom: 2px solid #e2e8f0; padding: 1rem; }}
+                .table thead th {{ background: var(--am-bg); font-weight: 600; border-bottom: 2px solid var(--am-border); padding: 1rem; }}
                 .table tbody td {{ padding: 1rem; vertical-align: middle; }}
-                .table tbody tr:hover {{ background: #f8fafc; }}
+                .table tbody tr:hover {{ background: var(--am-bg); }}
                 
                 .search-box {{ margin-bottom: 1.5rem; }}
-                .search-box input {{ border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; }}
-                .search-box input:focus {{ border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }}
+                .search-box input {{ border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }}
+                .search-box input:focus {{ border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }}
                 
                 .filters-bar {{ margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; }}
-                .filters-bar select {{ border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; }}
-                .filters-bar select:focus {{ border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }}
+                .filters-bar select {{ border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }}
+                .filters-bar select:focus {{ border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }}
             </style>
         </head>
         <body>
@@ -722,16 +723,7 @@ class DashboardStudentProfile(models.TransientModel):
             return '<div class="alert alert-info">No hay métricas numéricas para graficar</div>'
         
         # Paleta profesional estilo Stripe/Linear
-        colors = [
-            '#3b82f6',  # Blue
-            '#10b981',  # Green
-            '#f59e0b',  # Amber
-            '#8b5cf6',  # Purple
-            '#ef4444',  # Red
-            '#06b6d4',  # Cyan
-            '#ec4899',  # Pink
-            '#f97316',  # Orange
-        ]
+        colors = palette.METRICS_PALETTE
         
         datasets = []
         for idx, metric in enumerate(df_numeric['metric_label'].unique()[:5]):
@@ -797,11 +789,11 @@ class DashboardStudentProfile(models.TransientModel):
                                 family: "'Inter', sans-serif",
                                 weight: '500'
                             }},
-                            color: '#64748b'
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
                         }}
                     }},
                     tooltip: {{
-                        backgroundColor: '#1e293b',
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--am-primary-darker').trim(),
                         padding: 12,
                         titleFont: {{
                             size: 13,
@@ -814,7 +806,7 @@ class DashboardStudentProfile(models.TransientModel):
                         }},
                         cornerRadius: 6,
                         displayColors: true,
-                        borderColor: '#e5e7eb',
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--am-border').trim(),
                         borderWidth: 1,
                         callbacks: {{
                             title: function(context) {{
@@ -842,13 +834,13 @@ class DashboardStudentProfile(models.TransientModel):
                                 size: 12,
                                 family: "'Inter', sans-serif"
                             }},
-                            color: '#94a3b8'
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
                         }}
                     }},
                     y: {{
                         beginAtZero: true,
                         grid: {{
-                            color: '#f1f5f9',
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-light').trim(),
                             drawBorder: false
                         }},
                         ticks: {{
@@ -856,7 +848,7 @@ class DashboardStudentProfile(models.TransientModel):
                                 size: 12,
                                 family: "'Inter', sans-serif"
                             }},
-                            color: '#94a3b8'
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
                         }}
                     }}
                 }},
@@ -899,11 +891,11 @@ class DashboardStudentProfile(models.TransientModel):
             last_value = values[-1]
             percent_change = ((last_value - first_value) / first_value * 100) if first_value != 0 else 0
             change_icon = '↑' if percent_change > 0 else '↓' if percent_change < 0 else '→'
-            change_color = '#10b981' if percent_change > 0 else '#ef4444' if percent_change < 0 else '#94a3b8'
+            change_color = palette.UI_SUCCESS if percent_change > 0 else palette.UI_DANGER if percent_change < 0 else palette.UI_MUTED
             change_text = f"<span style='color: {change_color}; font-weight: 600;'>{change_icon} {abs(percent_change):.1f}%</span>"
             
-            # Colores semáforo por cada barra
-            colors = [dashboard_helpers.get_semaphore_color(v) for v in values]
+            # Color consistente para las barras del estudiante (usar color principal del tema)
+            student_color = palette.UI_PRIMARY
             
             # Obtener media del grupo en los mismos periodos si disponible
             group_means = []
@@ -918,43 +910,46 @@ class DashboardStudentProfile(models.TransientModel):
                         group_means.append(None)
             
             chart_id = f'evolution_{student.id}_{idx}'
-            
-            # Crear datasets
+
+            # Crear datasets: las barras representan al estudiante (etiquetadas con su nombre); líneas para media grupo/centro
             datasets = [
                 {
-                    'label': 'Estudiante',
+                    'label': student.name,
                     'data': values,
-                    'backgroundColor': colors,
+                    'backgroundColor': student_color,
+                    'borderColor': student_color,
                     'borderRadius': 6,
                     'borderSkipped': False,
                     'order': 2
                 }
             ]
-            
+
             # Agregar línea de media del grupo si hay datos
             if group_means and any(v is not None for v in group_means):
                 datasets.append({
                     'label': 'Media grupo',
                     'data': group_means,
                     'type': 'line',
-                    'borderColor': '#94a3b8',
+                    'borderColor': palette.UI_MUTED,
                     'backgroundColor': 'transparent',
                     'borderWidth': 2,
                     'borderDash': [5, 5],
                     'pointRadius': 4,
-                    'pointBackgroundColor': '#94a3b8',
+                    'pointBackgroundColor': palette.UI_MUTED,
                     'pointBorderColor': '#ffffff',
                     'pointBorderWidth': 2,
                     'order': 1,
                     'tension': 0.3
                 })
-            
+
+
+
             charts_html += f'''
             <div class="col-lg-6 mb-4">
                 <div class="card">
                     <div class="card-header">
                         <h6 class="card-title-sm">{metric}</h6>
-                        <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0;">
+                        <p style="font-size: 11px; color: var(--am-muted); margin: 4px 0 0 0;">
                             Evolución con contexto del grupo · Cambio: {change_text}
                         </p>
                     </div>
@@ -985,11 +980,11 @@ class DashboardStudentProfile(models.TransientModel):
                                     size: 11,
                                     family: "'Inter', sans-serif"
                                 }},
-                                color: '#64748b'
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
                             }}
                         }},
                         tooltip: {{
-                            backgroundColor: '#1e293b',
+                            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--am-primary-darker').trim(),
                             padding: 12,
                             cornerRadius: 6,
                             titleFont: {{
@@ -1026,14 +1021,14 @@ class DashboardStudentProfile(models.TransientModel):
                                     size: 11,
                                     family: "'Inter', sans-serif"
                                 }},
-                                color: '#94a3b8'
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
                             }}
                         }},
                         y: {{
                             beginAtZero: true,
                             max: 100,
                             grid: {{
-                                color: '#f1f5f9',
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--am-light').trim(),
                                 drawBorder: false
                             }},
                             ticks: {{
@@ -1041,7 +1036,7 @@ class DashboardStudentProfile(models.TransientModel):
                                     size: 11,
                                     family: "'Inter', sans-serif"
                                 }},
-                                color: '#94a3b8'
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
                             }}
                         }}
                     }},
@@ -1164,9 +1159,9 @@ class DashboardStudentProfile(models.TransientModel):
                 'label': student.name,
                 'data': student_values,
                 'backgroundColor': 'rgba(59, 130, 246, 0.2)',
-                'borderColor': '#3b82f6',
+                'borderColor': palette.UI_PRIMARY,
                 'borderWidth': 2,
-                'pointBackgroundColor': '#3b82f6',
+                'pointBackgroundColor': palette.UI_PRIMARY,
                 'pointBorderColor': '#ffffff',
                 'pointBorderWidth': 2,
                 'pointRadius': 4,
@@ -1180,10 +1175,10 @@ class DashboardStudentProfile(models.TransientModel):
                 'label': 'Media grupo',
                 'data': group_values,
                 'backgroundColor': 'rgba(148, 163, 184, 0.1)',
-                'borderColor': '#94a3b8',
+                'borderColor': palette.UI_MUTED,
                 'borderWidth': 2,
                 'borderDash': [5, 5],
-                'pointBackgroundColor': '#94a3b8',
+                'pointBackgroundColor': palette.UI_MUTED,
                 'pointBorderColor': '#ffffff',
                 'pointBorderWidth': 2,
                 'pointRadius': 3,
@@ -1196,10 +1191,10 @@ class DashboardStudentProfile(models.TransientModel):
                 'label': 'Media centro',
                 'data': center_values,
                 'backgroundColor': 'rgba(16, 185, 129, 0.05)',
-                'borderColor': '#10b981',
+                'borderColor': palette.UI_SUCCESS,
                 'borderWidth': 2,
                 'borderDash': [2, 2],
-                'pointBackgroundColor': '#10b981',
+                'pointBackgroundColor': palette.UI_SUCCESS,
                 'pointBorderColor': '#ffffff',
                 'pointBorderWidth': 2,
                 'pointRadius': 3,
@@ -1246,13 +1241,13 @@ class DashboardStudentProfile(models.TransientModel):
                                 family: "'Inter', sans-serif",
                                 weight: '500'
                             }},
-                            color: '#64748b',
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim(),
                             boxWidth: 8,
                             boxHeight: 8
                         }}
                     }},
                     tooltip: {{
-                        backgroundColor: '#1e293b',
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--am-primary-darker').trim(),
                         padding: 10,
                         cornerRadius: 6,
                         titleFont: {{
@@ -1281,11 +1276,11 @@ class DashboardStudentProfile(models.TransientModel):
                                 size: 10,
                                 family: "'Inter', sans-serif"
                             }},
-                            color: '#94a3b8',
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim(),
                             backdropColor: 'transparent'
                         }},
                         grid: {{
-                            color: '#e5e7eb'
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-border').trim()
                         }},
                         pointLabels: {{
                             font: {{
@@ -1293,7 +1288,7 @@ class DashboardStudentProfile(models.TransientModel):
                                 family: "'Inter', sans-serif",
                                 weight: '500'
                             }},
-                            color: '#475569',
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim(),
                             padding: 8
                         }}
                     }}
@@ -1433,8 +1428,8 @@ class DashboardStudentProfile(models.TransientModel):
             
             body {
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background-color: #fafbfc;
-                color: #0f172a;
+                background-color: var(--am-bg);
+                color: var(--am-text);
                 line-height: 1.6;
                 font-size: 15px;
                 padding-bottom: 80px;
@@ -1449,13 +1444,13 @@ class DashboardStudentProfile(models.TransientModel):
             h1 {
                 font-size: 32px;
                 font-weight: 700;
-                color: #0f172a;
+                color: var(--am-text);
                 margin-bottom: 8px;
                 letter-spacing: -0.5px;
             }
             
             .subtitle {
-                color: #64748b;
+                color: var(--am-muted);
                 font-size: 16px;
                 font-weight: 400;
                 margin-bottom: 32px;
@@ -1469,8 +1464,8 @@ class DashboardStudentProfile(models.TransientModel):
             }
             
             .kpi-card {
-                background: white;
-                border: 1px solid #e5e7eb;
+                background: var(--am-surface);
+                border: 1px solid var(--am-border);
                 border-radius: 10px;
                 padding: 24px;
                 transition: all 0.2s ease;
@@ -1479,13 +1474,13 @@ class DashboardStudentProfile(models.TransientModel):
             .kpi-card:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                border-color: #d1d5db;
+                border-color: var(--am-border);
             }
             
             .kpi-label {
                 font-size: 13px;
                 font-weight: 500;
-                color: #64748b;
+                color: var(--am-muted);
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 margin-bottom: 8px;
@@ -1494,20 +1489,20 @@ class DashboardStudentProfile(models.TransientModel):
             .kpi-value {
                 font-size: 36px;
                 font-weight: 700;
-                color: #0f172a;
+                color: var(--am-text);
                 line-height: 1;
                 margin-bottom: 4px;
             }
             
             .kpi-description {
                 font-size: 13px;
-                color: #94a3b8;
+                color: var(--am-muted);
                 font-weight: 400;
             }
             
             .card {
-                background: white;
-                border: 1px solid #e5e7eb;
+                background: var(--am-surface);
+                border: 1px solid var(--am-border);
                 border-radius: 10px;
                 margin-bottom: 24px;
                 overflow: hidden;
@@ -1516,27 +1511,27 @@ class DashboardStudentProfile(models.TransientModel):
             
             .card-header {
                 padding: 20px 24px;
-                border-bottom: 1px solid #f1f5f9;
-                background: white;
+                border-bottom: 1px solid var(--am-light);
+                background: var(--am-surface);
             }
             
             .card-title {
                 font-size: 18px;
                 font-weight: 600;
-                color: #0f172a;
+                color: var(--am-text);
                 margin: 0;
             }
             
             .card-title-sm {
                 font-size: 15px;
                 font-weight: 600;
-                color: #0f172a;
+                color: var(--am-text);
                 margin: 0;
             }
             
             .card-subtitle {
                 font-size: 13px;
-                color: #64748b;
+                color: var(--am-muted);
                 margin: 4px 0 0 0;
                 font-weight: 400;
             }
@@ -1546,31 +1541,31 @@ class DashboardStudentProfile(models.TransientModel):
             }
             
             .alert {
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
+                background: var(--am-bg);
+                border: 1px solid var(--am-border);
                 border-radius: 8px;
                 padding: 16px 20px;
-                color: #475569;
+                color: var(--am-muted);
                 font-size: 14px;
                 margin-bottom: 20px;
             }
             
             .alert-info {
-                background: #eff6ff;
-                border-color: #bfdbfe;
-                color: #1e40af;
+                background: var(--am-primary-100);
+                border-color: var(--am-primary-200);
+                color: var(--am-primary-600);
             }
             
             .alert-warning {
-                background: #fef3c7;
-                border-color: #fde68a;
-                color: #92400e;
+                background: var(--am-light);
+                border-color: var(--am-border);
+                color: var(--am-warning);
             }
             
             .alert-danger {
-                background: #fee2e2;
-                border-color: #fecaca;
-                color: #991b1b;
+                background: var(--am-light);
+                border-color: var(--am-border);
+                color: var(--am-danger);
             }
             
             .badge {
@@ -1583,18 +1578,18 @@ class DashboardStudentProfile(models.TransientModel):
             }
             
             .badge-info {
-                background: #dbeafe;
-                color: #1e40af;
+                background: var(--am-primary-100);
+                color: var(--am-primary-600);
             }
             
             .badge-warning {
-                background: #fef3c7;
-                color: #92400e;
+                background: var(--am-warning);
+                color: var(--am-text);
             }
             
             .badge-danger {
-                background: #fee2e2;
-                color: #991b1b;
+                background: var(--am-light);
+                color: var(--am-danger);
             }
             
             .row {
@@ -1623,15 +1618,15 @@ class DashboardStudentProfile(models.TransientModel):
             }
             
             thead {
-                background: #f8fafc;
-                border-bottom: 1px solid #e5e7eb;
+                background: var(--am-bg);
+                border-bottom: 1px solid var(--am-border);
             }
             
             th {
                 padding: 12px 16px;
                 text-align: left;
                 font-weight: 600;
-                color: #475569;
+                color: var(--am-muted);
                 font-size: 13px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
@@ -1639,8 +1634,8 @@ class DashboardStudentProfile(models.TransientModel):
             
             td {
                 padding: 14px 16px;
-                border-bottom: 1px solid #f1f5f9;
-                color: #334155;
+                border-bottom: 1px solid var(--am-light);
+                color: var(--am-text);
             }
             
             tr:last-child td {
@@ -1648,7 +1643,7 @@ class DashboardStudentProfile(models.TransientModel):
             }
             
             tbody tr:hover {
-                background: #fafbfc;
+                background: var(--am-bg);
             }
             
             ul {
@@ -1658,8 +1653,8 @@ class DashboardStudentProfile(models.TransientModel):
             
             li {
                 padding: 12px 0;
-                border-bottom: 1px solid #f1f5f9;
-                color: #334155;
+                border-bottom: 1px solid var(--am-light);
+                color: var(--am-text);
                 font-size: 14px;
             }
             
@@ -1680,7 +1675,7 @@ class DashboardStudentProfile(models.TransientModel):
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         </head>
-        <body style="background: #f1f5f9; font-family: sans-serif;">
+        <body style="background: {palette.UI_BG}; font-family: sans-serif;">
             <div class="container mt-5">
                 <div class="alert alert-danger text-center">
                     <i class="fa-solid fa-exclamation-triangle fa-3x mb-3"></i>

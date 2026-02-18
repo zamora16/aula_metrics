@@ -2,6 +2,7 @@
 """
 Estilos CSS compartidos para todos los dashboards de AulaMetrics
 """
+from . import palette
 
 
 def get_common_styles():
@@ -9,10 +10,33 @@ def get_common_styles():
     Retorna los estilos CSS compartidos por todos los dashboards.
     Incluye layout principal, sidebar, topbar, cards, badges, etc.
     """
-    return """
+    root_vars = f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
+
+        :root {{
+            --am-bg: {palette.UI_BG};
+            --am-surface: {palette.UI_SURFACE};
+            --am-text: {palette.UI_TEXT};
+            --am-primary: {palette.UI_PRIMARY};
+            --am-primary-600: {palette.UI_PRIMARY_DARK};
+            --am-primary-darker: {palette.UI_PRIMARY_DARKER};
+            --am-primary-rgb: {palette.UI_PRIMARY_RGB};
+            --am-primary-100: {palette.UI_PRIMARY_LIGHT};
+            --am-primary-200: {palette.UI_PRIMARY_200};
+            --am-success: {palette.UI_SUCCESS};
+            --am-success-dark: {palette.UI_SUCCESS_DARK};
+            --am-muted: {palette.UI_MUTED};
+            --am-border: {palette.UI_BORDER};
+            --am-light: {palette.UI_LIGHT};
+            --am-warning: {palette.UI_WARNING};
+            --am-danger: {palette.UI_DANGER};
+            --am-sidebar-start: {palette.UI_SIDEBAR_START};
+            --am-sidebar-end: {palette.UI_SIDEBAR_END};
+        }}
+    """
+
+    rest_css = """
         /* Reset y base */
         * {
             margin: 0;
@@ -22,8 +46,8 @@ def get_common_styles():
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f8fafc;
-            color: #0f172a;
+            background: var(--am-bg);
+            color: var(--am-text);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -38,7 +62,7 @@ def get_common_styles():
         /* ==================== SIDEBAR ==================== */
         .sidebar {
             width: 260px;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            background: linear-gradient(180deg, var(--am-sidebar-start) 0%, var(--am-sidebar-end) 100%);
             color: white;
             display: flex;
             flex-direction: column;
@@ -87,9 +111,9 @@ def get_common_styles():
         }
         
         .sidebar-item.active {
-            background: rgba(59, 130, 246, 0.2);
+            background: rgba(var(--am-primary-rgb), 0.18);
             color: white;
-            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 0 1px rgba(var(--am-primary-rgb), 0.3);
         }
         
         .sidebar-item i {
@@ -114,7 +138,7 @@ def get_common_styles():
         
         .topbar {
             background: white;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--am-border);
             padding: 20px 32px;
             display: flex;
             justify-content: space-between;
@@ -129,12 +153,12 @@ def get_common_styles():
             font-size: 24px;
             font-weight: 700;
             margin: 0;
-            color: #0f172a;
+            color: var(--am-text);
         }
         
         .breadcrumbs {
             font-size: 13px;
-            color: #64748b;
+            color: var(--am-muted);
             display: block;
             margin-top: 4px;
         }
@@ -168,7 +192,7 @@ def get_common_styles():
         .card {
             background: white;
             border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--am-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             margin-bottom: 24px;
             overflow: hidden;
@@ -209,7 +233,7 @@ def get_common_styles():
             background: white;
             padding: 24px;
             border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--am-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             transition: all 0.2s ease;
         }
@@ -237,7 +261,7 @@ def get_common_styles():
         
         .kpi-description {
             font-size: 14px;
-            color: #94a3b8;
+            color: var(--am-muted);
         }
         
         /* ==================== BADGES ==================== */
@@ -277,8 +301,8 @@ def get_common_styles():
         
         /* ==================== FILTROS MODERNOS ==================== */
         .filter-panel-compact {
-            background: linear-gradient(to bottom, #ffffff, #f8fafc);
-            border: 1px solid #e2e8f0;
+            background: linear-gradient(to bottom, var(--am-surface), var(--am-bg));
+            border: 1px solid var(--am-border);
             border-radius: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             padding: 24px 28px;
@@ -291,7 +315,7 @@ def get_common_styles():
             gap: 12px;
             margin-bottom: 18px;
             padding-bottom: 14px;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid var(--am-border);
         }
         
         .filter-header i {
@@ -320,30 +344,30 @@ def get_common_styles():
             display: inline-flex;
             align-items: center;
             padding: 8px 16px;
-            background: #f8fafc;
-            color: #475569;
+            background: var(--am-bg);
+            color: var(--am-muted);
             border-radius: 24px;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 14px;
             font-weight: 500;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--am-border);
             user-select: none;
         }
         
         .filter-pill:hover {
-            background: #e0e7ff;
-            border-color: #c7d2fe;
-            color: #3730a3;
+            background: var(--am-primary-100);
+            border-color: var(--am-primary-200);
+            color: var(--am-primary-600);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 4px 6px rgba(var(--am-primary-rgb), 0.1);
         }
         
         .filter-pill.active {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            border-color: #2563eb;
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
+            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            color: var(--am-surface);
+            border-color: var(--am-primary-600);
+            box-shadow: 0 4px 8px rgba(var(--am-primary-rgb), 0.25);
         }
         
         .filter-actions {
@@ -373,15 +397,15 @@ def get_common_styles():
         }
         
         .btn-filter-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            border-color: #2563eb;
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            color: var(--am-surface);
+            border-color: var(--am-primary-600);
+            box-shadow: 0 2px 4px rgba(var(--am-primary-rgb), 0.2);
         }
         
         .btn-filter-primary:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, var(--am-primary-600) 0%, var(--am-primary-darker) 100%);
+            box-shadow: 0 4px 8px rgba(var(--am-primary-rgb), 0.3);
             transform: translateY(-1px);
         }
         
@@ -395,23 +419,23 @@ def get_common_styles():
         .empty-state {
             text-align: center;
             padding: 80px 20px;
-            color: #94a3b8;
+            color: var(--am-muted);
         }
         
         .empty-state i {
-            color: #cbd5e1;
+            color: var(--am-light);
             margin-bottom: 16px;
         }
         
         .empty-state h3 {
-            color: #64748b;
+            color: var(--am-muted);
             font-size: 20px;
             font-weight: 600;
             margin: 16px 0 8px;
         }
         
         .empty-state p {
-            color: #94a3b8;
+            color: var(--am-muted);
             font-size: 14px;
         }
         
@@ -422,12 +446,12 @@ def get_common_styles():
         }
         
         .welcome-banner {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            color: var(--am-surface);
             padding: 48px 40px;
             border-radius: 16px;
             margin-bottom: 32px;
-            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 10px 40px rgba(var(--am-primary-rgb), 0.2);
         }
         
         .welcome-banner h2 {
@@ -481,13 +505,13 @@ def get_common_styles():
         }
         
         .stat-icon.blue {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            color: var(--am-surface);
         }
         
         .stat-icon.green {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--am-success) 0%, var(--am-success-dark) 100%);
+            color: var(--am-surface);
         }
         
         .stat-icon.red {
@@ -823,6 +847,7 @@ def get_common_styles():
         }
     </style>
     """
+    return root_vars + rest_css
 
 
 def get_chart_styles():

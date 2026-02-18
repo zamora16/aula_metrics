@@ -7,7 +7,7 @@ from collections import Counter
 import re
 
 # Importar utilidades compartidas del dashboard
-from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_layout, dashboard_helpers
+from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
 
 
 class QualitativeDashboardController(http.Controller):
@@ -471,7 +471,7 @@ class QualitativeDashboardController(http.Controller):
                 rows_html += f'''
                 <tr class="{alert_class}">
                     <td><a href="/aulametrics/student/{resp['student_id']}" class="fw-bold">{resp['student_name']}</a></td>
-                    <td><span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">{resp['group_name']}</span></td>
+                    <td><span class="badge" style="background: var(--am-light); color: var(--am-muted); border: 1px solid var(--am-border);">{resp['group_name']}</span></td>
                     <td><small>{resp['date']}</small></td>
                     <td>{response_html}</td>
                     <td class="text-center">{resp['word_count']}</td>
@@ -567,7 +567,7 @@ class QualitativeDashboardController(http.Controller):
                             .enter().append("text")
                             .style("font-size", d => d.size + "px")
                             .style("font-family", "Inter")
-                            .style("fill", (d, i) => ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#06b6d4"][i % 6])
+                            .style("fill", (d, i) => {json.dumps(palette.METRICS_PALETTE[:6])}[i % 6])
                             .attr("text-anchor", "middle")
                             .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
                             .text(d => d.text);
@@ -698,7 +698,7 @@ class QualitativeDashboardController(http.Controller):
                             .enter().append("text")
                             .style("font-size", d => d.size + "px")
                             .style("font-family", "Inter")
-                            .style("fill", (d, i) => ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#06b6d4"][i % 6])
+                            .style("fill", (d, i) => {json.dumps(palette.METRICS_PALETTE[:6])}[i % 6])
                             .attr("text-anchor", "middle")
                             .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
                             .text(d => d.text);
