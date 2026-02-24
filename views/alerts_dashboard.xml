@@ -24,11 +24,11 @@
                                 <field name="alert_level"/>
                                 <field name="severity"/>
                                 <field name="threshold_id"/>
-                                <field name="student_id" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor"/>
+                                <field name="student_id" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
                                 <field name="academic_group_id"/>
                                 <field name="score_value"/>
-                                <button name="action_resolve" string="Resolver" type="object" class="btn btn-success btn-sm" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor,aulametrics.group_aulametrics_tutor"/>
-                                <button name="action_dismiss" string="Descartar" type="object" class="btn btn-warning btn-sm" confirm="¿Descartar esta alerta?" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor,aulametrics.group_aulametrics_tutor"/>
+                                <button name="action_resolve" string="Resolver" type="object" class="btn btn-success btn-sm" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
+                                <button name="action_dismiss" string="Descartar" type="object" class="btn btn-warning btn-sm" confirm="¿Descartar esta alerta?" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
                             </tree>
                             <form string="Alerta">
                                 <group>
@@ -45,7 +45,7 @@
                                 </group>
                                 <group>
                                     <field name="participation_id" readonly="1"/>
-                                    <field name="student_id" readonly="1" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor"/>
+                                    <field name="student_id" readonly="1" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
                                     <field name="academic_group_id" readonly="1"/>
                                 </group>
                             </form>
@@ -111,7 +111,7 @@
                                 </group>
                                 <group>
                                     <field name="participation_id" readonly="1"/>
-                                    <field name="student_id" readonly="1" groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor"/>
+                                    <field name="student_id" readonly="1" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
                                     <field name="academic_group_id" readonly="1"/>
                                 </group>
                                 <group string="Resolución" invisible="status != 'resolved'">

@@ -25,11 +25,11 @@
                 <header>
                     <button string="Marcar como Resuelta" type="object" name="action_resolve" 
                             invisible="status != 'active'" class="btn-success"
-                            groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor,aulametrics.group_aulametrics_tutor"/>
+                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
                     <button string="Descartar Alerta" type="object" name="action_dismiss" 
                             invisible="status != 'active'" class="btn-warning" 
                             confirm="¿Está seguro de que quiere descartar esta alerta?"
-                            groups="aulametrics.group_aulametrics_admin,aulametrics.group_aulametrics_counselor,aulametrics.group_aulametrics_tutor"/>
+                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
                 </header>
                 <sheet>
                     <group>

@@ -29,7 +29,7 @@ class UniversalMatrixScoring:
         )
         
         if not matrix_questions:
-            # Si no hay matrices, procesar preguntas no-matriz
+            # Si no hay matrices, procesar preguntas no-matriz y devolver UNA métrica por survey
             return self._process_non_matrix_questions(user_input)
         
         # Recopilar TODAS las líneas de TODAS las matrices
@@ -65,7 +65,10 @@ class UniversalMatrixScoring:
             avg_score = sum(all_scores) / len(all_scores)
             
             # Usar título del cuestionario como nombre de la métrica
-            metric_label = self.survey.title if self.survey.title else "Encuesta"
+            # Preferir el metric_label definido en la primera matriz (si existe)
+            first_matrix = matrix_questions[0] if matrix_questions else None
+            metric_label = (first_matrix.metric_label[:100] if first_matrix and getattr(first_matrix, 'metric_label', False)
+                            else (self.survey.title if self.survey.title else "Encuesta"))
             metric_name = self.survey.survey_code if hasattr(self.survey, 'survey_code') and self.survey.survey_code else f"survey_{self.survey.id}"
             
             metrics.append({
@@ -101,46 +104,88 @@ class UniversalMatrixScoring:
         Nota: Opciones múltiples se procesan en survey_user_input._save_multiplechoice_responses()
         """
         metrics = []
-        
-        for line in user_input.user_input_line_ids:
-            if not line.question_id:
-                continue
-            
-            question = line.question_id
-            
-            # Skip matrices (ya procesadas)
-            if question.question_type == 'matrix':
-                continue
-            
-            # Skip opciones múltiples (procesadas en _save_multiplechoice_responses)
-            if question.question_type in ['simple_choice', 'multiple_choice']:
-                continue
-            
-            metric_name = f"adhoc_q{question.id}"
-            metric_label = question.metric_label[:100]
-            
-            try:
-                # Texto libre
-                if question.question_type in ['char_box', 'text_box']:
-                    text_value = None
-                    if hasattr(line, 'value_char_box') and line.value_char_box:
-                        text_value = line.value_char_box
-                    elif hasattr(line, 'value_text_box') and line.value_text_box:
-                        text_value = line.value_text_box
-                    
-                    if text_value:
-                        metrics.append({
-                            'metric_name': metric_name,
-                            'metric_label': metric_label,
-                            'value_float': None,
-                            'value_text': text_value,
-                            'value_json': None,
-                            'question_id': question.id
-                        })
-            
-            except Exception:
-                continue
-        
+
+        # Agrupar por pregunta relevante (excluyendo páginas y matrices)
+        relevant_lines = [l for l in user_input.user_input_line_ids if l.question_id and l.question_id.question_type != 'matrix' and not l.question_id.is_page]
+        if not relevant_lines:
+            return metrics
+
+        # Dado que aplicamos la restricción de 1 pregunta productora por survey,
+        # la pregunta relevante será la única. Tomamos la primera encontrada.
+        main_question = list({l.question_id for l in relevant_lines})[0]
+
+        metric_label = main_question.metric_label[:100] if hasattr(main_question, 'metric_label') else (main_question.title or 'Encuesta')
+        metric_name = self.survey.survey_code if hasattr(self.survey, 'survey_code') and self.survey.survey_code else f"survey_{self.survey.id}"
+
+        # Procesar según tipo
+        try:
+            if main_question.question_type in ['char_box', 'text_box']:
+                # Guardar texto cualitativo (usar el primer valor no vacío)
+                text_value = None
+                for line in relevant_lines:
+                    if line.question_id.id == main_question.id:
+                        if hasattr(line, 'value_char_box') and line.value_char_box:
+                            text_value = line.value_char_box
+                            break
+                        if hasattr(line, 'value_text_box') and line.value_text_box:
+                            text_value = line.value_text_box
+                            break
+
+                if text_value:
+                    metrics.append({
+                        'metric_name': metric_name,
+                        'metric_label': metric_label,
+                        'value_float': None,
+                        'value_text': text_value,
+                        'value_json': None,
+                        'question_id': main_question.id
+                    })
+
+            elif main_question.question_type == 'numerical_box':
+                # Tomar el primer valor numérico encontrado
+                num = None
+                for line in relevant_lines:
+                    if line.question_id.id == main_question.id and hasattr(line, 'value_numerical_box') and line.value_numerical_box is not None:
+                        num = line.value_numerical_box
+                        break
+
+                if num is not None:
+                    metrics.append({
+                        'metric_name': metric_name,
+                        'metric_label': metric_label,
+                        'value_float': float(num),
+                        'value_text': None,
+                        'value_json': None,
+                        'question_id': main_question.id
+                    })
+
+            elif main_question.question_type in ['simple_choice', 'multiple_choice']:
+                # Tratar siempre las opciones como variables de segmentación categóricas.
+                # Recopilar los valores/textos de las opciones seleccionadas y guardarlos en value_json.
+                selected = []
+                for line in relevant_lines:
+                    if line.question_id.id == main_question.id and line.suggested_answer_id:
+                        # Usar el valor (label) de la opción para segmentación
+                        val = getattr(line.suggested_answer_id, 'value', None)
+                        if val is None:
+                            # Fallback a la etiqueta si no hay 'value'
+                            val = getattr(line.suggested_answer_id, 'name', None)
+                        if val is not None:
+                            selected.append(val)
+
+                if selected:
+                    metrics.append({
+                        'metric_name': metric_name,
+                        'metric_label': metric_label,
+                        'value_float': None,
+                        'value_text': None,
+                        'value_json': selected,
+                        'question_id': main_question.id
+                    })
+
+        except Exception:
+            pass
+
         return metrics
 
 # Todas las encuestas usan la estrategia universal

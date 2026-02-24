@@ -240,10 +240,13 @@ class DashboardCharts(models.TransientModel):
                 continue
             
             # Obtener pregunta para nombre legible
-            question = SurveyQuestion.browse(question_id).exists()
-            if not question:
+            question = SurveyQuestion.browse(question_id)
+            if not question.exists():
                 continue
-            
+
+            # Etiqueta legible: preferir metric_label, fallback a title
+            label = question.metric_label or (question.title if getattr(question, 'title', False) else f'Pregunta {question_id}')
+
             # Extraer opciones únicas de todos los registros
             all_records = MetricValue.search([
                 ('metric_name', '=', metric_name),
@@ -258,11 +261,49 @@ class DashboardCharts(models.TransientModel):
             if options_set:
                 variables.append({
                     'value': metric_name,
-                    'label': question.metric_label,
+                    'label': label,
                     'type': 'metric_json',
                     'options': sorted(list(options_set))
                 })
         
+        # --- Extender segmentación con preguntas de selección de las encuestas
+        # incluidas en las evaluaciones filtradas (flexibilidad para encuestas ad-hoc)
+        existing_values = set(v['value'] for v in variables)
+
+        try:
+            Survey = self.env['survey.survey'].sudo()
+            # Determinar surveys a inspeccionar: las de las evaluaciones filtradas si existen
+            survey_candidates = self.env['survey.question'].__class__(self.env)  # dummy
+            if filters.get('evaluation_ids'):
+                Evaluation = self.env['aulametrics.evaluation'].sudo()
+                evals = Evaluation.browse(filters['evaluation_ids'])
+                survey_candidates = evals.mapped('survey_ids')
+            else:
+                # Sin evaluación filtrada, considerar todas las encuestas (administradores)
+                survey_candidates = Survey.search([])
+
+            for survey in survey_candidates:
+                for q in survey.question_ids.filtered(lambda q: q.question_type in ['simple_choice', 'multiple_choice']):
+                    name = f'question_{q.id}_choices'
+                    if name in existing_values:
+                        continue
+
+                    opts = [ans.value or ans.name for ans in q.suggested_answer_ids]
+                    if not opts:
+                        continue
+
+                    lbl = q.metric_label or (q.title if getattr(q, 'title', False) else f'Pregunta {q.id}')
+                    variables.append({
+                        'value': name,
+                        'label': lbl,
+                        'type': 'metric_json',
+                        'options': sorted(list(set(opts)))
+                    })
+                    existing_values.add(name)
+        except Exception:
+            # No bloquear la generación del dashboard por errores en esta extensión
+            pass
+
         return variables
 
     def _build_segment_options_html(self, segmentation_vars):
@@ -2624,14 +2665,20 @@ class DashboardCharts(models.TransientModel):
                     // Inicializar wordclouds
                     setTimeout(() => {
                         console.log('Intentando inicializar wordclouds...');
-                        if (typeof initWordcloudCounselor !== 'undefined') {
-                            console.log('Llamando a initWordcloudCounselor');
-                            initWordcloudCounselor();
-                        } else if (typeof initWordcloudTutor !== 'undefined') {
-                            console.log('Llamando a initWordcloudTutor');
-                            initWordcloudTutor();
+                        if (!window._aulametrics_wordcloud_inited) {
+                            if (typeof initWordcloudCounselor !== 'undefined') {
+                                console.log('Llamando a initWordcloudCounselor');
+                                window._aulametrics_wordcloud_inited = true;
+                                initWordcloudCounselor();
+                            } else if (typeof initWordcloudTutor !== 'undefined') {
+                                console.log('Llamando a initWordcloudTutor');
+                                window._aulametrics_wordcloud_inited = true;
+                                initWordcloudTutor();
+                            } else {
+                                console.log('No se encontraron funciones de inicialización de wordcloud');
+                            }
                         } else {
-                            console.log('No se encontraron funciones de inicialización de wordcloud');
+                            console.log('Wordcloud ya inicializado, omitiendo llamada');
                         }
                     }, 500);
                 })
@@ -2688,10 +2735,16 @@ class DashboardCharts(models.TransientModel):
                                 
                                 // Reinicializar wordclouds
                                 setTimeout(() => {
-                                    if (typeof initWordcloudCounselor !== 'undefined') {
-                                        initWordcloudCounselor();
-                                    } else if (typeof initWordcloudTutor !== 'undefined') {
-                                        initWordcloudTutor();
+                                    if (!window._aulametrics_wordcloud_inited) {
+                                        if (typeof initWordcloudCounselor !== 'undefined') {
+                                            window._aulametrics_wordcloud_inited = true;
+                                            initWordcloudCounselor();
+                                        } else if (typeof initWordcloudTutor !== 'undefined') {
+                                            window._aulametrics_wordcloud_inited = true;
+                                            initWordcloudTutor();
+                                        }
+                                    } else {
+                                        console.log('Wordcloud ya inicializado, omitiendo segunda llamada');
                                     }
                                 }, 300);
                             }

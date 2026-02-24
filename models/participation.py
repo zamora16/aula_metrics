@@ -154,12 +154,22 @@ class Participation(models.Model):
         for survey in surveys:
             try:
                 # Buscar la respuesta del alumno a este survey DURANTE esta evaluación
-                user_input = self.env['survey.user_input'].search([
+                domain = [
                     ('partner_id', '=', self.student_id.id),
                     ('survey_id', '=', survey.id),
                     ('state', '=', 'done'),
-                    ('create_date', '>=', self.evaluation_id.date_start)
-                ], limit=1)
+                ]
+
+                # Si la evaluación está activa, aceptar respuestas hasta date_end (<=)
+                # Si no está activa, requerir que la respuesta sea posterior a date_start (>=)
+                if self.evaluation_id and self.evaluation_id.state == 'active':
+                    if self.evaluation_id.date_end:
+                        domain.append(('create_date', '<=', self.evaluation_id.date_end))
+                else:
+                    if self.evaluation_id and self.evaluation_id.date_start:
+                        domain.append(('create_date', '>=', self.evaluation_id.date_start))
+
+                user_input = self.env['survey.user_input'].search(domain, limit=1)
                 
                 if not user_input:
                     continue

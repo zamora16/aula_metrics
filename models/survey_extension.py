@@ -56,12 +56,32 @@ class SurveyExtension(models.Model):
         """Crear cuestionarios - ahora permitido para orientadores"""
         for vals in vals_list:
             # Si se crea desde menú de cuestionarios del centro, marcar como ad hoc
+            # ADHOC -> pertenece al centro: no debería marcarse como biblioteca `is_aulametrics`.
             if self.env.context.get('default_is_adhoc') or vals.get('is_adhoc'):
-                vals['is_aulametrics'] = True
                 vals['is_adhoc'] = True
+                vals['is_aulametrics'] = False
                 vals['access_mode'] = 'token'  # Solo por token
                 vals['users_login_required'] = False
+
+            # Sólo administradores pueden definir `survey_code` (cuestionarios oficiales)
+            if vals.get('survey_code') and not self.env.user.has_group('base.group_system'):
+                raise UserError('Solo los administradores pueden definir `survey_code`.')
+
+            # Sólo administradores pueden marcar como parte de la biblioteca AulaMetrics
+            if vals.get('is_aulametrics') and not self.env.user.has_group('base.group_system'):
+                raise UserError('Solo los administradores pueden marcar una encuesta como `is_aulametrics`.')
+
         return super().create(vals_list)
+
+    def write(self, vals):
+        """Evitar que usuarios no-admins asignen `survey_code` o marquen `is_aulametrics`."""
+        if vals.get('survey_code') and not self.env.user.has_group('base.group_system'):
+            raise UserError('Solo los administradores pueden modificar `survey_code`.')
+
+        if 'is_aulametrics' in vals and vals.get('is_aulametrics') and not self.env.user.has_group('base.group_system'):
+            raise UserError('Solo los administradores pueden cambiar `is_aulametrics`.')
+
+        return super(SurveyExtension, self).write(vals)
     
     @api.depends('evaluation_ids')
     def _compute_evaluation_count(self):
@@ -90,6 +110,43 @@ class SurveyExtension(models.Model):
             total_seconds = item_count * 10
             survey.average_duration = round(total_seconds / 60)
 
+    @api.constrains('question_and_page_ids', 'is_aulametrics')
+    def _check_single_metric_question(self):
+        """Asegura que los cuestionarios de AulaMetrics representen UNA sola métrica.
+
+        Regla: para encuestas marcadas como `is_aulametrics`, sólo se permite
+        UNA pregunta productora de métrica. Las preguntas tipo 'page' no cuentan.
+        Tipos considerados productores de métricas: matrix, simple_choice,
+        multiple_choice, numerical_box, text_box, char_box.
+        """
+        metric_types = {
+            'matrix', 'simple_choice', 'multiple_choice',
+            'numerical_box', 'text_box', 'char_box'
+        }
+        for survey in self:
+            # Solo validar encuestas que pertenecen a AulaMetrics o son ad-hoc del centro
+            if not (survey.is_aulametrics or survey.is_adhoc):
+                continue
+
+            # Intentar contar preguntas a partir de `question_and_page_ids` (usa los datos en memoria
+            # durante create/write) y caer back a `question_ids` si está disponible.
+            metric_questions = survey.question_and_page_ids.filtered(lambda q: not getattr(q, 'is_page', False) and getattr(q, 'question_type', None) in metric_types)
+
+            if not metric_questions:
+                metric_questions = survey.question_ids.filtered(
+                    lambda q: not q.is_page and q.question_type in metric_types
+                )
+
+            # Permitir encuestas vacías temporalmente (creación inicial desde UI).
+            # La restricción solo impide tener MÁS de una pregunta productora.
+            # Validaciones más estrictas (ej. exigir >=1) pueden aplicarse al publicar/activar.
+
+            if len(metric_questions) > 1:
+                raise UserError(
+                    'Los cuestionarios de AulaMetrics deben contener sólo UNA pregunta productora de métricas (matrix, selección o texto). ' \
+                    f'Encuesta tiene {len(metric_questions)} preguntas relevantes.'
+                )
+
     def action_view_evaluations(self):
         """Acción para ver evaluaciones que usan este cuestionario"""
         self.ensure_one()
@@ -105,7 +162,8 @@ class SurveyExtension(models.Model):
     def action_test_survey(self):
         """Override para vista previa: usa portal personalizado si es AulaMetrics."""
         self.ensure_one()
-        if self.is_aulametrics:
+        # Usar el portal de AulaMetrics tanto para encuestas oficiales como para ad-hoc
+        if self.is_aulametrics or self.is_adhoc:
             return {
                 'type': 'ir.actions.act_url',
                 'url': f'/survey/preview/{self.id}',

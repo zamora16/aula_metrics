@@ -200,8 +200,7 @@ class Alert(models.Model):
         """
         # Buscar umbrales activos relevantes para los cuestionarios de esta evaluación
         thresholds = self.env['aulametrics.threshold'].search([
-            ('active', '=', True),
-            ('survey_id', 'in', participation.evaluation_id.survey_ids.ids)
+            ('active', '=', True)
         ])
         
         for threshold in thresholds:

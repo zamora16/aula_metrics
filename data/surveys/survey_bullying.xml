@@ -22,6 +22,7 @@
         <field name="survey_id" ref="survey_bullying"/>
         <field name="is_page" eval="True"/>
         <field name="title">Cuestionario de Bullying</field>
+            <field name="metric_label">Cuestionario de Bullying</field>
         <field name="sequence">1</field>
         <field name="description">Durante los últimos dos meses...</field>
     </record>
@@ -30,6 +31,7 @@
     <record id="survey_bullying_matrix_unified" model="survey.question">
         <field name="survey_id" ref="survey_bullying"/>
         <field name="title">Durante los últimos dos meses...</field>
+            <field name="metric_label">Bullying</field>
         <field name="question_type">matrix</field>
         <field name="matrix_subtype">simple</field>
         <field name="sequence">2</field>

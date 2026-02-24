@@ -14,7 +14,8 @@ class SurveyUserInput(models.Model):
         
         for user_input in self:
             try:
-                if not user_input.survey_id or not user_input.survey_id.is_aulametrics:
+                # Procesar tanto cuestionarios oficiales como ad-hoc del centro
+                if not user_input.survey_id or not (user_input.survey_id.is_aulametrics or user_input.survey_id.is_adhoc):
                     continue
                 
                 if not user_input.partner_id:

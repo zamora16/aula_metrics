@@ -23,6 +23,7 @@ Por favor, responde a todos los enunciados del cuestionario. Si alguno de ellos 
     <record id="survey_asq14_question" model="survey.question">
         <field name="survey_id" ref="survey_asq14"/>
         <field name="title">Durante el último año...</field>
+        <field name="metric_label">Estrés</field>
         <field name="question_type">matrix</field>
         <field name="matrix_subtype">simple</field>
         <field name="sequence">1</field>

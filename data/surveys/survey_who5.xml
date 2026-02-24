@@ -21,6 +21,7 @@
     <record id="survey_who5_question" model="survey.question">
         <field name="survey_id" ref="survey_who5"/>
         <field name="title">Durante las últimas dos semanas...</field>
+        <field name="metric_label">Bienestar</field>
         <field name="question_type">matrix</field>
         <field name="matrix_subtype">simple</field>
         <field name="sequence">1</field>

@@ -13,7 +13,8 @@ class AulaMetricsSurveyPortal(http.Controller):
     def survey_preview(self, survey_id, **kw):
         """Vista previa de survey usando template personalizado."""
         survey = request.env['survey.survey'].sudo().browse(survey_id)
-        if not survey.exists() or not survey.is_aulametrics:
+        # Permitir preview tanto para encuestas oficiales como para ad-hoc del centro
+        if not survey.exists() or not (survey.is_aulametrics or survey.is_adhoc):
             return request.render('aula_metrics.portal_error', {
                 'error_title': 'Encuesta no encontrada',
                 'error_message': 'La encuesta no existe o no es de AulaMetrics.'

@@ -10,7 +10,6 @@ class AcademicGroup(models.Model):
     name = fields.Char(
         string='Nombre del Grupo',
         required=True,
-        tracking=True,
         help='Ejemplo: 1º ESO A, 2º Bachillerato B'
     )
     
@@ -21,20 +20,18 @@ class AcademicGroup(models.Model):
         ('eso4', '4º ESO'),
         ('bach1', '1º Bachillerato'),
         ('bach2', '2º Bachillerato'),
-    ], string='Nivel Educativo', required=True, tracking=True)
+    ], string='Nivel Educativo', required=True)
     
     academic_year = fields.Char(
         string='Curso Académico',
         required=True,
         default=lambda self: self._default_academic_year(),
-        tracking=True,
         help='Ejemplo: 2024-2025'
     )
     
     tutor_id = fields.Many2one(
         'res.users',
         string='Tutor/a',
-        tracking=True,
         domain=[('share', '=', False)],
         help='Usuario asignado como tutor de este grupo'
     )

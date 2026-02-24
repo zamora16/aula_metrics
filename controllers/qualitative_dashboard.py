@@ -579,8 +579,13 @@ class QualitativeDashboardController(http.Controller):
             }}
             
             // Ejecutar inmediatamente si estamos en página standalone
-            if (typeof initWordcloud === 'undefined') {{
-                setTimeout(initWordcloudCounselor, 100);
+            if (!window._aulametrics_wordcloud_inited) {{
+                setTimeout(function() {{
+                    if (!window._aulametrics_wordcloud_inited) {{
+                        window._aulametrics_wordcloud_inited = true;
+                        initWordcloudCounselor();
+                    }}
+                }}, 100);
             }}
         </script>
         '''
@@ -709,9 +714,14 @@ class QualitativeDashboardController(http.Controller):
                 }}
             }}
             
-            // Ejecutar inmediatamente si estamos en página standalone
-            if (typeof initWordcloud === 'undefined') {{
-                setTimeout(initWordcloudTutor, 100);
+            // Ejecutar inmediatamente si estamos en página standalone (usa bandera global para evitar duplicados)
+            if (!window._aulametrics_wordcloud_inited) {{
+                setTimeout(function() {{
+                    if (!window._aulametrics_wordcloud_inited) {{
+                        window._aulametrics_wordcloud_inited = true;
+                        initWordcloudTutor();
+                    }}
+                }}, 100);
             }}
         </script>
         '''

@@ -4,23 +4,15 @@
     'version': '1.0.0',
     'summary': "Sistema de evaluación psicosocial para centros educativos",
 
-    'description': """
-        Módulo base de AulaMetrics que proporciona:
-        - Gestión de grupos académicos
-        - Extensión de roles y permisos
-        - Configuración global del sistema
-    """,
-
     'author': "Angel Zamora",
     'category': 'Education',
     'depends': ['base', 'mail', 'survey'],
-
     'data': [
         # 1. Seguridad
         'security/security.xml',
         'security/ir.model.access.csv',
         'security/record_rules.xml',
-        
+        'data/users_groups.xml',
         # 2. Datos
         'data/alert_keywords.xml',
         'data/surveys/survey_bullying.xml',
@@ -28,8 +20,6 @@
         'data/surveys/survey_asq14.xml',
         'data/cron/cron_jobs.xml',
         'data/dashboard_data.xml',
-        'data/demo/users_groups.xml',
-        
         # 3. Vistas
         'views/dashboard_home_views.xml',
         'views/dashboard.xml',
@@ -44,17 +34,12 @@
         'views/alerts_dashboard.xml',
         'views/survey_portal_templates.xml',
         'views/menu.xml',
-        
         # 4. Datos de Dashboard
         'data/dashboard_home_data.xml',
-        
         # 5. Wizards
         'wizards/resolve_alert_wizard_views.xml',
-
     ],
-    'demo': [
-        'demo/demo.xml',
-    ],
+    'demo': [],
     'assets': {
         'web.assets_backend': [
             'aula_metrics/static/src/scss/dashboard_home.scss',
