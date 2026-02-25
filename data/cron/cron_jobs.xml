@@ -3,7 +3,7 @@
     <!-- Cron job para actualizar automáticamente estados de evaluaciones -->
     <record id="ir_cron_auto_update_evaluation_states" model="ir.cron">
         <field name="name">Actualizar Estados de Evaluaciones</field>
-        <field name="model_id" ref="model_aulametrics_evaluation"/>
+        <field name="model_id" ref="model_aula_metrics_evaluation"/>
         <field name="state">code</field>
         <field name="code">model.auto_update_evaluation_states()</field>
         <field name="interval_number">15</field>

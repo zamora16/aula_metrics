@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista de Lista de Umbrales -->
     <record id="view_threshold_tree" model="ir.ui.view">
-        <field name="name">aulametrics.threshold.tree</field>
-        <field name="model">aulametrics.threshold</field>
+        <field name="name">aula_metrics.threshold.tree</field>
+        <field name="model">aula_metrics.threshold</field>
         <field name="arch" type="xml">
             <tree string="Umbrales">
                 <field name="name"/>
@@ -19,8 +19,8 @@
 
     <!-- Vista de Formulario de Umbrales -->
     <record id="view_threshold_form" model="ir.ui.view">
-        <field name="name">aulametrics.threshold.form</field>
-        <field name="model">aulametrics.threshold</field>
+        <field name="name">aula_metrics.threshold.form</field>
+        <field name="model">aula_metrics.threshold</field>
         <field name="arch" type="xml">
             <form string="Umbral">
                 <sheet>
@@ -44,7 +44,7 @@
     <!-- Acción de Ventana para Umbrales -->
     <record id="action_threshold" model="ir.actions.act_window">
         <field name="name">Umbrales</field>
-        <field name="res_model">aulametrics.threshold</field>
+        <field name="res_model">aula_metrics.threshold</field>
         <field name="view_mode">tree,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

@@ -2,7 +2,7 @@
 <odoo>
     <data>
         <!-- Banner de Bienvenida (Sequence 1) -->
-        <record id="dashboard_card_welcome_banner" model="aulametrics.dashboard.home">
+        <record id="dashboard_card_welcome_banner" model="aula_metrics.dashboard.home">
             <field name="sequence">1</field>
             <field name="name">Bienvenido a AulaMetrics</field>
             <field name="description">Sistema integral de evaluación del bienestar psicosocial estudiantil. Gestiona cuestionarios, programa evaluaciones, analiza métricas y detecta alertas para intervenciones tempranas.</field>
@@ -13,7 +13,7 @@
         <!-- Tarjetas del Dashboard de Inicio -->
         
         <!-- 1. Cuestionarios (Primera fila, primera columna) -->
-        <record id="dashboard_card_surveys" model="aulametrics.dashboard.home">
+        <record id="dashboard_card_surveys" model="aula_metrics.dashboard.home">
             <field name="sequence">10</field>
             <field name="name">Cuestionarios</field>
             <field name="description">Gestiona cuestionarios validados y crea nuevos cuestionarios.</field>
@@ -23,7 +23,7 @@
         </record>
         
         <!-- 2. Evaluaciones (Primera fila, segunda columna) -->
-        <record id="dashboard_card_evaluations" model="aulametrics.dashboard.home">
+        <record id="dashboard_card_evaluations" model="aula_metrics.dashboard.home">
             <field name="sequence">20</field>
             <field name="name">Evaluaciones</field>
             <field name="description">Programa y gestiona evaluaciones asignando cuestionarios a grupos académicos.</field>
@@ -33,7 +33,7 @@
         </record>
         
         <!-- 3. Dashboard de Métricas (Segunda fila, primera columna) -->
-        <record id="dashboard_card_metrics" model="aulametrics.dashboard.home">
+        <record id="dashboard_card_metrics" model="aula_metrics.dashboard.home">
             <field name="sequence">30</field>
             <field name="name">Dashboard de Métricas</field>
             <field name="description">Visualiza los resultados de tus evaluaciones.</field>
@@ -43,7 +43,7 @@
         </record>
         
         <!-- 4. Sistema de Alertas (Segunda fila, segunda columna) -->
-        <record id="dashboard_card_alerts" model="aulametrics.dashboard.home">
+        <record id="dashboard_card_alerts" model="aula_metrics.dashboard.home">
             <field name="sequence">40</field>
             <field name="name">Sistema de Alertas</field>
             <field name="description">Gestiona alertas de indicadores de riesgo.</field>

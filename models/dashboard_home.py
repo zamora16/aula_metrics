@@ -8,7 +8,7 @@ class DashboardHome(models.Model):
     Contiene tarjetas de navegación estáticas.
     Las tarjetas se definen en data/dashboard_home_data.xml
     """
-    _name = 'aulametrics.dashboard.home'
+    _name = 'aula_metrics.dashboard.home'
     _description = 'Dashboard de Inicio AulaMetrics'
     _order = 'sequence, id'
     

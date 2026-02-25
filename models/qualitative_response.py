@@ -5,14 +5,14 @@ import re
 import json
 
 class QualitativeResponse(models.Model):
-    _name = 'aulametrics.qualitative_response'
+    _name = 'aula_metrics.qualitative_response'
     _description = 'Respuesta Cualitativa (Texto Abierto)'
     _order = 'response_date desc'
     
     # Relaciones
     student_id = fields.Many2one('res.partner', string='Estudiante', required=True, ondelete='cascade', index=True)
-    academic_group_id = fields.Many2one('aulametrics.academic_group', string='Grupo Académico', required=True, index=True)
-    evaluation_id = fields.Many2one('aulametrics.evaluation', string='Evaluación', required=True, ondelete='cascade', index=True)
+    academic_group_id = fields.Many2one('aula_metrics.academic_group', string='Grupo Académico', required=True, index=True)
+    evaluation_id = fields.Many2one('aula_metrics.evaluation', string='Evaluación', required=True, ondelete='cascade', index=True)
     survey_id = fields.Many2one('survey.survey', string='Cuestionario', required=True, ondelete='restrict')
     question_id = fields.Many2one('survey.question', string='Pregunta', required=True, ondelete='restrict')
     user_input_id = fields.Many2one('survey.user_input', string='Respuesta de Usuario', ondelete='cascade')
@@ -46,7 +46,7 @@ class QualitativeResponse(models.Model):
                 continue
             
             # Obtener palabras clave activas del sistema
-            alert_keywords = self.env['aulametrics.alert_keyword'].search([
+            alert_keywords = self.env['aula_metrics.alert_keyword'].search([
                 ('active', '=', True)
             ])
             
@@ -69,7 +69,7 @@ class QualitativeResponse(models.Model):
             
             # Si se detectaron keywords, crear alerta formal
             if record.has_alert_keywords and record.id:
-                self.env['aulametrics.alert'].sudo().create_qualitative_alert(record)
+                self.env['aula_metrics.alert'].sudo().create_qualitative_alert(record)
     
     @api.depends('student_id')
     def _compute_display_name(self):
@@ -97,7 +97,7 @@ class QualitativeResponse(models.Model):
 
 
 class AlertKeyword(models.Model):
-    _name = 'aulametrics.alert_keyword'
+    _name = 'aula_metrics.alert_keyword'
     _description = 'Palabra Clave para Alertas Automáticas'
     _order = 'sequence, keyword'
     
@@ -113,7 +113,7 @@ class AlertKeyword(models.Model):
                                        help='Palabras configuradas por defecto (no se pueden eliminar)')
     is_variant = fields.Boolean('Es Variante', default=False, readonly=True,
                                 help='Variante automática generada de otra palabra')
-    parent_keyword_id = fields.Many2one('aulametrics.alert_keyword', string='Palabra Principal',
+    parent_keyword_id = fields.Many2one('aula_metrics.alert_keyword', string='Palabra Principal',
                                        ondelete='cascade', readonly=True,
                                        help='Palabra clave de la que se generó esta variante')
     
@@ -143,7 +143,7 @@ class AlertKeyword(models.Model):
             for record in self:
                 if not record.is_variant and not record.is_system_default:
                     # Eliminar variantes antiguas
-                    self.env['aulametrics.alert_keyword'].search([
+                    self.env['aula_metrics.alert_keyword'].search([
                         ('parent_keyword_id', '=', record.id)
                     ]).unlink()
                     # Generar nuevas variantes
@@ -175,13 +175,13 @@ class AlertKeyword(models.Model):
         # Crear registros de variantes
         for variant in variants:
             # Verificar si ya existe (para evitar duplicados)
-            existing = self.env['aulametrics.alert_keyword'].search([
+            existing = self.env['aula_metrics.alert_keyword'].search([
                 ('keyword', '=', variant)
             ], limit=1)
             
             if not existing:
                 try:
-                    self.env['aulametrics.alert_keyword'].create({
+                    self.env['aula_metrics.alert_keyword'].create({
                         'keyword': variant,
                         'description': f'Variante automática de "{self.keyword}"',
                         'severity': self.severity,

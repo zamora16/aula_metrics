@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista Kanban del Dashboard de Inicio -->
     <record id="view_dashboard_home_kanban" model="ir.ui.view">
-        <field name="name">aulametrics.dashboard.home.kanban</field>
-        <field name="model">aulametrics.dashboard.home</field>
+        <field name="name">aula_metrics.dashboard.home.kanban</field>
+        <field name="model">aula_metrics.dashboard.home</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_dashboard am_dashboard_view" create="false" edit="false" delete="false">
                 <field name="id"/>
@@ -56,7 +56,7 @@
     <!-- Acción para abrir el Dashboard de Inicio -->
     <record id="action_dashboard_home" model="ir.actions.act_window">
         <field name="name">Inicio AulaMetrics</field>
-        <field name="res_model">aulametrics.dashboard.home</field>
+        <field name="res_model">aula_metrics.dashboard.home</field>
         <field name="view_mode">kanban</field>
         <field name="view_id" ref="view_dashboard_home_kanban"/>
         <field name="help" type="html">

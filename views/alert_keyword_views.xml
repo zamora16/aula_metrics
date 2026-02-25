@@ -3,7 +3,7 @@
     <!-- Vista Tree de Palabras Clave de Alerta -->
     <record id="view_alert_keyword_tree" model="ir.ui.view">
         <field name="name">alert.keyword.tree</field>
-        <field name="model">aulametrics.alert_keyword</field>
+        <field name="model">aula_metrics.alert_keyword</field>
         <field name="arch" type="xml">
             <tree string="Palabras Clave de Alerta" decoration-muted="is_variant">
                 <field name="sequence" widget="handle"/>
@@ -20,7 +20,7 @@
     <!-- Vista Form de Palabras Clave de Alerta -->
     <record id="view_alert_keyword_form" model="ir.ui.view">
         <field name="name">alert.keyword.form</field>
-        <field name="model">aulametrics.alert_keyword</field>
+        <field name="model">aula_metrics.alert_keyword</field>
         <field name="arch" type="xml">
             <form string="Palabra Clave de Alerta">
                 <sheet>
@@ -46,7 +46,7 @@
                         </group>
                         <group>
                             <field name="active"/>
-                            <field name="sequence"/>
+                            <field name="sequence" invisible="1"/>
                         </group>
                     </group>
                     
@@ -78,7 +78,7 @@
     <!-- Acción para Palabras Clave de Alerta -->
     <record id="action_alert_keyword" model="ir.actions.act_window">
         <field name="name">Palabras Clave de Alerta</field>
-        <field name="res_model">aulametrics.alert_keyword</field>
+        <field name="res_model">aula_metrics.alert_keyword</field>
         <field name="view_mode">tree,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Configura palabras clave para alertas automáticas</p>

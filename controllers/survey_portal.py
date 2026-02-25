@@ -164,7 +164,7 @@ class AulaMetricsSurveyPortal(http.Controller):
 
     def _get_participation_by_token(self, token):
         """Busca participación por token."""
-        return request.env['aulametrics.participation'].sudo().search([
+        return request.env['aula_metrics.participation'].sudo().search([
             ('evaluation_token', '=', token),
             ('state', '!=', 'expired')
         ], limit=1)

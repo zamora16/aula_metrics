@@ -2,8 +2,8 @@
 <odoo>
     <!-- Dashboard de Alertas -->
     <record id="view_alerts_dashboard" model="ir.ui.view">
-        <field name="name">aulametrics.alerts.dashboard</field>
-        <field name="model">aulametrics.alerts_dashboard</field>
+        <field name="name">aula_metrics.alerts.dashboard</field>
+        <field name="model">aula_metrics.alerts_dashboard</field>
         <field name="arch" type="xml">
             <form string="Sistema de Alertas" create="false" edit="false">
                 <div class="oe_title">
@@ -129,7 +129,7 @@
     <!-- Acción del Dashboard -->
     <record id="action_alerts_dashboard" model="ir.actions.act_window">
         <field name="name">Dashboard de Alertas</field>
-        <field name="res_model">aulametrics.alerts_dashboard</field>
+        <field name="res_model">aula_metrics.alerts_dashboard</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="view_alerts_dashboard"/>
         <field name="target">current</field>

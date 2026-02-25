@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista de Formulario de Participación -->
     <record id="view_participation_form" model="ir.ui.view">
-        <field name="name">aulametrics.participation.form</field>
-        <field name="model">aulametrics.participation</field>
+        <field name="name">aula_metrics.participation.form</field>
+        <field name="model">aula_metrics.participation</field>
         <field name="arch" type="xml">
             <form string="Participación" create="false" delete="false">
                 <header>
@@ -41,8 +41,8 @@
 
     <!-- Vista de Lista de Participaciones -->
     <record id="view_participation_tree" model="ir.ui.view">
-        <field name="name">aulametrics.participation.tree</field>
-        <field name="model">aulametrics.participation</field>
+        <field name="name">aula_metrics.participation.tree</field>
+        <field name="model">aula_metrics.participation</field>
         <field name="arch" type="xml">
             <tree string="Participaciones" 
                   decoration-success="state == 'completed'" 
@@ -63,8 +63,8 @@
 
     <!-- Vista de Búsqueda/Filtros -->
     <record id="view_participation_search" model="ir.ui.view">
-        <field name="name">aulametrics.participation.search</field>
-        <field name="model">aulametrics.participation</field>
+        <field name="name">aula_metrics.participation.search</field>
+        <field name="model">aula_metrics.participation</field>
         <field name="arch" type="xml">
             <search string="Buscar Participaciones">
                 <field name="evaluation_id"/>
@@ -88,7 +88,7 @@
     <!-- Acción de Ventana (no se añadirá al menú directamente, se accede desde evaluaciones) -->
     <record id="action_participation" model="ir.actions.act_window">
         <field name="name">Participaciones</field>
-        <field name="res_model">aulametrics.participation</field>
+        <field name="res_model">aula_metrics.participation</field>
         <field name="view_mode">tree,form</field>
     </record>
 </odoo>

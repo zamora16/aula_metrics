@@ -148,7 +148,7 @@
         <!-- Evaluaciones: Tutores solo ven evaluaciones que incluyen sus grupos -->
         <record id="evaluation_tutor_rule" model="ir.rule">
             <field name="name">Evaluaciones: Tutores solo sus grupos</field>
-            <field name="model_id" ref="model_aulametrics_evaluation"/>
+            <field name="model_id" ref="model_aula_metrics_evaluation"/>
             <field name="domain_force">[('academic_group_ids.tutor_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="perm_read" eval="True"/>
@@ -160,7 +160,7 @@
         <!-- Evaluaciones: Management, Orientadores y Admins ven todas -->
         <record id="evaluation_counselor_admin_management_rule" model="ir.rule">
             <field name="name">Evaluaciones: Orientadores/Admins/Management todas</field>
-            <field name="model_id" ref="model_aulametrics_evaluation"/>
+            <field name="model_id" ref="model_aula_metrics_evaluation"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
         </record>

@@ -3,16 +3,16 @@ from odoo import models, fields, api
 import re
 
 class Alert(models.Model):
-    _name = 'aulametrics.alert'
+    _name = 'aula_metrics.alert'
     _description = 'Alerta de AulaMetrics'
     _order = 'alert_date desc'
     
     name = fields.Char(string='Título', compute='_compute_name')
-    threshold_id = fields.Many2one('aulametrics.threshold', string='Umbral', ondelete='cascade')
-    participation_id = fields.Many2one('aulametrics.participation', string='Participación', ondelete='cascade')
-    qualitative_response_id = fields.Many2one('aulametrics.qualitative_response', string='Respuesta Cualitativa', ondelete='cascade')
+    threshold_id = fields.Many2one('aula_metrics.threshold', string='Umbral', ondelete='cascade')
+    participation_id = fields.Many2one('aula_metrics.participation', string='Participación', ondelete='cascade')
+    qualitative_response_id = fields.Many2one('aula_metrics.qualitative_response', string='Respuesta Cualitativa', ondelete='cascade')
     student_id = fields.Many2one('res.partner', string='Alumno')
-    academic_group_id = fields.Many2one('aulametrics.academic_group', string='Grupo Académico')
+    academic_group_id = fields.Many2one('aula_metrics.academic_group', string='Grupo Académico')
     score_value = fields.Float(string='Valor de Puntuación', required=True)
     alert_date = fields.Datetime(string='Fecha de Alerta', default=fields.Datetime.now)
     status = fields.Selection([
@@ -80,7 +80,7 @@ class Alert(models.Model):
                     keywords_list = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
                     
                     # Buscar keywords en BD para obtener sus severidades
-                    keywords = self.env['aulametrics.alert_keyword'].search([
+                    keywords = self.env['aula_metrics.alert_keyword'].search([
                         ('keyword', 'in', keywords_list),
                         ('active', '=', True)
                     ])
@@ -124,8 +124,8 @@ class Alert(models.Model):
         """Computa el nombre de la alerta según permisos del usuario."""
         for alert in self:
             user = self.env.user
-            is_counselor_or_admin = user.has_group('aulametrics.group_aulametrics_admin') or user.has_group('aulametrics.group_aulametrics_counselor')
-            is_management = user.has_group('aulametrics.group_aulametrics_management')
+            is_counselor_or_admin = user.has_group('aula_metrics.group_aulametrics_admin') or user.has_group('aula_metrics.group_aulametrics_counselor')
+            is_management = user.has_group('aula_metrics.group_aulametrics_management')
             
             # Nombre base según tipo de alerta
             if alert.alert_type == 'qualitative':
@@ -199,7 +199,7 @@ class Alert(models.Model):
         Se llama en tiempo real cada vez que se completa un cuestionario.
         """
         # Buscar umbrales activos relevantes para los cuestionarios de esta evaluación
-        thresholds = self.env['aulametrics.threshold'].search([
+        thresholds = self.env['aula_metrics.threshold'].search([
             ('active', '=', True)
         ])
         
@@ -262,7 +262,7 @@ class Alert(models.Model):
     def _check_all_group_alerts(self, participation):
         """Verifica y genera alertas grupales para todos los umbrales relevantes en una sola operación"""
         group = participation.student_id.academic_group_id
-        thresholds = self.env['aulametrics.threshold'].search([
+        thresholds = self.env['aula_metrics.threshold'].search([
             ('active', '=', True),
             ('survey_id', 'in', participation.evaluation_id.survey_ids.ids),
             ('group_threshold_percentage', '>', 0)
@@ -333,7 +333,7 @@ class Alert(models.Model):
         return {
             'name': 'Resolver Alerta',
             'type': 'ir.actions.act_window',
-            'res_model': 'aulametrics.resolve_alert_wizard',
+            'res_model': 'aula_metrics.resolve_alert_wizard',
             'view_mode': 'form',
             'target': 'new',
             'context': {

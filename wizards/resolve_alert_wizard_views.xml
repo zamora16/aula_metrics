@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista del wizard para resolver alertas -->
     <record id="view_resolve_alert_wizard_form" model="ir.ui.view">
-        <field name="name">aulametrics.resolve_alert_wizard.form</field>
-        <field name="model">aulametrics.resolve_alert_wizard</field>
+        <field name="name">aula_metrics.resolve_alert_wizard.form</field>
+        <field name="model">aula_metrics.resolve_alert_wizard</field>
         <field name="arch" type="xml">
             <form string="Resolver Alerta">
                 <field name="alert_id" invisible="1"/>

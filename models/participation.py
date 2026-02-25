@@ -4,13 +4,13 @@ import uuid
 
 class Participation(models.Model):
     """Seguimiento de participación de alumnos en evaluaciones"""
-    _name = 'aulametrics.participation'
+    _name = 'aula_metrics.participation'
     _description = 'Participación en Evaluación'
     _order = 'evaluation_id desc, student_id'
     
     # Relaciones
     evaluation_id = fields.Many2one(
-        'aulametrics.evaluation',
+        'aula_metrics.evaluation',
         string='Evaluación',
         required=True,
         ondelete='cascade',
@@ -65,7 +65,7 @@ class Participation(models.Model):
     )
     
     metric_value_ids = fields.One2many(
-        'aulametrics.metric_value',
+        'aula_metrics.metric_value',
         compute='_compute_metric_value_ids',
         string='Valores de Métricas',
         help='Valores de todas las métricas calculadas para este estudiante en esta evaluación'
@@ -91,7 +91,7 @@ class Participation(models.Model):
         """Obtiene las métricas de este estudiante en esta evaluación"""
         for participation in self:
             if participation.student_id and participation.evaluation_id:
-                participation.metric_value_ids = self.env['aulametrics.metric_value'].search([
+                participation.metric_value_ids = self.env['aula_metrics.metric_value'].search([
                     ('student_id', '=', participation.student_id.id),
                     ('evaluation_id', '=', participation.evaluation_id.id)
                 ])
@@ -107,7 +107,7 @@ class Participation(models.Model):
         Los tutores solo verán métricas de estudiantes de sus grupos.
         """
         self.ensure_one()
-        metric = self.env['aulametrics.metric_value'].search([
+        metric = self.env['aula_metrics.metric_value'].search([
             ('student_id', '=', self.student_id.id),
             ('evaluation_id', '=', self.evaluation_id.id),
             ('metric_name', '=', metric_name)
@@ -122,7 +122,7 @@ class Participation(models.Model):
         Nota: Las record rules filtran automáticamente según el rol del usuario.
         """
         self.ensure_one()
-        metrics = self.env['aulametrics.metric_value'].search([
+        metrics = self.env['aula_metrics.metric_value'].search([
             ('student_id', '=', self.student_id.id),
             ('evaluation_id', '=', self.evaluation_id.id)
         ])
@@ -149,7 +149,7 @@ class Participation(models.Model):
             return
         
         surveys = self.evaluation_id.survey_ids
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         for survey in surveys:
             try:
@@ -222,7 +222,7 @@ class Participation(models.Model):
     def check_alerts(self):
         """Verifica si las puntuaciones actuales generan alertas"""
         self.ensure_one()
-        self.env['aulametrics.alert'].check_alerts_for_participation(self)
+        self.env['aula_metrics.alert'].check_alerts_for_participation(self)
 
     def action_expire(self):
         """Marca participaciones pendientes como expiradas"""

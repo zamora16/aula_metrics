@@ -36,12 +36,12 @@ class QualitativeDashboardController(http.Controller):
         # Aplicar filtros por rol
         if role == 'tutor':
             # Solo su grupo académico
-            tutor_groups = request.env['aulametrics.academic_group'].search([
+            tutor_groups = request.env['aula_metrics.academic_group'].search([
                 ('tutor_id', '=', user.id)
             ])
             domain.append(('academic_group_id', 'in', tutor_groups.ids))
         
-        responses = request.env['aulametrics.qualitative_response'].search(
+        responses = request.env['aula_metrics.qualitative_response'].search(
             domain, 
             order='response_date desc',
             limit=500  # Límite de seguridad
@@ -96,18 +96,18 @@ class QualitativeDashboardController(http.Controller):
         if role == 'tutor':
             # Solo evaluaciones de sus grupos
             user = request.env.user
-            tutor_groups = request.env['aulametrics.academic_group'].search([
+            tutor_groups = request.env['aula_metrics.academic_group'].search([
                 ('tutor_id', '=', user.id)
             ])
             domain.append(('academic_group_ids', 'in', tutor_groups.ids))
         
-        all_evaluations = request.env['aulametrics.evaluation'].search(
+        all_evaluations = request.env['aula_metrics.evaluation'].search(
             domain,
             order='date_start desc'
         )
         
         # Filtrar solo evaluaciones con preguntas de texto libre
-        evaluations_with_text_questions = request.env['aulametrics.evaluation']
+        evaluations_with_text_questions = request.env['aula_metrics.evaluation']
         for evaluation in all_evaluations:
             # Verificar si alguna encuesta tiene preguntas de texto libre
             has_text_questions = False

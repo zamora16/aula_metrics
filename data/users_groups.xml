@@ -16,7 +16,7 @@
         </record>
 
         <!-- Grupo Académico: 1º ESO A -->
-        <record id="group_eso1_a" model="aulametrics.academic_group">
+        <record id="group_eso1_a" model="aula_metrics.academic_group">
             <field name="name">1º ESO A</field>
             <field name="course_level">eso1</field>
             <field name="tutor_id" ref="user_tutor_1"/>
@@ -104,7 +104,7 @@
         </record>
 
         <!-- Grupo Académico: 1º ESO B -->
-        <record id="group_eso1_b" model="aulametrics.academic_group">
+        <record id="group_eso1_b" model="aula_metrics.academic_group">
             <field name="name">1º ESO B</field>
             <field name="course_level">eso1</field>
             <field name="tutor_id" ref="user_tutor_2"/>
@@ -192,7 +192,7 @@
         </record>
 
         <!-- Grupo Académico: 1º ESO C -->
-        <record id="group_eso1_c" model="aulametrics.academic_group">
+        <record id="group_eso1_c" model="aula_metrics.academic_group">
             <field name="name">1º ESO C</field>
             <field name="course_level">eso1</field>
             <field name="tutor_id" ref="user_tutor_3"/>
@@ -280,7 +280,7 @@
         </record>
 
         <!-- Grupo Académico: 2º ESO A -->
-        <record id="group_eso2_a" model="aulametrics.academic_group">
+        <record id="group_eso2_a" model="aula_metrics.academic_group">
             <field name="name">2º ESO A</field>
             <field name="course_level">eso2</field>
             <field name="tutor_id" ref="user_tutor_4"/>
@@ -368,7 +368,7 @@
         </record>
 
         <!-- Grupo Académico: 2º ESO B -->
-        <record id="group_eso2_b" model="aulametrics.academic_group">
+        <record id="group_eso2_b" model="aula_metrics.academic_group">
             <field name="name">2º ESO B</field>
             <field name="course_level">eso2</field>
             <field name="tutor_id" ref="user_tutor_5"/>
@@ -456,7 +456,7 @@
         </record>
 
         <!-- Grupo Académico: 2º ESO C -->
-        <record id="group_eso2_c" model="aulametrics.academic_group">
+        <record id="group_eso2_c" model="aula_metrics.academic_group">
             <field name="name">2º ESO C</field>
             <field name="course_level">eso2</field>
             <field name="tutor_id" ref="user_tutor_6"/>
@@ -544,7 +544,7 @@
         </record>
 
         <!-- Grupo Académico: 3º ESO A -->
-        <record id="group_eso3_a" model="aulametrics.academic_group">
+        <record id="group_eso3_a" model="aula_metrics.academic_group">
             <field name="name">3º ESO A</field>
             <field name="course_level">eso3</field>
             <field name="tutor_id" ref="user_tutor_7"/>
@@ -632,7 +632,7 @@
         </record>
 
         <!-- Grupo Académico: 3º ESO B -->
-        <record id="group_eso3_b" model="aulametrics.academic_group">
+        <record id="group_eso3_b" model="aula_metrics.academic_group">
             <field name="name">3º ESO B</field>
             <field name="course_level">eso3</field>
             <field name="tutor_id" ref="user_tutor_8"/>
@@ -720,7 +720,7 @@
         </record>
 
         <!-- Grupo Académico: 4º ESO A -->
-        <record id="group_eso4_a" model="aulametrics.academic_group">
+        <record id="group_eso4_a" model="aula_metrics.academic_group">
             <field name="name">4º ESO A</field>
             <field name="course_level">eso4</field>
             <field name="tutor_id" ref="user_tutor_9"/>
@@ -808,7 +808,7 @@
         </record>
 
         <!-- Grupo Académico: 4º ESO B -->
-        <record id="group_eso4_b" model="aulametrics.academic_group">
+        <record id="group_eso4_b" model="aula_metrics.academic_group">
             <field name="name">4º ESO B</field>
             <field name="course_level">eso4</field>
             <field name="tutor_id" ref="user_tutor_10"/>
@@ -896,7 +896,7 @@
         </record>
 
         <!-- Grupo Académico: 1º Bachillerato A -->
-        <record id="group_bach1_a" model="aulametrics.academic_group">
+        <record id="group_bach1_a" model="aula_metrics.academic_group">
             <field name="name">1º Bachillerato A</field>
             <field name="course_level">bach1</field>
             <field name="tutor_id" ref="user_tutor_11"/>
@@ -984,7 +984,7 @@
         </record>
 
         <!-- Grupo Académico: 2º Bachillerato A -->
-        <record id="group_bach2_a" model="aulametrics.academic_group">
+        <record id="group_bach2_a" model="aula_metrics.academic_group">
             <field name="name">2º Bachillerato A</field>
             <field name="course_level">bach2</field>
             <field name="tutor_id" ref="user_tutor_12"/>

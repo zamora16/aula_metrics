@@ -2,7 +2,7 @@
 from odoo import models, fields, api
 
 class Threshold(models.Model):
-    _name = 'aulametrics.threshold'
+    _name = 'aula_metrics.threshold'
     _description = 'Umbral para Alertas'
 
     name = fields.Char(string='Nombre', required=True, help='Ej: Alto Estrés ASQ-14')

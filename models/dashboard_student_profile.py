@@ -11,7 +11,7 @@ from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers, palet
 
 
 class DashboardStudentProfile(models.TransientModel):
-    _name = 'aulametrics.dashboard.student_profile'
+    _name = 'aula_metrics.dashboard.student_profile'
     _description = 'Generador de Perfil Individual de Estudiante'
 
     @api.model
@@ -112,7 +112,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _get_student_metrics(self, student_id):
         """Obtiene todas las métricas del estudiante ordenadas por fecha."""
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         return MetricValue.search([
             ('student_id', '=', student_id)
         ], order='timestamp desc')
@@ -182,7 +182,7 @@ class DashboardStudentProfile(models.TransientModel):
         """)
         
         # Alertas activas
-        alerts_count = self.env['aulametrics.alert'].search_count([
+        alerts_count = self.env['aula_metrics.alert'].search_count([
             ('student_id', '=', student.id),
             ('status', '=', 'active')
         ])
@@ -198,7 +198,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _get_student_alerts_html(self, student_id):
         """Obtiene HTML con las alertas activas del estudiante."""
-        Alert = self.env['aulametrics.alert']
+        Alert = self.env['aula_metrics.alert']
         alerts = Alert.search([
             ('student_id', '=', student_id),
             ('status', '=', 'active')
@@ -238,7 +238,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _get_student_alerts_history_html(self, student_id):
         """Obtiene HTML con el historial de alertas resueltas/descartadas del estudiante."""
-        Alert = self.env['aulametrics.alert']
+        Alert = self.env['aula_metrics.alert']
         alerts = Alert.search([
             ('student_id', '=', student_id),
             ('status', 'in', ['resolved', 'dismissed'])
@@ -298,7 +298,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _get_participations_html(self, student_id):
         """Obtiene HTML con el histórico de participaciones."""
-        Participation = self.env['aulametrics.participation']
+        Participation = self.env['aula_metrics.participation']
         participations = Participation.search([
             ('student_id', '=', student_id)
         ], order='completed_at desc', limit=20)
@@ -350,7 +350,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _get_qualitative_responses_html(self, student_id):
         """Obtiene HTML con las respuestas cualitativas del estudiante."""
-        QualitativeResponse = self.env['aulametrics.qualitative_response']
+        QualitativeResponse = self.env['aula_metrics.qualitative_response']
         responses = QualitativeResponse.search([
             ('student_id', '=', student_id)
         ], order='response_date desc', limit=20)
@@ -403,7 +403,7 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _get_metric_threshold(self, metric_name):
         """Obtiene el umbral configurado para una métrica."""
-        Threshold = self.env['aulametrics.threshold']
+        Threshold = self.env['aula_metrics.threshold']
         threshold = Threshold.search([
             ('score_field', '=', metric_name),
             ('active', '=', True)
@@ -538,10 +538,10 @@ class DashboardStudentProfile(models.TransientModel):
                 email = student.email or 'N/A'
                 
                 # Contar métricas y alertas
-                metrics_count = self.env['aulametrics.metric_value'].search_count([
+                metrics_count = self.env['aula_metrics.metric_value'].search_count([
                     ('student_id', '=', student.id)
                 ])
-                alerts_count = self.env['aulametrics.alert'].search_count([
+                alerts_count = self.env['aula_metrics.alert'].search_count([
                     ('student_id', '=', student.id),
                     ('status', '=', 'active')
                 ])
@@ -1067,7 +1067,7 @@ class DashboardStudentProfile(models.TransientModel):
         
         # Para cada métrica del estudiante, obtener valores del grupo
         for metric_name in df_student['metric_name'].unique():
-            MetricValue = self.env['aulametrics.metric_value']
+            MetricValue = self.env['aula_metrics.metric_value']
             group_metrics = MetricValue.search([
                 ('metric_name', '=', metric_name),
                 ('academic_group_id', '=', group_id)
@@ -1094,7 +1094,7 @@ class DashboardStudentProfile(models.TransientModel):
         
         # Para cada métrica del estudiante, obtener valores de todo el centro
         for metric_name in df_student['metric_name'].unique():
-            MetricValue = self.env['aulametrics.metric_value']
+            MetricValue = self.env['aula_metrics.metric_value']
             center_metrics = MetricValue.search([
                 ('metric_name', '=', metric_name)
             ])

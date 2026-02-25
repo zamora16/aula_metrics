@@ -10,7 +10,7 @@ import json
 from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
 
 class DashboardCharts(models.TransientModel):
-    _name = 'aulametrics.dashboard.charts'
+    _name = 'aula_metrics.dashboard.charts'
     _description = 'Generador de Dashboard de Métricas'
 
     @api.model
@@ -69,7 +69,7 @@ class DashboardCharts(models.TransientModel):
 
     def _get_available_metrics(self, filters, role_info):
         """Obtiene las métricas únicas disponibles en metric_value."""
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         # Dominio base
         domain = []
@@ -143,8 +143,8 @@ class DashboardCharts(models.TransientModel):
         Los grupos se derivan automáticamente de las evaluaciones seleccionadas,
         mostrando solo aquellos que tienen participación en dichas evaluaciones.
         """
-        AcademicGroup = self.env['aulametrics.academic_group']
-        MetricValue = self.env['aulametrics.metric_value']
+        AcademicGroup = self.env['aula_metrics.academic_group']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         # Si hay evaluaciones filtradas, derivar grupos desde ellas
         if filters.get('evaluation_ids'):
@@ -174,7 +174,7 @@ class DashboardCharts(models.TransientModel):
 
     def _get_available_evaluations(self, role_info):
         """Obtiene las evaluaciones disponibles según el rol."""
-        Evaluation = self.env['aulametrics.evaluation']
+        Evaluation = self.env['aula_metrics.evaluation']
         
         # Las record rules ya aplican filtros, simplemente buscamos todas
         evaluations = Evaluation.search([], order='date_start desc')
@@ -206,7 +206,7 @@ class DashboardCharts(models.TransientModel):
         })
         
         # 2. Preguntas de opciones múltiples (dinámicas desde metric_value)
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         SurveyQuestion = self.env['survey.question'].sudo()  # sudo() para lectura de metadatos de encuestas
         
         # Dominio base respetando permisos de rol
@@ -275,7 +275,7 @@ class DashboardCharts(models.TransientModel):
             # Determinar surveys a inspeccionar: las de las evaluaciones filtradas si existen
             survey_candidates = self.env['survey.question'].__class__(self.env)  # dummy
             if filters.get('evaluation_ids'):
-                Evaluation = self.env['aulametrics.evaluation'].sudo()
+                Evaluation = self.env['aula_metrics.evaluation'].sudo()
                 evals = Evaluation.browse(filters['evaluation_ids'])
                 survey_candidates = evals.mapped('survey_ids')
             else:
@@ -371,7 +371,7 @@ class DashboardCharts(models.TransientModel):
 
     def _query_metric_values(self, filters, role_info):
         """Consulta los valores de métricas. Las métricas y grupos se derivan automáticamente de las evaluaciones."""
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         domain = []
         
@@ -386,7 +386,7 @@ class DashboardCharts(models.TransientModel):
                 domain.append(('academic_group_id', 'in', allowed_groups))
             else:
                 # Si no tiene grupos, no ve nada
-                return self.env['aulametrics.metric_value']
+                return self.env['aula_metrics.metric_value']
         
         return MetricValue.search(domain)
 
@@ -642,7 +642,7 @@ class DashboardCharts(models.TransientModel):
         Returns:
             list: Lista de dicts con {value, operator, label, severity}
         """
-        Threshold = self.env['aulametrics.threshold']
+        Threshold = self.env['aula_metrics.threshold']
         thresholds = Threshold.search([
             ('active', '=', True),
             ('score_field', '=', metric_name)
@@ -1088,7 +1088,7 @@ class DashboardCharts(models.TransientModel):
         
         # Preparar datos de segmentación para TODAS las variables disponibles
         stats_by_segmentation = {}
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         for seg_var in segmentation_vars:
             var_value = seg_var['value']
@@ -1380,7 +1380,7 @@ class DashboardCharts(models.TransientModel):
         
         # Preparar datos de segmentación (también filtrados a evaluación más reciente)
         distribution_by_segmentation = {}
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         for seg_var in segmentation_vars:
             var_value = seg_var['value']
@@ -1596,7 +1596,7 @@ class DashboardCharts(models.TransientModel):
         
         # Preparar datos de segmentación para TODAS las variables disponibles
         stats_by_segmentation = {}
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         for seg_var in segmentation_vars:
             var_value = seg_var['value']  # 'gender' o 'question_116_choices'
@@ -2267,7 +2267,7 @@ class DashboardCharts(models.TransientModel):
         Returns:
             list: Lista de dicts con información de evaluaciones activas
         """
-        Evaluation = self.env['aulametrics.evaluation']
+        Evaluation = self.env['aula_metrics.evaluation']
         
         # Filtro base: solo evaluaciones activas
         domain = [('state', '=', 'active')]
@@ -2297,7 +2297,7 @@ class DashboardCharts(models.TransientModel):
             
             # Contar alertas activas relacionadas (solo para counselor/admin)
             if role_info.get('role') in ['admin', 'counselor']:
-                Alert = self.env['aulametrics.alert']
+                Alert = self.env['aula_metrics.alert']
                 alert_count = Alert.search_count([
                     ('participation_id.evaluation_id', '=', evaluation.id),
                     ('status', '=', 'active')

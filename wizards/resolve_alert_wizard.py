@@ -3,10 +3,10 @@ from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 
 class ResolveAlertWizard(models.TransientModel):
-    _name = 'aulametrics.resolve_alert_wizard'
+    _name = 'aula_metrics.resolve_alert_wizard'
     _description = 'Wizard para Resolver Alerta'
     
-    alert_id = fields.Many2one('aulametrics.alert', string='Alerta', required=True, ondelete='cascade')
+    alert_id = fields.Many2one('aula_metrics.alert', string='Alerta', required=True, ondelete='cascade')
     resolution_action = fields.Text(
         string='Acción Tomada',
         required=True,

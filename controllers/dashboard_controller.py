@@ -51,7 +51,7 @@ class DashboardChartsController(http.Controller):
 
         # Para tutores (no counselor/admin), restringir a sus grupos asignados
         if role_info['role'] == 'tutor':
-            tutor_groups = request.env['aulametrics.academic_group'].search([
+            tutor_groups = request.env['aula_metrics.academic_group'].search([
                 ('tutor_id', '=', user.id)
             ])
             role_info['allowed_group_ids'] = tutor_groups.ids
@@ -74,7 +74,7 @@ class DashboardChartsController(http.Controller):
         # Aplicar restricciones de rol a los filtros
         filters = self._apply_role_restrictions(filters, role_info)
 
-        html_content = request.env['aulametrics.dashboard.charts'].generate_dashboard(
+        html_content = request.env['aula_metrics.dashboard.charts'].generate_dashboard(
             filters=filters, 
             role_info=role_info
         )
@@ -105,7 +105,7 @@ class DashboardChartsController(http.Controller):
             )
         
         # Generar lista HTML de estudiantes
-        html_content = request.env['aulametrics.dashboard.student_profile'].generate_students_list(
+        html_content = request.env['aula_metrics.dashboard.student_profile'].generate_students_list(
             role_info=role_info
         )
         
@@ -140,7 +140,7 @@ class DashboardChartsController(http.Controller):
         
         # Delegar validación de acceso y generación al modelo
         try:
-            html_content = request.env['aulametrics.dashboard.student_profile'].generate_student_profile(
+            html_content = request.env['aula_metrics.dashboard.student_profile'].generate_student_profile(
                 student_id=student_id,
                 role_info=role_info
             )

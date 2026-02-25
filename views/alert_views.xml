@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista de Lista de Alertas -->
     <record id="view_alert_tree" model="ir.ui.view">
-        <field name="name">aulametrics.alert.tree</field>
-        <field name="model">aulametrics.alert</field>
+        <field name="name">aula_metrics.alert.tree</field>
+        <field name="model">aula_metrics.alert</field>
         <field name="arch" type="xml">
             <tree string="Alertas">
                 <field name="name"/>
@@ -18,8 +18,8 @@
 
     <!-- Vista de Formulario de Alertas -->
     <record id="view_alert_form" model="ir.ui.view">
-        <field name="name">aulametrics.alert.form</field>
-        <field name="model">aulametrics.alert</field>
+        <field name="name">aula_metrics.alert.form</field>
+        <field name="model">aula_metrics.alert</field>
         <field name="arch" type="xml">
             <form string="Alerta">
                 <header>
@@ -64,7 +64,7 @@
     <!-- Acción de Ventana para Alertas -->
     <record id="action_alert" model="ir.actions.act_window">
         <field name="name">Alertas</field>
-        <field name="res_model">aulametrics.alert</field>
+        <field name="res_model">aula_metrics.alert</field>
         <field name="view_mode">tree,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

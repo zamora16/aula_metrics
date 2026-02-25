@@ -32,7 +32,7 @@ class SurveyUserInput(models.Model):
                 except Exception:
                     pass
                 
-                evaluations = self.env['aulametrics.evaluation'].search([
+                evaluations = self.env['aula_metrics.evaluation'].search([
                     ('state', 'in', ['scheduled', 'active']),
                     ('survey_ids', 'in', user_input.survey_id.id)
                 ])
@@ -41,7 +41,7 @@ class SurveyUserInput(models.Model):
                     continue
                 
                 for evaluation in evaluations:
-                    participation = self.env['aulametrics.participation'].search([
+                    participation = self.env['aula_metrics.participation'].search([
                         ('evaluation_id', '=', evaluation.id),
                         ('student_id', '=', user_input.partner_id.id),
                         ('state', '=', 'pending')
@@ -91,7 +91,7 @@ class SurveyUserInput(models.Model):
         """Obtiene la evaluación y participación activa para este user_input."""
         self.ensure_one()
         
-        evaluation = self.env['aulametrics.evaluation'].search([
+        evaluation = self.env['aula_metrics.evaluation'].search([
             ('state', 'in', ['scheduled', 'active']),
             ('survey_ids', 'in', self.survey_id.id)
         ], order='date_start desc', limit=1)
@@ -99,7 +99,7 @@ class SurveyUserInput(models.Model):
         if not evaluation:
             return None, None
         
-        participation = self.env['aulametrics.participation'].search([
+        participation = self.env['aula_metrics.participation'].search([
             ('evaluation_id', '=', evaluation.id),
             ('student_id', '=', self.partner_id.id)
         ], limit=1)
@@ -124,7 +124,7 @@ class SurveyUserInput(models.Model):
         if not evaluation or not participation:
             return
         
-        QualitativeResponse = self.env['aulametrics.qualitative_response']
+        QualitativeResponse = self.env['aula_metrics.qualitative_response']
         
         for question in text_questions:
             line = self.user_input_line_ids.filtered(
@@ -180,7 +180,7 @@ class SurveyUserInput(models.Model):
         if not evaluation or not participation:
             return
         
-        MetricValue = self.env['aulametrics.metric_value']
+        MetricValue = self.env['aula_metrics.metric_value']
         
         for question in choice_questions:
             lines = self.user_input_line_ids.filtered(

@@ -3,7 +3,7 @@ from odoo import models, fields, api
 import datetime
 
 class AcademicGroup(models.Model):
-    _name = 'aulametrics.academic_group'
+    _name = 'aula_metrics.academic_group'
     _description = 'Grupo Académico'
     _order = 'name'
 

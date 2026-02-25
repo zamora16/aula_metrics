@@ -7,7 +7,7 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
     
     academic_group_id = fields.Many2one(
-        'aulametrics.academic_group',
+        'aula_metrics.academic_group',
         string='Grupo Académico',
         help='Grupo al que pertenece el estudiante',
         ondelete='set null'

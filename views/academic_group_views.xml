@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista de Formulario -->
     <record id="view_academic_group_form" model="ir.ui.view">
-        <field name="name">aulametrics.academic_group.form</field>
-        <field name="model">aulametrics.academic_group</field>
+        <field name="name">aula_metrics.academic_group.form</field>
+        <field name="model">aula_metrics.academic_group</field>
         <field name="arch" type="xml">
             <form string="Grupo Académico">
                 <sheet>
@@ -36,8 +36,8 @@
 
     <!-- Vista de Lista -->
     <record id="view_academic_group_tree" model="ir.ui.view">
-        <field name="name">aulametrics.academic_group.tree</field>
-        <field name="model">aulametrics.academic_group</field>
+        <field name="name">aula_metrics.academic_group.tree</field>
+        <field name="model">aula_metrics.academic_group</field>
         <field name="arch" type="xml">
             <tree string="Grupos Académicos">
                 <field name="name"/>
@@ -52,8 +52,8 @@
 
     <!-- Vista de Búsqueda/Filtros -->
     <record id="view_academic_group_search" model="ir.ui.view">
-        <field name="name">aulametrics.academic_group.search</field>
-        <field name="model">aulametrics.academic_group</field>
+        <field name="name">aula_metrics.academic_group.search</field>
+        <field name="model">aula_metrics.academic_group</field>
         <field name="arch" type="xml">
             <search string="Buscar Grupos">
                 <field name="name"/>
@@ -76,7 +76,7 @@
     <!-- Acción de Ventana -->
     <record id="action_academic_group" model="ir.actions.act_window">
         <field name="name">Grupos Académicos</field>
-        <field name="res_model">aulametrics.academic_group</field>
+        <field name="res_model">aula_metrics.academic_group</field>
         <field name="view_mode">tree,form</field>
         <field name="context">{'search_default_active': 1}</field>
         <field name="help" type="html">

@@ -2,8 +2,8 @@
 <odoo>
     <!-- Vista de Formulario de Evaluación -->
     <record id="view_evaluation_form" model="ir.ui.view">
-        <field name="name">aulametrics.evaluation.form</field>
-        <field name="model">aulametrics.evaluation</field>
+        <field name="name">aula_metrics.evaluation.form</field>
+        <field name="model">aula_metrics.evaluation</field>
         <field name="arch" type="xml">
             <form string="Evaluación">
                 <header>
@@ -116,8 +116,8 @@
 
     <!-- Vista de Lista de Evaluaciones -->
     <record id="view_evaluation_tree" model="ir.ui.view">
-        <field name="name">aulametrics.evaluation.tree</field>
-        <field name="model">aulametrics.evaluation</field>
+        <field name="name">aula_metrics.evaluation.tree</field>
+        <field name="model">aula_metrics.evaluation</field>
         <field name="arch" type="xml">
             <tree string="Evaluaciones" 
                   decoration-info="state == 'draft'"
@@ -141,8 +141,8 @@
 
     <!-- Vista de Búsqueda/Filtros -->
     <record id="view_evaluation_search" model="ir.ui.view">
-        <field name="name">aulametrics.evaluation.search</field>
-        <field name="model">aulametrics.evaluation</field>
+        <field name="name">aula_metrics.evaluation.search</field>
+        <field name="model">aula_metrics.evaluation</field>
         <field name="arch" type="xml">
             <search string="Buscar Evaluaciones">
                 <field name="name"/>
@@ -174,7 +174,7 @@
     <!-- Acción de Ventana -->
     <record id="action_evaluation" model="ir.actions.act_window">
         <field name="name">Evaluaciones</field>
-        <field name="res_model">aulametrics.evaluation</field>
+        <field name="res_model">aula_metrics.evaluation</field>
         <field name="view_mode">tree,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">

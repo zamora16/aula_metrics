@@ -8,7 +8,7 @@ class MetricValue(models.Model):
     Almacena valores de métricas individuales por estudiante/evaluación.
     Permite comparaciones temporales y almacenamiento flexible de cualquier métrica.
     """
-    _name = 'aulametrics.metric_value'
+    _name = 'aula_metrics.metric_value'
     _description = 'Valor de Métrica Individual'
     _order = 'timestamp desc, id desc'
 
@@ -28,7 +28,7 @@ class MetricValue(models.Model):
         index=True
     )
     evaluation_id = fields.Many2one(
-        'aulametrics.evaluation',
+        'aula_metrics.evaluation',
         string='Evaluación',
         required=True,
         ondelete='cascade',
@@ -81,7 +81,7 @@ class MetricValue(models.Model):
         index=True
     )
     academic_group_id = fields.Many2one(
-        'aulametrics.academic_group',
+        'aula_metrics.academic_group',
         string='Grupo Académico',
         related='student_id.academic_group_id',
         store=True,

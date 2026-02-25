@@ -2,8 +2,8 @@
 <odoo>
     <!-- Dashboard de AulaMetrics -->
     <record id="view_aulametrics_dashboard" model="ir.ui.view">
-        <field name="name">aulametrics.dashboard</field>
-        <field name="model">aulametrics.evaluation</field>
+        <field name="name">aula_metrics.dashboard</field>
+        <field name="model">aula_metrics.evaluation</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_dashboard o_aulametrics_dashboard" create="false">
                 <field name="id"/>
@@ -83,7 +83,7 @@
     <!-- Acción del Dashboard -->
     <record id="action_aulametrics_dashboard" model="ir.actions.act_window">
         <field name="name">Panel de Control</field>
-        <field name="res_model">aulametrics.evaluation</field>
+        <field name="res_model">aula_metrics.evaluation</field>
         <field name="view_mode">kanban,tree,form</field>
         <field name="view_id" ref="view_aulametrics_dashboard"/>
         <field name="help" type="html">

@@ -29,7 +29,7 @@ class SurveyExtension(models.Model):
     )
     
     evaluation_ids = fields.Many2many(
-        'aulametrics.evaluation',
+        'aula_metrics.evaluation',
         'evaluation_survey_rel',
         'survey_id',
         'evaluation_id',
@@ -153,7 +153,7 @@ class SurveyExtension(models.Model):
         return {
             'name': 'Evaluaciones',
             'type': 'ir.actions.act_window',
-            'res_model': 'aulametrics.evaluation',
+            'res_model': 'aula_metrics.evaluation',
             'view_mode': 'tree,form',
             'domain': [('survey_ids', 'in', self.id)],
             'context': {'default_survey_ids': [(6, 0, [self.id])]},

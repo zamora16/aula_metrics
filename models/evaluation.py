@@ -4,7 +4,7 @@ from odoo.exceptions import ValidationError
 
 class Evaluation(models.Model):
     """Evaluación Programada - Asignación de cuestionarios a grupos académicos"""
-    _name = 'aulametrics.evaluation'
+    _name = 'aula_metrics.evaluation'
     _description = 'Evaluación Programada'
     _order = 'date_start desc, name'
     
@@ -48,7 +48,7 @@ class Evaluation(models.Model):
 
     # Grupos destinatarios (Many2many)
     academic_group_ids = fields.Many2many(
-        'aulametrics.academic_group',
+        'aula_metrics.academic_group',
         'evaluation_group_rel',
         'evaluation_id',
         'group_id',
@@ -140,7 +140,7 @@ class Evaluation(models.Model):
     
     # Relación con participaciones
     participation_ids = fields.One2many(
-        'aulametrics.participation',
+        'aula_metrics.participation',
         'evaluation_id',
         string='Participaciones',
         help='Seguimiento de participación de cada alumno'
@@ -379,7 +379,7 @@ class Evaluation(models.Model):
     
     def _create_participations(self):
         """Crea registros de participación para cada alumno de los grupos asignados"""
-        Participation = self.env['aulametrics.participation']
+        Participation = self.env['aula_metrics.participation']
         
         for group in self.academic_group_ids:
             for student in group.student_ids:
@@ -401,7 +401,7 @@ class Evaluation(models.Model):
         return {
             'name': 'Participaciones',
             'type': 'ir.actions.act_window',
-            'res_model': 'aulametrics.participation',
+            'res_model': 'aula_metrics.participation',
             'view_mode': 'tree,form',
             'domain': [('evaluation_id', '=', self.id)],
             'context': {'default_evaluation_id': self.id},
