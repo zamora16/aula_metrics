@@ -8,6 +8,7 @@
     'category': 'Education',
     'depends': ['base', 'mail', 'survey'],
     'data': [
+        'data/alert_keywords.xml',
         # 1. Seguridad
         'security/security.xml',
         'security/ir.model.access.csv',

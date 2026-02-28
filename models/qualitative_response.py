@@ -2,9 +2,19 @@
 
 from odoo import api, fields, models
 import re
-import json
+import unicodedata
 
 class QualitativeResponse(models.Model):
+    _name = 'aula_metrics.qualitative_response'
+    _description = 'Respuesta Cualitativa (Texto Abierto)'
+    _order = 'response_date desc'
+
+    def _normalize_text(self, text):
+        """Removes accents and lowercases text for keyword matching."""
+        return ''.join(
+            c for c in unicodedata.normalize('NFD', text)
+            if unicodedata.category(c) != 'Mn'
+        ).lower()
     _name = 'aula_metrics.qualitative_response'
     _description = 'Respuesta Cualitativa (Texto Abierto)'
     _order = 'response_date desc'
@@ -23,7 +33,15 @@ class QualitativeResponse(models.Model):
     
     # Análisis automático
     word_count = fields.Integer('Número de Palabras', compute='_compute_word_count', store=True)
-    detected_keywords = fields.Char('Palabras Clave Detectadas')  # JSON: ["suicidio", "depresión"]
+    detected_keyword_ids = fields.Many2many(
+        'aula_metrics.alert_keyword',
+        'qualitative_response_keyword_rel',
+        'response_id',
+        'keyword_id',
+        string='Palabras Clave Detectadas',
+        help='Palabras clave detectadas en la respuesta',
+        index=True
+    )
     has_alert_keywords = fields.Boolean('Contiene Palabras de Alerta', compute='_compute_alert_keywords', store=True, index=True)
     
     # Campos computados para anonimización
@@ -31,43 +49,26 @@ class QualitativeResponse(models.Model):
     course_level = fields.Char('Nivel de Curso', compute='_compute_course_level', store=True)
     
     @api.depends('response_text')
-    def _compute_word_count(self):
-        """Calcula número de palabras en la respuesta."""
-        for record in self:
-            record.word_count = len(record.response_text.split()) if record.response_text else 0
-    
-    @api.depends('response_text')
     def _compute_alert_keywords(self):
-        """Detecta palabras clave críticas configuradas por el centro."""
         for record in self:
             if not record.response_text:
                 record.has_alert_keywords = False
-                record.detected_keywords = False
+                record.detected_keyword_ids = [(5, 0, 0)]
                 continue
-            
-            # Obtener palabras clave activas del sistema
-            alert_keywords = self.env['aula_metrics.alert_keyword'].search([
-                ('active', '=', True)
-            ])
-            
+            alert_keywords = self.env['aula_metrics.alert_keyword'].search([('active', '=', True)])
             if not alert_keywords:
                 record.has_alert_keywords = False
-                record.detected_keywords = False
+                record.detected_keyword_ids = [(5, 0, 0)]
                 continue
-            
-            # Buscar coincidencias
-            text_lower = record.response_text.lower()
-            found = []
-            
-            for keyword_record in alert_keywords:
-                keyword = keyword_record.keyword.lower()
-                if keyword in text_lower:
-                    found.append(keyword_record.keyword)
-            
+            text_normalized = self._normalize_text(record.response_text)
+            found = alert_keywords.filtered(
+                lambda k: bool(re.search(
+                    r'\b' + re.escape(self._normalize_text(k.keyword)) + r'\b',
+                    text_normalized
+                ))
+            )
             record.has_alert_keywords = bool(found)
-            record.detected_keywords = json.dumps(found, ensure_ascii=False) if found else False
-            
-            # Si se detectaron keywords, crear alerta formal
+            record.detected_keyword_ids = [(6, 0, found.ids)] if found else [(5, 0, 0)]
             if record.has_alert_keywords and record.id:
                 self.env['aula_metrics.alert'].sudo().create_qualitative_alert(record)
     
@@ -223,107 +224,15 @@ class AlertKeyword(models.Model):
     
     def _generate_grammatical_variants(self, word):
         """
-        Genera variantes gramaticales comunes en español.
-        Solo para casos más comunes y relevantes.
+        Genera variantes gramaticales simples (plurales).
         """
         variants = set()
-        
-        # Diccionario de raíces comunes y sus variantes
-        common_variants = {
-            # Suicidio
-            'suicidio': ['suicida', 'suicidas', 'suicidarse', 'suicidar', 'suicidó', 'suicidándose'],
-            'suicida': ['suicidio', 'suicidas', 'suicidarse'],
-            
-            # Depresión
-            'depresion': ['depresivo', 'depresiva', 'deprimido', 'deprimida', 'deprimir'],
-            'depresión': ['depresivo', 'depresiva', 'deprimido', 'deprimida', 'deprimir'],
-            'depresivo': ['depresion', 'depresión', 'deprimido'],
-            'deprimido': ['depresion', 'depresión', 'deprimir'],
-            
-            # Ansiedad
-            'ansiedad': ['ansioso', 'ansiosa', 'ansiedades'],
-            'ansioso': ['ansiedad'],
-            
-            # Acoso
-            'acoso': ['acosar', 'acosado', 'acosada', 'acosador', 'acosadora', 'acosos'],
-            'acosar': ['acoso', 'acosado', 'acosador'],
-            'acosado': ['acoso', 'acosar'],
-            
-            # Bullying
-            'bullying': ['bully', 'bullyng'],  # error ortográfico común
-            
-            # Maltrato
-            'maltrato': ['maltratar', 'maltratado', 'maltratada', 'maltratador'],
-            'maltratar': ['maltrato', 'maltratado'],
-            
-            # Abuso
-            'abuso': ['abusar', 'abusado', 'abusada', 'abusador', 'abusiva', 'abusivo'],
-            'abusar': ['abuso', 'abusado', 'abusador'],
-            
-            # Violencia
-            'violencia': ['violento', 'violenta', 'violentar'],
-            'violento': ['violencia'],
-            
-            # Muerte
-            'muerte': ['morir', 'muerto', 'muerta', 'muriendo', 'morirse'],
-            'morir': ['muerte', 'muerto', 'muriendo'],
-            'muerto': ['muerte', 'morir'],
-            
-            # Matar
-            'matar': ['mata', 'mato', 'matado', 'matando', 'matarme', 'matarse'],
-            'matarme': ['matar', 'matarse'],
-            
-            # Cortar (autolesión)
-            'cortar': ['corto', 'cortado', 'cortando', 'cortarme'],
-            'cortarme': ['cortar', 'cortarse'],
-            
-            # Miedo
-            'miedo': ['miedos', 'miedoso', 'temer', 'temor'],
-            'temer': ['miedo', 'temor'],
-            
-            # Tristeza
-            'tristeza': ['triste', 'tristes', 'entristecer'],
-            'triste': ['tristeza', 'tristes'],
-            
-            # Soledad
-            'soledad': ['solo', 'sola', 'solos', 'solas'],
-            'solo': ['soledad', 'sola'],
-            
-            # Llorar
-            'llorar': ['lloro', 'llora', 'llorando', 'lloré'],
-            'lloro': ['llorar', 'llorando'],
-            
-            # Pegar
-            'pegar': ['pego', 'pega', 'pegado', 'pegando', 'pegaron'],
-            
-            # Golpear
-            'golpear': ['golpe', 'golpes', 'golpeado', 'golpeando'],
-            'golpe': ['golpear', 'golpes', 'golpeado'],
-            
-            # Amenaza
-            'amenaza': ['amenazar', 'amenazado', 'amenazas', 'amenazador'],
-            'amenazar': ['amenaza', 'amenazado'],
-            
-            # Odio
-            'odio': ['odiar', 'odiado', 'odia'],
-            'odiar': ['odio', 'odiado'],
-            
-            # Pánico
-            'panico': ['panicos'],
-            'pánico': ['pánicos'],
-        }
-        
-        # Buscar en el diccionario
-        if word in common_variants:
-            variants.update(common_variants[word])
-        
         # Plurales simples (agregar 's' o 'es')
         if not word.endswith('s'):
             if word.endswith(('a', 'e', 'i', 'o', 'u')):
                 variants.add(word + 's')
             else:
                 variants.add(word + 'es')
-        
         return variants
     
     def unlink(self):
