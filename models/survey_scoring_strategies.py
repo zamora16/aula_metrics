@@ -41,24 +41,39 @@ class UniversalMatrixScoring:
                 lines = user_input.user_input_line_ids.filtered(
                     lambda l: l.question_id.id == question.id
                 )
-                
                 if not lines:
                     continue
-                
-                # Detectar max_sequence automáticamente para esta matriz
-                max_seq = self._get_max_sequence(question)
-                if not max_seq or max_seq <= 0:
+                # Calcular el máximo valor de score/sequence para normalizar (fuera del bucle)
+                max_value = self._get_max_score(question)
+                if not max_value:
                     continue
-                
-                # Normalizar todas las filas de esta matriz
+                # Normalizar todas las filas de esta matriz usando score (fallback a sequence)
                 for line in lines:
-                    if line.suggested_answer_id and hasattr(line.suggested_answer_id, 'sequence'):
-                        if line.suggested_answer_id.sequence is not None:
-                            score = (line.suggested_answer_id.sequence / max_seq) * 100
+                    ans = line.suggested_answer_id
+                    if ans is not None:
+                        # Usar score si está definido (None), si no fallback a sequence
+                        value = ans.score if ans.score is not None else ans.sequence
+                        if value is not None:
+                            score = (value / max_value) * 100
                             all_scores.append(score)
-            
             except Exception:
                 continue
+
+    def _get_max_score(self, question):
+        """Detecta el máximo score definido en las opciones de la matriz, fallback a max_sequence si no hay scores."""
+        try:
+            answers = question.suggested_answer_ids
+            if answers:
+                scores = [ans.score for ans in answers if hasattr(ans, 'score') and ans.score not in (None, 0.0, False)]
+                if scores:
+                    return max(scores)
+                # Fallback a sequence si no hay scores
+                sequences = [ans.sequence for ans in answers if hasattr(ans, 'sequence') and ans.sequence is not None]
+                if sequences:
+                    return max(sequences)
+        except Exception:
+            pass
+        return None
         
         # Si tenemos scores, crear la métrica única
         if all_scores:

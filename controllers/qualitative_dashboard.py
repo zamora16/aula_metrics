@@ -150,7 +150,7 @@ class QualitativeDashboardController(http.Controller):
                 'response': r.response_text,
                 'word_count': r.word_count,
                 'has_alerts': r.has_alert_keywords,
-                'keywords': json.loads(r.detected_keywords) if r.detected_keywords else [],
+                'keywords': [k.keyword for k in r.detected_keyword_ids] if r.detected_keyword_ids else [],
                 'question': r.question_id.title
             })
         
