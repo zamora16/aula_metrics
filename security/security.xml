@@ -19,7 +19,6 @@
         <record id="group_aulametrics_counselor" model="res.groups">
             <field name="name">Orientador</field>
             <field name="category_id" ref="module_category_aulametrics"/>
-            <field name="implied_ids" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="comment">Orientadores con control total del sistema AulaMetrics en su centro</field>
         </record>
 
@@ -27,7 +26,6 @@
         <record id="group_aulametrics_management" model="res.groups">
             <field name="name">Dirección</field>
             <field name="category_id" ref="module_category_aulametrics"/>
-            <field name="implied_ids" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="comment">Equipo directivo con acceso a datos globales del centro</field>
         </record>
 
@@ -35,7 +33,6 @@
         <record id="group_aulametrics_admin" model="res.groups">
             <field name="name">Administrador AulaMetrics</field>
             <field name="category_id" ref="module_category_aulametrics"/>
-            <field name="implied_ids" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_management'))]"/>
             <field name="comment">Administrador con gestión completa del sistema</field>
         </record>
     </data>

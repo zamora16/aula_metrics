@@ -25,6 +25,9 @@ access_alerts_dashboard_tutor,access.alerts.dashboard.tutor,model_aula_metrics_a
 access_alerts_dashboard_management,access.alerts.dashboard.management,model_aula_metrics_alerts_dashboard,group_aulametrics_management,1,0,0,0
 access_resolve_alert_wizard_admin,access.resolve.alert.wizard.admin,model_aula_metrics_resolve_alert_wizard,group_aulametrics_admin,1,1,1,1
 access_resolve_alert_wizard_counselor,access.resolve.alert.wizard.counselor,model_aula_metrics_resolve_alert_wizard,group_aulametrics_counselor,1,1,1,1
+access_manual_alert_wizard_admin,access.manual.alert.wizard.admin,model_aula_metrics_manual_alert_wizard,group_aulametrics_admin,1,1,1,1
+access_manual_alert_wizard_counselor,access.manual.alert.wizard.counselor,model_aula_metrics_manual_alert_wizard,group_aulametrics_counselor,1,1,1,1
+access_manual_alert_wizard_tutor,access.manual.alert.wizard.tutor,model_aula_metrics_manual_alert_wizard,group_aulametrics_tutor,1,1,1,1
 access_dashboard_charts_admin,access.dashboard.charts.admin,model_aula_metrics_dashboard_charts,group_aulametrics_admin,1,1,1,1
 access_dashboard_charts_counselor,access.dashboard.charts.counselor,model_aula_metrics_dashboard_charts,group_aulametrics_counselor,1,1,1,1
 access_dashboard_charts_tutor,access.dashboard.charts.tutor,model_aula_metrics_dashboard_charts,group_aulametrics_tutor,1,0,0,0
@@ -68,3 +71,11 @@ access_dashboard_home_admin,access.dashboard.home.admin,model_aula_metrics_dashb
 access_dashboard_home_counselor,access.dashboard.home.counselor,model_aula_metrics_dashboard_home,group_aulametrics_counselor,1,0,0,0
 access_dashboard_home_tutor,access.dashboard.home.tutor,model_aula_metrics_dashboard_home,group_aulametrics_tutor,1,0,0,0
 access_dashboard_home_management,access.dashboard.home.management,model_aula_metrics_dashboard_home,group_aulametrics_management,1,0,0,0
+access_case_stage_admin,access.case.stage.admin,model_aula_metrics_case_stage,group_aulametrics_admin,1,1,1,1
+access_case_stage_counselor,access.case.stage.counselor,model_aula_metrics_case_stage,group_aulametrics_counselor,1,1,1,1
+access_case_stage_tutor,access.case.stage.tutor,model_aula_metrics_case_stage,group_aulametrics_tutor,1,0,0,0
+access_case_stage_management,access.case.stage.management,model_aula_metrics_case_stage,group_aulametrics_management,1,0,0,0
+access_case_admin,access.case.admin,model_aula_metrics_case,group_aulametrics_admin,1,1,1,1
+access_case_counselor,access.case.counselor,model_aula_metrics_case,group_aulametrics_counselor,1,1,1,1
+access_case_tutor,access.case.tutor,model_aula_metrics_case,group_aulametrics_tutor,1,0,0,0
+access_case_management,access.case.management,model_aula_metrics_case,group_aulametrics_management,1,0,0,0

@@ -4,7 +4,7 @@
         <!-- Los tutores solo ven sus grupos asignados -->
         <record id="academic_group_tutor_rule" model="ir.rule">
             <field name="name">Tutores: solo sus grupos</field>
-            <field name="model_id" ref="model_aulametrics_academic_group"/>
+            <field name="model_id" ref="model_aula_metrics_academic_group"/>
             <field name="domain_force">[('tutor_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="perm_read" eval="True"/>
@@ -16,7 +16,7 @@
         <!-- Los orientadores, dirección y administradores ven todos los grupos -->
         <record id="academic_group_counselor_admin_rule" model="ir.rule">
             <field name="name">Orientadores/Admins/Dirección: todos los grupos</field>
-            <field name="model_id" ref="model_aulametrics_academic_group"/>
+            <field name="model_id" ref="model_aula_metrics_academic_group"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
         </record>
@@ -24,16 +24,21 @@
         <!-- Umbrales: todos los grupos pueden ver todos los umbrales -->
         <record id="threshold_all_rule" model="ir.rule">
             <field name="name">Umbrales: acceso global</field>
-            <field name="model_id" ref="model_aulametrics_threshold"/>
+            <field name="model_id" ref="model_aula_metrics_threshold"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_tutor')), (4, ref('group_aulametrics_management'))]"/>
         </record>
 
         <!-- Alertas: Tutores solo ven alertas de sus grupos -->
         <record id="alert_tutor_rule" model="ir.rule">
-            <field name="name">Alertas: Tutores solo sus grupos</field>
-            <field name="model_id" ref="model_aulametrics_alert"/>
-            <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
+            <field name="name">Alertas: Tutores solo sus grupos (sin manuales)</field>
+            <field name="model_id" ref="model_aula_metrics_alert"/>
+            <!--
+                Tutores ven alertas automáticas de sus grupos, pero NO las alertas manuales.
+                Las alertas manuales (is_manual=True) son gestionadas exclusivamente
+                por orientadores y admins para proteger la confidencialidad del proceso.
+            -->
+            <field name="domain_force">['&amp;', ('academic_group_id.tutor_id', '=', user.id), ('is_manual', '=', False)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -44,7 +49,7 @@
         <!-- Alertas: Management ve todas (pero anonimizadas en el modelo) -->
         <record id="alert_management_rule" model="ir.rule">
             <field name="name">Alertas: Management ve todas</field>
-            <field name="model_id" ref="model_aulametrics_alert"/>
+            <field name="model_id" ref="model_aula_metrics_alert"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_management'))]"/>
             <field name="perm_read" eval="True"/>
@@ -56,7 +61,7 @@
         <!-- Alertas: Orientadores y Admins ven todas -->
         <record id="alert_counselor_admin_rule" model="ir.rule">
             <field name="name">Alertas: Orientadores/Admins todas</field>
-            <field name="model_id" ref="model_aulametrics_alert"/>
+            <field name="model_id" ref="model_aula_metrics_alert"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
         </record>
@@ -64,7 +69,7 @@
         <!-- Dashboard de Alertas: acceso global para todos los grupos -->
         <record id="alerts_dashboard_all_rule" model="ir.rule">
             <field name="name">Dashboard Alertas: acceso global</field>
-            <field name="model_id" ref="model_aulametrics_alerts_dashboard"/>
+            <field name="model_id" ref="model_aula_metrics_alerts_dashboard"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_tutor')), (4, ref('group_aulametrics_management'))]"/>
         </record>
@@ -112,7 +117,7 @@
         <!-- Métricas: Tutores solo ven métricas de estudiantes de sus grupos -->
         <record id="metric_value_tutor_rule" model="ir.rule">
             <field name="name">Métricas: Tutores solo sus grupos</field>
-            <field name="model_id" ref="model_aulametrics_metric_value"/>
+            <field name="model_id" ref="model_aula_metrics_metric_value"/>
             <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="perm_read" eval="True"/>
@@ -124,7 +129,7 @@
         <!-- Métricas: Management ve todas las métricas (solo lectura vía ACL) -->
         <record id="metric_value_management_rule" model="ir.rule">
             <field name="name">Métricas: Management todas (lectura)</field>
-            <field name="model_id" ref="model_aulametrics_metric_value"/>
+            <field name="model_id" ref="model_aula_metrics_metric_value"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_management'))]"/>
             <field name="perm_read" eval="True"/>
@@ -136,7 +141,7 @@
         <!-- Métricas: Orientadores y Admins acceso completo -->
         <record id="metric_value_counselor_admin_rule" model="ir.rule">
             <field name="name">Métricas: Orientadores/Admins acceso completo</field>
-            <field name="model_id" ref="model_aulametrics_metric_value"/>
+            <field name="model_id" ref="model_aula_metrics_metric_value"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
         </record>
@@ -172,7 +177,7 @@
         <!-- Participaciones: Tutores solo ven participaciones de sus grupos -->
         <record id="participation_tutor_rule" model="ir.rule">
             <field name="name">Participaciones: Tutores solo sus grupos</field>
-            <field name="model_id" ref="model_aulametrics_participation"/>
+            <field name="model_id" ref="model_aula_metrics_participation"/>
             <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="perm_read" eval="True"/>
@@ -184,7 +189,7 @@
         <!-- Participaciones: Management, Orientadores y Admins ven todas -->
         <record id="participation_counselor_admin_management_rule" model="ir.rule">
             <field name="name">Participaciones: Orientadores/Admins/Management todas</field>
-            <field name="model_id" ref="model_aulametrics_participation"/>
+            <field name="model_id" ref="model_aula_metrics_participation"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
         </record>
@@ -192,7 +197,7 @@
         <!-- Respuestas Cualitativas: Tutores solo de sus grupos -->
         <record id="qualitative_response_tutor_rule" model="ir.rule">
             <field name="name">Respuestas Cualitativas: Tutores solo sus grupos</field>
-            <field name="model_id" ref="model_aulametrics_qualitative_response"/>
+            <field name="model_id" ref="model_aula_metrics_qualitative_response"/>
             <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
             <field name="perm_read" eval="True"/>
@@ -204,7 +209,7 @@
         <!-- Respuestas Cualitativas: Management, Orientadores y Admins ven todas -->
         <record id="qualitative_response_counselor_admin_management_rule" model="ir.rule">
             <field name="name">Respuestas Cualitativas: Orientadores/Admins/Management todas</field>
-            <field name="model_id" ref="model_aulametrics_qualitative_response"/>
+            <field name="model_id" ref="model_aula_metrics_qualitative_response"/>
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_management'))]"/>
         </record>

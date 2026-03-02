@@ -57,6 +57,13 @@
               parent="menu_aulametrics_alerts"
               action="action_alerts_dashboard"
               sequence="10"/>
+
+    <menuitem id="menu_aulametrics_notify_counselor"
+              name="Notificar al Orientador"
+              parent="menu_aulametrics_alerts"
+              action="aula_metrics.action_manual_alert_wizard"
+              sequence="15"
+              groups="aula_metrics.group_aulametrics_tutor"/>
               
     <menuitem id="menu_aulametrics_thresholds" 
               name="Configurar Umbrales" 
@@ -83,4 +90,25 @@
               parent="menu_aulametrics_config"
               action="action_academic_group"
               sequence="10"/>
+
+    <!-- Orientación: Casos -->
+    <menuitem id="menu_aulametrics_cases_root"
+              name="Orientación"
+              parent="menu_aulametrics_root"
+              sequence="35"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
+
+    <menuitem id="menu_aulametrics_cases"
+              name="Casos de Orientación"
+              parent="menu_aulametrics_cases_root"
+              action="action_case"
+              sequence="10"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
+
+    <menuitem id="menu_aulametrics_case_stages"
+              name="Configurar Fases"
+              parent="menu_aulametrics_cases_root"
+              action="action_case_stage"
+              sequence="20"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
 </odoo>

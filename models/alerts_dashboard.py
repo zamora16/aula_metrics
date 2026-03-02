@@ -14,7 +14,10 @@ class AlertsDashboard(models.Model):
     @api.depends()
     def _compute_active_alerts(self):
         for record in self:
-            record.active_alerts = self.env['aula_metrics.alert'].search([('status', '=', 'active')])
+            # Incluye alertas activas (sin caso) y en gestión (con caso abierto)
+            record.active_alerts = self.env['aula_metrics.alert'].search([
+                ('status', 'in', ['active', 'en_gestion'])
+            ])
 
     @api.depends()
     def _compute_all_alerts(self):

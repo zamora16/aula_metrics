@@ -18,36 +18,81 @@
                             <strong>Alertas activas:</strong> Las alertas se generan automáticamente según los umbrales configurados.
                         </div>
                         <field name="active_alerts" nolabel="1" mode="tree,form">
-                            <tree string="Alertas Activas" decoration-success="severity == 'low'" decoration-warning="severity == 'moderate'" decoration-danger="severity == 'high'">
+                            <tree string="Alertas Activas"
+                                  decoration-success="severity == 'low' and status == 'active'"
+                                  decoration-warning="severity == 'moderate' and status == 'active'"
+                                  decoration-danger="severity == 'high' and status == 'active'"
+                                  decoration-info="status == 'en_gestion'">
                                 <field name="name"/>
                                 <field name="alert_date"/>
                                 <field name="alert_level"/>
                                 <field name="severity"/>
+                                <field name="status" widget="badge"
+                                       decoration-success="status == 'active'"
+                                       decoration-info="status == 'en_gestion'"/>
                                 <field name="threshold_id"/>
                                 <field name="student_id" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
                                 <field name="academic_group_id"/>
                                 <field name="score_value"/>
-                                <button name="action_resolve" string="Resolver" type="object" class="btn btn-success btn-sm" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
-                                <button name="action_dismiss" string="Descartar" type="object" class="btn btn-warning btn-sm" confirm="¿Descartar esta alerta?" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
+                                <!-- case_id: campo auxiliar para condicionar botones; oculto en columna -->
+                                <field name="case_id" column_invisible="1"/>
+                                <!--
+                                    RESOLVER: solo cuando NO hay caso (alertas grupales o individuales sin caso).
+                                    Accesible a orientador, admin y tutor.
+                                -->
+                                <button name="action_resolve" string="Resolver" type="object"
+                                        class="btn btn-success btn-sm"
+                                        invisible="case_id"
+                                        groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
+                                <!--
+                                    VER CASO: solo cuando hay caso vinculado.
+                                    Exclusivo de orientadores y admins (los que gestionan casos).
+                                -->
+                                <button name="action_open_case" string="Ver Caso ▶" type="object"
+                                        class="btn btn-primary btn-sm"
+                                        invisible="not case_id"
+                                        groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
+                                <!--
+                                    DESCARTAR: falso positivo; funciona en 'active' y 'en_gestion'.
+                                    Accesible a orientador, admin y tutor.
+                                -->
+                                <button name="action_dismiss" string="Descartar" type="object"
+                                        class="btn btn-warning btn-sm"
+                                        confirm="¿Descartar esta alerta?"
+                                        invisible="status not in ('active', 'en_gestion')"
+                                        groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
                             </tree>
                             <form string="Alerta">
-                                <group>
-                                    <field name="name" readonly="1"/>
-                                    <field name="alert_date" readonly="1"/>
-                                    <field name="status"/>
-                                    <field name="alert_level" readonly="1"/>
-                                    <field name="severity" readonly="1"/>
-                                    <field name="threshold_id" readonly="1"/>
-                                </group>
-                                <group>
-                                    <field name="message" readonly="1"/>
-                                    <field name="score_value" readonly="1"/>
-                                </group>
-                                <group>
-                                    <field name="participation_id" readonly="1"/>
-                                    <field name="student_id" readonly="1" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
-                                    <field name="academic_group_id" readonly="1"/>
-                                </group>
+                                <sheet>
+                                    <field name="case_id" invisible="1"/>
+                                    <group>
+                                        <field name="name" readonly="1"/>
+                                        <field name="alert_date" readonly="1"/>
+                                        <field name="status" widget="badge"
+                                               decoration-success="status == 'active'"
+                                               decoration-info="status == 'en_gestion'"
+                                               decoration-secondary="status in ('resolved', 'dismissed')"/>
+                                        <field name="alert_level" readonly="1"/>
+                                        <field name="severity" readonly="1"/>
+                                        <field name="alert_type" readonly="1"/>
+                                        <field name="threshold_id" readonly="1"
+                                               invisible="alert_type != 'quantitative'"/>
+                                    </group>
+                                    <group>
+                                        <field name="message" readonly="1"/>
+                                        <field name="score_value" readonly="1"
+                                               invisible="alert_type == 'manual'"/>
+                                    </group>
+                                    <group string="Origen">
+                                        <field name="student_id" readonly="1"
+                                               groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
+                                        <field name="academic_group_id" readonly="1"/>
+                                    </group>
+                                    <group string="Descripción del Tutor" invisible="alert_type != 'manual'">
+                                        <field name="manual_description" readonly="1" widget="text"
+                                               nolabel="1" colspan="2"/>
+                                    </group>
+                                </sheet>
                             </form>
                         </field>
                     </page>

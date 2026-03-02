@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, api
+import json
 import re
+from odoo import models, fields, api
 
 class Alert(models.Model):
     _name = 'aula_metrics.alert'
@@ -13,10 +14,11 @@ class Alert(models.Model):
     qualitative_response_id = fields.Many2one('aula_metrics.qualitative_response', string='Respuesta Cualitativa', ondelete='cascade')
     student_id = fields.Many2one('res.partner', string='Alumno')
     academic_group_id = fields.Many2one('aula_metrics.academic_group', string='Grupo Académico')
-    score_value = fields.Float(string='Valor de Puntuación', required=True)
+    score_value = fields.Float(string='Valor de Puntuación', default=0.0)
     alert_date = fields.Datetime(string='Fecha de Alerta', default=fields.Datetime.now)
     status = fields.Selection([
         ('active', 'Activa'),
+        ('en_gestion', 'En Gestión'),
         ('resolved', 'Resuelta'),
         ('dismissed', 'Descartada'),
     ], string='Estado', default='active', required=True)
@@ -27,13 +29,14 @@ class Alert(models.Model):
     ], string='Nivel de Alerta', default='individual', required=True)
     alert_type = fields.Selection([
         ('quantitative', 'Cuantitativa'),
-        ('qualitative', 'Cualitativa')
+        ('qualitative', 'Cualitativa'),
+        ('manual', 'Manual (Tutor)'),
     ], string='Tipo de Alerta', compute='_compute_alert_type', store=True)
     severity = fields.Selection([
         ('low', 'Baja'),
         ('moderate', 'Moderada'),
         ('high', 'Alta')
-    ], string='Severidad', compute='_compute_severity', store=True)
+    ], string='Severidad', compute='_compute_severity', store=True, readonly=False)
     
     # Campos de resolución
     resolution_action = fields.Text(
@@ -45,7 +48,26 @@ class Alert(models.Model):
         readonly=True,
         help='Fecha y hora en que se resolvió la alerta'
     )
+
+    # Alerta creada manualmente por un tutor
+    is_manual = fields.Boolean(
+        string='Alerta Manual',
+        default=False,
+        help='Indica que esta alerta fue creada manualmente por un tutor, no por el sistema automático'
+    )
+    manual_description = fields.Text(
+        string='Descripción del Tutor',
+        help='Descripción de la situación observada por el tutor'
+    )
     
+    # Caso de orientación vinculado (calculado desde el lado inverso)
+    case_id = fields.Many2one(
+        'aula_metrics.case',
+        string='Caso de Orientación',
+        compute='_compute_case_id',
+        store=False,
+    )
+
     # Campo computado para mostrar curso general (sin especificar A/B/C)
     course_level_general = fields.Char(
         string='Curso General',
@@ -53,6 +75,14 @@ class Alert(models.Model):
         store=False
     )
     
+    def _compute_case_id(self):
+        """Busca el caso de orientación vinculado a esta alerta (si existe)."""
+        for alert in self:
+            case = self.env['aula_metrics.case'].sudo().search(
+                [('alert_id', '=', alert.id)], limit=1
+            )
+            alert.case_id = case
+
     def _compute_course_level_general(self):
         """Extrae solo el nivel de curso (Primero, Segundo...) sin la letra del grupo."""
         for alert in self:
@@ -63,20 +93,32 @@ class Alert(models.Model):
             else:
                 alert.course_level_general = 'Sin curso'
     
-    @api.depends('qualitative_response_id', 'threshold_id')
+    @api.depends('qualitative_response_id', 'threshold_id', 'is_manual')
     def _compute_alert_type(self):
-        """Determina si la alerta es cuantitativa o cualitativa."""
+        """Determina si la alerta es cuantitativa, cualitativa o manual."""
         for alert in self:
-            alert.alert_type = 'qualitative' if alert.qualitative_response_id else 'quantitative'
+            if alert.is_manual:
+                alert.alert_type = 'manual'
+            elif alert.qualitative_response_id:
+                alert.alert_type = 'qualitative'
+            else:
+                alert.alert_type = 'quantitative'
     
-    @api.depends('threshold_id', 'qualitative_response_id')
+    @api.depends('threshold_id', 'qualitative_response_id', 'is_manual')
     def _compute_severity(self):
-        """Calcula severidad: desde threshold para cuantitativas, desde keywords para cualitativas."""
+        """Calcula severidad: desde threshold para cuantitativas, desde keywords para cualitativas.
+        Para alertas manuales, la severidad es fijada directamente por el tutor (no se sobreescribe).
+        """
         for alert in self:
+            if alert.is_manual:
+                # La severidad se establece en el wizard; no tocar el valor ya almacenado.
+                # Solo asignar default si está vacía (primera vez).
+                if not alert.severity:
+                    alert.severity = 'moderate'
+                continue
             if alert.qualitative_response_id and alert.qualitative_response_id.detected_keywords:
                 # Alerta cualitativa: usar severidad más alta de keywords detectadas
                 try:
-                    import json
                     keywords_list = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
                     
                     # Buscar keywords en BD para obtener sus severidades
@@ -101,14 +143,16 @@ class Alert(models.Model):
             else:
                 alert.severity = False
     
-    @api.depends('threshold_id', 'qualitative_response_id')
+    @api.depends('threshold_id', 'qualitative_response_id', 'is_manual', 'manual_description')
     def _compute_message(self):
         """Computa el mensaje de alerta según el tipo."""
         for alert in self:
-            if alert.qualitative_response_id:
+            if alert.is_manual:
+                # Alerta manual: usar la descripción introducida por el tutor
+                alert.message = alert.manual_description or 'Alerta reportada manualmente por el tutor'
+            elif alert.qualitative_response_id:
                 # Alerta cualitativa: mensaje personalizado con keywords
                 try:
-                    import json
                     keywords = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
                     keywords_str = ', '.join(keywords)
                     alert.message = f"Se detectaron palabras de alerta en una respuesta cualitativa: {keywords_str}"
@@ -130,6 +174,8 @@ class Alert(models.Model):
             # Nombre base según tipo de alerta
             if alert.alert_type == 'qualitative':
                 base_name = 'Alerta Cualitativa'
+            elif alert.alert_type == 'manual':
+                base_name = 'Alerta Manual'
             else:
                 base_name = alert.threshold_id.name if alert.threshold_id else 'Alerta'
             
@@ -173,7 +219,6 @@ class Alert(models.Model):
         
         # Contar keywords como score_value
         try:
-            import json
             keywords = json.loads(qualitative_response.detected_keywords or '[]')
             score_value = float(len(keywords))
         except:
@@ -189,7 +234,11 @@ class Alert(models.Model):
             'alert_level': 'individual',
             'status': 'active',
         })
-        
+
+        # Crear caso de orientación automáticamente para alertas cualitativas individuales
+        if alert.student_id:
+            self.env['aula_metrics.case'].sudo().create_from_alert(alert)
+
         return alert
     
     @api.model
@@ -222,42 +271,6 @@ class Alert(models.Model):
         
         # Verificar alertas grupales después de procesar todas las individuales
         self._check_all_group_alerts(participation)
-    
-    def _check_group_alert(self, threshold, group):
-        """Verifica y genera alerta grupal si corresponde"""
-        if not threshold.group_threshold_percentage:
-            return
-            
-        # Contar alertas activas individuales en este grupo para este umbral
-        active_alerts = self.search_count([
-            ('threshold_id', '=', threshold.id),
-            ('academic_group_id', '=', group.id),
-            ('status', '=', 'active'),
-            ('alert_level', '=', 'individual')
-        ])
-        
-        total_students = group.student_count or len(group.student_ids)
-        if total_students == 0:
-            return
-        
-        percentage = (active_alerts / total_students) * 100
-        
-        if percentage >= threshold.group_threshold_percentage:
-            # Crear alerta grupal si no existe
-            existing_group_alert = self.search([
-                ('threshold_id', '=', threshold.id),
-                ('academic_group_id', '=', group.id),
-                ('alert_level', '=', 'group'),
-                ('status', '=', 'active')
-            ], limit=1)
-            
-            if not existing_group_alert:
-                self.create({
-                    'threshold_id': threshold.id,
-                    'academic_group_id': group.id,
-                    'score_value': percentage,
-                    'alert_level': 'group',
-                })
     
     def _check_all_group_alerts(self, participation):
         """Verifica y genera alertas grupales para todos los umbrales relevantes en una sola operación"""
@@ -323,13 +336,18 @@ class Alert(models.Model):
                 vals['academic_group_id'] = participation.student_id.academic_group_id.id
             else:
                 vals['academic_group_id'] = participation.student_id.academic_group_id.id
-            
-            self.create(vals)
+
+            new_alert = self.create(vals)
+
+            # Crear caso de orientación automáticamente para alertas individuales
+            if alert_level == 'individual' and new_alert.student_id:
+                self.env['aula_metrics.case'].sudo().create_from_alert(new_alert)
 
     def action_resolve(self):
-        """Abrir wizard para registrar la acción tomada y resolver la alerta"""
+        """Abrir wizard para registrar la acción tomada y resolver la alerta.
+        Solo se usa para alertas grupales o individuales sin caso asociado.
+        """
         self.ensure_one()
-        
         return {
             'name': 'Resolver Alerta',
             'type': 'ir.actions.act_window',
@@ -341,7 +359,23 @@ class Alert(models.Model):
             }
         }
 
+    def action_open_case(self):
+        """Navega al caso de orientación vinculado a esta alerta.
+        Solo accesible para orientadores y administradores.
+        """
+        self.ensure_one()
+        if not self.case_id:
+            return
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'aula_metrics.case',
+            'res_id': self.case_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+
     def action_dismiss(self):
-        """Descartar alerta"""
+        """Descartar alerta. Funciona tanto en estado 'active' como 'en_gestion'."""
         for alert in self:
-            alert.status = 'dismissed'
+            if alert.status in ('active', 'en_gestion'):
+                alert.status = 'dismissed'

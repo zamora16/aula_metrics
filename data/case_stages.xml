@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fases por defecto para el flujo de casos de orientación.
+     noupdate="0" para que puedan actualizarse con el módulo. -->
+<odoo>
+    <data noupdate="0">
+
+        <record id="case_stage_screening" model="aula_metrics.case.stage">
+            <field name="name">Screening</field>
+            <field name="sequence">10</field>
+            <field name="fold" eval="False"/>
+            <field name="is_final" eval="False"/>
+            <field name="color">4</field>
+        </record>
+
+        <record id="case_stage_seguimiento" model="aula_metrics.case.stage">
+            <field name="name">En Seguimiento</field>
+            <field name="sequence">20</field>
+            <field name="fold" eval="False"/>
+            <field name="is_final" eval="False"/>
+            <field name="color">3</field>
+        </record>
+
+        <record id="case_stage_intervencion" model="aula_metrics.case.stage">
+            <field name="name">Intervención</field>
+            <field name="sequence">30</field>
+            <field name="fold" eval="False"/>
+            <field name="is_final" eval="False"/>
+            <field name="color">2</field>
+        </record>
+
+        <record id="case_stage_cerrado" model="aula_metrics.case.stage">
+            <field name="name">Cerrado</field>
+            <field name="sequence">99</field>
+            <field name="fold" eval="True"/>
+            <field name="is_final" eval="True"/>
+            <field name="color">5</field>
+        </record>
+
+    </data>
+</odoo>

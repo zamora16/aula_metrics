@@ -15,3 +15,5 @@ from . import dashboard_student_profile
 from . import dashboard_home
 from . import survey_scoring_strategies
 from . import qualitative_response
+from . import case_stage
+from . import case

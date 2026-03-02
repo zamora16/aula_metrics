@@ -8,7 +8,6 @@
     'category': 'Education',
     'depends': ['base', 'mail', 'survey'],
     'data': [
-        'data/alert_keywords.xml',
         # 1. Seguridad
         'security/security.xml',
         'security/ir.model.access.csv',
@@ -21,6 +20,7 @@
         'data/surveys/survey_asq14.xml',
         'data/cron/cron_jobs.xml',
         'data/dashboard_data.xml',
+        'data/case_stages.xml',
         # 3. Vistas
         'views/dashboard_home_views.xml',
         'views/dashboard.xml',
@@ -33,12 +33,14 @@
         'views/alert_views.xml',
         'views/alert_keyword_views.xml',
         'views/alerts_dashboard.xml',
+        'views/case_views.xml',
         'views/survey_portal_templates.xml',
-        'views/menu.xml',
         # 4. Datos de Dashboard
         'data/dashboard_home_data.xml',
-        # 5. Wizards
+        # 5. Wizards (antes del menú para que las acciones existan al resolverlas)
         'wizards/resolve_alert_wizard_views.xml',
+        'wizards/manual_alert_wizard_views.xml',
+        'views/menu.xml',
     ],
     'demo': [],
     'assets': {

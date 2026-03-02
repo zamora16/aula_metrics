@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Acción del wizard (se abre como ventana emergente) -->
+    <record id="action_manual_alert_wizard" model="ir.actions.act_window">
+        <field name="name">Notificar al Orientador</field>
+        <field name="res_model">aula_metrics.manual_alert_wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" eval="False"/>
+        <field name="help" type="html">
+            <p>Comunica una situación de un alumno al orientador del centro.</p>
+        </field>
+    </record>
+
+    <!-- Formulario del wizard -->
+    <record id="view_manual_alert_wizard_form" model="ir.ui.view">
+        <field name="name">aula_metrics.manual.alert.wizard.form</field>
+        <field name="model">aula_metrics.manual_alert_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Notificar al Orientador">
+                <div class="alert alert-info" role="alert">
+                    <i class="fa fa-info-circle me-2"/>
+                    Esta notificación creará un caso de seguimiento para el orientador.
+                    Solo tú y el orientador sabréis que esta alerta existe.
+                </div>
+                <group>
+                    <!--
+                        Un solo campo student_id. El dominio permisivo permite a todos los roles
+                        usar el wizard. La restricción de que tutores solo puedan seleccionar
+                        alumnos de sus grupos se valida en el servidor (constraint del modelo).
+                    -->
+                    <field name="student_id" domain="[('is_student', '=', True)]"/>
+                    <field name="academic_group_id" readonly="1"/>
+                    <field name="severity" widget="radio"/>
+                </group>
+                <group>
+                    <field name="description"
+                           widget="text"
+                           placeholder="Describe brevemente la situación observada: comportamiento, cambios de actitud, comentarios preocupantes..."
+                           nolabel="1"
+                           colspan="2"/>
+                </group>
+                <footer>
+                    <button string="Enviar al Orientador"
+                            type="object"
+                            name="action_confirm"
+                            class="btn-primary"
+                            data-hotkey="q"/>
+                    <button string="Cancelar"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

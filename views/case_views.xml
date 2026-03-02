@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--  FASES DE CASO (aula_metrics.case.stage)                           -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Lista de fases -->
+    <record id="view_case_stage_tree" model="ir.ui.view">
+        <field name="name">aula_metrics.case.stage.tree</field>
+        <field name="model">aula_metrics.case.stage</field>
+        <field name="arch" type="xml">
+            <tree string="Fases de Caso" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+                <field name="fold"/>
+                <field name="is_final"/>
+                <field name="case_count" string="Casos"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Formulario de fases -->
+    <record id="view_case_stage_form" model="ir.ui.view">
+        <field name="name">aula_metrics.case.stage.form</field>
+        <field name="model">aula_metrics.case.stage</field>
+        <field name="arch" type="xml">
+            <form string="Fase de Caso">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="sequence"/>
+                        <field name="color" widget="color_picker"/>
+                        <field name="fold"/>
+                        <field name="is_final"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción de gestión de fases -->
+    <record id="action_case_stage" model="ir.actions.act_window">
+        <field name="name">Fases de Casos</field>
+        <field name="res_model">aula_metrics.case.stage</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea la primera fase del flujo de casos
+            </p>
+            <p>
+                Define y ordena las fases por las que pasan los casos de orientación en tu centro.
+            </p>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!--  CASOS DE ORIENTACIÓN (aula_metrics.case)                          -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Vista Kanban -->
+    <record id="view_case_kanban" model="ir.ui.view">
+        <field name="name">aula_metrics.case.kanban</field>
+        <field name="model">aula_metrics.case</field>
+        <field name="arch" type="xml">
+            <kanban
+                default_group_by="stage_id"
+                group_create="false"
+                quick_create="true"
+                quick_create_view="aula_metrics.view_case_quick_form"
+            >
+                <field name="id"/>
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="user_id"/>
+                <field name="alert_id"/>
+                <field name="stage_id"/>
+                <field name="is_closed"/>
+                <field name="priority"/>
+                <field name="kanban_state"/>
+                <field name="open_date"/>
+                <field name="color"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click #{record.priority.raw_value == '1' ? 'oe_kanban_color_2' : ''}">
+                            <div class="oe_kanban_content">
+                                <!-- Cabecera: título + prioridad -->
+                                <div class="o_kanban_record_top mb8">
+                                    <div class="o_kanban_record_headings">
+                                        <strong class="o_kanban_record_title">
+                                            <field name="name"/>
+                                        </strong>
+                                    </div>
+                                    <div class="o_kanban_record_top_right">
+                                        <field name="priority" widget="priority"/>
+                                        <field name="kanban_state" widget="kanban_state_selection"/>
+                                    </div>
+                                </div>
+                                <!-- Alumno -->
+                                <div class="o_kanban_record_body">
+                                    <div>
+                                        <i class="fa fa-user me-1" title="Alumno"/>
+                                        <field name="student_id"/>
+                                    </div>
+                                    <div t-if="record.alert_id.raw_value">
+                                        <i class="fa fa-bell me-1 text-warning" title="Alerta asociada"/>
+                                        <field name="alert_id"/>
+                                    </div>
+                                    <div class="text-muted small mt4">
+                                        <i class="fa fa-calendar me-1" title="Fecha de apertura"/>
+                                        <field name="open_date"/>
+                                    </div>
+                                </div>
+                                <!-- Pie: responsable -->
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left"/>
+                                    <div class="oe_kanban_bottom_right">
+                                        <field name="user_id" widget="many2one_avatar_user"
+                                               options="{'size': 24}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Vista rápida para crear desde Kanban -->
+    <record id="view_case_quick_form" model="ir.ui.view">
+        <field name="name">aula_metrics.case.quick.form</field>
+        <field name="model">aula_metrics.case</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="name" placeholder="Título del caso..."/>
+                <field name="student_id"/>
+                <field name="user_id"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Lista -->
+    <record id="view_case_tree" model="ir.ui.view">
+        <field name="name">aula_metrics.case.tree</field>
+        <field name="model">aula_metrics.case</field>
+        <field name="arch" type="xml">
+            <tree string="Casos de Orientación"
+                  decoration-muted="is_closed == True">
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="academic_group_id" optional="show"/>
+                <field name="stage_id"/>
+                <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="open_date"/>
+                <field name="close_date" optional="hide"/>
+                <field name="priority" widget="priority"/>
+                <field name="is_closed" invisible="1"/>
+                <field name="alert_id" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario -->
+    <record id="view_case_form" model="ir.ui.view">
+        <field name="name">aula_metrics.case.form</field>
+        <field name="model">aula_metrics.case</field>
+        <field name="arch" type="xml">
+            <form string="Caso de Orientación">
+                <header>
+                    <field name="stage_id" widget="statusbar"
+                           options="{'clickable': '1'}"/>
+                    <button string="Cerrar Caso"
+                            type="object"
+                            name="action_close_case"
+                            class="btn-danger"
+                            invisible="is_closed == True"
+                            confirm="¿Confirmas que este caso está resuelto y deseas cerrarlo?"
+                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
+                    <button string="Reabrir Caso"
+                            type="object"
+                            name="action_reopen_case"
+                            class="btn-warning"
+                            invisible="is_closed == False"
+                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button"
+                                type="object"
+                                name="action_view_alert"
+                                icon="fa-bell"
+                                invisible="not alert_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Alerta</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Cerrado"
+                            bg_color="bg-danger"
+                            invisible="not is_closed"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"
+                                   placeholder="Título del caso..."
+                                   readonly="is_closed"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Información del Caso">
+                            <field name="student_id"
+                                   readonly="is_closed"/>
+                            <field name="academic_group_id"/>
+                            <field name="alert_id"
+                                   readonly="is_closed"/>
+                            <field name="user_id" widget="many2one_avatar_user"
+                                   readonly="is_closed"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <group string="Fechas">
+                            <field name="open_date" readonly="is_closed"/>
+                            <field name="close_date" readonly="1"
+                                   invisible="not is_closed"/>
+                            <field name="is_closed" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Descripción" name="description">
+                            <field name="description"
+                                   placeholder="Describe el motivo de apertura del caso..."
+                                   readonly="is_closed"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda/Filtros -->
+    <record id="view_case_search" model="ir.ui.view">
+        <field name="name">aula_metrics.case.search</field>
+        <field name="model">aula_metrics.case</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Casos">
+                <field name="name" string="Título"/>
+                <field name="student_id" string="Alumno"/>
+                <field name="user_id" string="Responsable"/>
+                <field name="stage_id" string="Fase"/>
+                <field name="academic_group_id" string="Grupo"/>
+                <!-- Filtros predefinidos -->
+                <filter string="Mis Casos" name="my_cases"
+                        domain="[('user_id', '=', uid)]"/>
+                <filter string="Casos Abiertos" name="open_cases"
+                        domain="[('is_closed', '=', False)]"/>
+                <filter string="Casos Cerrados" name="closed_cases"
+                        domain="[('is_closed', '=', True)]"/>
+                <filter string="Urgentes" name="urgent"
+                        domain="[('priority', '=', '1')]"/>
+                <separator/>
+                <filter string="Abiertos este mes" name="this_month"
+                        domain="[('open_date', '&gt;=', (context_today() + relativedelta(day=1)).strftime('%%Y-%%m-%%d'))]"/>
+                <!-- Agrupaciones -->
+                <group expand="0" string="Agrupar por">
+                    <filter string="Fase" name="group_by_stage"
+                            context="{'group_by': 'stage_id'}"/>
+                    <filter string="Alumno" name="group_by_student"
+                            context="{'group_by': 'student_id'}"/>
+                    <filter string="Responsable" name="group_by_user"
+                            context="{'group_by': 'user_id'}"/>
+                    <filter string="Grupo Académico" name="group_by_group"
+                            context="{'group_by': 'academic_group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción principal de Casos -->
+    <record id="action_case" model="ir.actions.act_window">
+        <field name="name">Casos de Orientación</field>
+        <field name="res_model">aula_metrics.case</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="context">{'search_default_open_cases': 1}</field>
+        <field name="search_view_id" ref="view_case_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay casos de orientación registrados
+            </p>
+            <p>
+                Crea un nuevo caso para hacer seguimiento de un alumno,
+                o espera a que se genere automáticamente desde una alerta.
+            </p>
+        </field>
+    </record>
+
+</odoo>
