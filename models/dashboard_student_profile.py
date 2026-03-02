@@ -372,15 +372,10 @@ class DashboardStudentProfile(models.TransientModel):
             
             # Detectar keywords encontradas
             keywords_html = ''
-            if resp.has_alert_keywords and resp.detected_keywords:
-                try:
-                    import json
-                    detected = json.loads(resp.detected_keywords)
-                    if detected:
-                        keywords_list = ', '.join([f'<strong>{kw}</strong>' for kw in detected])
-                        keywords_html = f'<div class="mt-2"><small class="text-danger">Palabras detectadas: {keywords_list}</small></div>'
-                except:
-                    pass
+            if resp.has_alert_keywords and resp.detected_keyword_ids:
+                keywords_list = ', '.join([f'<strong>{kw.keyword}</strong>' for kw in resp.detected_keyword_ids])
+                if keywords_list:
+                    keywords_html = f'<div class="mt-2"><small class="text-danger">Palabras detectadas: {keywords_list}</small></div>'
             
             html += f"""
             <div class="card mb-3 {alert_class}">
