@@ -17,3 +17,4 @@ from . import survey_scoring_strategies
 from . import qualitative_response
 from . import case_stage
 from . import case
+from . import message_thread

@@ -79,3 +79,13 @@ access_case_admin,access.case.admin,model_aula_metrics_case,group_aulametrics_ad
 access_case_counselor,access.case.counselor,model_aula_metrics_case,group_aulametrics_counselor,1,1,1,1
 access_case_tutor,access.case.tutor,model_aula_metrics_case,group_aulametrics_tutor,1,0,0,0
 access_case_management,access.case.management,model_aula_metrics_case,group_aulametrics_management,1,0,0,0
+access_message_thread_admin,access.message.thread.admin,model_aula_metrics_message_thread,group_aulametrics_admin,1,1,1,1
+access_message_thread_counselor,access.message.thread.counselor,model_aula_metrics_message_thread,group_aulametrics_counselor,1,1,1,1
+access_message_thread_tutor,access.message.thread.tutor,model_aula_metrics_message_thread,group_aulametrics_tutor,1,1,1,1
+access_message_thread_management,access.message.thread.management,model_aula_metrics_message_thread,group_aulametrics_management,1,1,1,1
+access_mail_message_tutor,access.mail.message.tutor,mail.model_mail_message,group_aulametrics_tutor,1,1,1,0
+access_mail_message_counselor,access.mail.message.counselor,mail.model_mail_message,group_aulametrics_counselor,1,1,1,0
+access_mail_message_management,access.mail.message.management,mail.model_mail_message,group_aulametrics_management,1,1,1,0
+access_mail_followers_tutor,access.mail.followers.tutor,mail.model_mail_followers,group_aulametrics_tutor,1,1,1,0
+access_mail_followers_counselor,access.mail.followers.counselor,mail.model_mail_followers,group_aulametrics_counselor,1,1,1,0
+access_mail_followers_management,access.mail.followers.management,mail.model_mail_followers,group_aulametrics_management,1,1,1,0

@@ -34,6 +34,7 @@
         'views/alert_keyword_views.xml',
         'views/alerts_dashboard.xml',
         'views/case_views.xml',
+        'views/message_thread_views.xml',
         'views/survey_portal_templates.xml',
         # 4. Datos de Dashboard
         'data/dashboard_home_data.xml',
