@@ -244,6 +244,10 @@ class DashboardCharts(models.TransientModel):
             if not question.exists():
                 continue
 
+            # Solo incluir preguntas explícitamente marcadas como segmentación
+            if not question.is_segmentation:
+                continue
+
             # Etiqueta legible: preferir metric_label, fallback a title
             label = question.metric_label or (question.title if getattr(question, 'title', False) else f'Pregunta {question_id}')
 
@@ -283,7 +287,7 @@ class DashboardCharts(models.TransientModel):
                 survey_candidates = Survey.search([])
 
             for survey in survey_candidates:
-                for q in survey.question_ids.filtered(lambda q: q.question_type in ['simple_choice', 'multiple_choice']):
+                for q in survey.question_ids.filtered(lambda q: q.question_type in ['simple_choice', 'multiple_choice'] and q.is_segmentation):
                     name = f'question_{q.id}_choices'
                     if name in existing_values:
                         continue

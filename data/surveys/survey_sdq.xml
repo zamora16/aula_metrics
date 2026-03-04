@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===========================================================
+         CUESTIONARIO SDQ — Strengths and Difficulties Questionnaire
+         Versión Autoinforme (11–17 años)
+         survey_code: SDQ | Edad recomendada: 11–17 años
+
+         Cada ítem es una pregunta simple_choice con 3 opciones propias.
+         sequence = número de ítem (1–25), usado por SdqScoring.
+         Ítems inversos (7,11,14,21,25): score ya invertido en las opciones.
+         =========================================================== -->
+
+    <record id="survey_sdq" model="survey.survey">
+        <field name="title">SDQ — Cuestionario de Capacidades y Dificultades (Autoinforme)</field>
+        <field name="is_aulametrics" eval="True"/>
+        <field name="survey_code">SDQ</field>
+        <field name="recommended_age_min">11</field>
+        <field name="recommended_age_max">17</field>
+        <field name="description">Para cada frase, marca la casilla que mejor describa cómo te has comportado o sentido en los últimos 6 meses.</field>
+        <field name="scoring_type">no_scoring</field>
+        <field name="questions_layout">one_page</field>
+        <field name="users_can_go_back" eval="True"/>
+        <field name="is_attempts_limited" eval="False"/>
+        <field name="is_time_limited" eval="False"/>
+        <field name="access_mode">token</field>
+        <field name="users_login_required" eval="False"/>
+    </record>
+
+    <!-- ÍTEM 1 — Prosocial -->
+    <record id="sdq_q01" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Tengo en cuenta los sentimientos de otras personas</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">1</field>
+        <field name="metric_label">Conducta prosocial</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q01_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q01"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q01_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q01"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q01_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q01"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 2 — Hiperactividad -->
+    <record id="sdq_q02" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Soy inquieto/a, hiperactivo/a, no puedo permanecer quieto/a por mucho tiempo</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">2</field>
+        <field name="metric_label">Hiperactividad/inatención</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q02_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q02"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q02_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q02"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q02_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q02"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 3 — Síntomas emocionales -->
+    <record id="sdq_q03" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Suelo tener muchos dolores de cabeza, estómago o náuseas</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">3</field>
+        <field name="metric_label">Síntomas emocionales</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q03_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q03"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q03_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q03"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q03_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q03"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 4 — Prosocial -->
+    <record id="sdq_q04" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Normalmente comparto con otros mis juegos, lápices, útiles, etc.</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">4</field>
+        <field name="metric_label">Conducta prosocial</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q04_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q04"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q04_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q04"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q04_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q04"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 5 — Conducta -->
+    <record id="sdq_q05" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Cuando me enojo, me enojo mucho y pierdo el control</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">5</field>
+        <field name="metric_label">Problemas de conducta</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q05_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q05"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q05_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q05"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q05_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q05"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 6 — Problemas con compañeros -->
+    <record id="sdq_q06" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Soy más bien solitario/a y tiendo a jugar solo/a</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">6</field>
+        <field name="metric_label">Problemas con compañeros</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q06_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q06"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q06_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q06"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q06_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q06"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 7 — Conducta (INVERSO: No=2, Un tanto=1, Abs=0) -->
+    <record id="sdq_q07" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Por lo general soy obediente</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">7</field>
+        <field name="metric_label">Problemas de conducta</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q07_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q07"/><field name="value">No es cierto</field><field name="score">2</field><field name="sequence">1</field></record>
+    <record id="sdq_q07_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q07"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q07_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q07"/><field name="value">Absolutamente cierto</field><field name="score">0</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 8 — Síntomas emocionales -->
+    <record id="sdq_q08" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">A menudo estoy preocupado/a</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">8</field>
+        <field name="metric_label">Síntomas emocionales</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q08_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q08"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q08_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q08"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q08_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q08"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 9 — Prosocial -->
+    <record id="sdq_q09" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Ayudo si alguien está enfermo, disgustado o herido</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">9</field>
+        <field name="metric_label">Conducta prosocial</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q09_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q09"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q09_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q09"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q09_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q09"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 10 — Hiperactividad -->
+    <record id="sdq_q10" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Estoy todo el tiempo moviéndome, me muevo demasiado</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">10</field>
+        <field name="metric_label">Hiperactividad/inatención</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q10_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q10"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q10_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q10"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q10_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q10"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 11 — Problemas con compañeros (INVERSO) -->
+    <record id="sdq_q11" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Tengo un/a buen/a amigo/a por lo menos</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">11</field>
+        <field name="metric_label">Problemas con compañeros</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q11_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q11"/><field name="value">No es cierto</field><field name="score">2</field><field name="sequence">1</field></record>
+    <record id="sdq_q11_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q11"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q11_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q11"/><field name="value">Absolutamente cierto</field><field name="score">0</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 12 — Conducta -->
+    <record id="sdq_q12" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Peleo mucho. Puedo hacer que los demás hagan lo que yo quiero</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">12</field>
+        <field name="metric_label">Problemas de conducta</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q12_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q12"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q12_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q12"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q12_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q12"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 13 — Síntomas emocionales -->
+    <record id="sdq_q13" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Me siento a menudo triste, desanimado/a o con ganas de llorar</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">13</field>
+        <field name="metric_label">Síntomas emocionales</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q13_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q13"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q13_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q13"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q13_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q13"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 14 — Problemas con compañeros (INVERSO) -->
+    <record id="sdq_q14" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Por lo general caigo bien a la otra gente de mi edad</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">14</field>
+        <field name="metric_label">Problemas con compañeros</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q14_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q14"/><field name="value">No es cierto</field><field name="score">2</field><field name="sequence">1</field></record>
+    <record id="sdq_q14_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q14"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q14_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q14"/><field name="value">Absolutamente cierto</field><field name="score">0</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 15 — Hiperactividad -->
+    <record id="sdq_q15" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Me distraigo con facilidad, me cuesta concentrarme</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">15</field>
+        <field name="metric_label">Hiperactividad/inatención</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q15_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q15"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q15_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q15"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q15_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q15"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 16 — Síntomas emocionales -->
+    <record id="sdq_q16" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Me pongo nervioso/a con situaciones nuevas, fácilmente pierdo la confianza en mí mismo/a</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">16</field>
+        <field name="metric_label">Síntomas emocionales</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q16_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q16"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q16_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q16"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q16_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q16"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 17 — Prosocial -->
+    <record id="sdq_q17" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Trato bien a los niños/as más pequeños/as</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">17</field>
+        <field name="metric_label">Conducta prosocial</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q17_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q17"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q17_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q17"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q17_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q17"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 18 — Conducta -->
+    <record id="sdq_q18" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">A menudo me acusan de mentir o de hacer trampa</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">18</field>
+        <field name="metric_label">Problemas de conducta</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q18_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q18"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q18_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q18"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q18_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q18"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 19 — Problemas con compañeros -->
+    <record id="sdq_q19" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Otros chicos de mi edad se meten conmigo o se burlan de mí</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">19</field>
+        <field name="metric_label">Problemas con compañeros</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q19_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q19"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q19_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q19"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q19_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q19"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 20 — Prosocial -->
+    <record id="sdq_q20" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">A menudo ofrezco mi ayuda (a padres, profesores, niños)</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">20</field>
+        <field name="metric_label">Conducta prosocial</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q20_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q20"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q20_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q20"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q20_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q20"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 21 — Hiperactividad (INVERSO) -->
+    <record id="sdq_q21" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Pienso las cosas antes de hacerlas</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">21</field>
+        <field name="metric_label">Hiperactividad/inatención</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q21_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q21"/><field name="value">No es cierto</field><field name="score">2</field><field name="sequence">1</field></record>
+    <record id="sdq_q21_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q21"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q21_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q21"/><field name="value">Absolutamente cierto</field><field name="score">0</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 22 — Conducta -->
+    <record id="sdq_q22" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Tomo cosas que no son mías de casa, la escuela o de otros sitios</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">22</field>
+        <field name="metric_label">Problemas de conducta</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q22_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q22"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q22_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q22"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q22_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q22"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 23 — Problemas con compañeros -->
+    <record id="sdq_q23" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Me llevo mejor con adultos que con otros de mi edad</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">23</field>
+        <field name="metric_label">Problemas con compañeros</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q23_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q23"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q23_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q23"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q23_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q23"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 24 — Síntomas emocionales -->
+    <record id="sdq_q24" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Tengo muchos miedos, me asusto fácilmente</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">24</field>
+        <field name="metric_label">Síntomas emocionales</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q24_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q24"/><field name="value">No es cierto</field><field name="score">0</field><field name="sequence">1</field></record>
+    <record id="sdq_q24_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q24"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q24_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q24"/><field name="value">Absolutamente cierto</field><field name="score">2</field><field name="sequence">3</field></record>
+
+    <!-- ÍTEM 25 — Hiperactividad (INVERSO) -->
+    <record id="sdq_q25" model="survey.question">
+        <field name="survey_id" ref="survey_sdq"/>
+        <field name="title">Termino lo que empiezo, tengo buena concentración</field>
+        <field name="question_type">simple_choice</field>
+        <field name="sequence">25</field>
+        <field name="metric_label">Hiperactividad/inatención</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+    <record id="sdq_q25_a0" model="survey.question.answer"><field name="question_id" ref="sdq_q25"/><field name="value">No es cierto</field><field name="score">2</field><field name="sequence">1</field></record>
+    <record id="sdq_q25_a1" model="survey.question.answer"><field name="question_id" ref="sdq_q25"/><field name="value">Un tanto cierto</field><field name="score">1</field><field name="sequence">2</field></record>
+    <record id="sdq_q25_a2" model="survey.question.answer"><field name="question_id" ref="sdq_q25"/><field name="value">Absolutamente cierto</field><field name="score">0</field><field name="sequence">3</field></record>
+
+    <!-- ===========================================================
+         BAREMOS SDQ — versión española / normas autoinforme
+         =========================================================== -->
+
+    <!-- Síntomas emocionales -->
+    <record id="sdq_baremo_emotional_normal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">emotional</field>
+        <field name="scale_label">Síntomas emocionales</field><field name="display_order">1</field>
+        <field name="score_min">0</field><field name="score_max">3</field>
+        <field name="label">Normal</field><field name="severity">0</field><field name="color">#28a745</field>
+        <field name="description">El alumno no presenta síntomas emocionales significativos. Los niveles de ansiedad, preocupación y quejas somáticas están dentro del rango esperado para su edad.</field>
+    </record>
+    <record id="sdq_baremo_emotional_borderline" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">emotional</field>
+        <field name="scale_label">Síntomas emocionales</field><field name="display_order">1</field>
+        <field name="score_min">4</field><field name="score_max">4</field>
+        <field name="label">Límite</field><field name="severity">1</field><field name="color">#ffc107</field>
+        <field name="description">El alumno presenta algunos síntomas emocionales que requieren seguimiento. Pueden observarse episodios de tristeza, preocupación o nerviosismo que conviene monitorizar de forma periódica.</field>
+    </record>
+    <record id="sdq_baremo_emotional_abnormal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">emotional</field>
+        <field name="scale_label">Síntomas emocionales</field><field name="display_order">1</field>
+        <field name="score_min">5</field><field name="score_max">10</field>
+        <field name="label">Anormal</field><field name="severity">2</field><field name="color">#dc3545</field>
+        <field name="description">El alumno presenta una carga emocional elevada. Se observan niveles significativos de tristeza, ansiedad, quejas somáticas o miedos que pueden interferir con su funcionamiento cotidiano. Se recomienda derivación para valoración especializada.</field>
+    </record>
+
+    <!-- Problemas de conducta -->
+    <record id="sdq_baremo_conduct_normal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">conduct</field>
+        <field name="scale_label">Problemas de conducta</field><field name="display_order">2</field>
+        <field name="score_min">0</field><field name="score_max">3</field>
+        <field name="label">Normal</field><field name="severity">0</field><field name="color">#28a745</field>
+        <field name="description">El comportamiento del alumno se ajusta a las normas y expectativas de su entorno. No se detectan problemas conductuales destacables en el momento de la evaluación.</field>
+    </record>
+    <record id="sdq_baremo_conduct_borderline" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">conduct</field>
+        <field name="scale_label">Problemas de conducta</field><field name="display_order">2</field>
+        <field name="score_min">4</field><field name="score_max">4</field>
+        <field name="label">Límite</field><field name="severity">1</field><field name="color">#ffc107</field>
+        <field name="description">Se observan algunos comportamientos desafiantes o disruptivos que se sitúan en zona de alerta. Conviene un seguimiento preventivo y el establecimiento de pautas de conducta consistentes.</field>
+    </record>
+    <record id="sdq_baremo_conduct_abnormal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">conduct</field>
+        <field name="scale_label">Problemas de conducta</field><field name="display_order">2</field>
+        <field name="score_min">5</field><field name="score_max">10</field>
+        <field name="label">Anormal</field><field name="severity">2</field><field name="color">#dc3545</field>
+        <field name="description">El alumno presenta problemas de conducta significativos, que pueden incluir comportamientos agresivos, desobediencia reiterada o dificultades para respetar normas. Se recomienda intervención orientada y coordinación con familia.</field>
+    </record>
+
+    <!-- Hiperactividad/inatención -->
+    <record id="sdq_baremo_hyper_normal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">hyperactivity</field>
+        <field name="scale_label">Hiperactividad/inatención</field><field name="display_order">3</field>
+        <field name="score_min">0</field><field name="score_max">5</field>
+        <field name="label">Normal</field><field name="severity">0</field><field name="color">#28a745</field>
+        <field name="description">Los niveles de atención y actividad motora se encuentran dentro del rango esperado para su edad y etapa de desarrollo.</field>
+    </record>
+    <record id="sdq_baremo_hyper_borderline" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">hyperactivity</field>
+        <field name="scale_label">Hiperactividad/inatención</field><field name="display_order">3</field>
+        <field name="score_min">6</field><field name="score_max">7</field>
+        <field name="label">Límite</field><field name="severity">1</field><field name="color">#ffc107</field>
+        <field name="description">Se aprecian algunos indicios de dificultades atencionales o de regulación de la actividad motora que conviene observar. Puede beneficiarse de estrategias de apoyo en el aula.</field>
+    </record>
+    <record id="sdq_baremo_hyper_abnormal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">hyperactivity</field>
+        <field name="scale_label">Hiperactividad/inatención</field><field name="display_order">3</field>
+        <field name="score_min">8</field><field name="score_max">10</field>
+        <field name="label">Anormal</field><field name="severity">2</field><field name="color">#dc3545</field>
+        <field name="description">El alumno presenta niveles elevados de inatención, impulsividad o hiperactividad que pueden interferir en su rendimiento académico y funcionamiento social. Se recomienda valoración especializada y adaptaciones metodológicas en el aula.</field>
+    </record>
+
+    <!-- Problemas con compañeros -->
+    <record id="sdq_baremo_peer_normal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">peer</field>
+        <field name="scale_label">Problemas con compañeros</field><field name="display_order">4</field>
+        <field name="score_min">0</field><field name="score_max">2</field>
+        <field name="label">Normal</field><field name="severity">0</field><field name="color">#28a745</field>
+        <field name="description">El alumno mantiene relaciones positivas con sus iguales sin dificultades destacables en el ámbito social y de convivencia.</field>
+    </record>
+    <record id="sdq_baremo_peer_borderline" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">peer</field>
+        <field name="scale_label">Problemas con compañeros</field><field name="display_order">4</field>
+        <field name="score_min">3</field><field name="score_max">3</field>
+        <field name="label">Límite</field><field name="severity">1</field><field name="color">#ffc107</field>
+        <field name="description">Se observan algunas dificultades en las relaciones con compañeros que conviene monitorizar. Pueden incluir cierta preferencia por actividades solitarias o dificultades puntuales de integración.</field>
+    </record>
+    <record id="sdq_baremo_peer_abnormal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">peer</field>
+        <field name="scale_label">Problemas con compañeros</field><field name="display_order">4</field>
+        <field name="score_min">4</field><field name="score_max">10</field>
+        <field name="label">Anormal</field><field name="severity">2</field><field name="color">#dc3545</field>
+        <field name="description">El alumno presenta dificultades importantes en sus relaciones interpersonales, que pueden incluir aislamiento social, rechazo por parte de iguales o conflictos frecuentes. Se recomienda intervención orientada al desarrollo de habilidades sociales.</field>
+    </record>
+
+    <!-- Conducta prosocial (mayor = mejor) -->
+    <record id="sdq_baremo_prosocial_normal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">prosocial</field>
+        <field name="scale_label">Conducta prosocial</field><field name="display_order">5</field>
+        <field name="score_min">6</field><field name="score_max">10</field>
+        <field name="label">Normal</field><field name="severity">0</field><field name="color">#28a745</field>
+        <field name="description">El alumno muestra una conducta prosocial adecuada: se muestra empático, colaborativo y considerado con los demás en su entorno habitual.</field>
+    </record>
+    <record id="sdq_baremo_prosocial_borderline" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">prosocial</field>
+        <field name="scale_label">Conducta prosocial</field><field name="display_order">5</field>
+        <field name="score_min">5</field><field name="score_max">5</field>
+        <field name="label">Límite</field><field name="severity">1</field><field name="color">#ffc107</field>
+        <field name="description">La conducta prosocial se sitúa en un nivel moderado. El alumno puede beneficiarse de actividades que fomenten la empatía, la cooperación y las habilidades de apoyo hacia los demás.</field>
+    </record>
+    <record id="sdq_baremo_prosocial_abnormal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">prosocial</field>
+        <field name="scale_label">Conducta prosocial</field><field name="display_order">5</field>
+        <field name="score_min">0</field><field name="score_max">4</field>
+        <field name="label">Anormal</field><field name="severity">2</field><field name="color">#dc3545</field>
+        <field name="description">El alumno presenta dificultades para mostrar conductas prosociales. Se aprecia escasa iniciativa empática o de ayuda hacia los demás. Se recomienda intervención orientada al desarrollo de competencias sociales y emocionales.</field>
+    </record>
+
+    <!-- Total dificultades (0–40) -->
+    <record id="sdq_baremo_total_normal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">total</field>
+        <field name="scale_label">Total dificultades</field><field name="display_order">99</field>
+        <field name="score_min">0</field><field name="score_max">15</field>
+        <field name="label">Normal</field><field name="severity">0</field><field name="color">#28a745</field>
+        <field name="description">La puntuación total de dificultades se sitúa dentro del rango normativo, lo que indica que el alumno no presenta un nivel de dificultad global preocupante en el momento de la evaluación.</field>
+    </record>
+    <record id="sdq_baremo_total_borderline" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">total</field>
+        <field name="scale_label">Total dificultades</field><field name="display_order">99</field>
+        <field name="score_min">16</field><field name="score_max">19</field>
+        <field name="label">Límite</field><field name="severity">1</field><field name="color">#ffc107</field>
+        <field name="description">La puntuación total indica un nivel de dificultades en zona límite. Aunque no alcanza el umbral clínico, conviene prestar atención y realizar un seguimiento individualizado para detectar posibles cambios.</field>
+    </record>
+    <record id="sdq_baremo_total_abnormal" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_sdq"/><field name="scale_name">total</field>
+        <field name="scale_label">Total dificultades</field><field name="display_order">99</field>
+        <field name="score_min">20</field><field name="score_max">40</field>
+        <field name="label">Anormal</field><field name="severity">2</field><field name="color">#dc3545</field>
+        <field name="description">La puntuación total refleja un nivel elevado de dificultades en múltiples áreas del desarrollo. Esta puntuación sugiere la presencia de problemas que pueden afectar de manera significativa al bienestar y funcionamiento del alumno. Se recomienda una valoración psicopedagógica o psicológica especializada.</field>
+    </record>
+
+</odoo>

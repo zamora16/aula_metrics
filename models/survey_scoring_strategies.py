@@ -203,10 +203,226 @@ class UniversalMatrixScoring:
 
         return metrics
 
+
+# ============================================================
+# Estrategia SDQ — Cuestionario de Capacidades y Dificultades
+# Versión autoinforme (11-17 años)
+# ============================================================
+
+class SdqScoring:
+    """
+    Estrategia de puntuación para el SDQ (Strengths and Difficulties Questionnaire).
+    Versión autoinforme para 11-17 años.
+
+    25 ítems distribuidos en 5 sub-escalas de 5 ítems cada una (rango 0-10 c/u).
+    El Total de Dificultades es la suma de las 4 primeras sub-escalas (rango 0-40).
+    La sub-escala Prosocial NO se incluye en el Total de Dificultades.
+
+    Los ítems inversos (7, 11, 14, 21, 25) se puntúan al revés:
+      No es cierto → 2, Un tanto cierto → 1, Absolutamente cierto → 0.
+
+    Opciones de respuesta estándar (por sequence):
+      sequence 0 → No es cierto     → valor 0 (o 2 si es inverso)
+      sequence 1 → Un tanto cierto  → valor 1
+      sequence 2 → Absolutamente cierto → valor 2 (o 0 si es inverso)
+
+    En el XML del cuestionario los ítems inversos deben llevar
+    is_inverse=True en el campo correspondiente de la pregunta,
+    o bien el campo de la respuesta `score` ya debe estar precalculado de forma inversa.
+
+    Esta estrategia devuelve métricas con el siguiente formato:
+      [
+        {'metric_name': 'SDQ_emotional',    'metric_label': 'Síntomas emocionales',    'value_float': 3.0, ...},
+        {'metric_name': 'SDQ_conduct',      'metric_label': 'Problemas de conducta',   'value_float': 2.0, ...},
+        {'metric_name': 'SDQ_hyperactivity','metric_label': 'Hiperactividad/inatención','value_float': 5.0, ...},
+        {'metric_name': 'SDQ_peer',         'metric_label': 'Problemas con compañeros', 'value_float': 1.0, ...},
+        {'metric_name': 'SDQ_prosocial',    'metric_label': 'Conducta prosocial',       'value_float': 8.0, ...},
+        {'metric_name': 'SDQ_total',        'metric_label': 'Total dificultades',       'value_float': 11.0, ...},
+      ]
+    """
+
+    # Mapeo de número de ítem a sub-escala
+    SCALE_ITEMS = {
+        'emotional':     [3, 8, 13, 16, 24],
+        'conduct':       [5, 7, 12, 18, 22],
+        'hyperactivity': [2, 10, 15, 21, 25],
+        'peer':          [6, 11, 14, 19, 23],
+        'prosocial':     [1, 4, 9, 17, 20],
+    }
+
+    SCALE_LABELS = {
+        'emotional':     'Síntomas emocionales',
+        'conduct':       'Problemas de conducta',
+        'hyperactivity': 'Hiperactividad/inatención',
+        'peer':          'Problemas con compañeros',
+        'prosocial':     'Conducta prosocial',
+        'total':         'Total dificultades',
+    }
+
+    # Ítems con puntuación inversa
+    INVERSE_ITEMS = {7, 11, 14, 21, 25}
+
+    # Escalas que componen el Total de Dificultades
+    DIFFICULTY_SCALES = ['emotional', 'conduct', 'hyperactivity', 'peer']
+
+    def __init__(self, survey):
+        self.survey = survey
+
+    def calculate(self, user_input):
+        """
+        Calcula las 6 puntuaciones SDQ (5 sub-escalas + Total Dificultades).
+
+        Returns:
+            list[dict]: Lista de métricas con las puntuaciones calculadas.
+        """
+        if not user_input or not user_input.user_input_line_ids:
+            return []
+
+        # Construir mapa: número de ítem → puntuación obtenida
+        item_scores = self._extract_item_scores(user_input)
+
+        if not item_scores:
+            return []
+
+        # Calcular sub-escalas
+        scale_results = {}
+        metrics = []
+
+        for scale_name, item_numbers in self.SCALE_ITEMS.items():
+            scale_score = 0
+            items_found = 0
+            for item_num in item_numbers:
+                score = item_scores.get(item_num)
+                if score is not None:
+                    scale_score += score
+                    items_found += 1
+
+            # Solo registrar si hay al menos 1 ítem respondido
+            if items_found > 0:
+                scale_results[scale_name] = scale_score
+                metrics.append({
+                    'metric_name': f'SDQ_{scale_name}',
+                    'metric_label': self.SCALE_LABELS[scale_name],
+                    'value_float': float(scale_score),
+                    'value_text': None,
+                    'value_json': None,
+                    'question_id': None,
+                })
+
+        # Total dificultades
+        total = sum(
+            scale_results[s] for s in self.DIFFICULTY_SCALES if s in scale_results
+        )
+        metrics.append({
+            'metric_name': 'SDQ_total',
+            'metric_label': self.SCALE_LABELS['total'],
+            'value_float': float(total),
+            'value_text': None,
+            'value_json': None,
+            'question_id': None,
+        })
+
+        return metrics
+
+    def calculate_scale_scores(self, user_input):
+        """
+        Devuelve un dict con los scores por sub-escala y el total,
+        para persistir en SurveyResult.scale_scores_json.
+
+        Returns:
+            dict: {
+                'emotional': score,
+                'conduct': score,
+                'hyperactivity': score,
+                'peer': score,
+                'prosocial': score,
+                'total': score,
+            }
+        """
+        if not user_input or not user_input.user_input_line_ids:
+            return {}
+
+        item_scores = self._extract_item_scores(user_input)
+        if not item_scores:
+            return {}
+
+        result = {}
+        for scale_name, item_numbers in self.SCALE_ITEMS.items():
+            scale_score = sum(
+                item_scores[n] for n in item_numbers if n in item_scores
+            )
+            result[scale_name] = scale_score
+
+        result['total'] = sum(
+            result.get(s, 0) for s in self.DIFFICULTY_SCALES
+        )
+        return result
+
+    def _extract_item_scores(self, user_input):
+        """
+        Extrae la puntuación de cada ítem numerado del SDQ.
+
+        El número de ítem se mapea a través del campo `sequence` de la pregunta
+        (la pregunta con sequence=1 es el ítem 1, etc.) o del campo `sdq_item_number`
+        si se definió explícitamente en el XML.
+
+        Para ítems inversos, aplica la inversión: valor_final = 2 - valor_original.
+
+        Returns:
+            dict: {item_number: score_value}
+        """
+        item_scores = {}
+
+        for line in user_input.user_input_line_ids:
+            question = line.question_id
+            if not question or question.is_page:
+                continue
+
+            # Obtener el número de ítem SDQ
+            # Preferir campo explícito 'sdq_item_number'; fallback a sequence
+            item_num = getattr(question, 'sdq_item_number', None)
+            if not item_num:
+                item_num = getattr(question, 'sequence', None)
+            if not item_num:
+                continue
+
+            try:
+                item_num = int(item_num)
+            except (TypeError, ValueError):
+                continue
+
+            if item_num < 1 or item_num > 25:
+                continue
+
+            # Obtener la puntuación de la respuesta seleccionada
+            answer = line.suggested_answer_id
+            if not answer:
+                continue
+
+            # Usar el campo `score` si está definido; si no, usar sequence como fallback
+            raw_value = None
+            if hasattr(answer, 'score') and answer.score is not None and answer.score != 0.0:
+                raw_value = float(answer.score)
+            elif hasattr(answer, 'sequence') and answer.sequence is not None:
+                raw_value = float(answer.sequence)
+
+            if raw_value is None:
+                continue
+
+            # Aplicar inversión para ítems inversos
+            if item_num in self.INVERSE_ITEMS:
+                raw_value = 2.0 - raw_value
+
+            item_scores[item_num] = raw_value
+
+        return item_scores
+
+
 # Todas las encuestas usan la estrategia universal
 SCORING_STRATEGIES = {
     'WHO5': UniversalMatrixScoring,
     'BULLYING_VA': UniversalMatrixScoring,
     'ASQ14': UniversalMatrixScoring,
     'ADHOC': UniversalMatrixScoring,
+    'SDQ': SdqScoring,
 }

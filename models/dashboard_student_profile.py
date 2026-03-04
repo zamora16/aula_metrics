@@ -9,6 +9,13 @@ import json
 # Importar utilidades compartidas del dashboard
 from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
 
+# Paleta de severidad: índice = severity (0=Normal, 1=Límite, 2=Anormal)
+# Etiquetas y orden de escalas son dinámicos — ver fields scale_label / display_order en survey_baremo_range
+_SEV_BAR_COLOR  = ['#2f855a', '#d97706', '#ef4444']
+_SEV_BADGE_CSS  = ['background:#2f855a;color:#fff', 'background:#f6c85f;color:#78350f', 'background:#ef4444;color:#fff']
+_SEV_TEXT_LABEL = ['Normal', 'Límite', 'Anormal']
+# ────────────────────────────────────────────────────────────────────────────────
+
 
 class DashboardStudentProfile(models.TransientModel):
     _name = 'aula_metrics.dashboard.student_profile'
@@ -37,23 +44,29 @@ class DashboardStudentProfile(models.TransientModel):
             return self._error_html("No tiene permisos para ver este perfil")
 
         metrics = self._get_student_metrics(student_id)
-        
+
         if not metrics:
             return self._build_empty_profile(student, role_info)
 
         df = self._prepare_metrics_dataframe(metrics)
-        
-        evolution_charts = self._generate_evolution_chartjs(df, student)
-        radar_chart = self._generate_radar_chart(df, student)
+
+        # Tab "Cuestionarios del Centro": excluir métricas de cuestionarios oficiales AulaMetrics
+        centro_metrics = self._get_centro_metrics(student_id)
+        df_centro = self._prepare_metrics_dataframe(centro_metrics) if centro_metrics else pd.DataFrame()
+
+        evolution_charts = self._generate_evolution_chartjs(df_centro, student)
+        radar_chart = self._generate_radar_chart(df_centro, student)
         kpis = self._generate_student_kpis(student, df)
         alerts_html = self._get_student_alerts_html(student_id)
         alerts_history_html = self._get_student_alerts_history_html(student_id)
         participations_html = self._get_participations_html(student_id)
         qualitative_html = self._get_qualitative_responses_html(student_id)
-        
+        official_surveys_html = self._get_official_surveys_html(student_id)
+
         return self._build_profile_html_chartjs(
-            student, role_info, kpis, '', 
-            evolution_charts, radar_chart, alerts_html, alerts_history_html, participations_html, qualitative_html
+            student, role_info, kpis,
+            evolution_charts, radar_chart, alerts_html, alerts_history_html, participations_html, qualitative_html,
+            official_surveys=official_surveys_html
         )
 
     @api.model
@@ -115,6 +128,19 @@ class DashboardStudentProfile(models.TransientModel):
         MetricValue = self.env['aula_metrics.metric_value']
         return MetricValue.search([
             ('student_id', '=', student_id)
+        ], order='timestamp desc')
+
+    def _get_centro_metrics(self, student_id):
+        """
+        Obtiene solo las métricas procedentes de encuestas del centro
+        (excluye cuestionarios oficiales AulaMetrics no-adhoc).
+        """
+        MetricValue = self.env['aula_metrics.metric_value']
+        return MetricValue.search([
+            ('student_id', '=', student_id),
+            '|',
+            ('survey_id.is_aulametrics', '=', False),
+            ('survey_id.is_adhoc', '=', True),
         ], order='timestamp desc')
 
     def _prepare_metrics_dataframe(self, metrics):
@@ -396,21 +422,333 @@ class DashboardStudentProfile(models.TransientModel):
         html += '</div>'
         return html
 
-    def _get_metric_threshold(self, metric_name):
-        """Obtiene el umbral configurado para una métrica."""
-        Threshold = self.env['aula_metrics.threshold']
-        threshold = Threshold.search([
-            ('score_field', '=', metric_name),
-            ('active', '=', True)
-        ], limit=1, order='severity desc')
-        
-        if threshold:
-            return {
-                'value': threshold.threshold_value,
-                'name': threshold.name,
-                'operator': threshold.operator
-            }
-        return None
+    # ────────────────────────────────────────────────────────────────────────
+    # Cuestionarios Oficiales — acordeón por resultado
+    # ────────────────────────────────────────────────────────────────────────
+
+    def _get_official_surveys_html(self, student_id):
+        """
+        Sección de cuestionarios oficiales: lista de filas compactas ordenadas
+        por fecha. Cada fila muestra [cuestionario · fecha · puntuación · badge]
+        y al pulsar se expande inline con el desglose completo por sub-escalas.
+        No hay navegación fuera del perfil.
+
+        Returns:
+            str: HTML de la sección, o '' si no hay resultados.
+        """
+        SurveyResult = self.env['aula_metrics.survey_result']
+        results = SurveyResult.search([
+            ('student_id', '=', student_id),
+            ('is_aulametrics', '=', True),
+        ], order='completed_at desc')
+
+        if not results:
+            return ''
+
+        # Pre-calcular scale_maxes y meta (etiqueta + orden) por survey_id una sola vez
+        BaremoRange = self.env['aula_metrics.survey_baremo_range']
+        maxes_cache = {}   # {survey_id: {scale_name: max_value}}
+        meta_cache  = {}   # {survey_id: {scale_name: {'label': str, 'order': int}}}
+        seen_sids = list(dict.fromkeys(r.survey_id.id for r in results))
+        for sid in seen_sids:
+            baremos = BaremoRange.search([('survey_id', '=', sid)])
+            m, meta = {}, {}
+            for br in baremos:
+                sn = br.scale_name or '__global__'
+                if br.score_max > m.get(sn, 0):
+                    m[sn] = br.score_max
+                if sn not in meta:
+                    meta[sn] = {
+                        'label': br.scale_label or sn.replace('_', ' ').capitalize(),
+                        'order': br.display_order if br.display_order is not None else 99,
+                    }
+            maxes_cache[sid] = m
+            meta_cache[sid]  = meta
+
+        # Agrupar por cuestionario manteniendo orden de aparición
+        groups = {}    # {survey_id: {'title': str, 'results': [...]}}
+        for r in results:
+            sid = r.survey_id.id
+            if sid not in groups:
+                groups[sid] = {
+                    'title': r.survey_id.title or '—',
+                    'results': [],
+                }
+            groups[sid]['results'].append(r)
+
+        # Construir grupos de acordeón
+        groups_html = []
+        for sid in seen_sids:
+            g = groups[sid]
+            scale_maxes = maxes_cache[sid]
+
+            # Comparativa grupo / centro (se inyecta dentro de cada fila)
+            ctx = self._get_survey_result_context(sid, student_id)
+
+            # Una fila acordeón por cada resultado, con marcadores de media
+            scale_meta = meta_cache[sid]
+            rows_html = ''.join(
+                self._build_survey_result_row(r, scale_maxes, ctx, scale_meta)
+                for r in g['results']
+            )
+
+            groups_html.append(f"""
+            <div class="mb-3">
+                <div class="d-flex align-items-center gap-2 mb-2 px-1">
+                    <i class="fa-solid fa-clipboard-list" style="color:var(--am-primary);font-size:13px;"></i>
+                    <span style="font-size:12px;font-weight:600;color:var(--am-muted);letter-spacing:0.04em;text-transform:uppercase;">{g['title']}</span>
+                    <span style="font-size:11px;flex:1;height:1px;background:var(--am-border);display:inline-block;vertical-align:middle;"></span>
+                </div>
+                <div class="official-survey-list">
+                    {rows_html}
+                </div>
+            </div>""")
+
+        # Devuelve sólo el cuerpo con los grupos — el tab panel hace de contenedor
+        return '\n'.join(groups_html)
+
+    def _build_survey_result_row(self, result, scale_maxes, context=None, scale_meta=None):
+        """
+        Fila acordeón para un resultado de cuestionario oficial.
+
+        Cabecera: fecha · evaluación · puntuación global · badge de severidad.
+        Cuerpo expandible: barra horizontal por sub-escala coloreada según severidad,
+        con marcadores de media de grupo (gris) y centro (verde) superpuestos.
+        Valor mostrado como score/max. Leyenda compacta arriba.
+        """
+        rid = result.id
+        collapse_id = f'sr-detail-{rid}'
+
+        # ── Metadatos de cabecera ─────────────────────────────────────────
+        date_str  = result.completed_at.strftime('%d/%m/%Y') if result.completed_at else '—'
+        age_str   = f'{result.age_at_completion} a.' if result.age_at_completion else ''
+        eval_name = result.evaluation_id.name if result.evaluation_id else ''
+
+        sev         = min(result.baremo_severity, 2)
+        bar_color   = _SEV_BAR_COLOR[sev]
+        badge_style = _SEV_BADGE_CSS[sev]
+        global_label = result.baremo_label or _SEV_TEXT_LABEL[sev]
+
+        meta_parts = [date_str]
+        if age_str:
+            meta_parts.append(age_str)
+        if eval_name:
+            meta_parts.append(eval_name)
+        meta_str = ' · '.join(meta_parts)
+
+        # ── Contexto comparativo ──────────────────────────────────────────
+        has_ctx = bool(context and (context.get('group_count') or context.get('center_count')))
+        g_means = context['group_means']  if has_ctx else {}
+        c_means = context['center_means'] if has_ctx else {}
+
+        # ── Leyenda de marcadores (solo si hay contexto con datos de grupo/centro) ──
+        legend_parts = []
+        if has_ctx and context.get('group_count'):
+            n = context['group_count']
+            legend_parts.append(
+                f'<span style="display:inline-block;width:2px;height:12px;background:#94a3b8;'
+                f'border-radius:1px;vertical-align:middle;"></span>'
+                f'&nbsp;Media grupo ({n})'
+            )
+        if has_ctx and context.get('center_count'):
+            n = context['center_count']
+            legend_parts.append(
+                f'<span style="display:inline-block;width:2px;height:12px;background:{palette.UI_SUCCESS};'
+                f'border-radius:1px;vertical-align:middle;"></span>'
+                f'&nbsp;Media centro ({n})'
+            )
+        legend_html = (
+            ('<div class="d-flex gap-3 mb-3" style="font-size:10px;color:var(--am-muted);">'
+             + '&emsp;'.join(legend_parts)
+             + '</div>')
+            if legend_parts else ''
+        )
+
+        # ── Contenido expandido: sub-escalas ─────────────────────────────
+        scale_scores = result.get_scale_scores()
+        scale_bars_html = ''
+
+        if scale_scores:
+            _meta = scale_meta or {}
+            has_total = 'total' in scale_scores
+            non_total = [s for s in scale_scores if s != 'total']
+            non_total.sort(key=lambda s: _meta.get(s, {}).get('order', 99))
+            ordered_scales = non_total + (['total'] if has_total else [])
+
+            bars = []
+            for scale_name in ordered_scales:
+                scale_data   = scale_scores[scale_name]
+                score        = scale_data.get('score', 0) if isinstance(scale_data, dict) else float(scale_data)
+                s_sev        = min(scale_data.get('severity', 0) if isinstance(scale_data, dict) else 0, 2)
+                val_color    = _SEV_BAR_COLOR[s_sev]
+                scale_max    = max(scale_maxes.get(scale_name, 10), 1)
+                display_name = (_meta.get(scale_name) or {}).get('label') or scale_name.replace('_', ' ').capitalize()
+                is_total     = scale_name == 'total' and has_total and len(ordered_scales) > 1
+
+                def pct(v, mx=scale_max):
+                    return min(v / mx * 100, 100)
+
+                # ── Barra del alumno (color según severidad) ──────────────
+                s_pct    = pct(score)
+                bar_html = (f'<div title="{display_name}: {score:.0f}/{scale_max:.0f}" '
+                            f'style="position:absolute;left:0;top:50%;transform:translateY(-50%);'
+                            f'width:{s_pct:.1f}%;height:9px;background:{val_color};'
+                            f'border-radius:0 2px 2px 0;z-index:2;"></div>')
+
+                # ── Marcadores grupo / centro ─────────────────────────────
+                g_mean = g_means.get(scale_name)
+                c_mean = c_means.get(scale_name)
+                g_mk   = ''
+                c_mk   = ''
+                if g_mean is not None:
+                    gp   = pct(g_mean)
+                    g_mk = (f'<div title="Media grupo: {g_mean:.1f}" '
+                            f'style="position:absolute;left:{gp:.1f}%;top:0;'
+                            f'height:100%;width:2px;background:#94a3b8;z-index:4;"></div>')
+                if c_mean is not None:
+                    cp   = pct(c_mean)
+                    c_mk = (f'<div title="Media centro: {c_mean:.1f}" '
+                            f'style="position:absolute;left:{cp:.1f}%;top:0;'
+                            f'height:100%;width:2px;background:{palette.UI_SUCCESS};z-index:4;"></div>')
+
+                top_border = 'border-top:1px solid var(--am-border);padding-top:8px;margin-top:4px;' \
+                             if is_total else ''
+
+                bars.append(f"""
+                <div class="d-flex align-items-center gap-2 mb-2" style="{top_border}">
+                    <small style="width:145px;min-width:115px;flex-shrink:0;
+                                  color:var(--am-muted);font-size:11px;">{display_name}</small>
+                    <div style="flex:1;position:relative;height:22px;border-radius:3px;
+                                overflow:hidden;background:var(--am-border);">
+                        {bar_html}
+                        {g_mk}
+                        {c_mk}
+                    </div>
+                    <small style="width:44px;text-align:right;font-weight:700;
+                                  font-size:11px;color:{val_color};flex-shrink:0;"
+                           title="{display_name}">{score:.0f}<span style="font-weight:400;color:var(--am-muted);">/{scale_max:.0f}</span></small>
+                </div>""")
+            scale_bars_html = '\n'.join(bars)
+
+        # ── Descripción global del baremo ─────────────────────────────────
+        desc_html = ''
+        if result.baremo_description:
+            desc_html = f'<p style="font-size:13px;color:var(--am-muted);margin-bottom:14px;">{result.baremo_description}</p>'
+
+        # ── Notas del orientador ──────────────────────────────────────────
+        notes_html = ''
+        if result.notes:
+            notes_html = f"""
+            <div class="mt-3 p-2" style="background:var(--am-light);border-radius:6px;
+                         border-left:3px solid var(--am-primary);">
+                <small style="color:var(--am-muted);">
+                    <i class="fa-solid fa-note-sticky me-1"></i>
+                    <strong>Observación:</strong> {result.notes}
+                </small>
+            </div>"""
+
+        # ── Row HTML ─────────────────────────────────────────────────────
+        return f"""
+        <div style="border:1px solid var(--am-border);border-radius:8px;margin-bottom:6px;overflow:hidden;">
+
+            <!-- Cabecera: wrapper flex externo sin toggle -->
+            <div class="d-flex align-items-center"
+                 style="border-left:4px solid {bar_color};">
+
+                <!-- Zona clicable para colapsar (ocupa todo el espacio menos el botón) -->
+                <div class="d-flex align-items-center justify-content-between px-3 py-2"
+                     role="button"
+                     data-bs-toggle="collapse"
+                     data-bs-target="#{collapse_id}"
+                     aria-expanded="false"
+                     aria-controls="{collapse_id}"
+                     style="flex:1;min-width:0;cursor:pointer;user-select:none;transition:background 0.15s;"
+                     onmouseover="this.style.background='var(--am-light)'"
+                     onmouseout="this.style.background=''">
+
+                    <!-- Fecha y meta -->
+                    <div style="min-width:0;flex:1;">
+                        <span style="font-size:14px;font-weight:500;color:var(--am-text);">{meta_str}</span>
+                    </div>
+
+                    <!-- Puntuación global + badge + flecha -->
+                    <div class="d-flex align-items-center gap-3 ms-3 flex-shrink-0">
+                        <span style="font-size:22px;font-weight:700;line-height:1;color:{bar_color};">{result.raw_score:.0f}<span style="font-weight:400;color:var(--am-muted);"><t t-if="scale_maxes.get('total')">/{scale_maxes['total']:.0f}</t></span></span>
+                        <span class="badge" style="{badge_style};font-size:11px;padding:3px 10px;">{global_label}</span>
+                        <i class="fa-solid fa-chevron-down"
+                           id="chevron-{rid}"
+                           style="color:var(--am-muted);font-size:11px;transition:transform 0.25s;"></i>
+                    </div>
+                </div>
+
+                <!-- Botón informe: FUERA del div de colapso -->
+                <a href="/report/pdf/aula_metrics.report_survey_result_document/{rid}"
+                   target="_blank"
+                   title="Generar informe PDF"
+                   style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;
+                          margin-right:10px;flex-shrink:0;
+                          border:1px solid var(--am-border);border-radius:5px;
+                          font-size:10px;color:var(--am-muted);text-decoration:none;
+                          background:var(--am-surface);line-height:1.4;white-space:nowrap;"
+                   onmouseover="this.style.borderColor='var(--am-primary)';this.style.color='var(--am-primary)';"
+                   onmouseout="this.style.borderColor='var(--am-border)';this.style.color='var(--am-muted)';"
+                ><i class="fa-solid fa-file-pdf" style="font-size:10px;"></i>&nbsp;Informe</a>
+
+            </div>
+
+            <!-- Cuerpo expandible -->
+            <div class="collapse" id="{collapse_id}">
+                <div style="padding:16px 20px;border-top:1px solid var(--am-border);background:var(--am-surface);">
+                    {desc_html}
+                    {legend_html}
+                    {scale_bars_html}
+                    {notes_html}
+                </div>
+            </div>
+        </div>
+        <script>
+        (function() {{
+            var el  = document.getElementById('{collapse_id}');
+            var chv = document.getElementById('chevron-{rid}');
+            if (el && chv) {{
+                el.addEventListener('show.bs.collapse',  function() {{ chv.style.transform = 'rotate(180deg)'; }});
+                el.addEventListener('hide.bs.collapse',  function() {{ chv.style.transform = 'rotate(0deg)'; }});
+            }}
+        }})();
+        </script>"""
+
+    def _get_survey_result_context(self, survey_id, student_id):
+        """
+        Calcula medias por escala de otros alumnos para el mismo cuestionario.
+        Retorna medias del grupo del alumno y del centro completo.
+        """
+        SurveyResult = self.env['aula_metrics.survey_result']
+        student = self.env['res.partner'].browse(student_id)
+        group_id = student.academic_group_id.id if student.academic_group_id else None
+
+        all_others = SurveyResult.search([
+            ('survey_id', '=', survey_id),
+            ('student_id', '!=', student_id),
+        ])
+        group_others = all_others.filtered(
+            lambda r: group_id and r.student_id.academic_group_id.id == group_id
+        )
+
+        def avg_scales(records):
+            sums, counts = {}, {}
+            for r in records:
+                for scale_name, data in r.get_scale_scores().items():
+                    score = data.get('score', 0) if isinstance(data, dict) else float(data or 0)
+                    sums[scale_name]   = sums.get(scale_name, 0) + score
+                    counts[scale_name] = counts.get(scale_name, 0) + 1
+            return {k: sums[k] / counts[k] for k in sums if counts.get(k)}
+
+        return {
+            'group_means':  avg_scales(group_others),
+            'center_means': avg_scales(all_others),
+            'group_count':  len(group_others),
+            'center_count': len(all_others),
+        }
 
     def _build_empty_profile(self, student, role_info):
         """HTML cuando el estudiante no tiene métricas."""
@@ -708,154 +1046,6 @@ class DashboardStudentProfile(models.TransientModel):
         </html>
         """
 
-    def _generate_timeline_chartjs(self, df, student):
-        """Timeline con Chart.js - estilo profesional."""
-        if df.empty:
-            return '<div class="alert alert-info">No hay datos temporales disponibles</div>'
-        
-        df_numeric = df[df['value_type'] == 'numeric'].copy()
-        if df_numeric.empty:
-            return '<div class="alert alert-info">No hay métricas numéricas para graficar</div>'
-        
-        # Paleta profesional estilo Stripe/Linear
-        colors = palette.METRICS_PALETTE
-        
-        datasets = []
-        for idx, metric in enumerate(df_numeric['metric_label'].unique()[:5]):
-            df_metric = df_numeric[df_numeric['metric_label'] == metric].sort_values('timestamp')
-            
-            data_points = [
-                {'x': row['timestamp'].strftime('%Y-%m-%d %H:%M:%S'), 'y': float(row['value'])}
-                for _, row in df_metric.iterrows()
-            ]
-            
-            color = colors[idx % len(colors)]
-            datasets.append({
-                'label': metric,
-                'data': data_points,
-                'borderColor': color,
-                'backgroundColor': 'transparent',
-                'borderWidth': 2,
-                'tension': 0.3,
-                'fill': False,
-                'pointRadius': 4,
-                'pointHoverRadius': 6,
-                'pointBackgroundColor': color,
-                'pointBorderColor': '#ffffff',
-                'pointBorderWidth': 2
-            })
-        
-        chart_id = f'timeline_{student.id}'
-        datasets_json = json.dumps(datasets)
-        
-        return f'''
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Evolución Temporal</h5>
-                <p class="card-subtitle">Seguimiento longitudinal de métricas</p>
-            </div>
-            <div class="card-body">
-                <canvas id="{chart_id}" style="max-height: 350px;"></canvas>
-            </div>
-        </div>
-        
-        <script>
-        new Chart(document.getElementById('{chart_id}'), {{
-            type: 'line',
-            data: {{
-                datasets: {datasets_json}
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {{
-                    mode: 'index',
-                    intersect: false
-                }},
-                plugins: {{
-                    legend: {{
-                        display: true,
-                        position: 'bottom',
-                        labels: {{
-                            usePointStyle: true,
-                            padding: 16,
-                            font: {{
-                                size: 13,
-                                family: "'Inter', sans-serif",
-                                weight: '500'
-                            }},
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
-                        }}
-                    }},
-                    tooltip: {{
-                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--am-primary-darker').trim(),
-                        padding: 12,
-                        titleFont: {{
-                            size: 13,
-                            family: "'Inter', sans-serif",
-                            weight: '600'
-                        }},
-                        bodyFont: {{
-                            size: 13,
-                            family: "'Inter', sans-serif"
-                        }},
-                        cornerRadius: 6,
-                        displayColors: true,
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--am-border').trim(),
-                        borderWidth: 1,
-                        callbacks: {{
-                            title: function(context) {{
-                                let date = new Date(context[0].parsed.x);
-                                return date.toLocaleDateString('es-ES', {{day: '2-digit', month: 'short', year: 'numeric'}});
-                            }}
-                        }}
-                    }}
-                }},
-                scales: {{
-                    x: {{
-                        type: 'time',
-                        time: {{
-                            unit: 'day',
-                            displayFormats: {{
-                                day: 'dd/MM'
-                            }}
-                        }},
-                        grid: {{
-                            display: false,
-                            drawBorder: false
-                        }},
-                        ticks: {{
-                            font: {{
-                                size: 12,
-                                family: "'Inter', sans-serif"
-                            }},
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
-                        }}
-                    }},
-                    y: {{
-                        beginAtZero: true,
-                        grid: {{
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-light').trim(),
-                            drawBorder: false
-                        }},
-                        ticks: {{
-                            font: {{
-                                size: 12,
-                                family: "'Inter', sans-serif"
-                            }},
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim()
-                        }}
-                    }}
-                }},
-                animation: {{
-                    duration: 750,
-                    easing: 'easeInOutCubic'
-                }}
-            }}
-        }});
-        </script>
-        '''
-
     def _generate_evolution_chartjs(self, df, student):
         """Gráficos individuales con contexto del grupo - estilo profesional."""
         if df.empty:
@@ -905,6 +1095,10 @@ class DashboardStudentProfile(models.TransientModel):
                         group_means.append(None)
             
             chart_id = f'evolution_{student.id}_{idx}'
+
+            # Eje Y dinámico: usar el máximo real de los datos de esta métrica
+            all_chart_vals = values + [v for v in group_means if v is not None]
+            y_suggested_max = round(max(all_chart_vals) * 1.20, 1) if all_chart_vals else 100
 
             # Crear datasets: las barras representan al estudiante (etiquetadas con su nombre); líneas para media grupo/centro
             datasets = [
@@ -1021,7 +1215,7 @@ class DashboardStudentProfile(models.TransientModel):
                         }},
                         y: {{
                             beginAtZero: true,
-                            max: 100,
+                            suggestedMax: {y_suggested_max},
                             grid: {{
                                 color: getComputedStyle(document.documentElement).getPropertyValue('--am-light').trim(),
                                 drawBorder: false
@@ -1105,204 +1299,188 @@ class DashboardStudentProfile(models.TransientModel):
         return center_data
     
     def _generate_radar_chart(self, df, student):
-        """Genera radar chart si hay 3+ métricas numéricas."""
+        """
+        Resumen de Métricas — reemplaza el radar chart.
+
+        Muestra cada métrica numérica como una fila horizontal con:
+        - Nombre de la métrica y fecha de última medición
+        - Barra normalizada (0–100 % del rango observado en el centro) con:
+            · Barra rellena hasta el valor del alumno (color semáforo si hay umbral)
+            · Marcador vertical gris = media del grupo
+            · Marcador vertical verde = media del centro
+        - Valor bruto destacado a la derecha + flecha de tendencia
+
+        La normalización es independiente por métrica, por lo que métricas con
+        rangos completamente diferentes son siempre comparables entre sí.
+        """
         if df.empty:
             return ''
-        
+
         df_numeric = df[df['value_type'] == 'numeric'].copy()
         if df_numeric.empty:
             return ''
-        
-        # Obtener último valor de cada métrica
-        latest_by_metric = df_numeric.groupby('metric_label').last().reset_index()
-        
-        # Necesitamos al menos 3 métricas
-        if len(latest_by_metric) < 3:
-            return ''
-        
-        # Obtener contexto del grupo y centro
-        group_data = self._get_group_context_data(student, df_numeric)
+
+        group_data  = self._get_group_context_data(student, df_numeric)
         center_data = self._get_center_context_data(student, df_numeric)
-        
-        # Preparar datos del estudiante
-        student_labels = []
-        student_values = []
-        group_values = []
-        center_values = []
-        
-        for _, row in latest_by_metric.iterrows():
-            student_labels.append(row['metric_label'])
-            student_values.append(float(row['value']))
-            
-            # Media del grupo para esta métrica
-            metric_name = row['metric_name']
+        MetricValue = self.env['aula_metrics.metric_value']
+
+        rows_html = []
+        metrics_shown = 0
+
+        for metric_name in df_numeric['metric_name'].unique():
+            df_m = df_numeric[df_numeric['metric_name'] == metric_name].sort_values('timestamp')
+            if df_m.empty:
+                continue
+
+            label     = df_m.iloc[-1]['metric_label']
+            last_val  = float(df_m.iloc[-1]['value'])
+            last_date = df_m.iloc[-1]['timestamp'].strftime('%d/%m/%Y')
+
+            # ── Tendencia vs medición anterior ──────────────────────────
+            if len(df_m) >= 2:
+                prev_val = float(df_m.iloc[-2]['value'])
+                diff = last_val - prev_val
+                if abs(diff) < 0.5:
+                    trend_icon  = '<i class="fa-solid fa-minus" style="color:var(--am-muted);font-size:10px;"></i>'
+                    trend_color = 'var(--am-muted)'
+                elif diff > 0:
+                    trend_icon  = '<i class="fa-solid fa-arrow-up" style="color:var(--am-primary);font-size:10px;"></i>'
+                    trend_color = palette.UI_PRIMARY
+                else:
+                    trend_icon  = '<i class="fa-solid fa-arrow-down" style="color:var(--am-danger, #ef4444);font-size:10px;"></i>'
+                    trend_color = palette.UI_DANGER
+            else:
+                trend_icon  = ''
+                trend_color = 'var(--am-muted)'
+
+            # ── Rango de normalización: máximo observado en el centro ────
+            all_vals = MetricValue.search_read(
+                [('metric_name', '=', metric_name), ('value_float', '!=', False)],
+                ['value_float']
+            )
+            all_floats = [r['value_float'] for r in all_vals if r['value_float'] is not None]
+            observed_max = max(all_floats) if all_floats else max(last_val, 1)
+            if observed_max <= 0:
+                observed_max = 1
+
+            def to_pct(v):
+                return min(int(v / observed_max * 100), 100)
+
+            student_pct = to_pct(last_val)
+
+            bar_color = palette.UI_PRIMARY
+
+            # ── Marcadores de grupo y centro ─────────────────────────────
+            group_marker_html  = ''
+            center_marker_html = ''
+            group_tooltip = ''
+            center_tooltip = ''
+
             if metric_name in group_data:
-                group_values.append(group_data[metric_name]['mean'])
-            else:
-                group_values.append(None)
-            
-            # Media del centro para esta métrica
+                gm = group_data[metric_name]['mean']
+                gp = to_pct(gm)
+                group_tooltip = f'Media grupo: {gm:.1f}'
+                group_marker_html = f'''
+                <div title="{group_tooltip}"
+                     style="position:absolute;left:{gp}%;top:50%;transform:translate(-50%,-50%);
+                            width:3px;height:20px;background:#94a3b8;border-radius:2px;z-index:2;"></div>'''
+
             if metric_name in center_data:
-                center_values.append(center_data[metric_name]['mean'])
-            else:
-                center_values.append(None)
-        
-        chart_id = f'radar_{student.id}'
-        
-        datasets = [
-            {
-                'label': student.name,
-                'data': student_values,
-                'backgroundColor': 'rgba(59, 130, 246, 0.2)',
-                'borderColor': palette.UI_PRIMARY,
-                'borderWidth': 2,
-                'pointBackgroundColor': palette.UI_PRIMARY,
-                'pointBorderColor': '#ffffff',
-                'pointBorderWidth': 2,
-                'pointRadius': 4,
-                'pointHoverRadius': 6
-            }
-        ]
-        
-        # Agregar dataset del grupo si hay datos
-        if any(v is not None for v in group_values):
-            datasets.append({
-                'label': 'Media grupo',
-                'data': group_values,
-                'backgroundColor': 'rgba(148, 163, 184, 0.1)',
-                'borderColor': palette.UI_MUTED,
-                'borderWidth': 2,
-                'borderDash': [5, 5],
-                'pointBackgroundColor': palette.UI_MUTED,
-                'pointBorderColor': '#ffffff',
-                'pointBorderWidth': 2,
-                'pointRadius': 3,
-                'pointHoverRadius': 5
-            })
-        
-        # Agregar dataset del centro si hay datos
-        if any(v is not None for v in center_values):
-            datasets.append({
-                'label': 'Media centro',
-                'data': center_values,
-                'backgroundColor': 'rgba(16, 185, 129, 0.05)',
-                'borderColor': palette.UI_SUCCESS,
-                'borderWidth': 2,
-                'borderDash': [2, 2],
-                'pointBackgroundColor': palette.UI_SUCCESS,
-                'pointBorderColor': '#ffffff',
-                'pointBorderWidth': 2,
-                'pointRadius': 3,
-                'pointHoverRadius': 5
-            })
-        
-        return f'''
-        <div class="row mb-4">
-            <div class="col-md-10 col-lg-7 col-xl-6 mx-auto">
-                <div class="card">
-                    <div class="card-header text-center">
-                        <h5 class="card-title">Perfil Multidimensional</h5>
-                        <p class="card-subtitle">Comparativa visual con grupo y centro</p>
+                cm = center_data[metric_name]['mean']
+                cp = to_pct(cm)
+                center_tooltip = f'Media centro: {cm:.1f}'
+                center_marker_html = f'''
+                <div title="{center_tooltip}"
+                     style="position:absolute;left:{cp}%;top:50%;transform:translate(-50%,-50%);
+                            width:3px;height:20px;background:{palette.UI_SUCCESS};border-radius:2px;z-index:2;"></div>'''
+
+            rows_html.append(f"""
+            <div class="d-flex align-items-center gap-3 py-2"
+                 style="border-bottom:1px solid var(--am-border);">
+
+                <!-- Nombre + meta -->
+                <div style="width:180px;min-width:140px;flex-shrink:0;">
+                    <div style="font-size:13px;font-weight:500;color:var(--am-text);
+                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                         title="{label}">{label}</div>
+                    <div style="font-size:11px;color:var(--am-muted);">{last_date} {trend_icon}</div>
+                </div>
+
+                <!-- Barra normalizada -->
+                <div style="flex:1;position:relative;height:28px;display:flex;align-items:center;">
+                    <!-- Track -->
+                    <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+                                height:8px;background:var(--am-border);border-radius:4px;overflow:visible;">
+                        <!-- Fill alumno -->
+                        <div style="width:{student_pct}%;height:100%;background:{bar_color};
+                                    border-radius:4px;transition:width 0.5s ease;"></div>
                     </div>
-                    <div class="card-body" style="padding: 1.5rem; display: flex; justify-content: center; align-items: center;">
-                        <div style="width: 100%; max-width: 500px;">
-                            <canvas id="{chart_id}"></canvas>
+                    {group_marker_html}
+                    {center_marker_html}
+                </div>
+
+                <!-- Valor bruto -->
+                <div style="width:64px;flex-shrink:0;text-align:right;">
+                    <span style="font-size:18px;font-weight:700;color:{bar_color};line-height:1;">
+                        {last_val:.0f}</span>
+                    <div style="font-size:10px;color:var(--am-muted);">/ {observed_max:.0f}</div>
+                </div>
+            </div>""")
+            metrics_shown += 1
+
+        if not rows_html:
+            return ''
+
+        rows_joined = '\n'.join(rows_html)
+        return f"""
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Resumen de Métricas</h5>
+                        <p class="card-subtitle">Posición del alumno en cada variable respecto al grupo y al centro</p>
+                    </div>
+                    <div class="card-body" style="padding-top:4px;padding-bottom:4px;">
+                        {rows_joined}
+
+                        <!-- Leyenda -->
+                        <div class="d-flex gap-4 pt-3" style="font-size:11px;color:var(--am-muted);">
+                            <span><span style="display:inline-block;width:18px;height:7px;background:var(--am-primary);border-radius:3px;vertical-align:middle;"></span> Alumno</span>
+                            <span><span style="display:inline-block;width:3px;height:14px;background:#94a3b8;border-radius:1px;vertical-align:middle;"></span> Media grupo</span>
+                            <span><span style="display:inline-block;width:3px;height:14px;background:{palette.UI_SUCCESS};border-radius:1px;vertical-align:middle;"></span> Media centro</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <script>
-        new Chart(document.getElementById('{chart_id}'), {{
-            type: 'radar',
-            data: {{
-                labels: {json.dumps(student_labels)},
-                datasets: {json.dumps(datasets)}
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1.2,
-                plugins: {{
-                    legend: {{
-                        display: true,
-                        position: 'bottom',
-                        labels: {{
-                            usePointStyle: true,
-                            padding: 12,
-                            font: {{
-                                size: 12,
-                                family: "'Inter', sans-serif",
-                                weight: '500'
-                            }},
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim(),
-                            boxWidth: 8,
-                            boxHeight: 8
-                        }}
-                    }},
-                    tooltip: {{
-                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--am-primary-darker').trim(),
-                        padding: 10,
-                        cornerRadius: 6,
-                        titleFont: {{
-                            family: "'Inter', sans-serif",
-                            size: 12,
-                            weight: '600'
-                        }},
-                        bodyFont: {{
-                            family: "'Inter', sans-serif",
-                            size: 11
-                        }},
-                        callbacks: {{
-                            label: function(context) {{
-                                return context.dataset.label + ': ' + context.parsed.r.toFixed(1) + ' pts';
-                            }}
-                        }}
-                    }}
-                }},
-                scales: {{
-                    r: {{
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {{
-                            stepSize: 25,
-                            font: {{
-                                size: 10,
-                                family: "'Inter', sans-serif"
-                            }},
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim(),
-                            backdropColor: 'transparent'
-                        }},
-                        grid: {{
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-border').trim()
-                        }},
-                        pointLabels: {{
-                            font: {{
-                                size: 11,
-                                family: "'Inter', sans-serif",
-                                weight: '500'
-                            }},
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--am-muted').trim(),
-                            padding: 8
-                        }}
-                    }}
-                }},
-                animation: {{
-                    duration: 600,
-                    easing: 'easeInOutCubic'
-                }}
-            }}
-        }});
-        </script>
-        '''
+        </div>"""
 
-    def _build_profile_html_chartjs(self, student, role_info, kpis, timeline, evolution, radar, alerts, alerts_history, participations, qualitative=''):
+    def _build_profile_html_chartjs(self, student, role_info, kpis, evolution, radar, alerts, alerts_history, participations, qualitative='', official_surveys=''):
         """HTML del perfil con Chart.js - diseño profesional con layout del dashboard."""
         role_badge = dashboard_helpers.get_role_badge(role_info)
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
         sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
-        
+
+        # Determinar pestaña activa: Oficiales si hay resultados, Centro en otro caso
+        has_official = bool(official_surveys and official_surveys.strip())
+        active_oficial = 'show active' if has_official else ''
+        active_centro  = '' if has_official else 'show active'
+        tab_oficial_cls = 'nav-link active' if has_official else 'nav-link'
+        tab_centro_cls  = 'nav-link' if has_official else 'nav-link active'
+
+        oficial_content = official_surveys if has_official else """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-clipboard-list fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">Este alumno aún no tiene resultados de cuestionarios oficiales.</p>
+            </div>"""
+
+        centro_content = (radar or '') + (evolution or '')
+        if not centro_content.strip():
+            centro_content = """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
+            </div>"""
+
         return f"""
         <!DOCTYPE html>
         <html lang="es">
@@ -1320,7 +1498,7 @@ class DashboardStudentProfile(models.TransientModel):
         <body>
             <div class="dashboard-layout">
                 {sidebar_html}
-                
+
                 <main class="main-content">
                     <div class="topbar">
                         <div>
@@ -1336,21 +1514,63 @@ class DashboardStudentProfile(models.TransientModel):
                             </a>
                         </div>
                     </div>
-                    
+
                     <div class="content-wrapper">
                         <div class="container-fluid">
+
+                            <!-- KPIs -->
                             <div class="kpi-grid">
                                 {kpis}
                             </div>
-                            
-                            {radar if radar else ''}
-                            
-                            <div class="row">
-                            {evolution}
+
+                            <!-- ═══ PESTAÑAS DE CUESTIONARIOS ═══ -->
+                            <div class="card mb-4">
+                                <div class="card-header" style="padding-bottom:0;border-bottom:none;">
+                                    <ul class="nav nav-tabs" style="border-bottom:none;margin-bottom:-1px;gap:4px;">
+                                        <li class="nav-item">
+                                            <a class="{tab_oficial_cls}" id="tab-oficial-btn"
+                                               data-bs-toggle="tab" href="#tab-oficial" role="tab"
+                                               style="font-size:13px;font-weight:600;">
+                                                <i class="fa-solid fa-clipboard-check me-1"></i>Cuestionarios Oficiales
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="{tab_centro_cls}" id="tab-centro-btn"
+                                               data-bs-toggle="tab" href="#tab-centro" role="tab"
+                                               style="font-size:13px;font-weight:600;">
+                                                <i class="fa-solid fa-school me-1"></i>Cuestionarios del Centro
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="card-body" style="padding-top:20px;">
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade {active_oficial}" id="tab-oficial" role="tabpanel">
+                                            {oficial_content}
+                                        </div>
+                                        <div class="tab-pane fade {active_centro}" id="tab-centro" role="tabpanel">
+                                            {centro_content}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            {timeline}
-                            
+
+                            <!-- ═══ RESPUESTAS CUALITATIVAS ═══ -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title">Respuestas Cualitativas</h5>
+                                            <p class="card-subtitle">Textos y comentarios abiertos</p>
+                                        </div>
+                                        <div class="card-body">
+                                            {qualitative}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ═══ ALERTAS + PARTICIPACIÓN ═══ -->
                             <div class="row">
                                 <div class="col-lg-6">
                                     <div class="card">
@@ -1360,9 +1580,12 @@ class DashboardStudentProfile(models.TransientModel):
                                         </div>
                                         <div class="card-body">
                                             {alerts}
-                                            
                                             <div class="mt-3">
-                                                <button class="btn btn-outline-secondary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#alertsHistory" aria-expanded="false" aria-controls="alertsHistory">
+                                                <button class="btn btn-outline-secondary btn-sm w-100"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#alertsHistory"
+                                                        aria-expanded="false">
                                                     <i class="fa-solid fa-clock-rotate-left me-2"></i>Ver Historial de Alertas
                                                 </button>
                                                 <div class="collapse mt-3" id="alertsHistory">
@@ -1386,20 +1609,7 @@ class DashboardStudentProfile(models.TransientModel):
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h5 class="card-title">Respuestas Cualitativas</h5>
-                                            <p class="card-subtitle">Textos y comentarios abiertos</p>
-                                        </div>
-                                        <div class="card-body">
-                                            {qualitative}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
                         </div>
                     </div>
                 </main>

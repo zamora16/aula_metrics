@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "AulaMetrics",
-    'version': '1.0.0',
+    'version': '1.0.1',
     'summary': "Sistema de evaluación psicosocial para centros educativos",
 
     'author': "Angel Zamora",
@@ -18,6 +18,7 @@
         'data/surveys/survey_bullying.xml',
         'data/surveys/survey_who5.xml',
         'data/surveys/survey_asq14.xml',
+        'data/surveys/survey_sdq.xml',
         'data/cron/cron_jobs.xml',
         'data/dashboard_data.xml',
         'data/case_stages.xml',
@@ -36,6 +37,7 @@
         'views/case_views.xml',
         'views/message_thread_views.xml',
         'views/survey_portal_templates.xml',
+        'views/reports/survey_result_report_sdq.xml',
         # 4. Datos de Dashboard
         'data/dashboard_home_data.xml',
         # 5. Wizards (antes del menú para que las acciones existan al resolverlas)

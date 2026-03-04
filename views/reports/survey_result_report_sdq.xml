@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="paperformat_no_margin" model="report.paperformat">
+        <field name="name">No Margin A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_survey_result" model="ir.actions.report">
+        <field name="name">Informe de Resultados</field>
+        <field name="model">aula_metrics.survey_result</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">aula_metrics.report_survey_result_document</field>
+        <field name="report_file">aula_metrics.report_survey_result_document</field>
+        <field name="print_report_name">'Informe_%s_%s' % (object.student_id.name.replace(' ','_'), object.completed_at.strftime('%Y%m%d'))</field>
+        <field name="binding_model_id" ref="model_aula_metrics_survey_result"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_no_margin"/>
+    </record>
+
+    <template id="report_survey_result_document">
+        <t t-foreach="docs" t-as="doc">
+            <t t-set="d" t-value="doc.get_report_data()"/>
+
+            <div class="article">
+                    <style>
+                        /* ── Configuración de impresión ── */
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+
+                        /* Neutralizar estilos de Odoo sobre .article */
+                        .article {
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            height: auto !important;
+                        }
+
+                        /* ── Tipografía base ── */
+                        .am-report {
+                            font-family: Arial, sans-serif;
+                            font-size: 9pt;
+                            color: #1e293b;
+                            width: 100%;
+                        }
+                        .am-report p { margin: 0 0 5pt 0; }
+
+                        /* ── CABECERA ── */
+                        .am-header {
+                            background: #1e3a5f !important;
+                            padding: 14pt 20pt 10pt;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-header .tag {
+                            font-size: 6.5pt;
+                            letter-spacing: 0.1em;
+                            text-transform: uppercase;
+                            color: #93b4d0 !important;
+                            margin-bottom: 4pt;
+                        }
+                        .am-header h1 {
+                            font-size: 15pt;
+                            font-weight: bold;
+                            margin: 0 0 10pt;
+                            line-height: 1.2;
+                            color: #ffffff !important;
+                        }
+                        .am-header .meta-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            border: none !important;
+                        }
+                        .am-header .meta-table td {
+                            padding: 0 20pt 0 0;
+                            vertical-align: top;
+                            color: #ffffff !important;
+                            font-size: 8.5pt;
+                            border: none !important;
+                        }
+                        .am-header .meta-label {
+                            font-size: 6.5pt;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                            letter-spacing: 0.08em;
+                            color: #93b4d0 !important;
+                            margin-bottom: 2pt;
+                        }
+
+                        /* ── CUERPO ── */
+                        .am-body {
+                            padding: 16pt 20pt 20pt;
+                        }
+
+                        /* ── AVISO LEGAL ── */
+                        .am-disclaimer {
+                            border-left: 3pt solid #94a3b8 !important;
+                            background: #f8fafc !important;
+                            padding: 9pt 12pt;
+                            margin-bottom: 14pt;
+                            font-size: 7.5pt;
+                            color: #475569;
+                            line-height: 1.6;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-disclaimer .disc-title {
+                            font-weight: bold;
+                            font-size: 7.5pt;
+                            color: #334155;
+                            text-transform: uppercase;
+                            letter-spacing: 0.06em;
+                            margin-bottom: 5pt;
+                        }
+                        .am-disclaimer ul {
+                            margin: 5pt 0 0 12pt;
+                            padding: 0;
+                        }
+                        .am-disclaimer ul li { margin-bottom: 3pt; }
+
+                        /* ── TÍTULOS DE SECCIÓN ── */
+                        .am-section-title {
+                            font-size: 7pt;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                            letter-spacing: 0.1em;
+                            color: #64748b;
+                            border-bottom: 1pt solid #e2e8f0 !important;
+                            padding-bottom: 3pt;
+                            margin: 14pt 0 10pt;
+                        }
+
+                        /* ── RESULTADO GLOBAL ── */
+                        .am-global {
+                            padding: 12pt 14pt;
+                            border-radius: 4pt;
+                            margin-bottom: 2pt;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-global .score-big {
+                            font-size: 28pt;
+                            font-weight: bold;
+                            line-height: 1;
+                            vertical-align: middle;
+                        }
+                        .am-global .sev-badge {
+                            display: inline-block;
+                            padding: 3pt 10pt;
+                            border-radius: 3pt;
+                            font-size: 8.5pt;
+                            font-weight: bold;
+                            color: #ffffff !important;
+                            margin-left: 8pt;
+                            vertical-align: middle;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-global .interp {
+                            font-size: 8pt;
+                            color: #475569;
+                            margin-top: 6pt;
+                            line-height: 1.5;
+                        }
+
+                        /* ── TABLA DE ESCALAS ── */
+                        .am-scales {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        .am-scales td {
+                            vertical-align: middle;
+                            padding: 5pt 4pt;
+                            border: none !important;
+                        }
+                        .am-scales tr {
+                            border: none !important;
+                        }
+                        /* Separador sutil entre filas de escala */
+                        .am-scales tr.scale-row {
+                            border-top: 1pt solid #f1f5f9 !important;
+                        }
+                        .am-scales tr.scale-row:first-child {
+                            border-top: none !important;
+                        }
+                        .am-scales .td-lbl {
+                            width: 30%;
+                            font-weight: bold;
+                            font-size: 8.5pt;
+                            color: #1e293b;
+                            padding-right: 10pt;
+                        }
+                        .am-scales .td-bar {
+                            width: 40%;
+                            padding-right: 10pt;
+                        }
+                        .am-scales .td-score {
+                            width: 10%;
+                            text-align: right;
+                            font-weight: bold;
+                            font-size: 8.5pt;
+                            padding-right: 6pt;
+                            white-space: nowrap;
+                        }
+                        .am-scales .td-score .max {
+                            font-weight: 400;
+                            color: #94a3b8;
+                        }
+                        .am-scales .td-sev {
+                            width: 20%;
+                            text-align: center;
+                        }
+                        .am-scales .sev-pill {
+                            display: inline-block;
+                            padding: 2pt 8pt;
+                            border-radius: 3pt;
+                            font-size: 7pt;
+                            font-weight: bold;
+                            color: #ffffff !important;
+                            white-space: nowrap;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-scales .bar-track {
+                            height: 6pt;
+                            background: #e9eef4 !important;
+                            border-radius: 3pt;
+                            overflow: hidden;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-scales .bar-fill {
+                            height: 6pt;
+                            border-radius: 3pt;
+                            -webkit-print-color-adjust: exact !important;
+                        }
+                        .am-scales .td-desc {
+                            font-size: 7.5pt;
+                            color: #64748b;
+                            line-height: 1.5;
+                            padding: 0 4pt 7pt;
+                            vertical-align: top;
+                            border: none !important;
+                        }
+                        /* Separador visual antes del Total */
+                        .am-scales tr.total-sep td {
+                            border-top: 1.5pt solid #cbd5e1 !important;
+                            padding-top: 8pt;
+                        }
+
+                        /* ── PIE ── */
+                        .am-footer {
+                            margin-top: 18pt;
+                            padding-top: 6pt;
+                            border-top: 1pt solid #e2e8f0 !important;
+                            font-size: 6.5pt;
+                            color: #94a3b8;
+                            text-align: center;
+                        }
+                    </style>
+
+                    <main>
+                        <div class="am-report">
+
+                        <!-- CABECERA -->
+                        <div class="am-header">
+                            <div class="tag">AulaMetrics &#183; Informe de Resultados</div>
+                            <h1><t t-esc="d['survey_title']"/></h1>
+                            <table class="meta-table">
+                                <tr>
+                                    <td>
+                                        <div class="meta-label">Alumno/a</div>
+                                        <t t-esc="d['student_name']"/>
+                                        <t t-if="d['student_age']">
+                                            &#160;(<t t-esc="d['student_age']"/> a&#241;os)
+                                        </t>
+                                    </td>
+                                    <td>
+                                        <div class="meta-label">Fecha de respuesta</div>
+                                        <t t-esc="d['completed_at'].strftime('%d/%m/%Y')"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- CUERPO -->
+                        <div class="am-body">
+
+                            <!-- AVISO LEGAL -->
+                            <div class="am-disclaimer">
+                                <div class="disc-title">Nota importante sobre este informe</div>
+                                <p>
+                                    Este informe no es el resultado de una evaluaci&#243;n psicol&#243;gica
+                                    ni de una valoraci&#243;n cl&#237;nica completa, sino que se refiere
+                                    &#250;nicamente a los resultados obtenidos con la administraci&#243;n de
+                                    algunos instrumentos de medida con fines de orientaci&#243;n educativa.
+                                    Esta particularidad conlleva la consideraci&#243;n de diferentes aspectos
+                                    para su correcta lectura e interpretaci&#243;n:
+                                </p>
+                                <ul>
+                                    <li>Los resultados obtenidos son de car&#225;cter
+                                        <b>exclusivamente informativo</b> y no permiten establecer
+                                        ning&#250;n diagn&#243;stico.</li>
+                                    <li>Estos datos se refieren &#250;nicamente al momento de la
+                                        evaluaci&#243;n y no permiten establecer predicciones sobre el
+                                        funcionamiento psicol&#243;gico de la persona en el futuro.</li>
+                                    <li>Las conclusiones se basan &#250;nicamente en las respuestas
+                                        obtenidas durante la sesi&#243;n, por lo que han de tomarse con la
+                                        debida cautela y no pueden ser generalizadas a otros contextos.</li>
+                                </ul>
+                            </div>
+
+                            <!-- RESULTADO GLOBAL -->
+                            <div class="am-section-title">Resultado global</div>
+                            <div class="am-global"
+                                 t-att-style="'background:{bg} !important;border:none;'.format(bg=d['global_sev_bg'])">
+                                <span class="score-big"
+                                      t-att-style="'color:{c};'.format(c=d['global_sev_color'])">
+                                    <t t-esc="'%.0f' % d['raw_score']"/>
+                                    <t t-if="d['raw_score_max']">
+                                        <span style="font-weight:400;color:#64748b;font-size:0.8em;">/<t t-esc="'%.0f' % d['raw_score_max']"/></span>
+                                    </t>
+                                </span>
+                                <span class="sev-badge"
+                                      t-att-style="'background:{c} !important;'.format(c=d['global_sev_color'])">
+                                    <t t-esc="d['global_label']"/>
+                                </span>
+                                <t t-if="d['global_description']">
+                                    <div class="interp"><t t-esc="d['global_description']"/></div>
+                                </t>
+                            </div>
+
+                            <!-- DESGLOSE POR ESCALAS -->
+                            <t t-if="d['scales']">
+                                <div class="am-section-title">Desglose por escalas</div>
+                                <table class="am-scales">
+                                    <t t-foreach="d['scales']" t-as="sc">
+                                        <tr t-att-class="'total-sep' if sc['is_total'] else 'scale-row'">
+                                            <td class="td-lbl"><t t-esc="sc['label']"/></td>
+                                            <td class="td-bar">
+                                                <div class="bar-track">
+                                                    <div class="bar-fill"
+                                                         t-att-style="'width:{}%;background:{} !important;'.format(sc['pct_str'], sc['sev_color'])"/>
+                                                </div>
+                                            </td>
+                                            <td class="td-score"
+                                                t-att-style="'color:{c};'.format(c=sc['sev_color'])">
+                                                <t t-esc="sc['score_str']"/>
+                                                <span class="max">/<t t-esc="sc['max_str']"/></span>
+                                            </td>
+                                            <td class="td-sev">
+                                                <span class="sev-pill"
+                                                      t-att-style="'background:{c} !important;'.format(c=sc['sev_color'])">
+                                                    <t t-esc="sc['sev_label']"/>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <t t-if="sc['description']">
+                                            <tr>
+                                                <td colspan="4" class="td-desc">
+                                                    <t t-esc="sc['description']"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </t>
+                                </table>
+                            </t>
+
+                            <!-- PIE -->
+                            <div class="am-footer">
+                                Informe generado por AulaMetrics &#183;
+                                <t t-esc="d['student_name']"/> &#183;
+                                <t t-esc="d['survey_title']"/> &#183;
+                                <t t-esc="d['completed_at'].strftime('%d/%m/%Y')"/> &#183;
+                                Este informe es de car&#225;cter exclusivamente informativo y no constituye diagn&#243;stico.
+                            </div>
+
+                        </div><!-- /am-body -->
+                    </div><!-- /am-report -->
+                    </main>
+                </div><!-- /article -->
+
+            </t>
+    </template>
+
+</odoo>

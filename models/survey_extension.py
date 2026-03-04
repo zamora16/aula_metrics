@@ -25,9 +25,29 @@ class SurveyExtension(models.Model):
     # Código identificador del cuestionario
     survey_code = fields.Char(
         string='Código del Cuestionario',
-        help='Identificador único del cuestionario (ej: WHO5, BULLYING_VA)'
+        help='Identificador único del cuestionario (ej: WHO5, BULLYING_VA, SDQ)'
     )
-    
+
+    # Edad recomendada para el cuestionario
+    recommended_age_min = fields.Integer(
+        string='Edad mínima recomendada',
+        default=0,
+        help='Edad mínima recomendada para aplicar este cuestionario (0 = sin límite)'
+    )
+    recommended_age_max = fields.Integer(
+        string='Edad máxima recomendada',
+        default=0,
+        help='Edad máxima recomendada para aplicar este cuestionario (0 = sin límite)'
+    )
+
+    # Baremos del cuestionario (sólo para is_aulametrics)
+    baremo_ids = fields.One2many(
+        'aula_metrics.survey_baremo_range',
+        'survey_id',
+        string='Baremos',
+        help='Rangos de puntuación e interpretación para este cuestionario'
+    )
+
     evaluation_ids = fields.Many2many(
         'aula_metrics.evaluation',
         'evaluation_survey_rel',
@@ -112,21 +132,33 @@ class SurveyExtension(models.Model):
 
     @api.constrains('question_and_page_ids', 'is_aulametrics')
     def _check_single_metric_question(self):
-        """Asegura que los cuestionarios de AulaMetrics representen UNA sola métrica.
+        """Asegura que los cuestionarios ad-hoc y los AulaMetrics de métrica única
+        tengan UNA sola pregunta productora de métrica.
 
-        Regla: para encuestas marcadas como `is_aulametrics`, sólo se permite
-        UNA pregunta productora de métrica. Las preguntas tipo 'page' no cuentan.
-        Tipos considerados productores de métricas: matrix, simple_choice,
-        multiple_choice, numerical_box, text_box, char_box.
+        Los cuestionarios AulaMetrics con estrategia propia (survey_code con
+        estrategia dedicada que no sea ADHOC, por ejemplo SDQ con 25 ítems)
+        quedan exentos de esta restricción porque su scoring está definido
+        explícitamente en la clase de estrategia correspondiente.
         """
+        from .survey_scoring_strategies import SCORING_STRATEGIES, UniversalMatrixScoring
+
         metric_types = {
             'matrix', 'simple_choice', 'multiple_choice',
             'numerical_box', 'text_box', 'char_box'
         }
         for survey in self:
-            # Solo validar encuestas que pertenecen a AulaMetrics o son ad-hoc del centro
+            # Solo validar encuestas AulaMetrics o ad-hoc del centro
             if not (survey.is_aulametrics or survey.is_adhoc):
                 continue
+
+            # Cuestionarios AulaMetrics con estrategia propia (multi-ítem)
+            # quedan exentos. Solo aplicamos la restricción a ad-hoc y a los que
+            # usan la estrategia universal (1 cuestionario = 1 métrica).
+            if survey.is_aulametrics and survey.survey_code:
+                strategy_class = SCORING_STRATEGIES.get(survey.survey_code)
+                if strategy_class and strategy_class is not UniversalMatrixScoring:
+                    # Estrategia propia: no aplicar restricción de 1 pregunta
+                    continue
 
             # Intentar contar preguntas a partir de `question_and_page_ids` (usa los datos en memoria
             # durante create/write) y caer back a `question_ids` si está disponible.
@@ -210,9 +242,20 @@ class SurveyExtension(models.Model):
 class SurveyQuestionExtension(models.Model):
     """Extensión del modelo de preguntas de encuesta para AulaMetrics"""
     _inherit = 'survey.question'
-    
+
     metric_label = fields.Char(
         string='Métrica',
         required=True,
         help='Nombre corto que identifica esta métrica en dashboards, gráficos y reportes de análisis.'
+    )
+
+    is_segmentation = fields.Boolean(
+        string='Variable de segmentación',
+        default=False,
+        help=(
+            'Marca esta pregunta como variable de segmentación. '
+            'Sólo las preguntas con esta opción activada aparecen en los filtros de segmentación '
+            'del dashboard (p. ej. "¿Eres repetidor?", "Tipo de familia"). '
+            'Los ítems de cuestionarios clínicos o escalas de puntuación NUNCA deben activar esta opción.'
+        )
     )

@@ -219,9 +219,14 @@
             </xpath>
             <xpath expr="//field[@name='title']" position="after">
                 <label for="metric_label" string="Nombre de la métrica:"/>
-                <field name="metric_label" 
+                <field name="metric_label"
                        required="1"
                        placeholder="ej: Nivel económico, Zona, Estado ánimo"/>
+                <label for="is_segmentation" string="Variable de segmentación:"
+                       invisible="question_type not in ['simple_choice', 'multiple_choice']"/>
+                <field name="is_segmentation"
+                       invisible="question_type not in ['simple_choice', 'multiple_choice']"
+                       help="Activa esta opción si las respuestas de esta pregunta deben usarse para segmentar alumnos en los dashboards (p. ej. ¿Eres repetidor?, Tipo de familia). NO actives esto en ítems de cuestionarios de puntuación como el SDQ."/>
             </xpath>
         </field>
     </record>

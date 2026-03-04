@@ -1,68 +1,79 @@
 # -*- coding: utf-8 -*-
+import json
+import logging
 from odoo import models, fields
+from .survey_scoring_strategies import SCORING_STRATEGIES
+
+_logger = logging.getLogger(__name__)
+
 
 class SurveyUserInput(models.Model):
     """Hook para capturar cuando un alumno completa una encuesta de AulaMetrics"""
     _inherit = 'survey.user_input'
-    
+
     def _mark_done(self):
         """
         Override del método que marca una encuesta como completada.
         Calcula scores, verifica alertas y marca participación.
+        Para cuestionarios is_aulametrics crea además un SurveyResult persistido.
         """
         res = super(SurveyUserInput, self)._mark_done()
-        
+
         for user_input in self:
             try:
                 # Procesar tanto cuestionarios oficiales como ad-hoc del centro
                 if not user_input.survey_id or not (user_input.survey_id.is_aulametrics or user_input.survey_id.is_adhoc):
                     continue
-                
+
                 if not user_input.partner_id:
                     continue
-                
+
+                # ── Persistir SurveyResult para cuestionarios oficiales ──
+                if user_input.survey_id.is_aulametrics:
+                    try:
+                        user_input._create_survey_result()
+                    except Exception as e:
+                        _logger.warning('SurveyResult: no se pudo crear para user_input %s: %s', user_input.id, e)
+
                 # Capturar respuestas cualitativas y de opciones múltiples
                 try:
                     user_input._save_qualitative_responses()
                 except Exception:
                     pass
-                
+
                 try:
                     user_input._save_multiplechoice_responses()
                 except Exception:
                     pass
-                
+
                 evaluations = self.env['aula_metrics.evaluation'].search([
                     ('state', 'in', ['scheduled', 'active']),
                     ('survey_ids', 'in', user_input.survey_id.id)
                 ])
-                
+
                 if not evaluations:
                     continue
-                
+
                 for evaluation in evaluations:
                     participation = self.env['aula_metrics.participation'].search([
                         ('evaluation_id', '=', evaluation.id),
                         ('student_id', '=', user_input.partner_id.id),
                         ('state', '=', 'pending')
                     ], limit=1)
-                    
+
                     if not participation:
                         continue
-                    
+
                     # Calcular puntuaciones y verificar alertas
                     try:
                         participation._calculate_scores()
                         participation.check_alerts()
                     except Exception:
                         pass
-                    
+
                     # Verificar si completó todos los cuestionarios
                     try:
                         all_surveys = evaluation.survey_ids
-                        # Count 'done' user_inputs that belong to this evaluation window.
-                        # If the evaluation is active, accept the most recent 'done' entries up to date_end;
-                        # otherwise require responses to be on/after the configured date_start.
                         domain = [
                             ('partner_id', '=', user_input.partner_id.id),
                             ('survey_id', 'in', all_surveys.ids),
@@ -81,11 +92,97 @@ class SurveyUserInput(models.Model):
                             participation.action_complete()
                     except Exception:
                         pass
-            
+
             except Exception:
                 continue
-        
+
         return res
+
+    def _create_survey_result(self):
+        """
+        Crea un registro SurveyResult para este user_input (cuestionario oficial AulaMetrics).
+        Usa la estrategia de scoring específica del cuestionario para calcular
+        el raw_score, los scale_scores y el baremo aplicado.
+        """
+        self.ensure_one()
+        survey = self.survey_id
+        survey_code = survey.survey_code or ''
+
+        # Evitar crear duplicados si ya existe un resultado para este user_input
+        existing = self.env['aula_metrics.survey_result'].search([
+            ('user_input_id', '=', self.id)
+        ], limit=1)
+        if existing:
+            return existing
+
+        # Obtener la estrategia de scoring
+        strategy_class = SCORING_STRATEGIES.get(survey_code)
+        if not strategy_class:
+            _logger.info('SurveyResult: sin estrategia para survey_code="%s", omitiendo.', survey_code)
+            return None
+
+        strategy = strategy_class(survey)
+
+        # Calcular puntuaciones por sub-escala (si la estrategia lo soporta)
+        scale_scores = {}
+        if hasattr(strategy, 'calculate_scale_scores'):
+            try:
+                scale_scores = strategy.calculate_scale_scores(self)
+            except Exception as e:
+                _logger.warning('SurveyResult: calculate_scale_scores error: %s', e)
+
+        # El raw_score es el total (o la primera métrica si no hay sub-escalas)
+        raw_score = 0.0
+        if scale_scores:
+            raw_score = float(scale_scores.get('total', 0.0))
+        else:
+            metrics = strategy.calculate(self)
+            if metrics:
+                raw_score = float(metrics[0].get('value_float') or 0.0)
+
+        # Buscar baremo global: usar 'total' si existe, sino None
+        BaremoRange = self.env['aula_metrics.survey_baremo_range']
+        scale_name_global = 'total' if 'total' in scale_scores else None
+        global_baremo = BaremoRange.find_baremo(survey.id, raw_score, scale_name=scale_name_global)
+        baremo_label = global_baremo.label if global_baremo else ''
+        baremo_description = global_baremo.description if global_baremo else ''
+        baremo_severity = global_baremo.severity if global_baremo else 0
+
+        # Enriquecer scale_scores con baremo por sub-escala
+        enriched_scales = {}
+        for scale_name, score in scale_scores.items():
+            baremo = BaremoRange.find_baremo(survey.id, float(score), scale_name=scale_name)
+            enriched_scales[scale_name] = {
+                'score': score,
+                'label': baremo.label if baremo else '',
+                'severity': baremo.severity if baremo else 0,
+                'description': baremo.description if baremo else '',
+            }
+
+        # Determinar evaluación activa (si hay)
+        evaluation = self.env['aula_metrics.evaluation'].search([
+            ('state', 'in', ['scheduled', 'active']),
+            ('survey_ids', 'in', survey.id)
+        ], order='date_start desc', limit=1)
+        evaluation_id = evaluation.id if evaluation else False
+
+        vals = {
+            'student_id': self.partner_id.id,
+            'survey_id': survey.id,
+            'user_input_id': self.id,
+            'evaluation_id': evaluation_id,
+            'completed_at': fields.Datetime.now(),
+            'is_aulametrics': True,
+            'raw_score': raw_score,
+            'baremo_label': baremo_label,
+            'baremo_description': baremo_description,
+            'baremo_severity': baremo_severity,
+            'scale_scores_json': json.dumps(enriched_scales) if enriched_scales else '{}',
+        }
+        result = self.env['aula_metrics.survey_result'].create(vals)
+        _logger.info('SurveyResult creado: id=%s alumno=%s survey=%s score=%.1f baremo=%s',
+                     result.id, self.partner_id.name, survey.title, raw_score, baremo_label)
+        return result
     
     def _get_evaluation_context(self):
         """Obtiene la evaluación y participación activa para este user_input."""
