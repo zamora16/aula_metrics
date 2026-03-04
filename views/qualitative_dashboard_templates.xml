@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- =====================================================================
+         QUALITATIVE DASHBOARD — Full page (standalone route)
+         Values expected: css_styles, role_desc, evaluations, questions,
+                          evaluation_id, question_id, view_type,
+                          + role-specific keys (see sub-templates below)
+         ===================================================================== -->
+    <template id="qualitative_dashboard_full" name="AulaMetrics - Dashboard Cualitativo">
+        <html lang="es">
+            <head>
+                <meta charset="UTF-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <title>Análisis Cualitativo - AulaMetrics</title>
+                <link rel="stylesheet"
+                      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"/>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.7/d3.layout.cloud.min.js"/>
+                <t t-out="css_styles"/>
+            </head>
+            <body>
+                <div class="dashboard-header">
+                    <div>
+                        <div class="header-title">
+                            <h2>
+                                <i class="fa-solid fa-comments me-2 text-primary"/>
+                                Análisis Cualitativo
+                            </h2>
+                        </div>
+                        <div class="header-meta"><t t-out="role_desc"/></div>
+                    </div>
+                </div>
+
+                <div class="container-fluid">
+                    <t t-call="aula_metrics.qualitative_filter_form"/>
+                    <t t-call="aula_metrics.qualitative_role_content"/>
+                </div>
+            </body>
+        </html>
+    </template>
+
+
+    <!-- =====================================================================
+         QUALITATIVE DASHBOARD — Embedded fragment (no HTML wrapper)
+         Same values as full page.
+         ===================================================================== -->
+    <template id="qualitative_dashboard_embedded" name="AulaMetrics - Dashboard Cualitativo Embebido">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"/>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.7/d3.layout.cloud.min.js"/>
+        <t t-out="css_styles"/>
+
+        <div class="container-fluid mt-4">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <p class="text-muted" style="font-size:14px; margin-bottom:16px;">
+                        <t t-out="role_desc"/>
+                    </p>
+                </div>
+            </div>
+            <t t-call="aula_metrics.qualitative_filter_form"/>
+            <t t-call="aula_metrics.qualitative_role_content"/>
+        </div>
+    </template>
+
+
+    <!-- =====================================================================
+         SHARED: Filter form
+         ===================================================================== -->
+    <template id="qualitative_filter_form" name="AulaMetrics - Filtros Cualitativos">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="get"
+                              action="/aulametrics/qualitative/dashboard"
+                              class="row g-3"
+                              id="qualitativeFiltersForm">
+
+                            <div class="col-md-5">
+                                <label class="form-label">Evaluación</label>
+                                <select name="evaluation_id" class="form-select">
+                                    <option value="">Todas las evaluaciones</option>
+                                    <t t-foreach="evaluations" t-as="ev">
+                                        <option t-att-value="ev.id"
+                                                t-att-selected="'selected' if evaluation_id == ev.id else None">
+                                            <t t-out="ev.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <div class="col-md-5">
+                                <label class="form-label">Pregunta</label>
+                                <select name="question_id" class="form-select">
+                                    <option value="">Todas las preguntas</option>
+                                    <t t-foreach="questions" t-as="q">
+                                        <option t-att-value="q.id"
+                                                t-att-selected="'selected' if question_id == q.id else None">
+                                            <t t-out="q.title[:80]"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- =====================================================================
+         SHARED: Content dispatcher by role
+         ===================================================================== -->
+    <template id="qualitative_role_content" name="AulaMetrics - Contenido por Rol">
+        <t t-if="view_type == 'counselor'">
+            <t t-call="aula_metrics.qualitative_counselor_view"/>
+        </t>
+        <t t-elif="view_type == 'tutor'">
+            <t t-call="aula_metrics.qualitative_tutor_view"/>
+        </t>
+        <t t-else="">
+            <t t-call="aula_metrics.qualitative_management_view"/>
+        </t>
+    </template>
+
+
+    <!-- =====================================================================
+         COUNSELOR VIEW
+         Extra values: total_responses, responses_with_alerts,
+                       responses (list of dicts), wordcloud_json, palette_json
+         ===================================================================== -->
+    <template id="qualitative_counselor_view" name="AulaMetrics - Vista Counselor">
+
+        <!-- KPI Cards -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-label">Total Respuestas</div>
+                <div class="kpi-value"><t t-out="total_responses"/></div>
+                <div class="kpi-description">Respuestas recibidas</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Con Alertas</div>
+                <div class="kpi-value"><t t-out="responses_with_alerts"/></div>
+                <div class="kpi-description">Requieren atención</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Wordcloud -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Nube de Palabras</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="wordcloud" style="width:100%; height:400px;"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responses table -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Respuestas Completas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Alumno</th>
+                                        <th>Grupo</th>
+                                        <th>Fecha</th>
+                                        <th>Respuesta</th>
+                                        <th>Palabras</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="not responses">
+                                        <tr>
+                                            <td colspan="6"
+                                                class="text-center text-muted py-4">
+                                                No hay respuestas cualitativas.
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-foreach="responses" t-as="resp">
+                                        <tr t-att-class="'table-warning' if resp['has_alerts'] else ''">
+                                            <td>
+                                                <a t-attf-href="/aulametrics/student/#{resp['student_id']}"
+                                                   class="fw-bold">
+                                                    <t t-out="resp['student_name']"/>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span class="badge"
+                                                      style="background:var(--am-light); color:var(--am-muted); border:1px solid var(--am-border);">
+                                                    <t t-out="resp['group_name']"/>
+                                                </span>
+                                            </td>
+                                            <td><small><t t-out="resp['date']"/></small></td>
+                                            <td>
+                                                <t t-if="resp['response']|length &gt; 150">
+                                                    <t t-out="resp['response'][:150]"/>...
+                                                    <a href="#" class="text-primary"
+                                                       t-attf-onclick="alert('#{resp['response'][:300].replace(&quot;'&quot;, &quot;\\'&quot;)}...'); return false;">
+                                                        Ver más
+                                                    </a>
+                                                </t>
+                                                <t t-else="">
+                                                    <t t-out="resp['response']"/>
+                                                </t>
+                                            </td>
+                                            <td class="text-center">
+                                                <t t-out="resp['word_count']"/>
+                                            </td>
+                                            <td>
+                                                <t t-if="resp['has_alerts']">
+                                                    <span class="badge"
+                                                          style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;">
+                                                        Alerta
+                                                    </span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="badge"
+                                                          style="background:#d1fae5; color:#065f46; border:1px solid #6ee7b7;">
+                                                        <i class="fa-solid fa-check"/>
+                                                    </span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function() {
+                var wordcloudData = <t t-out="wordcloud_json"/>;
+                var paletteColors = <t t-out="palette_json"/>;
+
+                function initWordcloud() {
+                    if (!wordcloudData || wordcloudData.length === 0) {
+                        var el = document.getElementById('wordcloud');
+                        if (el) el.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">No hay suficientes palabras para generar la nube</div>';
+                        return;
+                    }
+                    var wordcloudEl = document.getElementById('wordcloud');
+                    if (!wordcloudEl) return;
+
+                    var words = wordcloudData.map(function(d) { return {text: d[0], size: Math.sqrt(d[1]) * 10 + 10}; });
+
+                    var layout = d3.layout.cloud()
+                        .size([wordcloudEl.offsetWidth || 800, 400])
+                        .words(words)
+                        .padding(5)
+                        .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                        .font("Inter")
+                        .fontSize(function(d) { return d.size; })
+                        .on("end", function(words) {
+                            d3.select("#wordcloud").append("svg")
+                                .attr("width", layout.size()[0])
+                                .attr("height", layout.size()[1])
+                                .append("g")
+                                .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+                                .selectAll("text")
+                                .data(words)
+                                .enter().append("text")
+                                .style("font-size", function(d) { return d.size + "px"; })
+                                .style("font-family", "Inter")
+                                .style("fill", function(d, i) { return paletteColors[i % paletteColors.length]; })
+                                .attr("text-anchor", "middle")
+                                .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
+                                .text(function(d) { return d.text; });
+                        });
+                    layout.start();
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initWordcloud);
+                } else {
+                    setTimeout(initWordcloud, 100);
+                }
+            })();
+        </script>
+    </template>
+
+
+    <!-- =====================================================================
+         TUTOR VIEW
+         Extra values: stats (dict), anonymous_responses (list of dicts),
+                       wordcloud_json, palette_json
+         ===================================================================== -->
+    <template id="qualitative_tutor_view" name="AulaMetrics - Vista Tutor">
+
+        <!-- KPI Cards -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-label">Total Respuestas</div>
+                <div class="kpi-value"><t t-out="stats.get('total_responses', 0)"/></div>
+                <div class="kpi-description">De tu grupo</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Longitud Media</div>
+                <div class="kpi-value"><t t-out="stats.get('avg_length', 0)"/></div>
+                <div class="kpi-description">Palabras promedio</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Con Alertas</div>
+                <div class="kpi-value"><t t-out="stats.get('responses_with_alerts', 0)"/></div>
+                <div class="kpi-description">Requieren atención</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Top words -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Palabras Frecuentes</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <t t-foreach="stats.get('top_words', [])[:5]" t-as="w">
+                                <li>
+                                    <strong><t t-out="w[0]"/></strong>
+                                    (<t t-out="w[1]"/> veces)
+                                </li>
+                            </t>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wordcloud -->
+            <div class="col-md-8 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Nube de Palabras</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="wordcloud" style="width:100%; height:350px;"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anonymous responses -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Respuestas Anónimas</h5>
+                    </div>
+                    <div class="card-body">
+                        <t t-if="not anonymous_responses">
+                            <p class="text-center text-muted py-4">
+                                No hay respuestas cualitativas.
+                            </p>
+                        </t>
+                        <t t-foreach="anonymous_responses" t-as="resp">
+                            <div t-attf-class="mb-3 p-3 bg-light rounded border #{'border-warning' if resp['has_alerts'] else ''}">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small class="text-muted">
+                                        <t t-out="resp['date']"/> | <t t-out="resp['word_count']"/> palabras
+                                    </small>
+                                    <t t-if="resp['has_alerts']">
+                                        <span class="badge bg-warning">Alerta</span>
+                                    </t>
+                                </div>
+                                <p class="mb-0"><t t-out="resp['response']"/></p>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function() {
+                var wordcloudData = <t t-out="wordcloud_json"/>;
+                var paletteColors = <t t-out="palette_json"/>;
+
+                function initWordcloud() {
+                    if (!wordcloudData || wordcloudData.length === 0) {
+                        var el = document.getElementById('wordcloud');
+                        if (el) el.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">No hay suficientes palabras para generar la nube</div>';
+                        return;
+                    }
+                    var wordcloudEl = document.getElementById('wordcloud');
+                    if (!wordcloudEl) return;
+
+                    var words = wordcloudData.map(function(d) { return {text: d[0], size: Math.sqrt(d[1]) * 10 + 10}; });
+
+                    var layout = d3.layout.cloud()
+                        .size([wordcloudEl.offsetWidth || 800, 350])
+                        .words(words)
+                        .padding(5)
+                        .rotate(function() { return ~~(Math.random() * 2) * 90; })
+                        .font("Inter")
+                        .fontSize(function(d) { return d.size; })
+                        .on("end", function(words) {
+                            d3.select("#wordcloud").append("svg")
+                                .attr("width", layout.size()[0])
+                                .attr("height", layout.size()[1])
+                                .append("g")
+                                .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+                                .selectAll("text")
+                                .data(words)
+                                .enter().append("text")
+                                .style("font-size", function(d) { return d.size + "px"; })
+                                .style("font-family", "Inter")
+                                .style("fill", function(d, i) { return paletteColors[i % paletteColors.length]; })
+                                .attr("text-anchor", "middle")
+                                .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
+                                .text(function(d) { return d.text; });
+                        });
+                    layout.start();
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initWordcloud);
+                } else {
+                    setTimeout(initWordcloud, 100);
+                }
+            })();
+        </script>
+    </template>
+
+
+    <!-- =====================================================================
+         MANAGEMENT VIEW
+         Extra values: total_responses, stats_by_course (dict of dicts)
+         ===================================================================== -->
+    <template id="qualitative_management_view" name="AulaMetrics - Vista Management">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">Vista Agregada de Privacidad</h5>
+                    <p class="mb-0">
+                        Solo se muestran estadísticas agregadas por curso
+                        para proteger la privacidad de los estudiantes.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-12 mb-4">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total de Respuestas en el Centro</div>
+                    <div class="kpi-value"><t t-out="total_responses"/></div>
+                    <div class="kpi-description">Respuestas cualitativas recibidas</div>
+                </div>
+            </div>
+
+            <t t-if="not stats_by_course">
+                <div class="col-12">
+                    <p class="text-center text-muted py-5">
+                        No hay respuestas disponibles.
+                    </p>
+                </div>
+            </t>
+
+            <t t-foreach="stats_by_course.items()" t-as="course_item">
+                <t t-set="course_name" t-value="course_item[0]"/>
+                <t t-set="course_stats" t-value="course_item[1]"/>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><t t-out="course_name"/></h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="kpi-value"><t t-out="course_stats.get('total_responses', 0)"/></div>
+                            <div class="kpi-label mb-3">Respuestas totales</div>
+                            <p class="mb-2">
+                                <strong>Longitud media:</strong>
+                                <t t-out="course_stats.get('avg_length', 0)"/> palabras
+                            </p>
+                            <p class="mb-3">
+                                <strong>Con alertas:</strong>
+                                <t t-out="course_stats.get('responses_with_alerts', 0)"/>
+                            </p>
+                            <hr/>
+                            <h6>Palabras frecuentes:</h6>
+                            <ol class="small">
+                                <t t-foreach="course_stats.get('top_words', [])[:5]" t-as="w">
+                                    <li><strong><t t-out="w[0]"/></strong> (<t t-out="w[1]"/>)</li>
+                                </t>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </template>
+
+</odoo>

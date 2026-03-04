@@ -124,3 +124,27 @@ class SurveyBaremoRange(models.Model):
         else:
             domain.append(('scale_name', 'in', [False, '']))
         return self.search(domain, limit=1)
+
+    @api.model
+    def get_severity_mapping(self, survey_id):
+        """
+        Devuelve un mapeo de severidad a etiquetas y colores para un cuestionario dado.
+        Útil para evitar hardcodear constantes de UI.
+
+        Args:
+            survey_id (int): ID del cuestionario.
+
+        Returns:
+            dict: {severity: {'label': str, 'color': str, 'bg_color': str or None}}
+        """
+        baremos = self.search([('survey_id', '=', survey_id)])
+        mapping = {}
+        for b in baremos:
+            sev = b.severity
+            if sev not in mapping:
+                mapping[sev] = {
+                    'label': b.label,
+                    'color': b.color,
+                    'bg_color': getattr(b, 'bg_color', None),
+                }
+        return mapping

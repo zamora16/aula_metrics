@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError, UserError
+from odoo.addons.aula_metrics.utils.constants import (
+    GROUP_ADMIN, GROUP_COUNSELOR, GROUP_TUTOR,
+)
 
 
 class ManualAlertWizard(models.TransientModel):
@@ -12,8 +15,8 @@ class ManualAlertWizard(models.TransientModel):
         Este wizard es exclusivo para tutores que quieren derivar una situación al orientador.
         """
         user = self.env.user
-        is_counselor = user.has_group('aula_metrics.group_aulametrics_counselor')
-        is_admin = user.has_group('aula_metrics.group_aulametrics_admin')
+        is_counselor = user.has_group(GROUP_COUNSELOR)
+        is_admin = user.has_group(GROUP_ADMIN)
         if is_counselor or is_admin:
             raise UserError(
                 'Esta función está pensada para tutores.\n\n'
@@ -61,9 +64,9 @@ class ManualAlertWizard(models.TransientModel):
         """Un tutor solo puede notificar sobre alumnos de sus grupos.
         Orientadores y admins pueden notificar sobre cualquier alumno.
         """
-        tutor_group = self.env.ref('aula_metrics.group_aulametrics_tutor')
-        counselor_group = self.env.ref('aula_metrics.group_aulametrics_counselor')
-        admin_group = self.env.ref('aula_metrics.group_aulametrics_admin')
+        tutor_group = self.env.ref(GROUP_TUTOR)
+        counselor_group = self.env.ref(GROUP_COUNSELOR)
+        admin_group = self.env.ref(GROUP_ADMIN)
         user = self.env.user
         # Orientadores y admins no tienen restricción
         if user in counselor_group.users or user in admin_group.users:
@@ -91,8 +94,8 @@ class ManualAlertWizard(models.TransientModel):
         Solo para uso de tutores; orientadores y admins crean casos directamente.
         """
         self.ensure_one()
-        if (self.env.user.has_group('aula_metrics.group_aulametrics_counselor')
-                or self.env.user.has_group('aula_metrics.group_aulametrics_admin')):
+        if (self.env.user.has_group(GROUP_COUNSELOR)
+                or self.env.user.has_group(GROUP_ADMIN)):
             raise UserError(
                 'Esta función está pensada para tutores.\n\n'
                 'Como orientador o administrador puedes crear casos de orientación '

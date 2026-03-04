@@ -1,23 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+Capa de modelos de AulaMetrics, organizada en submódulos temáticos:
 
-from . import res_partner
-from . import academic_group
-from . import survey_extension
-from . import survey_answer_score
-from . import survey_baremo_range
-from . import survey_result
-from . import survey_user_input
-from . import evaluation
-from . import participation
-from . import metric_value
-from . import threshold
-from . import alert
-from . import alerts_dashboard
-from . import dashboard_charts
-from . import dashboard_student_profile
-from . import dashboard_home
-from . import survey_scoring_strategies
-from . import qualitative_response
-from . import case_stage
-from . import case
-from . import message_thread
+  core/     — Entidades base: alumnos, grupos, evaluaciones, métricas
+  survey/   — Cuestionarios: extensiones, baremos, resultados, puntuaciones
+  dashboard/— Dashboards: gráficos, perfil de alumno, consultas agregadas
+  metrics/  — Seguimiento: alertas, casos de orientación, respuestas cualitativas
+"""
+
+from . import core
+from . import survey
+from . import dashboard
+from . import metrics

@@ -1,7 +1,33 @@
 # -*- coding: utf-8 -*-
 from odoo import http
 from odoo.http import request
-from datetime import datetime, timedelta
+from markupsafe import Markup
+# Importar utilidades compartidas
+from odoo.addons.aula_metrics.utils import role_service
+from odoo.addons.aula_metrics.utils.constants import ROLE_MANAGEMENT
+
+_HTML_HEADERS = [('Content-Type', 'text/html; charset=utf-8')]
+
+# Keys whose values are pre-rendered HTML and must not be re-escaped by t-out.
+_HTML_VALUE_KEYS = frozenset({
+    'css_styles', 'head_extra',
+    'content_html', 'scripts_html',       # used by student profile pages
+    'topbar_subtitle', 'topbar_extra_actions',  # may contain HTML fragments
+})
+
+
+def _render(template, values):
+    """Render a QWeb template to a standalone HTML response.
+
+    All values listed in _HTML_VALUE_KEYS are wrapped in markupsafe.Markup
+    so that QWeb's t-out emits them as raw HTML instead of escaping them.
+    """
+    safe = {
+        k: (Markup(v) if k in _HTML_VALUE_KEYS and isinstance(v, str) else v)
+        for k, v in values.items()
+    }
+    html = request.env['ir.ui.view']._render_template(template, safe)
+    return request.make_response(html, headers=_HTML_HEADERS)
 
 
 class DashboardChartsController(http.Controller):
@@ -9,54 +35,10 @@ class DashboardChartsController(http.Controller):
 
     def _detect_user_role(self):
         """
-        Detecta el rol del usuario actual en AulaMetrics.
-        Retorna un dict con el rol y los group_ids permitidos.
+        Detecta el rol del usuario actual con sus grupos académicos permitidos.
         Jerarquía: admin > counselor > management > tutor
         """
-        user = request.env.user
-        role_info = {
-            'role': 'tutor',  # Default más restrictivo
-            'user_id': user.id,
-            'is_admin': False,
-            'is_counselor': False,
-            'is_management': False,
-            'is_tutor': False,
-            'allowed_group_ids': [],  # IDs de academic_group permitidos
-            'anonymize_students': False,  # Management no ve nombres individuales
-        }
-
-        if user.has_group('aula_metrics.group_aulametrics_admin'):
-            role_info.update({
-                'role': 'admin',
-                'is_admin': True,
-                'is_counselor': True,  # admin implies counselor
-                'is_management': True,  # admin implies management
-                'is_tutor': True,  # admin implies tutor
-            })
-        elif user.has_group('aula_metrics.group_aulametrics_counselor'):
-            role_info.update({
-                'role': 'counselor',
-                'is_counselor': True,
-                'is_tutor': True,  # counselor implies tutor
-            })
-        elif user.has_group('aula_metrics.group_aulametrics_management'):
-            role_info.update({
-                'role': 'management',
-                'is_management': True,
-                'is_tutor': True,  # management implies tutor
-                'anonymize_students': True,  # Management ve datos agregados, no individuales
-            })
-        else:
-            role_info['is_tutor'] = True
-
-        # Para tutores (no counselor/admin), restringir a sus grupos asignados
-        if role_info['role'] == 'tutor':
-            tutor_groups = request.env['aula_metrics.academic_group'].search([
-                ('tutor_id', '=', user.id)
-            ])
-            role_info['allowed_group_ids'] = tutor_groups.ids
-
-        return role_info
+        return role_service.get_role_info(request.env, request.env.user)
 
     @http.route('/aulametrics/dashboard', type='http', auth='user')
     def dashboard_view(self, **kwargs):
@@ -74,15 +56,11 @@ class DashboardChartsController(http.Controller):
         # Aplicar restricciones de rol a los filtros
         filters = self._apply_role_restrictions(filters, role_info)
 
-        html_content = request.env['aula_metrics.dashboard.charts'].generate_dashboard(
-            filters=filters, 
+        values = request.env['aula_metrics.dashboard.charts'].generate_dashboard(
+            filters=filters,
             role_info=role_info
         )
-
-        return request.make_response(
-            html_content,
-            headers=[('Content-Type', 'text/html; charset=utf-8')]
-        )
+        return _render('aula_metrics.dashboard_main', values)
 
     @http.route('/aulametrics/students', type='http', auth='user')
     def students_list_view(self, **kwargs):
@@ -97,22 +75,15 @@ class DashboardChartsController(http.Controller):
         role_info = self._detect_user_role()
         
         # Management no tiene acceso a perfiles individuales
-        if role_info.get('role') == 'management':
-            return request.make_response(
-                "<h1>Acceso Denegado</h1><p>El equipo directivo no tiene acceso a perfiles individuales de alumnos.</p>",
-                headers=[('Content-Type', 'text/html; charset=utf-8')],
-                status=403
-            )
-        
-        # Generar lista HTML de estudiantes
-        html_content = request.env['aula_metrics.dashboard.student_profile'].generate_students_list(
+        if role_info.get('role') == ROLE_MANAGEMENT:
+            return _render('aula_metrics.dashboard_access_denied', {
+                'message': 'El equipo directivo no tiene acceso a perfiles individuales de alumnos.',
+            })
+
+        values = request.env['aula_metrics.dashboard.student_profile'].generate_students_list(
             role_info=role_info
         )
-        
-        return request.make_response(
-            html_content,
-            headers=[('Content-Type', 'text/html; charset=utf-8')]
-        )
+        return _render('aula_metrics.dashboard_page_base', values)
 
     @http.route('/aulametrics/student/<int:student_id>', type='http', auth='user')
     def student_profile_view(self, student_id, **kwargs):
@@ -140,27 +111,19 @@ class DashboardChartsController(http.Controller):
         
         # Delegar validación de acceso y generación al modelo
         try:
-            html_content = request.env['aula_metrics.dashboard.student_profile'].generate_student_profile(
+            values = request.env['aula_metrics.dashboard.student_profile'].generate_student_profile(
                 student_id=student_id,
                 role_info=role_info
             )
-            
-            return request.make_response(
-                html_content,
-                headers=[('Content-Type', 'text/html; charset=utf-8')]
-            )
+            return _render('aula_metrics.dashboard_page_base', values)
         except Exception as e:
-            # Capturar errores de permisos o generación
             error_msg = str(e)
             if 'permiso' in error_msg.lower() or 'access' in error_msg.lower():
-                return request.not_found(description=error_msg)
-            else:
-                # Error genérico
-                return request.make_response(
-                    f"<h1>Error al generar el perfil</h1><p>{error_msg}</p>",
-                    headers=[('Content-Type', 'text/html; charset=utf-8')],
-                    status=500
-                )
+                return _render('aula_metrics.dashboard_access_denied', {'message': error_msg})
+            return _render('aula_metrics.dashboard_error_page', {
+                'error_title': 'Error al generar el perfil',
+                'error_message': error_msg,
+            })
 
     def _parse_hub_filters(self, kwargs):
         """Parsea los parámetros GET a un dict de filtros (SIMPLIFICADO: solo evaluaciones)."""

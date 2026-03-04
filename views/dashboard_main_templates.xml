@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- =====================================================================
+         SIDEBAR DE NAVEGACIÓN
+         Variables requeridas: role_info (dict), active_section (str)
+         ===================================================================== -->
+    <template id="dashboard_sidebar" name="AulaMetrics - Sidebar">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/aula_metrics/static/src/img/Logo_1024.png"
+                     alt="AulaMetrics"
+                     style="max-width:180px;height:auto;display:block;margin:0 auto;"/>
+            </div>
+            <nav class="sidebar-nav">
+                <!-- Dashboard interno: navegación JS; resto: enlaces href -->
+                <t t-if="active_section in ('home', 'quantitative', 'qualitative')">
+                    <a href="#"
+                       t-att-class="'sidebar-item active' if active_section == 'home' else 'sidebar-item'"
+                       data-section="home"
+                       onclick="navigateTo('home'); return false;">
+                        <i class="fa-solid fa-house"/>
+                        <span>Inicio</span>
+                    </a>
+                    <a href="#"
+                       t-att-class="'sidebar-item active' if active_section == 'quantitative' else 'sidebar-item'"
+                       data-section="quantitative"
+                       onclick="navigateTo('quantitative'); return false;">
+                        <i class="fa-solid fa-chart-line"/>
+                        <span>Datos Cuantitativos</span>
+                    </a>
+                    <a href="#"
+                       t-att-class="'sidebar-item active' if active_section == 'qualitative' else 'sidebar-item'"
+                       data-section="qualitative"
+                       onclick="navigateTo('qualitative'); return false;">
+                        <i class="fa-solid fa-comments"/>
+                        <span>Datos Cualitativos</span>
+                    </a>
+                </t>
+                <t t-else="">
+                    <a href="/aulametrics/dashboard?section=home" class="sidebar-item">
+                        <i class="fa-solid fa-house"/>
+                        <span>Inicio</span>
+                    </a>
+                    <a href="/aulametrics/dashboard?section=quantitative" class="sidebar-item">
+                        <i class="fa-solid fa-chart-line"/>
+                        <span>Datos Cuantitativos</span>
+                    </a>
+                    <a href="/aulametrics/dashboard?section=qualitative" class="sidebar-item">
+                        <i class="fa-solid fa-comments"/>
+                        <span>Datos Cualitativos</span>
+                    </a>
+                </t>
+                <!-- Perfiles: solo counselor/admin -->
+                <t t-if="role_info and role_info.get('role') in ('admin', 'counselor')">
+                    <a href="/aulametrics/students"
+                       t-att-class="'sidebar-item active' if active_section == 'profiles' else 'sidebar-item'">
+                        <i class="fa-solid fa-users"/>
+                        <span>Perfiles de Alumnos</span>
+                    </a>
+                </t>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/web" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fa-solid fa-arrow-left me-2"/>Volver a Odoo
+                </a>
+            </div>
+        </aside>
+    </template>
+
+
+    <!-- =====================================================================
+         TOPBAR
+         Variables requeridas: topbar_title (str), role_info (dict)
+         Opcionales: topbar_subtitle (str|Markup), topbar_extra_actions (Markup)
+         ===================================================================== -->
+    <template id="dashboard_topbar" name="AulaMetrics - Topbar">
+        <t t-set="role_" t-value="(role_info or {}).get('role', 'tutor')"/>
+        <div class="topbar">
+            <div>
+                <h3 id="sectionTitle"><t t-out="topbar_title"/></h3>
+                <t t-if="topbar_subtitle">
+                    <span class="breadcrumbs"><t t-out="topbar_subtitle"/></span>
+                </t>
+            </div>
+            <div class="topbar-actions">
+                <t t-if="role_ == 'admin'">
+                    <span class="badge bg-danger">
+                        <i class="fa-solid fa-shield-halved"/> Administrador
+                    </span>
+                </t>
+                <t t-elif="role_ == 'counselor'">
+                    <span class="badge bg-primary">
+                        <i class="fa-solid fa-user-tie"/> Orientador/a
+                    </span>
+                </t>
+                <t t-elif="role_ == 'management'">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fa-solid fa-briefcase"/> Equipo Directivo
+                    </span>
+                </t>
+                <t t-else="">
+                    <span class="badge bg-success">
+                        <i class="fa-solid fa-chalkboard-user"/> Tutor/a
+                    </span>
+                </t>
+                <t t-if="topbar_extra_actions">
+                    <t t-out="topbar_extra_actions"/>
+                </t>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- =====================================================================
+         SECCIÓN HOME
+         Variables: home_evaluations (list[dict]), home_total_evaluations (int),
+                    home_avg_participation (str), home_total_alerts (int),
+                    role_info (dict)
+         ===================================================================== -->
+    <template id="dashboard_home_section" name="AulaMetrics - Sección Inicio">
+        <div class="home-section">
+            <div class="welcome-banner">
+                <h2>
+                    <i class="fa-solid fa-hand-wave me-3" style="color:#fbbf24;"/>
+                    Bienvenido al Dashboard de AulaMetrics
+                </h2>
+                <p>Panel de control para el seguimiento del bienestar del alumnado</p>
+            </div>
+
+            <div class="quick-stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="fa-solid fa-clipboard-check"/>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Evaluaciones Activas</div>
+                        <div class="stat-value"><t t-out="home_total_evaluations or 0"/></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fa-solid fa-chart-line"/>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Participación Promedio</div>
+                        <div class="stat-value"><t t-out="home_avg_participation or '0%'"/></div>
+                    </div>
+                </div>
+                <t t-if="role_info and role_info.get('role') in ('admin', 'counselor')">
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i class="fa-solid fa-bell"/>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Alertas Activas</div>
+                            <div class="stat-value"><t t-out="home_total_alerts or 0"/></div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+
+            <div class="evaluations-section">
+                <h3 class="section-title">Evaluaciones Activas</h3>
+                <t t-if="home_evaluations">
+                    <div class="evaluations-grid">
+                        <t t-foreach="home_evaluations" t-as="ev">
+                            <div class="evaluation-card">
+                                <div class="evaluation-card-header">
+                                    <h4 class="evaluation-card-title">
+                                        <i class="fa-solid fa-clipboard-check"/>
+                                        <t t-out="ev['name']"/>
+                                    </h4>
+                                </div>
+                                <div class="evaluation-card-body">
+                                    <div class="evaluation-info-item">
+                                        <i class="fa-solid fa-calendar-days"/>
+                                        <span class="evaluation-info-label">Período:</span>
+                                        <span class="evaluation-info-value">
+                                            <t t-out="ev['date_range']"/>
+                                        </span>
+                                    </div>
+                                    <div class="evaluation-info-item">
+                                        <i class="fa-solid fa-chart-line"/>
+                                        <span class="evaluation-info-label">Participación:</span>
+                                        <span t-att-class="'participation-badge ' + ev.get('participation_class', '')">
+                                            <t t-out="ev['participation_display']"/>
+                                        </span>
+                                    </div>
+                                    <div class="evaluation-info-item">
+                                        <i class="fa-solid fa-users"/>
+                                        <span class="evaluation-info-label">Completados:</span>
+                                        <span class="evaluation-info-value">
+                                            <t t-out="ev['completed_students']"/> / <t t-out="ev['total_students']"/>
+                                        </span>
+                                    </div>
+                                    <t t-if="role_info and role_info.get('role') in ('admin', 'counselor') and 'alert_count' in ev">
+                                        <div class="evaluation-info-item">
+                                            <i class="fa-solid fa-bell"/>
+                                            <span class="evaluation-info-label">Alertas:</span>
+                                            <span t-att-class="'alerts-badge' + (' zero' if ev.get('alert_count', 0) == 0 else '')">
+                                                <i t-att-class="'fa-solid ' + ('fa-check-circle' if ev.get('alert_count', 0) == 0 else 'fa-exclamation-triangle')"/>
+                                                <t t-out="ev.get('alert_count', 0)"/>
+                                            </span>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="empty-evaluations">
+                        <i class="fa-solid fa-clipboard-question"/>
+                        <h3>No hay evaluaciones activas</h3>
+                        <p>No se encontraron evaluaciones activas en este momento</p>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- =====================================================================
+         CONTROLES DE FILTRO
+         Variables: available_evaluations (list[dict]), selected_evals (list[int])
+         ===================================================================== -->
+    <template id="dashboard_filter_controls" name="AulaMetrics - Controles de Filtro">
+        <div class="filter-panel-compact">
+            <form id="hub-filters" method="get" action="/aulametrics/dashboard">
+                <div class="filter-header">
+                    <i class="fa-solid fa-filter"/>
+                    <span>Filtrar por Evaluaciones</span>
+                </div>
+                <div class="filter-pills-container">
+                    <t t-foreach="available_evaluations or []" t-as="ev">
+                        <t t-set="is_active" t-value="(selected_evals and ev['id'] in selected_evals) or not selected_evals"/>
+                        <span t-att-class="'filter-pill eval-pill' + (' active' if is_active else '')"
+                              data-type="eval"
+                              t-att-data-value="ev['id']"
+                              onclick="togglePill(this)">
+                            <t t-out="ev['name']"/>
+                        </span>
+                    </t>
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn-filter-action" onclick="selectAllEvals()">
+                        <i class="fa-solid fa-check-double me-1"/>Todas
+                    </button>
+                    <button type="button" class="btn-filter-action" onclick="selectNoneEvals()">
+                        <i class="fa-solid fa-xmark me-1"/>Ninguna
+                    </button>
+                    <button type="submit" class="btn-filter-action btn-filter-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1"/>Aplicar Filtros
+                    </button>
+                </div>
+            </form>
+        </div>
+    </template>
+
+
+    <!-- =====================================================================
+         KPI CARDS
+         Variables: kpi_students, kpi_groups, kpi_evals, kpi_metrics (int)
+         ===================================================================== -->
+    <template id="dashboard_kpis" name="AulaMetrics - KPI Cards">
+        <div class="kpi-card">
+            <div class="kpi-label">Estudiantes</div>
+            <div class="kpi-value"><t t-out="kpi_students or 0"/></div>
+            <div class="kpi-description">Total analizados</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Grupos</div>
+            <div class="kpi-value"><t t-out="kpi_groups or 0"/></div>
+            <div class="kpi-description">Académicos</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Evaluaciones</div>
+            <div class="kpi-value"><t t-out="kpi_evals or 0"/></div>
+            <div class="kpi-description">Completadas</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Métricas</div>
+            <div class="kpi-value"><t t-out="kpi_metrics or 0"/></div>
+            <div class="kpi-description">Registradas</div>
+        </div>
+    </template>
+
+
+    <!-- =====================================================================
+         SCRIPTS JAVASCRIPT DEL DASHBOARD (sin datos en tiempo de render)
+         ===================================================================== -->
+    <template id="dashboard_scripts" name="AulaMetrics - Scripts JavaScript">
+        <script>//<![CDATA[
+        function togglePill(pill) {
+            pill.classList.toggle('active');
+        }
+
+        function selectAllEvals() {
+            document.querySelectorAll('.eval-pill').forEach(pill => pill.classList.add('active'));
+        }
+
+        function selectNoneEvals() {
+            document.querySelectorAll('.eval-pill').forEach(pill => pill.classList.remove('active'));
+        }
+
+        document.getElementById('hub-filters').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnContent = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Cargando...';
+
+            const evalValues = Array.from(document.querySelectorAll('.eval-pill.active')).map(p => p.dataset.value);
+            const params = new URLSearchParams();
+            if (evalValues.length > 0) params.append('evaluation_ids', evalValues.join(','));
+            params.append('section', 'quantitative');
+            const url = '/aulametrics/dashboard?' + params.toString();
+
+            const kpiContainer = document.querySelector('#section-quantitative .kpi-container');
+            const chartsContainer = document.querySelector('#section-quantitative .charts-container');
+            if (kpiContainer) { kpiContainer.style.opacity = '0.5'; kpiContainer.style.transition = 'opacity 0.3s'; }
+            if (chartsContainer) { chartsContainer.style.opacity = '0.5'; chartsContainer.style.transition = 'opacity 0.3s'; }
+
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    const newKpis = tempDiv.querySelector('.kpi-container');
+                    if (newKpis && kpiContainer) {
+                        kpiContainer.innerHTML = newKpis.innerHTML;
+                        kpiContainer.style.opacity = '0';
+                        setTimeout(() => { kpiContainer.style.opacity = '1'; }, 50);
+                    }
+                    const newCharts = tempDiv.querySelector('.charts-container');
+                    if (newCharts && chartsContainer) {
+                        chartsContainer.innerHTML = newCharts.innerHTML;
+                        chartsContainer.style.opacity = '0';
+                        chartsContainer.querySelectorAll('script').forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            newScript.textContent = oldScript.textContent;
+                            oldScript.parentNode.replaceChild(newScript, oldScript);
+                        });
+                        setTimeout(() => { chartsContainer.style.opacity = '1'; }, 50);
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                    if (kpiContainer) kpiContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    history.pushState({}, '', url);
+                })
+                .catch(error => {
+                    console.error('Error al aplicar filtros:', error);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnContent;
+                    if (kpiContainer) {
+                        kpiContainer.style.opacity = '1';
+                        kpiContainer.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fa-solid fa-exclamation-triangle" style="font-size:32px;color:var(--am-danger);"></i><p style="margin-top:12px;color:var(--am-muted);">Error al cargar datos. Intenta de nuevo.</p></div>';
+                    }
+                    if (chartsContainer) chartsContainer.style.opacity = '1';
+                });
+        });
+
+        function navigateTo(section) {
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            const activeItem = document.querySelector('[data-section="' + section + '"]');
+            if (activeItem) activeItem.classList.add('active');
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            const sectionEl = document.getElementById('section-' + section);
+            if (sectionEl) sectionEl.classList.add('active');
+            const titles = { 'home': 'Inicio', 'quantitative': 'Datos Cuantitativos', 'qualitative': 'Datos Cualitativos' };
+            const titleEl = document.getElementById('sectionTitle');
+            if (titleEl) titleEl.textContent = titles[section] || section;
+            if (section === 'qualitative' && !window.qualitativeLoaded) loadQualitativeContent();
+        }
+
+        function loadQualitativeContent() {
+            window.qualitativeLoaded = true;
+            const contentDiv = document.getElementById('qualitativeContent');
+            fetch('/aulametrics/qualitative/dashboard?embedded=true')
+                .then(response => response.text())
+                .then(html => {
+                    contentDiv.innerHTML = html;
+                    contentDiv.querySelectorAll('script').forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        if (oldScript.src) { newScript.src = oldScript.src; }
+                        else { newScript.textContent = oldScript.textContent; }
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+                    setTimeout(() => {
+                        if (!window._aulametrics_wordcloud_inited) {
+                            if (typeof initWordcloudCounselor !== 'undefined') {
+                                window._aulametrics_wordcloud_inited = true; initWordcloudCounselor();
+                            } else if (typeof initWordcloudTutor !== 'undefined') {
+                                window._aulametrics_wordcloud_inited = true; initWordcloudTutor();
+                            }
+                        }
+                    }, 500);
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar datos cualitativos</p></div>';
+                    console.error('Error cargando datos cualitativos:', error);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const section = new URLSearchParams(window.location.search).get('section');
+            if (section && ['home', 'quantitative', 'qualitative'].includes(section)) navigateTo(section);
+
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (form.id !== 'qualitativeFiltersForm') return;
+                e.preventDefault();
+                const params = new URLSearchParams();
+                for (const [key, value] of new FormData(form).entries()) {
+                    if (value) params.append(key, value);
+                }
+                params.append('embedded', 'true');
+                fetch('/aulametrics/qualitative/dashboard?' + params.toString())
+                    .then(response => response.text())
+                    .then(html => {
+                        const contentDiv = document.getElementById('qualitativeContent');
+                        if (!contentDiv) return;
+                        contentDiv.innerHTML = html;
+                        contentDiv.querySelectorAll('script').forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            if (oldScript.src) { newScript.src = oldScript.src; }
+                            else { newScript.textContent = oldScript.textContent; }
+                            oldScript.parentNode.replaceChild(newScript, oldScript);
+                        });
+                        setTimeout(() => {
+                            if (!window._aulametrics_wordcloud_inited) {
+                                if (typeof initWordcloudCounselor !== 'undefined') {
+                                    window._aulametrics_wordcloud_inited = true; initWordcloudCounselor();
+                                } else if (typeof initWordcloudTutor !== 'undefined') {
+                                    window._aulametrics_wordcloud_inited = true; initWordcloudTutor();
+                                }
+                            }
+                        }, 300);
+                    })
+                    .catch(error => console.error('Error al filtrar datos cualitativos:', error));
+            });
+        });
+//]]></script>
+    </template>
+
+
+    <!-- =====================================================================
+         PÁGINA PRINCIPAL DEL DASHBOARD (plantilla raíz)
+         Variables: head_extra (Markup), css_styles (Markup),
+                    role_info (dict), active_section (str),
+                    topbar_title (str), topbar_subtitle (Markup),
+                    available_evaluations (list), selected_evals (list),
+                    charts (list[Markup]), kpi_* (int),
+                    home_* (varios)
+         ===================================================================== -->
+    <template id="dashboard_main" name="AulaMetrics - Página Principal del Dashboard">
+        <html lang="es">
+            <head>
+                <meta charset="UTF-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <title>Dashboard de Métricas - AulaMetrics</title>
+                <link rel="stylesheet"
+                      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+                      rel="stylesheet"/>
+                <t t-out="head_extra"/>
+                <t t-out="css_styles"/>
+            </head>
+            <body>
+                <div class="dashboard-layout">
+                    <t t-call="aula_metrics.dashboard_sidebar"/>
+                    <main class="main-content">
+                        <t t-call="aula_metrics.dashboard_topbar"/>
+                        <div class="content-wrapper">
+
+                            <!-- Sección Inicio -->
+                            <div class="content-section active" id="section-home">
+                                <t t-call="aula_metrics.dashboard_home_section"/>
+                            </div>
+
+                            <!-- Sección Datos Cuantitativos -->
+                            <div class="content-section" id="section-quantitative">
+                                <div class="container-fluid">
+                                    <t t-call="aula_metrics.dashboard_filter_controls"/>
+                                    <t t-if="charts">
+                                        <div class="kpi-container my-4">
+                                            <t t-call="aula_metrics.dashboard_kpis"/>
+                                        </div>
+                                        <div class="charts-container">
+                                            <t t-foreach="charts" t-as="chart">
+                                                <t t-out="chart"/>
+                                            </t>
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="empty-state mt-4">
+                                            <i class="fa-solid fa-chart-line fa-4x"/>
+                                            <h3>No hay datos disponibles</h3>
+                                            <p>Ajusta los filtros para ver resultados</p>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Sección Datos Cualitativos -->
+                            <div class="content-section" id="section-qualitative">
+                                <div id="qualitativeContent">
+                                    <div style="text-align:center;padding:60px 20px;">
+                                        <i class="fa-solid fa-spinner fa-spin"
+                                           style="font-size:48px;color:var(--am-primary);"/>
+                                        <p style="margin-top:20px;color:var(--am-muted);">
+                                            Cargando datos cualitativos...
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </main>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"/>
+                <t t-call="aula_metrics.dashboard_scripts"/>
+            </body>
+        </html>
+    </template>
+
+</odoo>

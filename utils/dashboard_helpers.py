@@ -1,281 +1,75 @@
 # -*- coding: utf-8 -*-
 """
 Funciones auxiliares compartidas para dashboards de AulaMetrics
-Incluye: badges, formatters, validadores, etc.
+Incluye: formatters, sanitizers, chart helpers, detección de roles.
 """
 from datetime import datetime
 import json
-
-
-def get_role_badge(role_info):
-    """
-    Genera el badge HTML del rol del usuario.
-    
-    Args:
-        role_info (dict): Información del rol con clave 'role'
-    
-    Returns:
-        str: HTML del badge
-    """
-    role = role_info.get('role', 'tutor') if role_info else 'tutor'
-    
-    badges = {
-        'admin': '<span class="badge bg-danger"><i class="fa-solid fa-shield-halved"></i> Administrador</span>',
-        'counselor': '<span class="badge bg-primary"><i class="fa-solid fa-user-tie"></i> Orientador/a</span>',
-        'management': '<span class="badge bg-warning text-dark"><i class="fa-solid fa-briefcase"></i> Equipo Directivo</span>',
-        'tutor': '<span class="badge bg-success"><i class="fa-solid fa-chalkboard-user"></i> Tutor/a</span>',
-    }
-    
-    return badges.get(role, badges['tutor'])
+from .constants import (
+    GROUP_ADMIN, GROUP_COUNSELOR, GROUP_MANAGEMENT,
+    ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT,
+)
 
 
 def format_date(date_obj, format_str='%d/%m/%Y'):
     """
     Formatea una fecha de manera consistente.
-    
+
     Args:
         date_obj: Objeto date/datetime o string
         format_str (str): Formato de salida
-    
+
     Returns:
         str: Fecha formateada
     """
     if not date_obj:
         return 'Sin fecha'
-    
+
     if isinstance(date_obj, str):
         try:
             date_obj = datetime.strptime(date_obj, '%Y-%m-%d')
         except (ValueError, TypeError):
             return date_obj
-    
+
     try:
         return date_obj.strftime(format_str)
     except (AttributeError, TypeError):
         return str(date_obj)
 
 
-def get_alert_count_badge(count):
+def format_date_range(date_start, date_end):
     """
-    Genera un badge para mostrar el conteo de alertas.
-    
-    Args:
-        count (int): Número de alertas
-    
-    Returns:
-        str: HTML del badge
+    Formatea un rango de fechas como "DD/MM/YYYY - DD/MM/YYYY".
     """
-    if count > 0:
-        return f'<span class="badge bg-danger">{count} alerta(s)</span>'
-    return '<span class="badge bg-success">Sin alertas</span>'
+    return f"{format_date(date_start, '%d/%m/%Y')} - {format_date(date_end, '%d/%m/%Y')}"
 
 
-def get_semaphore_color(value):
+def format_participation_rate(rate):
     """
-    Retorna un color tipo semáforo según el valor (0-100).
-    
-    Args:
-        value (float): Valor normalizado 0-100
-    
-    Returns:
-        str: Código de color hex
-    """
-    if value >= 80:
-        return '#10b981'  # Verde
-    elif value >= 60:
-        return '#3b82f6'  # Azul
-    elif value >= 40:
-        return '#f59e0b'  # Amarillo/Naranja
-    else:
-        return '#ef4444'  # Rojo
-
-
-def truncate_text(text, max_length=50, suffix='...'):
-    """
-    Trunca un texto a una longitud máxima.
-    
-    Args:
-        text (str): Texto a truncar
-        max_length (int): Longitud máxima
-        suffix (str): Sufijo a agregar si se trunca
-    
-    Returns:
-        str: Texto truncado
-    """
-    if not text:
-        return ''
-    
-    text = str(text)
-    if len(text) <= max_length:
-        return text
-    
-    return text[:max_length - len(suffix)] + suffix
-
-
-def get_chart_js_libraries():
-    """
-    Retorna los enlaces a las librerías de Chart.js.
-    
-    Returns:
-        str: HTML con links a CDN
-    """
-    return """
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    """
-
-
-def get_d3_libraries():
-    """
-    Retorna los enlaces a las librerías de D3.js y d3-cloud.
-    
-    Returns:
-        str: HTML con links a CDN
-    """
-    return """
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.min.js"></script>
-    """
-
-
-def build_checkbox_options(items, checked_ids=None, name_prefix='item', id_field='id', label_field='name'):
-    """
-    Genera HTML de checkboxes para filtros.
-    
-    Args:
-        items (list): Lista de items (dicts o recordsets)
-        checked_ids (list): IDs de items marcados
-        name_prefix (str): Prefijo para el name del checkbox
-        id_field (str): Campo que contiene el ID
-        label_field (str): Campo que contiene el label
-    
-    Returns:
-        str: HTML de checkboxes
-    """
-    if checked_ids is None:
-        checked_ids = []
-    
-    html = ''
-    for item in items:
-        # Manejar tanto dicts como recordsets
-        item_id = item[id_field] if isinstance(item, dict) else getattr(item, id_field)
-        item_label = item[label_field] if isinstance(item, dict) else getattr(item, label_field)
-        
-        checked = 'checked' if item_id in checked_ids else ''
-        
-        html += f'''
-        <label>
-            <input type="checkbox" class="{name_prefix}-check" name="{name_prefix}[]" 
-                   value="{item_id}" {checked}>
-            {item_label}
-        </label>
-        '''
-    
-    return html
-
-
-def format_number(value, decimals=1):
-    """
-    Formatea un número con decimales.
-    
-    Args:
-        value: Valor numérico
-        decimals (int): Número de decimales
-    
-    Returns:
-        str: Número formateado
+    Formatea un porcentaje de participación como "XX.X%".
     """
     try:
-        return f"{float(value):.{decimals}f}"
+        return f"{float(rate):.1f}%"
     except (ValueError, TypeError):
-        return str(value)
-
-
-def safe_division(numerator, denominator, default=0):
-    """
-    División segura que evita división por cero.
-    
-    Args:
-        numerator: Numerador
-        denominator: Denominador
-        default: Valor por defecto si denominador es 0
-    
-    Returns:
-        float: Resultado de la división o default
-    """
-    try:
-        return numerator / denominator if denominator != 0 else default
-    except (TypeError, ValueError):
-        return default
-
-
-def get_gender_label(gender_code):
-    """
-    Convierte código de género a etiqueta legible.
-    
-    Args:
-        gender_code (str): Código ('male', 'female', 'other', 'prefer_not_say')
-    
-    Returns:
-        str: Etiqueta en español
-    """
-    gender_map = {
-        'male': 'Masculino',
-        'female': 'Femenino',
-        'other': 'Otro',
-        'prefer_not_say': 'Prefiere no decir'
-    }
-    return gender_map.get(gender_code, gender_code)
+        return "0.0%"
 
 
 def sanitize_id(text):
     """
     Sanitiza un texto para usarlo como ID HTML válido.
-    
-    Args:
-        text (str): Texto a sanitizar
-    
-    Returns:
-        str: ID válido
     """
-    return text.replace(' ', '_').replace('/', '_').replace('.', '_').replace('(', '').replace(')', '')
+    return (
+        text.replace(' ', '_').replace('/', '_')
+            .replace('.', '_').replace('(', '').replace(')', '')
+    )
 
 
-# ==================== HTML BUILDER HELPERS ====================
-
-def build_chart_card_header(label, subtitle, chart_id, segment_options_html=''):
-    """
-    Genera el header de una card de chart con título, subtítulo y selector de segmentación.
-    
-    Args:
-        label (str): Título de la card
-        subtitle (str): Subtítulo/descripción
-        chart_id (str): ID único del chart (para vincular al selector)
-        segment_options_html (str): HTML de opciones de segmentación (opcional)
-    
-    Returns:
-        str: HTML del card-header completo
-    """
-    segment_selector = ''
-    if segment_options_html:
-        segment_selector = f'''
-                <select id="segment_{chart_id}" class="chart-segment-selector">
-                    {segment_options_html}
-                </select>'''
-    
-    return f'''
-            <div class="card-header chart-card-header">
-                <div>
-                    <h5 class="card-title">{label}</h5>
-                    <p class="card-subtitle">{subtitle}</p>
-                </div>{segment_selector}
-            </div>'''
-
+# ==================== CHART HELPERS ====================
 
 def get_segment_colors_js():
     """
-    Retorna el objeto JavaScript de colores para segmentación.
-    Usa los valores definidos en `utils.palette` para mantener un único punto de verdad.
+    Retorna el objeto JavaScript de colores para segmentación por género.
+    Usa los valores definidos en `utils.palette` como única fuente de verdad.
     """
     from . import palette
     seg = palette.SEGMENT_COLORS
@@ -293,45 +87,131 @@ def get_segment_colors_js():
 
 def get_chart_card_styles():
     """
-    Retorna los estilos CSS para elementos de chart cards.
-    Estos estilos se aplican inline para charts dinámicos.
-    
-    Returns:
-        dict: Diccionario con clases CSS como keys y estilos como values
+    Retorna los estilos CSS inline para los headers de chart cards.
     """
     return {
-        'chart-card-header': 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;',
-        'chart-segment-selector': 'padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); font-weight: 500; min-width: 160px;'
+        'chart-card-header': (
+            'display: flex; justify-content: space-between; align-items: center; '
+            'flex-wrap: wrap; gap: 12px;'
+        ),
+        'chart-segment-selector': (
+            'padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); '
+            'border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); '
+            'font-weight: 500; min-width: 160px;'
+        ),
     }
 
 
-def format_participation_rate(rate):
+# ==================== ROLE & DATA HELPERS ====================
+
+def detect_user_role(user):
     """
-    Formatea un porcentaje de participación.
-    
+    Detecta el rol del usuario en AulaMetrics.
+
+    Jerarquía: admin > counselor > management > tutor
+
     Args:
-        rate (float): Porcentaje (0-100)
-    
+        user: recordset del usuario (res.users)
+
     Returns:
-        str: Porcentaje formateado como "XX.X%"
+        dict: {
+            'role': str ('admin', 'counselor', 'management', 'tutor'),
+            'user_id': int,
+            'is_admin': bool,
+            'is_counselor': bool,
+            'is_management': bool,
+            'is_tutor': bool,
+            'allowed_group_ids': [],  # Se llena después si es tutor
+            'anonymize_students': bool
+        }
     """
-    try:
-        return f"{float(rate):.1f}%"
-    except (ValueError, TypeError):
-        return "0.0%"
+    role_info = {
+        'role': 'tutor',
+        'user_id': user.id,
+        'is_admin': False,
+        'is_counselor': False,
+        'is_management': False,
+        'is_tutor': False,
+        'allowed_group_ids': [],
+        'anonymize_students': False,
+    }
+
+    if user.has_group(GROUP_ADMIN):
+        role_info.update({
+            'role': ROLE_ADMIN,
+            'is_admin': True,
+            'is_counselor': True,
+            'is_management': True,
+            'is_tutor': True,
+        })
+    elif user.has_group(GROUP_COUNSELOR):
+        role_info.update({
+            'role': ROLE_COUNSELOR,
+            'is_counselor': True,
+            'is_tutor': True,
+        })
+    elif user.has_group(GROUP_MANAGEMENT):
+        role_info.update({
+            'role': ROLE_MANAGEMENT,
+            'is_management': True,
+            'is_tutor': True,
+            'anonymize_students': True,
+        })
+    else:
+        role_info['is_tutor'] = True
+
+    return role_info
 
 
-def format_date_range(date_start, date_end):
+def metric_values_to_records(metric_values):
     """
-    Formatea un rango de fechas.
-    
-    Args:
-        date_start: Fecha de inicio (date, datetime o string)
-        date_end: Fecha de fin (date, datetime o string)
-    
-    Returns:
-        str: Rango formateado como "DD/MM/YYYY - DD/MM/YYYY"
+    Convierte un recordset de aula_metrics.metric_value a una lista de dicts
+    normalizada, lista para construir un DataFrame de pandas.
+
+    Es el núcleo compartido de prepare_dataframe (dashboard agregado) y
+    _prepare_metrics_dataframe (perfil individual de alumno).
+
+    Columnas del dict resultante:
+        metric_name, metric_label, metric_type   — identidad de la métrica
+        value                                    — valor unificado
+        value_numeric, value_json, value_text    — valores por tipo
+        timestamp                                — fecha del registro
+        evaluation_id, evaluation_name           — evaluación asociada
+        student_id, student_name, student_gender — alumno
+        group_id, group_name, curso              — grupo académico
+
+    Los registros sin ningún valor (float/json/text) se omiten silenciosamente.
     """
-    start_formatted = format_date(date_start, '%d/%m/%Y')
-    end_formatted = format_date(date_end, '%d/%m/%Y')
-    return f"{start_formatted} - {end_formatted}"
+    records = []
+    for mv in metric_values:
+        if mv.value_float:
+            metric_type = 'numeric'
+            unified_val = mv.value_float
+        elif mv.value_json:
+            metric_type = 'json'
+            unified_val = mv.value_json
+        elif mv.value_text:
+            metric_type = 'text'
+            unified_val = mv.value_text
+        else:
+            continue
+
+        records.append({
+            'metric_name':    mv.metric_name,
+            'metric_label':   mv.metric_label or mv.metric_name.replace('_', ' ').capitalize(),
+            'metric_type':    metric_type,
+            'value':          unified_val,
+            'value_numeric':  mv.value_float if mv.value_float else None,
+            'value_json':     mv.value_json  if mv.value_json  else None,
+            'value_text':     mv.value_text  if mv.value_text  else None,
+            'timestamp':      mv.timestamp,
+            'evaluation_id':   mv.evaluation_id.id   if mv.evaluation_id else None,
+            'evaluation_name': mv.evaluation_id.name if mv.evaluation_id else 'Sin evaluación',
+            'student_id':     mv.student_id.id     if mv.student_id else None,
+            'student_name':   mv.student_id.name   if mv.student_id else None,
+            'student_gender': mv.student_id.gender if mv.student_id else None,
+            'group_id':   mv.academic_group_id.id           if mv.academic_group_id else None,
+            'group_name': mv.academic_group_id.name         if mv.academic_group_id else None,
+            'curso':      mv.academic_group_id.course_level if mv.academic_group_id else None,
+        })
+    return records

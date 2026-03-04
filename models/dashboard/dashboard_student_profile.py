@@ -7,15 +7,9 @@ import pandas as pd
 import json
 
 # Importar utilidades compartidas del dashboard
-from ..utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
-
-# Paleta de severidad: índice = severity (0=Normal, 1=Límite, 2=Anormal)
-# Etiquetas y orden de escalas son dinámicos — ver fields scale_label / display_order en survey_baremo_range
-_SEV_BAR_COLOR  = ['#2f855a', '#d97706', '#ef4444']
-_SEV_BADGE_CSS  = ['background:#2f855a;color:#fff', 'background:#f6c85f;color:#78350f', 'background:#ef4444;color:#fff']
-_SEV_TEXT_LABEL = ['Normal', 'Límite', 'Anormal']
-# ────────────────────────────────────────────────────────────────────────────────
-
+from markupsafe import Markup
+from ...utils import dashboard_styles, dashboard_helpers, palette, role_service
+from ...utils.constants import ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR
 
 class DashboardStudentProfile(models.TransientModel):
     _name = 'aula_metrics.dashboard.student_profile'
@@ -31,7 +25,7 @@ class DashboardStudentProfile(models.TransientModel):
             role_info (dict): Información del rol del usuario
         
         Returns:
-            str: HTML completo del perfil
+            dict: Valores para renderizado QWeb via 'aula_metrics.dashboard_page_base'
         """
         if role_info is None:
             role_info = {'role': 'admin', 'anonymize_students': False}
@@ -78,7 +72,7 @@ class DashboardStudentProfile(models.TransientModel):
             role_info (dict): Información del rol del usuario
         
         Returns:
-            str: HTML completo con la lista de estudiantes
+            dict: Valores para renderizado QWeb via 'aula_metrics.dashboard_page_base'
         """
         if role_info is None:
             role_info = {'role': 'admin'}
@@ -87,17 +81,12 @@ class DashboardStudentProfile(models.TransientModel):
         Partner = self.env['res.partner']
         domain = [('is_student', '=', True)]
         
-        # Tutores solo ven sus grupos
-        if role_info.get('role') == 'tutor':
-            allowed_groups = role_info.get('allowed_group_ids', [])
-            if not allowed_groups:
-                students = Partner.browse([])
-            else:
-                domain.append(('academic_group_id', 'in', allowed_groups))
-                students = Partner.search(domain, order='name')
+        # Tutores solo ven sus grupos (None = sin grupos asignados → vacío)
+        filtered_domain = role_service.apply_group_filter(domain, role_info, field='academic_group_id')
+        if filtered_domain is None:
+            students = Partner.browse([])
         else:
-            # Counselor y admin ven todos
-            students = Partner.search(domain, order='name')
+            students = Partner.search(filtered_domain, order='name')
         
         # Generar HTML
         return self._build_students_list_html(students, role_info)
@@ -105,23 +94,7 @@ class DashboardStudentProfile(models.TransientModel):
     @api.model
     def _can_access_student(self, student, role_info):
         """Verifica si el usuario tiene permisos para ver este estudiante."""
-        role = role_info.get('role', 'tutor')
-        
-        # Admin y counselor tienen acceso a todos
-        if role in ['admin', 'counselor']:
-            return True
-        
-        # Management no tiene acceso a perfiles individuales
-        if role == 'management':
-            return False
-        
-        # Tutores: solo alumnos de sus grupos
-        if role == 'tutor':
-            allowed_groups = role_info.get('allowed_group_ids', [])
-            student_group = student.academic_group_id.id if student.academic_group_id else None
-            return student_group in allowed_groups
-        
-        return False
+        return role_service.can_access_student(role_info, student)
 
     def _get_student_metrics(self, student_id):
         """Obtiene todas las métricas del estudiante ordenadas por fecha."""
@@ -144,34 +117,17 @@ class DashboardStudentProfile(models.TransientModel):
         ], order='timestamp desc')
 
     def _prepare_metrics_dataframe(self, metrics):
-        """Convierte las métricas a DataFrame para análisis."""
-        data = []
-        for m in metrics:
-            # Detectar tipo y valor
-            if m.value_float:
-                value = m.value_float
-                value_type = 'numeric'
-            elif m.value_json:
-                value = m.value_json
-                value_type = 'json'
-            elif m.value_text:
-                value = m.value_text
-                value_type = 'text'
-            else:
-                continue
-            
-            row = {
-                'timestamp': m.timestamp,
-                'metric_name': m.metric_name,
-                'metric_label': m.metric_label or m.metric_name,
-                'value': value,
-                'value_type': value_type,
-                'evaluation_name': m.evaluation_id.name if m.evaluation_id else 'Sin evaluación',
-                'evaluation_id': m.evaluation_id.id if m.evaluation_id else None,
-            }
-            data.append(row)
-        
-        return pd.DataFrame(data)
+        """
+        Construye el DataFrame de las métricas de un alumno para análisis
+        longitudinal.
+
+        La conversión se delega en dashboard_helpers.metric_values_to_records.
+        El DataFrame resultante contiene todas las columnas disponibles;
+        los métodos consumidores proyectan las que necesitan.
+        """
+        if not metrics:
+            return pd.DataFrame()
+        return pd.DataFrame(dashboard_helpers.metric_values_to_records(metrics))
 
     def _generate_student_kpis(self, student, df):
         """Genera KPIs del estudiante - diseño profesional."""
@@ -525,9 +481,14 @@ class DashboardStudentProfile(models.TransientModel):
         eval_name = result.evaluation_id.name if result.evaluation_id else ''
 
         sev         = min(result.baremo_severity, 2)
-        bar_color   = _SEV_BAR_COLOR[sev]
-        badge_style = _SEV_BADGE_CSS[sev]
-        global_label = result.baremo_label or _SEV_TEXT_LABEL[sev]
+
+        # Obtener mapeo dinámico de severidad para este cuestionario
+        BaremoRange = self.env['aula_metrics.survey_baremo_range']
+        severity_mapping = BaremoRange.get_severity_mapping(result.survey_id.id)
+        sev_info = severity_mapping.get(sev, {})
+        bar_color = sev_info.get('color', '#ccc')
+        badge_style = f"background:{sev_info.get('bg_color', '#fff')};color:{sev_info.get('color', '#000')}"
+        global_label = result.baremo_label or sev_info.get('label', f'Severity {sev}')
 
         meta_parts = [date_str]
         if age_str:
@@ -580,7 +541,8 @@ class DashboardStudentProfile(models.TransientModel):
                 scale_data   = scale_scores[scale_name]
                 score        = scale_data.get('score', 0) if isinstance(scale_data, dict) else float(scale_data)
                 s_sev        = min(scale_data.get('severity', 0) if isinstance(scale_data, dict) else 0, 2)
-                val_color    = _SEV_BAR_COLOR[s_sev]
+                sev_info_s = severity_mapping.get(s_sev, {})
+                val_color = sev_info_s.get('color', '#ccc')
                 scale_max    = max(scale_maxes.get(scale_name, 10), 1)
                 display_name = (_meta.get(scale_name) or {}).get('label') or scale_name.replace('_', ' ').capitalize()
                 is_total     = scale_name == 'total' and has_total and len(ordered_scales) > 1
@@ -751,55 +713,21 @@ class DashboardStudentProfile(models.TransientModel):
         }
 
     def _build_empty_profile(self, student, role_info):
-        """HTML cuando el estudiante no tiene métricas."""
-        role_badge = dashboard_helpers.get_role_badge(role_info)
+        """Contexto para perfil sin métricas (template dashboard_page_base)."""
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
-        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
-        
+
         # Obtener alertas aunque no haya métricas
         alerts_html = self._get_student_alerts_html(student.id)
         alerts_history_html = self._get_student_alerts_history_html(student.id)
-        
-        return f"""
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Perfil de {student.name} - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            {dashboard_styles.get_common_styles()}
-            {self._profile_styles_chartjs()}
-        </head>
-        <body>
-            <div class="dashboard-layout">
-                {sidebar_html}
-                
-                <main class="main-content">
-                    <div class="topbar">
-                        <div>
-                            <h3>{student.name}</h3>
-                            <span class="breadcrumbs">
-                                <i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime('%d/%m/%Y')}
-                            </span>
-                        </div>
-                        <div class="topbar-actions">
-                            {role_badge}
-                            <a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">
-                                <i class="fa-solid fa-users"></i> Lista
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="content-wrapper">
+
+        content_html = f"""
                         <div class="container-fluid">
                             <div class="card" style="text-align: center; padding: 60px 40px;">
                                 <i class="fa-solid fa-chart-line" style="font-size: 80px; color: var(--am-light); margin-bottom: 24px;"></i>
                                 <h3 style="color: var(--am-muted); margin-bottom: 12px;">Sin datos de métricas disponibles</h3>
                                 <p style="color: var(--am-muted); font-size: 15px;">Este estudiante aún no tiene métricas registradas. Complete una evaluación para comenzar a ver datos.</p>
                             </div>
-                            
+
                             <div class="row mt-4">
                                 <div class="col-12">
                                     <div class="card">
@@ -809,7 +737,7 @@ class DashboardStudentProfile(models.TransientModel):
                                         </div>
                                         <div class="card-body">
                                             {alerts_html}
-                                            
+
                                             <div class="mt-3">
                                                 <button class="btn btn-outline-secondary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#alertsHistory" aria-expanded="false" aria-controls="alertsHistory">
                                                     <i class="fa-solid fa-clock-rotate-left me-2"></i>Ver Historial de Alertas
@@ -824,24 +752,28 @@ class DashboardStudentProfile(models.TransientModel):
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </main>
-            </div>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        </body>
-        </html>
-        """
+                        </div>"""
 
-    # Método obsoleto - usar dashboard_helpers.get_role_badge() en su lugar
-    # def _get_role_badge(self, role_info):
-    #     ...
+        return {
+            'page_title':           f'Perfil de {student.name}',
+            'css_styles':           Markup(dashboard_styles.get_common_styles() + self._profile_styles_chartjs()),
+            'head_extra':           Markup(''),
+            'role_info':            role_info,
+            'active_section':       'profiles',
+            'topbar_title':         student.name,
+            'topbar_subtitle':      Markup(
+                f'<i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime("%d/%m/%Y")}'
+            ),
+            'topbar_extra_actions': Markup(
+                '<a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">'
+                '<i class="fa-solid fa-users"></i> Lista</a>'
+            ),
+            'content_html':         Markup(content_html),
+            'scripts_html':         Markup(''),
+        }
 
     def _build_students_list_html(self, students, role_info):
-        """Construye el HTML de la lista de estudiantes con layout del dashboard."""
-        role_badge = dashboard_helpers.get_role_badge(role_info)
-        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
-        
+        """Construye los datos de la lista de estudiantes para el template QWeb."""
         # Obtener grupos únicos para el filtro
         groups = {}
         for student in students:
@@ -910,148 +842,121 @@ class DashboardStudentProfile(models.TransientModel):
                 </tr>
                 '''
         
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Perfiles de Alumnos - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-            {dashboard_styles.get_common_styles()}
-            <style>
-                .card {{ border-radius: 12px; border: 1px solid var(--am-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: var(--am-surface); }}
-                .card-header {{ background: var(--am-surface); border-bottom: 1px solid var(--am-border); font-weight: 600; padding: 1.25rem 1.5rem; }}
-                .table {{ margin-bottom: 0; }}
-                .table thead th {{ background: var(--am-bg); font-weight: 600; border-bottom: 2px solid var(--am-border); padding: 1rem; }}
-                .table tbody td {{ padding: 1rem; vertical-align: middle; }}
-                .table tbody tr:hover {{ background: var(--am-bg); }}
-                
-                .search-box {{ margin-bottom: 1.5rem; }}
-                .search-box input {{ border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }}
-                .search-box input:focus {{ border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }}
-                
-                .filters-bar {{ margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; }}
-                .filters-bar select {{ border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }}
-                .filters-bar select:focus {{ border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }}
-            </style>
-        </head>
-        <body>
-            <div class="dashboard-layout">
-                {sidebar_html}
-                
-                <main class="main-content">
-                    <div class="topbar">
-                        <div>
-                            <h3 id="sectionTitle">Perfiles de Alumnos</h3>
-                            <span class="breadcrumbs">
-                                <i class="fa-solid fa-users me-2"></i>Listado de estudiantes · {fields.Date.today().strftime('%d/%m/%Y')}
-                            </span>
-                        </div>
-                        <div class="topbar-actions">
-                            {role_badge}
-                        </div>
-                    </div>
-                    
-                    <div class="content-wrapper">
+        list_page_styles = dashboard_styles.get_common_styles() + """
+        <style>
+            .card { border-radius: 12px; border: 1px solid var(--am-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: var(--am-surface); }
+            .card-header { background: var(--am-surface); border-bottom: 1px solid var(--am-border); font-weight: 600; padding: 1.25rem 1.5rem; }
+            .table { margin-bottom: 0; }
+            .table thead th { background: var(--am-bg); font-weight: 600; border-bottom: 2px solid var(--am-border); padding: 1rem; }
+            .table tbody td { padding: 1rem; vertical-align: middle; }
+            .table tbody tr:hover { background: var(--am-bg); }
+
+            .search-box { margin-bottom: 1.5rem; }
+            .search-box input { border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }
+            .search-box input:focus { border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }
+
+            .filters-bar { margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; }
+            .filters-bar select { border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }
+            .filters-bar select:focus { border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }
+        </style>"""
+
+
+
+        content_html = f"""
                         <div class="container-fluid">
-                <div class="filters-bar">
-                    <div class="flex-grow-1">
-                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre...">
-                    </div>
-                    <div style="min-width: 250px;">
-                        <select id="groupFilter" class="form-select">
-                            {group_options}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fa-solid fa-list me-2"></i>Estudiantes ({len(students)})</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover" id="studentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Estudiante</th>
-                                        <th>Grupo</th>
-                                        <th class="text-center">Métricas</th>
-                                        <th>Estado</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {students_rows}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                        </div>
-                    </div>
-                </main>
-            </div>
-            
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                            <div class="filters-bar">
+                                <div class="flex-grow-1">
+                                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre...">
+                                </div>
+                                <div style="min-width: 250px;">
+                                    <select id="groupFilter" class="form-select">
+                                        {group_options}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span><i class="fa-solid fa-list me-2"></i>Estudiantes ({len(students)})</span>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="studentsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Estudiante</th>
+                                                    <th>Grupo</th>
+                                                    <th class="text-center">Métricas</th>
+                                                    <th>Estado</th>
+                                                    <th class="text-end">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {students_rows}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>"""
+
+        scripts_html = """
             <script>
-                // Función para aplicar todos los filtros
-                function applyFilters() {{
+                function applyFilters() {
                     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
                     const selectedGroup = document.getElementById('groupFilter').value;
                     const rows = document.querySelectorAll('#studentsTable tbody tr');
-                    
+
                     let visibleCount = 0;
-                    rows.forEach(row => {{
+                    rows.forEach(row => {
                         const text = row.textContent.toLowerCase();
                         const groupId = row.getAttribute('data-group-id');
-                        
-                        // Verificar filtro de texto
                         const matchesSearch = !searchTerm || text.includes(searchTerm);
-                        
-                        // Verificar filtro de grupo
                         const matchesGroup = !selectedGroup || groupId === selectedGroup;
-                        
-                        // Mostrar solo si cumple ambos filtros
-                        if (matchesSearch && matchesGroup) {{
+                        if (matchesSearch && matchesGroup) {
                             row.style.display = '';
                             visibleCount++;
-                        }} else {{
+                        } else {
                             row.style.display = 'none';
-                        }}
-                    }});
-                    
-                    // Actualizar contador en el header
+                        }
+                    });
+
                     const header = document.querySelector('.card-header span');
-                    if (header) {{
+                    if (header) {
                         const totalCount = rows.length;
-                        if (visibleCount === totalCount) {{
+                        if (visibleCount === totalCount) {
                             header.innerHTML = '<i class="fa-solid fa-list me-2"></i>Estudiantes (' + totalCount + ')';
-                        }} else {{
+                        } else {
                             header.innerHTML = '<i class="fa-solid fa-list me-2"></i>Estudiantes (' + visibleCount + ' de ' + totalCount + ')';
-                        }}
-                    }}
-                }}
-                
-                // Búsqueda en tiempo real
+                        }
+                    }
+                }
+
                 document.getElementById('searchInput').addEventListener('keyup', applyFilters);
-                
-                // Filtro por grupo
                 document.getElementById('groupFilter').addEventListener('change', applyFilters);
-            </script>
-        </body>
-        </html>
-        """
+            </script>"""
+
+        return {
+            'page_title':           'Perfiles de Alumnos',
+            'css_styles':           Markup(list_page_styles),
+            'head_extra':           Markup('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>'),
+            'role_info':            role_info,
+            'active_section':       'profiles',
+            'topbar_title':         'Perfiles de Alumnos',
+            'topbar_subtitle':      Markup(
+                f'<i class="fa-solid fa-users me-2"></i>Listado de estudiantes · {fields.Date.today().strftime("%d/%m/%Y")}'
+            ),
+            'topbar_extra_actions': Markup(''),
+            'content_html':         Markup(content_html),
+            'scripts_html':         Markup(scripts_html),
+        }
 
     def _generate_evolution_chartjs(self, df, student):
         """Gráficos individuales con contexto del grupo - estilo profesional."""
         if df.empty:
             return ''
         
-        df_numeric = df[df['value_type'] == 'numeric'].copy()
+        df_numeric = df[df['metric_type'] == 'numeric'].copy()
         if df_numeric.empty:
             return ''
         
@@ -1241,11 +1146,7 @@ class DashboardStudentProfile(models.TransientModel):
         if charts_html:
             return f'<div class="row">{charts_html}</div>'
         return ''
-    
-    # Método obsoleto - usar dashboard_helpers.get_semaphore_color() en su lugar
-    # def _get_semaphore_color(self, value):
-    #     ...
-    
+
     def _get_group_context_data(self, student, df_student):
         """Obtiene datos del grupo para contextualizar el perfil individual."""
         if not student.academic_group_id:
@@ -1316,7 +1217,7 @@ class DashboardStudentProfile(models.TransientModel):
         if df.empty:
             return ''
 
-        df_numeric = df[df['value_type'] == 'numeric'].copy()
+        df_numeric = df[df['metric_type'] == 'numeric'].copy()
         if df_numeric.empty:
             return ''
 
@@ -1455,10 +1356,8 @@ class DashboardStudentProfile(models.TransientModel):
         </div>"""
 
     def _build_profile_html_chartjs(self, student, role_info, kpis, evolution, radar, alerts, alerts_history, participations, qualitative='', official_surveys=''):
-        """HTML del perfil con Chart.js - diseño profesional con layout del dashboard."""
-        role_badge = dashboard_helpers.get_role_badge(role_info)
+        """Contexto para perfil con Chart.js (template dashboard_page_base)."""
         group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
-        sidebar_html = dashboard_layout.get_sidebar(role_info, active_section='profiles')
 
         # Determinar pestaña activa: Oficiales si hay resultados, Centro en otro caso
         has_official = bool(official_surveys and official_surveys.strip())
@@ -1481,41 +1380,12 @@ class DashboardStudentProfile(models.TransientModel):
                 <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
             </div>"""
 
-        return f"""
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Perfil de {student.name} - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-            {dashboard_styles.get_common_styles()}
-            {self._profile_styles_chartjs()}
-        </head>
-        <body>
-            <div class="dashboard-layout">
-                {sidebar_html}
+        chart_libs = (
+            '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>\n'
+            '<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>'
+        )
 
-                <main class="main-content">
-                    <div class="topbar">
-                        <div>
-                            <h3>{student.name}</h3>
-                            <span class="breadcrumbs">
-                                <i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime('%d/%m/%Y')}
-                            </span>
-                        </div>
-                        <div class="topbar-actions">
-                            {role_badge}
-                            <a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">
-                                <i class="fa-solid fa-users"></i> Lista
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="content-wrapper">
+        content_html = f"""
                         <div class="container-fluid">
 
                             <!-- KPIs -->
@@ -1610,14 +1480,25 @@ class DashboardStudentProfile(models.TransientModel):
                                 </div>
                             </div>
 
-                        </div>
-                    </div>
-                </main>
-            </div>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        </body>
-        </html>
-        """
+                        </div>"""
+
+        return {
+            'page_title':           f'Perfil de {student.name}',
+            'css_styles':           Markup(dashboard_styles.get_common_styles() + self._profile_styles_chartjs()),
+            'head_extra':           Markup(chart_libs),
+            'role_info':            role_info,
+            'active_section':       'profiles',
+            'topbar_title':         student.name,
+            'topbar_subtitle':      Markup(
+                f'<i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime("%d/%m/%Y")}'
+            ),
+            'topbar_extra_actions': Markup(
+                '<a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">'
+                '<i class="fa-solid fa-users"></i> Lista</a>'
+            ),
+            'content_html':         Markup(content_html),
+            'scripts_html':         Markup(''),
+        }
 
     def _profile_styles_chartjs(self):
         """Estilos profesionales estilo Stripe/Linear/Notion."""
@@ -1870,24 +1751,5 @@ class DashboardStudentProfile(models.TransientModel):
         """
 
     def _error_html(self, message):
-        """HTML de error."""
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Error - AulaMetrics</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        </head>
-        <body style="background: {palette.UI_BG}; font-family: sans-serif;">
-            <div class="container mt-5">
-                <div class="alert alert-danger text-center">
-                    <i class="fa-solid fa-exclamation-triangle fa-3x mb-3"></i>
-                    <h3>{message}</h3>
-                    <a href="/web" class="btn btn-primary mt-3">Volver</a>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+        """Raises ValueError so the controller can render the appropriate error template."""
+        raise ValueError(message)

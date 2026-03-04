@@ -2,6 +2,7 @@
 from markupsafe import Markup
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+from ...utils.constants import GROUP_ADMIN, GROUP_COUNSELOR, GROUP_MANAGEMENT, GROUP_TUTOR
 
 
 class MessageThread(models.Model):
@@ -109,10 +110,10 @@ class MessageThread(models.Model):
     @api.constrains('participant_ids')
     def _check_participants(self):
         valid_groups = [
-            'aula_metrics.group_aulametrics_tutor',
-            'aula_metrics.group_aulametrics_counselor',
-            'aula_metrics.group_aulametrics_management',
-            'aula_metrics.group_aulametrics_admin',
+            GROUP_TUTOR,
+            GROUP_COUNSELOR,
+            GROUP_MANAGEMENT,
+            GROUP_ADMIN,
         ]
         for thread in self:
             if len(thread.participant_ids) < 1:

@@ -2,6 +2,7 @@
 import json
 import re
 from odoo import models, fields, api
+from ...utils.constants import GROUP_ADMIN, GROUP_COUNSELOR, GROUP_MANAGEMENT
 
 class Alert(models.Model):
     _name = 'aula_metrics.alert'
@@ -168,8 +169,8 @@ class Alert(models.Model):
         """Computa el nombre de la alerta según permisos del usuario."""
         for alert in self:
             user = self.env.user
-            is_counselor_or_admin = user.has_group('aula_metrics.group_aulametrics_admin') or user.has_group('aula_metrics.group_aulametrics_counselor')
-            is_management = user.has_group('aula_metrics.group_aulametrics_management')
+            is_counselor_or_admin = user.has_group(GROUP_ADMIN) or user.has_group(GROUP_COUNSELOR)
+            is_management = user.has_group(GROUP_MANAGEMENT)
             
             # Nombre base según tipo de alerta
             if alert.alert_type == 'qualitative':

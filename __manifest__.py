@@ -37,6 +37,9 @@
         'views/case_views.xml',
         'views/message_thread_views.xml',
         'views/survey_portal_templates.xml',
+        'views/qualitative_dashboard_templates.xml',
+        'views/dashboard_page_templates.xml',
+        'views/dashboard_main_templates.xml',
         'views/reports/survey_result_report_sdq.xml',
         # 4. Datos de Dashboard
         'data/dashboard_home_data.xml',

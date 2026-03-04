@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-
 from odoo import http
 from odoo.http import request
 import json
 from collections import Counter
 import re
 
-# Importar utilidades compartidas del dashboard
-from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_layout, dashboard_helpers, palette
+# Importar utilidades compartidas
+from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_helpers, palette, role_service
+from odoo.addons.aula_metrics.utils.constants import (
+    QUERY_LIMIT_QUALITATIVE, EVAL_STATES_ACTIVE,
+    ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR,
+)
+from .dashboard_controller import _render
 
 
 class QualitativeDashboardController(http.Controller):
@@ -22,9 +26,10 @@ class QualitativeDashboardController(http.Controller):
             embedded: Si es 'true', devuelve solo el contenido sin wrapper HTML
         """
         
-        # Detectar rol del usuario
+        # Detectar rol del usuario (incluye allowed_group_ids para tutores)
         user = request.env.user
-        role = self._detect_user_role(user)
+        role_info = self._detect_user_role(user)
+        role = role_info['role']
         
         # Obtener respuestas según permisos del rol
         domain = []
@@ -33,22 +38,19 @@ class QualitativeDashboardController(http.Controller):
         if question_id:
             domain.append(('question_id', '=', int(question_id)))
         
-        # Aplicar filtros por rol
-        if role == 'tutor':
-            # Solo su grupo académico
-            tutor_groups = request.env['aula_metrics.academic_group'].search([
-                ('tutor_id', '=', user.id)
-            ])
-            domain.append(('academic_group_id', 'in', tutor_groups.ids))
-        
-        responses = request.env['aula_metrics.qualitative_response'].search(
-            domain, 
-            order='response_date desc',
-            limit=500  # Límite de seguridad
-        )
+        # Aplicar filtro de grupos (solo tutores; el resto tiene acceso global)
+        filtered_domain = role_service.apply_group_filter(domain, role_info, field='academic_group_id')
+        if filtered_domain is None:
+            responses = request.env['aula_metrics.qualitative_response']
+        else:
+            responses = request.env['aula_metrics.qualitative_response'].search(
+                filtered_domain,
+                order='response_date desc',
+                limit=QUERY_LIMIT_QUALITATIVE,
+            )
         
         # Obtener filtros disponibles
-        evaluations = self._get_available_evaluations(role)
+        evaluations = self._get_available_evaluations(role_info)
         questions = self._get_available_questions(responses)
         
         # Construir contexto según rol
@@ -61,45 +63,45 @@ class QualitativeDashboardController(http.Controller):
         }
         
         # Añadir datos específicos por rol
-        if role == 'counselor':
+        if role in [ROLE_COUNSELOR, ROLE_ADMIN]:
             context.update(self._get_counselor_data(responses))
-        elif role == 'tutor':
+        elif role == ROLE_TUTOR:
             context.update(self._get_tutor_data(responses))
         else:  # management
             context.update(self._get_management_data(responses))
         
-        # Generar HTML directamente
-        if embedded == 'true':
-            html_content = self._generate_embedded_html(context)
-        else:
-            html_content = self._generate_html(context)
-        
-        return request.make_response(
-            html_content,
-            headers=[('Content-Type', 'text/html; charset=utf-8')]
+        # Añadir valores de renderizado para QWeb
+        role_labels = {
+            ROLE_ADMIN: 'Vista completa identificada - Acceso total',
+            ROLE_COUNSELOR: 'Vista completa identificada - Acceso total',
+            ROLE_TUTOR: 'Vista de tu grupo - Respuestas anónimas',
+            ROLE_MANAGEMENT: 'Vista agregada del centro - Solo estadísticas',
+        }
+        context['role_desc'] = role_labels.get(role, '')
+        context['css_styles'] = dashboard_styles.get_common_styles()
+        context['wordcloud_json'] = json.dumps(context.get('wordcloud_data', []))
+        context['palette_json'] = json.dumps(palette.METRICS_PALETTE[:6])
+
+        template = (
+            'aula_metrics.qualitative_dashboard_embedded'
+            if embedded == 'true'
+            else 'aula_metrics.qualitative_dashboard_full'
         )
+        return _render(template, context)
     
     def _detect_user_role(self, user):
-        """Detecta el rol principal del usuario."""
-        if user.has_group('aula_metrics.group_aulametrics_counselor') or \
-           user.has_group('aula_metrics.group_aulametrics_admin'):
-            return 'counselor'
-        elif user.has_group('aula_metrics.group_aulametrics_tutor'):
-            return 'tutor'
-        else:
-            return 'management'
+        """Detecta el rol del usuario con sus grupos académicos permitidos."""
+        return role_service.get_role_info(request.env, user)
     
-    def _get_available_evaluations(self, role):
+    def _get_available_evaluations(self, role_info):
         """Obtiene evaluaciones disponibles según rol - solo las que tienen preguntas abiertas."""
-        domain = [('state', 'in', ['scheduled', 'active', 'completed'])]
-        
-        if role == 'tutor':
-            # Solo evaluaciones de sus grupos
-            user = request.env.user
-            tutor_groups = request.env['aula_metrics.academic_group'].search([
-                ('tutor_id', '=', user.id)
-            ])
-            domain.append(('academic_group_ids', 'in', tutor_groups.ids))
+        domain = role_service.apply_group_filter(
+            [('state', 'in', EVAL_STATES_ACTIVE)],
+            role_info,
+            field='academic_group_ids',
+        )
+        if domain is None:
+            return []
         
         all_evaluations = request.env['aula_metrics.evaluation'].search(
             domain,
@@ -276,508 +278,3 @@ class QualitativeDashboardController(http.Controller):
         
         return word_freq
     
-    def _generate_html(self, context):
-        """Genera el HTML completo del dashboard cualitativo."""
-        role = context['role']
-        
-        # Construir opciones de evaluaciones
-        eval_options = ''
-        for eval in context['evaluations']:
-            selected = 'selected' if context.get('evaluation_id') == eval.id else ''
-            eval_options += f'<option value="{eval.id}" {selected}>{eval.name}</option>'
-        
-        # Construir opciones de preguntas
-        question_options = ''
-        for q in context['questions']:
-            selected = 'selected' if context.get('question_id') == q.id else ''
-            title = q.title[:80] if len(q.title) > 80 else q.title
-            question_options += f'<option value="{q.id}" {selected}>{title}</option>'
-        
-        # Descripción del rol
-        role_desc = {
-            'counselor': 'Vista completa identificada - Acceso total',
-            'tutor': 'Vista de tu grupo - Respuestas anónimas',
-            'management': 'Vista agregada del centro - Solo estadísticas'
-        }.get(role, '')
-        
-        # Generar contenido específico por rol
-        content_html = ''
-        if role == 'counselor':
-            content_html = self._generate_counselor_view(context)
-        elif role == 'tutor':
-            content_html = self._generate_tutor_view(context)
-        else:
-            content_html = self._generate_management_view(context)
-        
-        return f"""<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis Cualitativo - AulaMetrics</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.7/d3.layout.cloud.min.js"></script>
-    {dashboard_styles.get_common_styles()}
-</head>
-<body>
-    <div class="dashboard-header">
-        <div>
-            <div class="header-title">
-                <h2><i class="fa-solid fa-comments me-2 text-primary"></i>Análisis Cualitativo</h2>
-            </div>
-            <div class="header-meta">{role_desc}</div>
-        </div>
-    </div>
-    
-    <div class="container-fluid">
-        <!-- Filtros -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <form method="get" action="/aulametrics/qualitative/dashboard" class="row g-3">
-                            <div class="col-md-5">
-                                <label class="form-label">Evaluación</label>
-                                <select name="evaluation_id" class="form-select">
-                                    <option value="">Todas las evaluaciones</option>
-                                    {eval_options}
-                                </select>
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label">Pregunta</label>
-                                <select name="question_id" class="form-select">
-                                    <option value="">Todas las preguntas</option>
-                                    {question_options}
-                                </select>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Contenido según rol -->
-        {content_html}
-    </div>
-</body>
-</html>"""
-    
-    def _generate_embedded_html(self, context):
-        """Genera HTML embebido para integración en pestañas (sin wrapper completo)."""
-        role = context['role']
-        
-        # Construir opciones de evaluaciones
-        eval_options = ''
-        for eval in context['evaluations']:
-            selected = 'selected' if context.get('evaluation_id') == eval.id else ''
-            eval_options += f'<option value="{eval.id}" {selected}>{eval.name}</option>'
-        
-        # Construir opciones de preguntas
-        question_options = ''
-        for q in context['questions']:
-            selected = 'selected' if context.get('question_id') == q.id else ''
-            title = q.title[:80] if len(q.title) > 80 else q.title
-            question_options += f'<option value="{q.id}" {selected}>{title}</option>'
-        
-        # Descripción del rol
-        role_desc = {
-            'counselor': 'Vista completa identificada - Acceso total',
-            'tutor': 'Vista de tu grupo - Respuestas anónimas',
-            'management': 'Vista agregada del centro - Solo estadísticas'
-        }.get(role, '')
-        
-        # Generar contenido específico por rol
-        content_html = ''
-        if role == 'counselor':
-            content_html = self._generate_counselor_view(context)
-        elif role == 'tutor':
-            content_html = self._generate_tutor_view(context)
-        else:
-            content_html = self._generate_management_view(context)
-        
-        # Devolver solo el contenido con estilos inline (sin html/head/body wrapper)
-        return f"""
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.7/d3.layout.cloud.min.js"></script>
-    {dashboard_styles.get_common_styles()}
-    <div class="container-fluid mt-4">
-        <div class="row mb-3">
-            <div class="col-12">
-                <p class="text-muted" style="font-size: 14px; margin-bottom: 16px;">{role_desc}</p>
-            </div>
-        </div>
-        
-        <!-- Filtros -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <form method="get" action="/aulametrics/qualitative/dashboard" class="row g-3" id="qualitativeFiltersForm">
-                            <div class="col-md-5">
-                                <label class="form-label">Evaluación</label>
-                                <select name="evaluation_id" class="form-select">
-                                    <option value="">Todas las evaluaciones</option>
-                                    {eval_options}
-                                </select>
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label">Pregunta</label>
-                                <select name="question_id" class="form-select">
-                                    <option value="">Todas las preguntas</option>
-                                    {question_options}
-                                </select>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Contenido según rol -->
-        {content_html}
-    </div>
-    """
-    
-    def _generate_counselor_view(self, context):
-        """Genera HTML para vista counselor."""
-        total_responses = context.get('total_responses', 0)
-        responses_with_alerts = context.get('responses_with_alerts', 0)
-        responses = context.get('responses', [])
-        wordcloud_data = json.dumps(context.get('wordcloud_data', []))
-        
-        # Generar filas de la tabla
-        rows_html = ''
-        if not responses:
-            rows_html = '<tr><td colspan="6" class="text-center text-muted py-4">No hay respuestas cualitativas.</td></tr>'
-        else:
-            for resp in responses:
-                alert_class = 'table-warning' if resp['has_alerts'] else ''
-                alert_badge = '''<span class="badge" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Alerta</span>''' if resp['has_alerts'] else '''<span class="badge" style="background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;"><i class="fa-solid fa-check"></i></span>'''
-                
-                # Respuesta con expand si es larga
-                response_html = resp['response']
-                if len(resp['response']) > 150:
-                    preview = resp['response'][:150]
-                    full_text_escaped = resp['response'].replace("'", "\\'")
-                    response_html = f'''{preview}... <a href="#" class="text-primary" onclick="alert('{full_text_escaped}'); return false;">Ver más</a>'''
-                
-                rows_html += f'''
-                <tr class="{alert_class}">
-                    <td><a href="/aulametrics/student/{resp['student_id']}" class="fw-bold">{resp['student_name']}</a></td>
-                    <td><span class="badge" style="background: var(--am-light); color: var(--am-muted); border: 1px solid var(--am-border);">{resp['group_name']}</span></td>
-                    <td><small>{resp['date']}</small></td>
-                    <td>{response_html}</td>
-                    <td class="text-center">{resp['word_count']}</td>
-                    <td>{alert_badge}</td>
-                </tr>
-                '''
-        
-        return f'''
-        <!-- KPI Cards -->
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-label">Total Respuestas</div>
-                <div class="kpi-value">{total_responses}</div>
-                <div class="kpi-description">Respuestas recibidas</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Con Alertas</div>
-                <div class="kpi-value">{responses_with_alerts}</div>
-                <div class="kpi-description">Requieren atención</div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Nube de Palabras</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="wordcloud" style="width:100%; height:400px;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Respuestas Completas</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Alumno</th>
-                                        <th>Grupo</th>
-                                        <th>Fecha</th>
-                                        <th>Respuesta</th>
-                                        <th>Palabras</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>{rows_html}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <script>
-            // Función para inicializar wordcloud - se llama después de insertar el HTML
-            function initWordcloudCounselor() {{
-                var wordcloudData = {wordcloud_data};
-                console.log('Inicializando wordcloud counselor, datos:', wordcloudData);
-                
-                if (wordcloudData && wordcloudData.length > 0) {{
-                    var wordcloudEl = document.getElementById('wordcloud');
-                    if (!wordcloudEl) {{
-                        console.error('Elemento wordcloud no encontrado');
-                        return;
-                    }}
-                    
-                    var words = wordcloudData.map(d => ({{text: d[0], size: Math.sqrt(d[1]) * 10 + 10}}));
-                    console.log('Palabras procesadas:', words);
-                    
-                    var layout = d3.layout.cloud()
-                        .size([wordcloudEl.offsetWidth || 800, 400])
-                        .words(words)
-                        .padding(5)
-                        .rotate(() => ~~(Math.random() * 2) * 90)
-                        .font("Inter")
-                        .fontSize(d => d.size)
-                        .on("end", draw);
-                    layout.start();
-                    
-                    function draw(words) {{
-                        d3.select("#wordcloud").append("svg")
-                            .attr("width", layout.size()[0])
-                            .attr("height", layout.size()[1])
-                            .append("g")
-                            .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
-                            .selectAll("text")
-                            .data(words)
-                            .enter().append("text")
-                            .style("font-size", d => d.size + "px")
-                            .style("font-family", "Inter")
-                            .style("fill", (d, i) => {json.dumps(palette.METRICS_PALETTE[:6])}[i % 6])
-                            .attr("text-anchor", "middle")
-                            .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
-                            .text(d => d.text);
-                    }}
-                }} else {{
-                    console.log('No hay datos para wordcloud');
-                    document.getElementById('wordcloud').innerHTML = '<div style="text-align: center; padding: 40px; color: #94a3b8;">No hay suficientes palabras para generar la nube</div>';
-                }}
-            }}
-            
-            // Ejecutar inmediatamente si estamos en página standalone
-            if (!window._aulametrics_wordcloud_inited) {{
-                setTimeout(function() {{
-                    if (!window._aulametrics_wordcloud_inited) {{
-                        window._aulametrics_wordcloud_inited = true;
-                        initWordcloudCounselor();
-                    }}
-                }}, 100);
-            }}
-        </script>
-        '''
-    
-    def _generate_tutor_view(self, context):
-        """Genera HTML para vista tutor."""
-        stats = context.get('stats', {})
-        anonymous_responses = context.get('anonymous_responses', [])
-        wordcloud_data = json.dumps(context.get('wordcloud_data', []))
-        
-        # Generar cartas de respuestas anónimas
-        responses_html = ''
-        if not anonymous_responses:
-            responses_html = '<p class="text-center text-muted py-4">No hay respuestas cualitativas.</p>'
-        else:
-            for resp in anonymous_responses:
-                border = 'border-warning' if resp['has_alerts'] else ''
-                badge = '<span class="badge bg-warning">Alerta</span>' if resp['has_alerts'] else ''
-                responses_html += f'''
-                <div class="mb-3 p-3 bg-light rounded border {border}">
-                    <div class="d-flex justify-content-between mb-2">
-                        <small class="text-muted">{resp['date']} | {resp['word_count']} palabras</small>
-                        {badge}
-                    </div>
-                    <p class="mb-0">{resp['response']}</p>
-                </div>
-                '''
-        
-        top_words_html = ''.join([f'<li><strong>{w[0]}</strong> ({w[1]} veces)</li>' for w in stats.get('top_words', [])[:5]])
-        
-        return f'''
-        <!-- KPI Cards -->
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-label">Total Respuestas</div>
-                <div class="kpi-value">{stats.get('total_responses', 0)}</div>
-                <div class="kpi-description">De tu grupo</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Longitud Media</div>
-                <div class="kpi-value">{stats.get('avg_length', 0)}</div>
-                <div class="kpi-description">Palabras promedio</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Con Alertas</div>
-                <div class="kpi-value">{stats.get('responses_with_alerts', 0)}</div>
-                <div class="kpi-description">Requieren atención</div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Palabras Frecuentes</h5>
-                    </div>
-                    <div class="card-body">
-                        <ol>{top_words_html}</ol>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-8 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Nube de Palabras</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="wordcloud" style="width:100%; height:350px;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Respuestas Anónimas</h5>
-                    </div>
-                    <div class="card-body">{responses_html}</div>
-                </div>
-            </div>
-        </div>
-        <script>
-            // Función para inicializar wordcloud tutor - se llama después de insertar el HTML
-            function initWordcloudTutor() {{
-                var wordcloudData = {wordcloud_data};
-                console.log('Inicializando wordcloud tutor, datos:', wordcloudData);
-                
-                if (wordcloudData && wordcloudData.length > 0) {{
-                    var wordcloudEl = document.getElementById('wordcloud');
-                    if (!wordcloudEl) {{
-                        console.error('Elemento wordcloud no encontrado');
-                        return;
-                    }}
-                    
-                    var words = wordcloudData.map(d => ({{text: d[0], size: Math.sqrt(d[1]) * 10 + 10}}));
-                    console.log('Palabras procesadas:', words);
-                    
-                    var layout = d3.layout.cloud()
-                        .size([wordcloudEl.offsetWidth || 800, 350])
-                        .words(words)
-                        .padding(5)
-                        .rotate(() => ~~(Math.random() * 2) * 90)
-                        .font("Inter")
-                        .fontSize(d => d.size)
-                        .on("end", draw);
-                    layout.start();
-                    
-                    function draw(words) {{
-                        d3.select("#wordcloud").append("svg")
-                            .attr("width", layout.size()[0])
-                            .attr("height", layout.size()[1])
-                            .append("g")
-                            .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
-                            .selectAll("text")
-                            .data(words)
-                            .enter().append("text")
-                            .style("font-size", d => d.size + "px")
-                            .style("font-family", "Inter")
-                            .style("fill", (d, i) => {json.dumps(palette.METRICS_PALETTE[:6])}[i % 6])
-                            .attr("text-anchor", "middle")
-                            .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
-                            .text(d => d.text);
-                    }}
-                }} else {{
-                    console.log('No hay datos para wordcloud');
-                    document.getElementById('wordcloud').innerHTML = '<div style="text-align: center; padding: 40px; color: #94a3b8;">No hay suficientes palabras para generar la nube</div>';
-                }}
-            }}
-            
-            // Ejecutar inmediatamente si estamos en página standalone (usa bandera global para evitar duplicados)
-            if (!window._aulametrics_wordcloud_inited) {{
-                setTimeout(function() {{
-                    if (!window._aulametrics_wordcloud_inited) {{
-                        window._aulametrics_wordcloud_inited = true;
-                        initWordcloudTutor();
-                    }}
-                }}, 100);
-            }}
-        </script>
-        '''
-    
-    def _generate_management_view(self, context):
-        """Genera HTML para vista management."""
-        total_responses = context.get('total_responses', 0)
-        stats_by_course = context.get('stats_by_course', {})
-        
-        # Generar cartas por curso
-        cards_html = ''
-        if not stats_by_course:
-            cards_html = '<div class="col-12"><p class="text-center text-muted py-5">No hay respuestas disponibles.</p></div>'
-        else:
-            for course, stats in stats_by_course.items():
-                top_words = ''.join([f'<li><strong>{w[0]}</strong> ({w[1]})</li>' for w in stats.get('top_words', [])[:5]])
-                cards_html += f'''
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">{course}</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="kpi-value">{stats.get('total_responses', 0)}</div>
-                            <div class="kpi-label mb-3">Respuestas totales</div>
-                            
-                            <p class="mb-2"><strong>Longitud media:</strong> {stats.get('avg_length', 0)} palabras</p>
-                            <p class="mb-3"><strong>Con alertas:</strong> {stats.get('responses_with_alerts', 0)}</p>
-                            <hr>
-                            <h6>Palabras frecuentes:</h6>
-                            <ol class="small">{top_words}</ol>
-                        </div>
-                    </div>
-                </div>
-                '''
-        
-        return f'''
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="alert alert-info">
-                    <h5 class="alert-heading">Vista Agregada de Privacidad</h5>
-                    <p class="mb-0">Solo se muestran estadísticas agregadas por curso para proteger la privacidad de los estudiantes.</p>
-                </div>
-            </div>
-            <div class="col-12 mb-4">
-                <div class="kpi-card">
-                    <div class="kpi-label">Total de Respuestas en el Centro</div>
-                    <div class="kpi-value">{total_responses}</div>
-                    <div class="kpi-description">Respuestas cualitativas recibidas</div>
-                </div>
-            </div>
-            {cards_html}
-        </div>
-        '''
-    
-
-    # Método obsoleto - usar dashboard_styles.get_common_styles() en su lugar
-    # def _styles(self):
-    #     ...

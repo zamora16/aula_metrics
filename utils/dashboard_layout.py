@@ -7,14 +7,8 @@ Incluye: sidebar, topbar, footer, etc.
 
 def get_sidebar(role_info=None, active_section='home'):
     """
-    Genera el sidebar de navegación.
-    
-    Args:
-        role_info (dict): Información del rol del usuario
-        active_section (str): Sección activa ('home', 'quantitative', 'qualitative', 'profiles')
-    
-    Returns:
-        str: HTML del sidebar
+    [DEPRECATED] Sustituido por la plantilla QWeb 'aula_metrics.dashboard_sidebar'.
+    Mantenido por compatibilidad con posibles llamadas externas.
     """
     # Perfiles solo visible para counselor/admin
     profiles_item = ''
@@ -82,16 +76,8 @@ def get_sidebar(role_info=None, active_section='home'):
 
 def get_topbar(title, subtitle='', role_badge='', extra_actions=''):
     """
-    Genera la barra superior (topbar).
-    
-    Args:
-        title (str): Título principal
-        subtitle (str): Subtítulo o breadcrumbs
-        role_badge (str): Badge HTML del rol del usuario
-        extra_actions (str): HTML adicional para acciones (botones, enlaces, etc.)
-    
-    Returns:
-        str: HTML del topbar
+    [DEPRECATED] Sustituido por la plantilla QWeb 'aula_metrics.dashboard_topbar'.
+    Mantenido por compatibilidad con posibles llamadas externas.
     """
     subtitle_html = f'<span class="breadcrumbs">{subtitle}</span>' if subtitle else ''
     
@@ -111,19 +97,8 @@ def get_topbar(title, subtitle='', role_badge='', extra_actions=''):
 
 def get_html_wrapper(title, content, sidebar_html, topbar_html, styles='', scripts='', head_extra=''):
     """
-    Envuelve el contenido en la estructura HTML completa del dashboard.
-    
-    Args:
-        title (str): Título de la página
-        content (str): Contenido principal HTML
-        sidebar_html (str): HTML del sidebar
-        topbar_html (str): HTML del topbar
-        styles (str): CSS adicional
-        scripts (str): JavaScript adicional
-        head_extra (str): Enlaces a librerías adicionales (Chart.js, etc.)
-    
-    Returns:
-        str: HTML completo de la página
+    [DEPRECATED] Sustituido por la plantilla QWeb 'aula_metrics.dashboard_page_base'.
+    Mantenido por compatibilidad con posibles llamadas externas.
     """
     return f"""
     <!DOCTYPE html>

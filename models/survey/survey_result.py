@@ -66,94 +66,76 @@ class SurveyResult(models.Model):
         default=True,
         help='Redundante para filtrado rápido sin join.',
     )
+
+    # ──────────────────────────────────────────────
+    # Puntuaciones
+    # ──────────────────────────────────────────────
+    raw_score = fields.Float(
+        string='Puntuación bruta',
+        default=0.0,
+        help='Puntuación bruta total del cuestionario.',
+    )
+    scale_scores_json = fields.Text(
+        string='Puntuaciones por escala (JSON)',
+        default='{}',
+        help='Dict serializado con la puntuación de cada sub-escala.',
+    )
+
+    # ──────────────────────────────────────────────
+    # Baremo aplicado (snapshot)
+    # ──────────────────────────────────────────────
+    baremo_label = fields.Char(
+        string='Nivel de severidad',
+        help='Etiqueta del baremo aplicado en el momento de completar.',
+    )
+    baremo_description = fields.Text(
+        string='Descripción del baremo',
+    )
+    baremo_severity = fields.Integer(
+        string='Severidad (0-2)',
+        default=0,
+        help='0 = bajo, 1 = medio, 2 = alto.',
+    )
+    notes = fields.Text(
+        string='Observaciones del orientador',
+        help='Notas o comentarios añadidos por el orientador sobre este resultado.',
+    )
+
+    # ──────────────────────────────────────────────
+    # Computed
+    # ──────────────────────────────────────────────
     age_at_completion = fields.Integer(
         string='Edad al completar',
         compute='_compute_age_at_completion',
-        store=True,
-        help='Edad del alumno en años en el momento de completar el cuestionario.',
+        store=False,
     )
 
-    # ──────────────────────────────────────────────
-    # Puntuación bruta y baremo global
-    # ──────────────────────────────────────────────
-    raw_score = fields.Float(
-        string='Puntuación bruta total',
-        help='Puntuación total del cuestionario (ej. Total Dificultades en SDQ).',
-    )
-    baremo_label = fields.Char(
-        string='Interpretación (snapshot)',
-        help='Etiqueta del baremo en el momento de la respuesta (ej. "Normal", "Anormal").',
-    )
-    baremo_description = fields.Text(
-        string='Descripción del baremo (snapshot)',
-    )
-    baremo_severity = fields.Integer(
-        string='Severidad',
-        default=0,
-        help='0=normal, 1=límite, 2=anormal/alto.',
-    )
-
-    # ──────────────────────────────────────────────
-    # Puntuaciones por sub-escala (JSON)
-    # ──────────────────────────────────────────────
-    scale_scores_json = fields.Text(
-        string='Puntuaciones por sub-escala (JSON)',
-        help=(
-            'Diccionario JSON con puntuaciones y baremo por sub-escala. '
-            'Ejemplo SDQ: {"emotional": {"score": 3, "label": "Normal", "severity": 0}, ...}'
-        ),
-    )
-
-    # ──────────────────────────────────────────────
-    # Observaciones
-    # ──────────────────────────────────────────────
-    notes = fields.Text(
-        string='Observaciones',
-        help='Notas del orientador sobre este resultado.',
-    )
-
-    # ──────────────────────────────────────────────
-    # Campos calculados
-    # ──────────────────────────────────────────────
-    display_name = fields.Char(
-        string='Nombre',
-        compute='_compute_display_name',
-    )
-
-    @api.depends('student_id', 'survey_id', 'completed_at')
-    def _compute_display_name(self):
-        for rec in self:
-            student = rec.student_id.name or '?'
-            survey = rec.survey_id.title or '?'
-            date_str = rec.completed_at.strftime('%d/%m/%Y') if rec.completed_at else '?'
-            rec.display_name = f'{student} — {survey} ({date_str})'
-
-    @api.depends('student_id', 'completed_at')
+    @api.depends('completed_at', 'student_id')
     def _compute_age_at_completion(self):
         for rec in self:
-            student = rec.student_id
-            birth_date = getattr(student, 'birth_date', None) or getattr(student, 'birthdate_date', None)
-            if birth_date and rec.completed_at:
-                completion_date = rec.completed_at.date() if hasattr(rec.completed_at, 'date') else rec.completed_at
-                try:
-                    age = (completion_date - birth_date).days // 365
-                    rec.age_at_completion = max(0, age)
-                except Exception:
-                    rec.age_at_completion = 0
+            partner = rec.student_id
+            birth = getattr(partner, 'birthdate_date', None) or getattr(partner, 'birth_date', None)
+            if birth and rec.completed_at:
+                ref = rec.completed_at.date() if hasattr(rec.completed_at, 'date') else rec.completed_at
+                rec.age_at_completion = (
+                    ref.year - birth.year
+                    - ((ref.month, ref.day) < (birth.month, birth.day))
+                )
             else:
                 rec.age_at_completion = 0
 
-    # ──────────────────────────────────────────────
-    # Helpers
-    # ──────────────────────────────────────────────
     def get_scale_scores(self):
-        """Devuelve el diccionario de puntuaciones por sub-escala, o {} si no hay."""
+        """
+        Devuelve el dict de puntuaciones por escala almacenado en scale_scores_json.
+
+        Returns:
+            dict: {'escala': {'score': float, 'label': str, 'severity': int, ...}}
+        """
         self.ensure_one()
-        if not self.scale_scores_json:
-            return {}
+        raw = self.scale_scores_json or '{}'
         try:
-            return json.loads(self.scale_scores_json)
-        except Exception:
+            return json.loads(raw)
+        except (ValueError, TypeError):
             return {}
 
     def get_report_data(self):
@@ -166,11 +148,10 @@ class SurveyResult(models.Model):
             global_label, global_severity, global_description, scales (list).
         """
         self.ensure_one()
-        _SEV_LABEL = ['Normal', 'Límite', 'Anormal']
-        _SEV_COLOR = ['#2f855a', '#d97706', '#ef4444']
-        _SEV_BG    = ['#f0fff4', '#fffbeb', '#fff1f2']
-
         BaremoRange = self.env['aula_metrics.survey_baremo_range']
+
+        # Obtener mapeo dinámico de severidad
+        severity_mapping = BaremoRange.get_severity_mapping(self.survey_id.id)
 
         # Metadatos de escala: etiqueta legible y orden
         baremos_all = BaremoRange.search([('survey_id', '=', self.survey_id.id)])
@@ -212,6 +193,12 @@ class SurveyResult(models.Model):
             scale_max = max(scale_maxes.get(sn, 10), 1)
             pct = min(score / scale_max * 100, 100)
 
+            # Usar mapeo dinámico para colores y labels
+            sev_info = severity_mapping.get(sev, {})
+            sev_label = label or sev_info.get('label', '—')
+            sev_color = sev_info.get('color', '#ccc')
+            sev_bg = sev_info.get('bg_color', '#fff')
+
             scales.append({
                 'name':        sn,
                 'label':       scale_meta.get(sn, {}).get('label') or sn.replace('_', ' ').capitalize(),
@@ -222,15 +209,22 @@ class SurveyResult(models.Model):
                 'pct':         pct,
                 'pct_str':     '%.1f' % pct,
                 'severity':    sev,
-                'sev_label':   label or (_SEV_LABEL[sev] if sev < 3 else '—'),
-                'sev_color':   _SEV_COLOR[sev],
-                'sev_bg':      _SEV_BG[sev],
+                'sev_label':   sev_label,
+                'sev_color':   sev_color,
+                'sev_bg':      sev_bg,
                 'description': description,
                 'is_total':    sn == 'total',
             })
 
         global_sev = min(self.baremo_severity, 2)
         raw_score_max = scale_maxes.get('total') if 'total' in scale_scores_raw else None
+
+        # Usar mapeo para global
+        global_sev_info = severity_mapping.get(global_sev, {})
+        global_label = self.baremo_label or global_sev_info.get('label', f'Severity {global_sev}')
+        global_sev_color = global_sev_info.get('color', '#ccc')
+        global_sev_bg = global_sev_info.get('bg_color', '#fff')
+
         return {
             'student_name':        self.student_id.name or '',
             'student_age':         self.age_at_completion,
@@ -238,10 +232,10 @@ class SurveyResult(models.Model):
             'completed_at':        self.completed_at,
             'raw_score':           self.raw_score,
             'raw_score_max':       raw_score_max,
-            'global_label':        self.baremo_label or _SEV_LABEL[global_sev],
+            'global_label':        global_label,
             'global_severity':     global_sev,
-            'global_sev_color':    _SEV_COLOR[global_sev],
-            'global_sev_bg':       _SEV_BG[global_sev],
+            'global_sev_color':    global_sev_color,
+            'global_sev_bg':       global_sev_bg,
             'global_description':  self.baremo_description or '',
             'scales':              scales,
         }
