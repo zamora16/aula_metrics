@@ -8,5 +8,8 @@ from . import dashboard_chart_evolution
 from . import dashboard_chart_static
 from . import dashboard_page_builder
 from . import dashboard_student_profile
+from . import dashboard_student_sections
+from . import dashboard_student_surveys
+from . import dashboard_student_charts
 from . import dashboard_home
 from . import alerts_dashboard
