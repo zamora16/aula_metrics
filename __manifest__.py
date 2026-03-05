@@ -15,10 +15,8 @@
         'data/users_groups.xml',
         # 2. Datos
         'data/alert_keywords.xml',
-        'data/surveys/survey_bullying.xml',
-        'data/surveys/survey_who5.xml',
-        'data/surveys/survey_asq14.xml',
         'data/surveys/survey_sdq.xml',
+        'data/surveys/survey_swls.xml',
         'data/cron/cron_jobs.xml',
         'data/dashboard_data.xml',
         'data/case_stages.xml',
