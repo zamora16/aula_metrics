@@ -12,7 +12,7 @@ from ...utils import palette, dashboard_helpers
 class DashboardChartsStatic(models.TransientModel):
     _inherit = 'aula_metrics.dashboard.charts'
 
-    def _chart_numeric_by_course(self, df, label, segmentation_vars):
+    def _chart_numeric_by_course(self, df, label, segmentation_vars, y_max=100, y_min=0):
         """Vista Management: Agregado por curso académico (barras compactas)."""
         cursos = sorted(df['curso'].unique())
         stats = []
@@ -204,8 +204,8 @@ class DashboardChartsStatic(models.TransientModel):
                     }},
                     scales: {{
                         x: {{
-                            beginAtZero: true,
-                            max: 100,
+                            min: {y_min},
+                            max: {y_max},
                             grid: {{ color: '#f1f5f9', drawBorder: false }},
                             ticks: {{
                                 font: {{ size: 11, family: "'Inter', sans-serif" }},
@@ -523,7 +523,7 @@ class DashboardChartsStatic(models.TransientModel):
         </script>
         '''
     
-    def _chart_numeric_by_groups(self, df, label, segmentation_vars):
+    def _chart_numeric_by_groups(self, df, label, segmentation_vars, y_max=100, y_min=0):
         """Vista Counselor: Comparativa de grupos (barras horizontales compactas)."""
         grupos = sorted(df['group_name'].unique())
         stats = []
@@ -718,8 +718,8 @@ class DashboardChartsStatic(models.TransientModel):
                     }},
                     scales: {{
                         x: {{
-                            beginAtZero: true,
-                            max: 100,
+                            min: {y_min},
+                            max: {y_max},
                             grid: {{ color: '#f1f5f9', drawBorder: false }},
                             ticks: {{
                                 font: {{ size: 11, family: "'Inter', sans-serif" }},

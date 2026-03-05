@@ -4,6 +4,7 @@ import datetime
 
 class AcademicGroup(models.Model):
     _name = 'aula_metrics.academic_group'
+    _table = 'aulametrics_academic_group'
     _description = 'Grupo Académico'
     _order = 'name'
 

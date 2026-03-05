@@ -132,51 +132,38 @@ class SurveyExtension(models.Model):
 
     @api.constrains('question_and_page_ids', 'is_aulametrics')
     def _check_single_metric_question(self):
-        """Asegura que los cuestionarios ad-hoc y los AulaMetrics de métrica única
-        tengan UNA sola pregunta productora de métrica.
+        """Asegura que los cuestionarios ad-hoc del centro tengan UNA sola pregunta.
 
-        Los cuestionarios AulaMetrics con estrategia propia (survey_code con
-        estrategia dedicada que no sea ADHOC, por ejemplo SDQ con 25 ítems)
-        quedan exentos de esta restricción porque su scoring está definido
-        explícitamente en la clase de estrategia correspondiente.
+        Los cuestionarios AulaMetrics oficiales (con survey_code) quedan exentos:
+        pueden tener cualquier número de preguntas según su diseño.
+        Solo los cuestionarios ad-hoc (is_adhoc=True, sin survey_code) están
+        sujetos a esta restricción para mantener el modelo de 1 pregunta = 1 métrica.
         """
-        from .survey_scoring_strategies import SCORING_STRATEGIES, UniversalMatrixScoring
-
         metric_types = {
             'matrix', 'simple_choice', 'multiple_choice',
             'numerical_box', 'text_box', 'char_box'
         }
         for survey in self:
-            # Solo validar encuestas AulaMetrics o ad-hoc del centro
-            if not (survey.is_aulametrics or survey.is_adhoc):
+            # Solo aplicar a cuestionarios ad-hoc del centro (sin survey_code oficial)
+            if not survey.is_adhoc:
+                continue
+            if survey.survey_code:
+                # Tiene código oficial → forma parte de la librería AulaMetrics → exento
                 continue
 
-            # Cuestionarios AulaMetrics con estrategia propia (multi-ítem)
-            # quedan exentos. Solo aplicamos la restricción a ad-hoc y a los que
-            # usan la estrategia universal (1 cuestionario = 1 métrica).
-            if survey.is_aulametrics and survey.survey_code:
-                strategy_class = SCORING_STRATEGIES.get(survey.survey_code)
-                if strategy_class and strategy_class is not UniversalMatrixScoring:
-                    # Estrategia propia: no aplicar restricción de 1 pregunta
-                    continue
-
-            # Intentar contar preguntas a partir de `question_and_page_ids` (usa los datos en memoria
-            # durante create/write) y caer back a `question_ids` si está disponible.
-            metric_questions = survey.question_and_page_ids.filtered(lambda q: not getattr(q, 'is_page', False) and getattr(q, 'question_type', None) in metric_types)
-
+            metric_questions = survey.question_and_page_ids.filtered(
+                lambda q: not getattr(q, 'is_page', False)
+                and getattr(q, 'question_type', None) in metric_types
+            )
             if not metric_questions:
                 metric_questions = survey.question_ids.filtered(
                     lambda q: not q.is_page and q.question_type in metric_types
                 )
 
-            # Permitir encuestas vacías temporalmente (creación inicial desde UI).
-            # La restricción solo impide tener MÁS de una pregunta productora.
-            # Validaciones más estrictas (ej. exigir >=1) pueden aplicarse al publicar/activar.
-
             if len(metric_questions) > 1:
                 raise UserError(
-                    'Los cuestionarios de AulaMetrics deben contener sólo UNA pregunta productora de métricas (matrix, selección o texto). ' \
-                    f'Encuesta tiene {len(metric_questions)} preguntas relevantes.'
+                    'Los cuestionarios ad-hoc del centro deben contener sólo UNA pregunta '
+                    f'productora de métricas. Este cuestionario tiene {len(metric_questions)}.'
                 )
 
     def action_view_evaluations(self):

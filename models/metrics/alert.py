@@ -6,6 +6,7 @@ from ...utils.constants import GROUP_ADMIN, GROUP_COUNSELOR, GROUP_MANAGEMENT
 
 class Alert(models.Model):
     _name = 'aula_metrics.alert'
+    _table = 'aulametrics_alert'
     _description = 'Alerta de AulaMetrics'
     _order = 'alert_date desc'
     

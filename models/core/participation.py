@@ -5,6 +5,7 @@ import uuid
 class Participation(models.Model):
     """Seguimiento de participación de alumnos en evaluaciones"""
     _name = 'aula_metrics.participation'
+    _table = 'aulametrics_participation'
     _description = 'Participación en Evaluación'
     _order = 'evaluation_id desc, student_id'
     

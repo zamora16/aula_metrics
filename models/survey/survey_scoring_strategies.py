@@ -418,11 +418,52 @@ class SdqScoring:
         return item_scores
 
 
+# ============================================================
+# Estrategia SWLS — Escala de Satisfacción con la Vida
+# Diener et al. (1985) | 5 ítems Likert 1-7 | Suma → 5-35
+# ============================================================
+
+class SwlsScoring:
+    """
+    Estrategia de puntuación para el SWLS (Satisfaction With Life Scale).
+    Suma los scores de los 5 ítems (1-7 cada uno) → puntuación total 5-35.
+    Devuelve 1 única escala: 'total' (Satisfacción con la vida).
+    """
+
+    def __init__(self, survey):
+        self.survey = survey
+
+    def _sum_scores(self, user_input):
+        """Suma los scores de todos los ítems respondidos del SWLS."""
+        total = 0.0
+        for line in (user_input.user_input_line_ids or []):
+            ans = line.suggested_answer_id
+            if ans and hasattr(ans, 'score') and ans.score not in (None, False):
+                total += float(ans.score)
+        return total
+
+    def calculate_scale_scores(self, user_input):
+        """Devuelve {'total': puntuación_raw} para que el pipeline lo enriquezca con baremos."""
+        if not user_input or not user_input.user_input_line_ids:
+            return {}
+        return {'total': self._sum_scores(user_input)}
+
+    def calculate(self, user_input):
+        """Fallback: devuelve la métrica total SWLS (valor bruto 5-35)."""
+        if not user_input or not user_input.user_input_line_ids:
+            return []
+        return [{
+            'metric_name': 'SWLS',
+            'metric_label': 'Satisfacción con la vida',
+            'value_float': self._sum_scores(user_input),
+            'value_text': None,
+            'value_json': None,
+            'question_id': None,
+        }]
+
+
 # Todas las encuestas usan la estrategia universal
 SCORING_STRATEGIES = {
-    'WHO5': UniversalMatrixScoring,
-    'BULLYING_VA': UniversalMatrixScoring,
-    'ASQ14': UniversalMatrixScoring,
-    'ADHOC': UniversalMatrixScoring,
     'SDQ': SdqScoring,
+    'SWLS': SwlsScoring,
 }

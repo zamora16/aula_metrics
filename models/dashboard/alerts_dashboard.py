@@ -3,6 +3,7 @@ from odoo import models, fields, api
 
 class AlertsDashboard(models.Model):
     _name = 'aula_metrics.alerts_dashboard'
+    _table = 'alerts_dashboard'
     _description = 'Dashboard de Alertas'
 
     name = fields.Char(string='Dashboard', default='Sistema de Alertas', readonly=True)

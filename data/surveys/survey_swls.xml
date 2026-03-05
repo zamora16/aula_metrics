@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===========================================================
+         CUESTIONARIO SWLS — Escala de Satisfacción con la Vida
+         (Satisfaction With Life Scale, Diener et al. 1985)
+         survey_code: SWLS | Edad recomendada: 14+ años
+
+         5 ítems simple_choice con escala Likert 1-7.
+         Puntuación: suma directa de los 5 ítems → rango 5-35.
+         1 única escala: 'total' (Satisfacción con la vida)
+         =========================================================== -->
+
+    <record id="survey_swls" model="survey.survey">
+        <field name="title">SWLS — Escala de Satisfacción con la Vida</field>
+        <field name="is_aulametrics" eval="True"/>
+        <field name="survey_code">SWLS</field>
+        <field name="recommended_age_min">14</field>
+        <field name="description">Por favor, indica tu grado de acuerdo con cada frase seleccionando el número apropiado.</field>
+        <field name="scoring_type">no_scoring</field>
+        <field name="questions_layout">one_page</field>
+        <field name="users_can_go_back" eval="True"/>
+        <field name="is_attempts_limited" eval="False"/>
+        <field name="is_time_limited" eval="False"/>
+        <field name="access_mode">token</field>
+        <field name="users_login_required" eval="False"/>
+    </record>
+
+    <!-- ===================== ÍTEMS SWLS (formato matriz) =====================
+         Una sola pregunta-matriz con 5 filas (ítems) y 7 columnas (escala Likert 1-7).
+         La puntuación se almacena en las columnas (suggested_answer_ids con score).
+    -->
+
+    <!-- Pregunta matriz SWLS -->
+    <record id="swls_matrix" model="survey.question">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="title">Para cada una de las siguientes afirmaciones, indica tu grado de acuerdo.</field>
+        <field name="question_type">matrix</field>
+        <field name="matrix_subtype">simple</field>
+        <field name="metric_label">Satisfacción con la vida</field>
+        <field name="sequence">1</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+
+    <!-- Columnas (opciones de respuesta): escala Likert 1-7 -->
+    <record id="swls_col_1" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">Completamente en desacuerdo</field><field name="score">1</field><field name="sequence">1</field></record>
+    <record id="swls_col_2" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">En desacuerdo</field><field name="score">2</field><field name="sequence">2</field></record>
+    <record id="swls_col_3" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">Más bien en desacuerdo</field><field name="score">3</field><field name="sequence">3</field></record>
+    <record id="swls_col_4" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">Ni de acuerdo ni en desacuerdo</field><field name="score">4</field><field name="sequence">4</field></record>
+    <record id="swls_col_5" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">Más bien de acuerdo</field><field name="score">5</field><field name="sequence">5</field></record>
+    <record id="swls_col_6" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">De acuerdo</field><field name="score">6</field><field name="sequence">6</field></record>
+    <record id="swls_col_7" model="survey.question.answer"><field name="question_id" ref="swls_matrix"/><field name="value">Completamente de acuerdo</field><field name="score">7</field><field name="sequence">7</field></record>
+
+    <!-- Filas (ítems SWLS) -->
+    <record id="swls_row_1" model="survey.question.answer"><field name="matrix_question_id" ref="swls_matrix"/><field name="value">En la mayoría de los aspectos mi vida es como yo quiero que sea</field><field name="sequence">10</field></record>
+    <record id="swls_row_2" model="survey.question.answer"><field name="matrix_question_id" ref="swls_matrix"/><field name="value">Las circunstancias de mi vida son muy buenas</field><field name="sequence">11</field></record>
+    <record id="swls_row_3" model="survey.question.answer"><field name="matrix_question_id" ref="swls_matrix"/><field name="value">Estoy satisfecho con mi vida</field><field name="sequence">12</field></record>
+    <record id="swls_row_4" model="survey.question.answer"><field name="matrix_question_id" ref="swls_matrix"/><field name="value">Hasta ahora he conseguido de la vida las cosas que considero importantes</field><field name="sequence">13</field></record>
+    <record id="swls_row_5" model="survey.question.answer"><field name="matrix_question_id" ref="swls_matrix"/><field name="value">Si pudiera vivir mi vida otra vez no cambiaría casi nada</field><field name="sequence">14</field></record>
+
+    <!-- ===========================================================
+         BAREMOS SWLS — Escala de Diener et al. (versión española)
+         Puntuación total: suma 5 ítems → rango 5–35
+         =========================================================== -->
+
+    <record id="swls_baremo_muy_satisfecho" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="scale_name">total</field>
+        <field name="scale_label">Satisfacción con la vida</field>
+        <field name="display_order">99</field>
+        <field name="score_min">30</field>
+        <field name="score_max">35</field>
+        <field name="label">Muy satisfecho</field>
+        <field name="severity">0</field>
+        <field name="color">#28a745</field>
+        <field name="description">Las personas en este rango aman sus vidas y sienten que las cosas les van muy bien. Presentan un nivel muy alto de bienestar subjetivo y satisfacción vital.</field>
+    </record>
+
+    <record id="swls_baremo_satisfecho" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="scale_name">total</field>
+        <field name="scale_label">Satisfacción con la vida</field>
+        <field name="display_order">99</field>
+        <field name="score_min">25</field>
+        <field name="score_max">29</field>
+        <field name="label">Satisfecho</field>
+        <field name="severity">0</field>
+        <field name="color">#5cb85c</field>
+        <field name="description">Las personas en este rango están satisfechas con su vida y tienen áreas identificadas de mejora. El nivel general de bienestar es positivo.</field>
+    </record>
+
+    <record id="swls_baremo_medio" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="scale_name">total</field>
+        <field name="scale_label">Satisfacción con la vida</field>
+        <field name="display_order">99</field>
+        <field name="score_min">20</field>
+        <field name="score_max">24</field>
+        <field name="label">Puntuación media</field>
+        <field name="severity">1</field>
+        <field name="color">#ffc107</field>
+        <field name="description">La puntuación media en países desarrollados se sitúa en esta zona. El alumno considera que hay áreas de su vida que necesitan mejorar. Conviene un seguimiento orientativo.</field>
+    </record>
+
+    <record id="swls_baremo_ligeramente_insatisfecho" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="scale_name">total</field>
+        <field name="scale_label">Satisfacción con la vida</field>
+        <field name="display_order">99</field>
+        <field name="score_min">15</field>
+        <field name="score_max">19</field>
+        <field name="label">Ligeramente insatisfecho</field>
+        <field name="severity">1</field>
+        <field name="color">#fd7e14</field>
+        <field name="description">El alumno presenta problemas pequeños pero significativos en varias áreas de su vida. Se recomienda un seguimiento individualizado y apoyo orientador preventivo.</field>
+    </record>
+
+    <record id="swls_baremo_insatisfecho" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="scale_name">total</field>
+        <field name="scale_label">Satisfacción con la vida</field>
+        <field name="display_order">99</field>
+        <field name="score_min">10</field>
+        <field name="score_max">14</field>
+        <field name="label">Insatisfecho</field>
+        <field name="severity">2</field>
+        <field name="color">#dc3545</field>
+        <field name="description">El alumno está significativamente insatisfecho con su vida. Se recomienda intervención orientadora y valoración de posibles factores de riesgo en el entorno personal, familiar o académico.</field>
+    </record>
+
+    <record id="swls_baremo_extremadamente_insatisfecho" model="aula_metrics.survey_baremo_range">
+        <field name="survey_id" ref="survey_swls"/>
+        <field name="scale_name">total</field>
+        <field name="scale_label">Satisfacción con la vida</field>
+        <field name="display_order">99</field>
+        <field name="score_min">5</field>
+        <field name="score_max">9</field>
+        <field name="label">Extremadamente insatisfecho</field>
+        <field name="severity">2</field>
+        <field name="color">#8b1a1a</field>
+        <field name="description">El alumno se siente extremadamente infeliz con su vida actual. Esta puntuación indica un nivel de malestar subjetivo muy elevado. Se recomienda una valoración psicopedagógica prioritaria y coordinación con la familia.</field>
+    </record>
+
+</odoo>

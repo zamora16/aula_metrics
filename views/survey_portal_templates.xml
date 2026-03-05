@@ -204,7 +204,7 @@
                         margin: 0;
                         line-height: 1.6;
                     }
-                    .sf-container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+                    .sf-container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
                     .sf-header {
                         background: var(--card);
                         border-radius: 12px;
@@ -276,15 +276,16 @@
                         line-height: 1.4;
                     }
                     /* Matrix styles */
-                    .sf-matrix { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+                    .sf-matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 0.5rem; }
+                    .sf-matrix { width: 100%; min-width: 520px; border-collapse: collapse; }
                     .sf-matrix th, .sf-matrix td {
-                        padding: 0.75rem 0.5rem;
+                        padding: 0.65rem 0.4rem;
                         text-align: center;
                         border-bottom: 1px solid var(--border);
-                        font-size: 0.9rem;
+                        font-size: 0.85rem;
                     }
-                    .sf-matrix th { font-weight: 500; color: var(--text-light); font-size: 0.8rem; }
-                    .sf-matrix td:first-child { text-align: left; font-weight: 500; }
+                    .sf-matrix th { font-weight: 500; color: var(--text-light); font-size: 0.75rem; line-height: 1.3; max-width: 90px; word-break: break-word; }
+                    .sf-matrix td:first-child { text-align: left; font-weight: 500; min-width: 200px; max-width: 340px; padding-right: 1rem; }
                     .sf-matrix input[type="radio"] { width: 18px; height: 18px; cursor: pointer; }
                     /* Text inputs */
                     .sf-input {
@@ -318,9 +319,11 @@
                     .sf-btn-submit { background: var(--accent); color: white; }
                     .sf-btn-submit:hover { background: #2980b9; }
                     .sf-btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
-                    @media (max-width: 600px) {
-                        .sf-matrix { font-size: 0.8rem; }
-                        .sf-matrix th, .sf-matrix td { padding: 0.5rem 0.25rem; }
+                    @media (max-width: 700px) {
+                        .sf-container { padding: 1rem 0.5rem; }
+                        .sf-matrix { font-size: 0.75rem; min-width: 480px; }
+                        .sf-matrix th, .sf-matrix td { padding: 0.4rem 0.2rem; }
+                        .sf-matrix td:first-child { min-width: 140px; }
                     }
                 </style>
             </head>
@@ -428,6 +431,7 @@
 
                                 <!-- Pregunta tipo Matrix -->
                                 <t t-if="q['question_type'] == 'matrix'">
+                                    <div class="sf-matrix-wrap">
                                     <table class="sf-matrix">
                                         <thead>
                                             <tr>
@@ -453,6 +457,7 @@
                                             </t>
                                         </tbody>
                                     </table>
+                                    </div>
                                 </t>
                             </div>
                         </t>

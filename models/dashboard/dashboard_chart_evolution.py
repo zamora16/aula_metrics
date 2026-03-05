@@ -10,7 +10,7 @@ from ...utils import palette
 class DashboardChartsEvolution(models.TransientModel):
     _inherit = 'aula_metrics.dashboard.charts'
 
-    def _chart_numeric_evolution_by_course(self, df, label):
+    def _chart_numeric_evolution_by_course(self, df, label, y_max=100, y_min=0):
         """Evolución temporal de la métrica por curso (Management)."""
         # Agrupar por evaluación (no por timestamp individual)
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
@@ -113,8 +113,8 @@ class DashboardChartsEvolution(models.TransientModel):
                         }}
                     }},
                     y: {{
-                        beginAtZero: true,
-                        max: 100,
+                        min: {y_min},
+                        max: {y_max},
                         grid: {{ color: '#f1f5f9', drawBorder: false }},
                         ticks: {{
                             font: {{ size: 11, family: "'Inter', sans-serif" }},
@@ -126,8 +126,8 @@ class DashboardChartsEvolution(models.TransientModel):
         }});
         </script>
         '''
-    
-    def _chart_numeric_evolution_distribution(self, df, label):
+
+    def _chart_numeric_evolution_distribution(self, df, label, y_max=100, y_min=0):
         """Evolución temporal: trayectorias individuales + media del grupo (Tutor - anónimo)."""
         # Agrupar por evaluación (no por timestamp individual)
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
@@ -279,8 +279,8 @@ class DashboardChartsEvolution(models.TransientModel):
                         }}
                     }},
                     y: {{
-                        beginAtZero: true,
-                        max: 100,
+                        min: {y_min},
+                        max: {y_max},
                         grid: {{ color: '#f1f5f9', drawBorder: false }},
                         ticks: {{
                             font: {{ size: 11, family: "'Inter', sans-serif" }},
@@ -292,8 +292,8 @@ class DashboardChartsEvolution(models.TransientModel):
         }});
         </script>
         '''
-    
-    def _chart_numeric_evolution_by_groups(self, df, label):
+
+    def _chart_numeric_evolution_by_groups(self, df, label, y_max=100, y_min=0):
         """Evolución temporal de la métrica por grupo (Counselor)."""
         # Agrupar por evaluación (no por timestamp individual)
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
@@ -396,8 +396,8 @@ class DashboardChartsEvolution(models.TransientModel):
                         }}
                     }},
                     y: {{
-                        beginAtZero: true,
-                        max: 100,
+                        min: {y_min},
+                        max: {y_max},
                         grid: {{ color: '#f1f5f9', drawBorder: false }},
                         ticks: {{
                             font: {{ size: 11, family: "'Inter', sans-serif" }},
@@ -409,4 +409,4 @@ class DashboardChartsEvolution(models.TransientModel):
         }});
         </script>
         '''
-    
+

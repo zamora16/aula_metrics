@@ -205,6 +205,8 @@ def metric_values_to_records(metric_values):
             'value_json':     mv.value_json  if mv.value_json  else None,
             'value_text':     mv.value_text  if mv.value_text  else None,
             'timestamp':      mv.timestamp,
+            'survey_id':      mv.survey_id.id             if mv.survey_id else None,
+            'is_aulametrics': mv.survey_id.is_aulametrics if mv.survey_id else False,
             'evaluation_id':   mv.evaluation_id.id   if mv.evaluation_id else None,
             'evaluation_name': mv.evaluation_id.name if mv.evaluation_id else 'Sin evaluación',
             'student_id':     mv.student_id.id     if mv.student_id else None,

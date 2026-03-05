@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 class Evaluation(models.Model):
     """Evaluación Programada - Asignación de cuestionarios a grupos académicos"""
     _name = 'aula_metrics.evaluation'
+    _table = 'aulametrics_evaluation'
     _description = 'Evaluación Programada'
     _order = 'date_start desc, name'
     
