@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── Modelo de datos para el informe compuesto ── -->
+    <record id="action_report_student_composite" model="ir.actions.report">
+        <field name="name">Informe Compuesto de Alumno</field>
+        <field name="model">res.partner</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">aula_metrics.report_student_composite</field>
+        <field name="report_file">aula_metrics.report_student_composite</field>
+        <field name="paperformat_id" ref="aula_metrics.paperformat_no_margin"/>
+    </record>
+
+    <!-- ── Plantilla QWeb ── -->
+    <template id="report_student_composite">
+        <div class="article">
+            <style>
+                /* ── Configuración de impresión ── */
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                .article {
+                    position: absolute !important;
+                    top: 0 !important; left: 0 !important; right: 0 !important;
+                    height: auto !important;
+                }
+
+                /* ── Tipografía base ── */
+                .am-report {
+                    font-family: Arial, sans-serif;
+                    font-size: 9pt;
+                    color: #1e293b;
+                    width: 100%;
+                    page-break-after: always;
+                }
+                .am-report:last-child { page-break-after: avoid; }
+                .am-report p { margin: 0 0 5pt 0; }
+
+                /* ── CABECERA ── */
+                .am-header {
+                    background: #1e3a5f !important;
+                    padding: 14pt 20pt 10pt;
+                    -webkit-print-color-adjust: exact !important;
+                }
+                .am-header .tag {
+                    font-size: 6.5pt; letter-spacing: 0.1em;
+                    text-transform: uppercase; color: #93b4d0 !important; margin-bottom: 4pt;
+                }
+                .am-header h1 {
+                    font-size: 15pt; font-weight: bold;
+                    margin: 0 0 10pt; line-height: 1.2; color: #ffffff !important;
+                }
+                .am-header .meta-table {
+                    width: 100%; border-collapse: collapse; border: none !important;
+                }
+                .am-header .meta-table td {
+                    padding: 0 20pt 0 0; vertical-align: top;
+                    color: #ffffff !important; font-size: 8.5pt; border: none !important;
+                }
+                .am-header .meta-label {
+                    font-size: 6.5pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: #93b4d0 !important; margin-bottom: 2pt;
+                }
+
+                /* ── CUERPO ── */
+                .am-body { padding: 16pt 20pt 20pt; }
+
+                /* ── AVISO LEGAL ── */
+                .am-disclaimer {
+                    border-left: 3pt solid #94a3b8 !important;
+                    background: #f8fafc !important; padding: 9pt 12pt; margin-bottom: 14pt;
+                    font-size: 7.5pt; color: #475569; line-height: 1.6;
+                    -webkit-print-color-adjust: exact !important;
+                }
+                .am-disclaimer .disc-title {
+                    font-weight: bold; font-size: 7.5pt; color: #334155;
+                    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5pt;
+                }
+                .am-disclaimer ul { margin: 5pt 0 0 12pt; padding: 0; }
+                .am-disclaimer ul li { margin-bottom: 3pt; }
+
+                /* ── PORTADA ── */
+                .am-cover-body { padding: 30pt 20pt; }
+                .am-cover-title {
+                    font-size: 22pt; font-weight: bold;
+                    color: #1e293b; margin-bottom: 6pt;
+                }
+                .am-cover-subtitle { font-size: 12pt; color: #64748b; margin-bottom: 24pt; }
+                .am-cover-meta td {
+                    padding: 5pt 20pt 5pt 0; font-size: 9pt;
+                    vertical-align: top; border: none !important;
+                }
+                .am-cover-meta .lbl {
+                    font-size: 7pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 2pt;
+                }
+                .am-cover-meta .val { font-weight: 600; color: #1e293b; }
+                .am-cover-list { margin-top: 20pt; }
+                .am-cover-list h3 {
+                    font-size: 8pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: #64748b;
+                    border-bottom: 1pt solid #e2e8f0 !important; padding-bottom: 4pt; margin-bottom: 8pt;
+                }
+                .am-cover-list li { font-size: 9pt; color: #1e293b; margin-bottom: 4pt; }
+
+                /* ── SECCIÓN DE ESCALAS ── */
+                .am-section-title {
+                    font-size: 7pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.1em; color: #64748b;
+                    border-bottom: 1pt solid #e2e8f0 !important;
+                    padding-bottom: 3pt; margin: 14pt 0 10pt;
+                }
+
+                /* ── RESULTADO GLOBAL ── */
+                .am-global {
+                    padding: 12pt 14pt; border-radius: 4pt; margin-bottom: 2pt;
+                    -webkit-print-color-adjust: exact !important;
+                }
+                .am-global .score-big { font-size: 28pt; font-weight: bold; line-height: 1; }
+                .am-global .sev-badge {
+                    display: inline-block; padding: 3pt 10pt; border-radius: 3pt;
+                    font-size: 8.5pt; font-weight: bold; color: #ffffff !important;
+                    margin-left: 8pt; -webkit-print-color-adjust: exact !important;
+                }
+                .am-global .interp { font-size: 8pt; color: #475569; margin-top: 6pt; line-height: 1.5; }
+
+                /* ── TABLA DE ESCALAS ── */
+                .am-scales { width: 100%; border-collapse: collapse; }
+                .am-scales td { vertical-align: middle; padding: 5pt 4pt; border: none !important; }
+                .am-scales tr { border: none !important; }
+                .am-scales tr.scale-row { border-top: 1pt solid #f1f5f9 !important; }
+                .am-scales tr.scale-row:first-child { border-top: none !important; }
+                .am-scales .td-lbl { width: 30%; font-weight: bold; font-size: 8.5pt; color: #1e293b; padding-right: 10pt; }
+                .am-scales .td-bar { width: 40%; padding-right: 10pt; }
+                .am-scales .td-score { width: 10%; text-align: right; font-weight: bold; font-size: 8.5pt; padding-right: 6pt; white-space: nowrap; }
+                .am-scales .td-score .max { font-weight: 400; color: #94a3b8; }
+                .am-scales .td-sev { width: 20%; text-align: center; }
+                .am-scales .sev-pill {
+                    display: inline-block; padding: 2pt 8pt; border-radius: 3pt;
+                    font-size: 7pt; font-weight: bold; color: #ffffff !important; white-space: nowrap;
+                    -webkit-print-color-adjust: exact !important;
+                }
+                .am-scales .bar-track { height: 6pt; background: #e9eef4 !important; border-radius: 3pt; overflow: hidden; -webkit-print-color-adjust: exact !important; }
+                .am-scales .bar-fill  { height: 6pt; border-radius: 3pt; -webkit-print-color-adjust: exact !important; }
+                .am-scales .td-desc   { font-size: 7.5pt; color: #64748b; line-height: 1.5; padding: 0 4pt 7pt; vertical-align: top; border: none !important; }
+                .am-scales tr.total-sep td { border-top: 1.5pt solid #cbd5e1 !important; padding-top: 8pt; }
+
+                /* ── PIE ── */
+                .am-footer {
+                    margin-top: 18pt; padding-top: 6pt;
+                    border-top: 1pt solid #e2e8f0 !important;
+                    font-size: 6.5pt; color: #94a3b8; text-align: center;
+                }
+            </style>
+
+            <!-- ══════════ PORTADA ══════════ -->
+            <main class="am-report">
+                <div class="am-header">
+                    <div class="tag">AulaMetrics &#183; Informe de Resultados</div>
+                    <h1>Informe compuesto de evaluaci&#243;n</h1>
+                    <table class="meta-table">
+                        <tr>
+                            <td>
+                                <div class="meta-label">Alumno/a</div>
+                                <t t-esc="student_name or (docs and docs[0].name) or ''"/>
+                            </td>
+                            <td>
+                                <div class="meta-label">Grupo</div>
+                                <t t-esc="student_group or ''"/>
+                            </td>
+                            <td>
+                                <div class="meta-label">Generado el</div>
+                                <t t-esc="generated_date or ''"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="am-cover-body">
+                    <div style="display:flex;gap:40pt;flex-wrap:wrap;">
+                        <div class="am-cover-list" style="flex:1;min-width:120pt;">
+                            <h3>Evaluaciones incluidas</h3>
+                            <ul>
+                                <t t-foreach="evaluation_names or []" t-as="en">
+                                    <li><t t-esc="en"/></li>
+                                </t>
+                            </ul>
+                        </div>
+                        <div class="am-cover-list" style="flex:1;min-width:120pt;">
+                            <h3>Cuestionarios incluidos</h3>
+                            <ul>
+                                <t t-foreach="survey_titles or []" t-as="st">
+                                    <li><t t-esc="st"/></li>
+                                </t>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="am-disclaimer" style="margin-top:24pt;">
+                        <div class="disc-title">Nota importante sobre este informe</div>
+                        <p>
+                            Este informe no es el resultado de una evaluaci&#243;n psicol&#243;gica
+                            ni de una valoraci&#243;n cl&#237;nica completa, sino que se refiere
+                            &#250;nicamente a los resultados obtenidos con instrumentos de
+                            medida con fines de orientaci&#243;n educativa.
+                        </p>
+                        <ul>
+                            <li>Los resultados son de car&#225;cter <b>exclusivamente informativo</b>
+                                y no permiten establecer ning&#250;n diagn&#243;stico.</li>
+                            <li>Los datos se refieren al momento de la evaluaci&#243;n y no permiten
+                                predicciones sobre el funcionamiento futuro.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="am-footer">
+                    Informe compuesto generado por AulaMetrics &#183;
+                    <t t-esc="student_name or ''"/> &#183;
+                    Fecha de generaci&#243;n: <t t-esc="generated_date or ''"/>
+                </div>
+            </main>
+
+            <!-- ══════════ PÁGINAS DE RESULTADOS ══════════ -->
+            <t t-foreach="pages or []" t-as="d">
+                    <main class="am-report">
+                        <div class="am-header">
+                            <div class="tag">AulaMetrics &#183; <t t-esc="d.get('evaluation_name', '')"/></div>
+                            <h1><t t-esc="d.get('survey_title', '')"/></h1>
+                            <table class="meta-table">
+                                <tr>
+                                    <td>
+                                        <div class="meta-label">Alumno/a</div>
+                                        <t t-esc="d.get('student_name', '')"/>
+                                        <t t-if="d.get('student_age')">
+                                            &#160;(<t t-esc="d['student_age']"/> a&#241;os)
+                                        </t>
+                                    </td>
+                                    <td>
+                                        <div class="meta-label">Fecha de respuesta</div>
+                                        <t t-esc="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
+                                    </td>
+                                    <td>
+                                        <div class="meta-label">Evaluaci&#243;n</div>
+                                        <t t-esc="d.get('evaluation_name', '')"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="am-body">
+                            <!-- Resultado global -->
+                            <div class="am-section-title">Resultado global</div>
+                            <div class="am-global"
+                                 t-att-style="'background:{bg} !important;border:none;'.format(bg=d.get('global_sev_bg','#f8fafc'))">
+                                <span class="score-big"
+                                      t-att-style="'color:{c};'.format(c=d.get('global_sev_color','#1e293b'))">
+                                    <t t-esc="'%.0f' % (d.get('raw_score') or 0)"/>
+                                    <t t-if="d.get('raw_score_max')">
+                                        <span style="font-weight:400;color:#64748b;font-size:0.8em;">/<t t-esc="'%.0f' % d['raw_score_max']"/></span>
+                                    </t>
+                                </span>
+                                <span class="sev-badge"
+                                      t-att-style="'background:{c} !important;'.format(c=d.get('global_sev_color','#94a3b8'))">
+                                    <t t-esc="d.get('global_label', '')"/>
+                                </span>
+                                <t t-if="d.get('global_description')">
+                                    <div class="interp"><t t-esc="d['global_description']"/></div>
+                                </t>
+                            </div>
+
+                            <!-- Desglose por escalas -->
+                            <t t-if="d.get('scales')">
+                                <div class="am-section-title">Desglose por escalas</div>
+                                <table class="am-scales">
+                                    <t t-foreach="d['scales']" t-as="sc">
+                                        <tr t-att-class="'total-sep' if sc.get('is_total') else 'scale-row'">
+                                            <td class="td-lbl"><t t-esc="sc.get('label','')"/></td>
+                                            <td class="td-bar">
+                                                <div class="bar-track">
+                                                    <div class="bar-fill"
+                                                         t-att-style="'width:{p}%;background:{c} !important;'.format(p=sc.get('pct_str','0'), c=sc.get('sev_color','#ccc'))"/>
+                                                </div>
+                                            </td>
+                                            <td class="td-score"
+                                                t-att-style="'color:{c};'.format(c=sc.get('sev_color','#1e293b'))">
+                                                <t t-esc="sc.get('score_str','0')"/>
+                                                <span class="max">/<t t-esc="sc.get('max_str','')"/></span>
+                                            </td>
+                                            <td class="td-sev">
+                                                <span class="sev-pill"
+                                                      t-att-style="'background:{c} !important;'.format(c=sc.get('sev_color','#ccc'))">
+                                                    <t t-esc="sc.get('sev_label','')"/>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <t t-if="sc.get('description')">
+                                            <tr><td colspan="4" class="td-desc"><t t-esc="sc['description']"/></td></tr>
+                                        </t>
+                                    </t>
+                                </table>
+                            </t>
+                        </div>
+
+                        <div class="am-footer">
+                            AulaMetrics &#183; <t t-esc="d.get('student_name','')"/> &#183;
+                            <t t-esc="d.get('survey_title','')"/> &#183;
+                            <t t-esc="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
+                            &#183; Exclusivamente informativo, no constituye diagn&#243;stico.
+                        </div>
+                    </main>
+
+            </t><!-- /t-foreach pages -->
+        </div><!-- /article -->
+    </template>
+
+</odoo>

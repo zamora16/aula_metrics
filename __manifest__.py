@@ -38,7 +38,8 @@
         'views/qualitative_dashboard_templates.xml',
         'views/dashboard_page_templates.xml',
         'views/dashboard_main_templates.xml',
-        'views/reports/survey_result_report_sdq.xml',
+        'views/reports/survey_result_report.xml',
+        'views/reports/report_student_composite.xml',
         # 4. Datos de Dashboard
         'data/dashboard_home_data.xml',
         # 5. Wizards (antes del menú para que las acciones existan al resolverlas)

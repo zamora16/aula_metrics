@@ -3,7 +3,7 @@
 from odoo import models, fields
 
 class SurveyQuestionAnswerScore(models.Model):
-    _inherit = 'survey.question.answer'  # ¡IMPORTANTE! Usar _inherit, no _name
+    _inherit = 'survey.question.answer'
 
     score = fields.Float(
         string='Puntuación (score)',

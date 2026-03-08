@@ -125,6 +125,119 @@ class DashboardChartsController(http.Controller):
                 'error_message': error_msg,
             })
 
+    @http.route('/aulametrics/student/<int:student_id>/informe_compuesto',
+                type='http', auth='user', methods=['GET'])
+    def student_composite_report(self, student_id, **kwargs):
+        """
+        Genera un informe PDF compuesto con resultados de cuestionarios oficiales
+        filtrado por evaluaciones y cuestionarios seleccionados.
+
+        Parámetros GET (repetibles):
+            evaluation_ids: IDs de evaluaciones a incluir
+            survey_ids:     IDs de cuestionarios a incluir
+        """
+        from datetime import date as _date
+
+        role_info = self._detect_user_role()
+
+        # Modo directo: IDs de resultado ya seleccionados (nuevo flujo desde la barra flotante)
+        result_ids = [
+            int(x) for x in request.httprequest.args.getlist('result_ids')
+            if x.strip().lstrip('-').isdigit()
+        ]
+
+        # Modo legado: filtro por evaluación + cuestionario
+        evaluation_ids = [
+            int(x) for x in request.httprequest.args.getlist('evaluation_ids')
+            if x.strip().lstrip('-').isdigit()
+        ]
+        survey_ids = [
+            int(x) for x in request.httprequest.args.getlist('survey_ids')
+            if x.strip().lstrip('-').isdigit()
+        ]
+
+        if not result_ids and (not evaluation_ids or not survey_ids):
+            return _render('aula_metrics.dashboard_error_page', {
+                'error_title':   'Parámetros inválidos',
+                'error_message': 'Seleccione al menos un resultado para generar el informe.',
+            })
+
+        student = request.env['res.partner'].sudo().browse(student_id)
+        if not student.exists() or not getattr(student, 'is_student', False):
+            return request.not_found()
+
+        if not role_service.can_access_student(role_info, student):
+            return _render('aula_metrics.dashboard_access_denied', {
+                'message': 'No tiene permisos para ver este perfil.',
+            })
+
+        try:
+            env = request.env
+
+            pages              = []
+            eval_names_seen    = []
+            survey_titles_seen = []
+
+            if result_ids:
+                results_ordered = env['aula_metrics.survey_result'].search([
+                    ('id',             'in', result_ids),
+                    ('student_id',     '=', student_id),
+                    ('is_aulametrics', '=', True),
+                ], order='evaluation_id, survey_id, completed_at asc')
+            else:
+                results_ordered = env['aula_metrics.survey_result'].search([
+                    ('student_id',     '=', student_id),
+                    ('is_aulametrics', '=', True),
+                    ('evaluation_id',  'in', evaluation_ids),
+                    ('survey_id',      'in', survey_ids),
+                ], order='evaluation_id, survey_id, completed_at asc')
+
+            pages              = []
+            eval_names_seen    = []
+            survey_titles_seen = []
+
+            for r in results_ordered:
+                ev_name    = r.evaluation_id.name if r.evaluation_id else 'Sin evaluación'
+                survey_ttl = r.survey_id.title or ''
+                if ev_name not in eval_names_seen:
+                    eval_names_seen.append(ev_name)
+                if survey_ttl not in survey_titles_seen:
+                    survey_titles_seen.append(survey_ttl)
+                page_data = r.get_report_data()
+                page_data['evaluation_name'] = ev_name
+                pages.append(page_data)
+
+            report_data = {
+                'student_name':    student.name or '',
+                'student_group':   student.academic_group_id.name if student.academic_group_id else '',
+                'generated_date':  _date.today().strftime('%d/%m/%Y'),
+                'evaluation_names': eval_names_seen,
+                'survey_titles':   survey_titles_seen,
+                'pages':           pages,
+            }
+
+            pdf_bytes, _ = env['ir.actions.report'].sudo()._render_qweb_pdf(
+                'aula_metrics.report_student_composite',
+                [student_id],
+                data=report_data,
+            )
+
+            student_name = (student.name or 'alumno').replace(' ', '_')
+            filename     = f'informe_compuesto_{student_name}.pdf'
+            return request.make_response(
+                pdf_bytes,
+                headers=[
+                    ('Content-Type',        'application/pdf'),
+                    ('Content-Disposition', f'inline; filename="{filename}"'),
+                ],
+            )
+
+        except Exception as e:
+            return _render('aula_metrics.dashboard_error_page', {
+                'error_title':   'Error al generar el informe compuesto',
+                'error_message': str(e),
+            })
+
     def _parse_hub_filters(self, kwargs):
         """Parsea los parámetros GET a un dict de filtros (SIMPLIFICADO: solo evaluaciones)."""
         filters = {

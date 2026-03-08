@@ -12,7 +12,8 @@ def get_common_styles():
     """
     root_vars = f"""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
 
         :root {{
             --am-bg: {palette.UI_BG};
@@ -45,10 +46,10 @@ def get_common_styles():
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--am-bg);
             color: var(--am-text);
-            line-height: 1.6;
+            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -62,7 +63,7 @@ def get_common_styles():
         /* ==================== SIDEBAR ==================== */
         .sidebar {
             width: 260px;
-            background: linear-gradient(180deg, var(--am-sidebar-start) 0%, var(--am-sidebar-end) 100%);
+            background: var(--am-sidebar-start);
             color: white;
             display: flex;
             flex-direction: column;
@@ -71,7 +72,7 @@ def get_common_styles():
             left: 0;
             top: 0;
             z-index: 1000;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
         }
         
         .sidebar-header {
@@ -95,7 +96,7 @@ def get_common_styles():
             align-items: center;
             gap: 12px;
             padding: 12px 16px;
-            color: #cbd5e1;
+            color: rgba(255, 255, 255, 0.45);
             text-decoration: none;
             border-radius: 8px;
             margin-bottom: 4px;
@@ -106,14 +107,14 @@ def get_common_styles():
         }
         
         .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.8);
         }
         
         .sidebar-item.active {
-            background: rgba(var(--am-primary-rgb), 0.18);
+            background: rgba(255, 255, 255, 0.09);
             color: white;
-            box-shadow: 0 0 0 1px rgba(var(--am-primary-rgb), 0.3);
+            border-left: 3px solid var(--am-warning);
         }
         
         .sidebar-item i {
@@ -146,12 +147,11 @@ def get_common_styles():
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .topbar h3 {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 800;
             margin: 0;
             color: var(--am-text);
         }
@@ -193,26 +193,26 @@ def get_common_styles():
             background: white;
             border-radius: 12px;
             border: 1px solid var(--am-border);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
             margin-bottom: 24px;
             overflow: hidden;
         }
         
         .card-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #e2e8f0;
-            background: white;
+            border-bottom: 1px solid var(--am-border);
+            background: #f8fafc;
         }
         
         .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #0f172a;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--am-text);
             margin: 0;
         }
         
         .card-subtitle {
-            font-size: 13px;
+            font-size: 12px;
             color: #64748b;
             margin: 4px 0 0 0;
         }
@@ -231,7 +231,7 @@ def get_common_styles():
         
         .kpi-card {
             background: white;
-            padding: 24px;
+            padding: 20px 24px;
             border-radius: 12px;
             border: 1px solid var(--am-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -240,21 +240,21 @@ def get_common_styles():
         
         .kpi-card:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
         }
         
         .kpi-label {
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 11px;
+            font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.08em;
             margin-bottom: 8px;
         }
         
         .kpi-value {
-            font-size: 36px;
+            font-size: 30px;
             font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
             color: #0f172a;
             margin: 8px 0;
         }
@@ -267,36 +267,48 @@ def get_common_styles():
         /* ==================== BADGES ==================== */
         .badge {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
             white-space: nowrap;
+            border: 1px solid transparent;
         }
         
         .badge.bg-primary {
-            background: #3b82f6;
-            color: white;
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+            border-color: #bfdbfe;
         }
         
         .badge.bg-success {
-            background: #10b981;
-            color: white;
+            background: #f0fdf4 !important;
+            color: #166534 !important;
+            border-color: #a7f3d0;
         }
         
         .badge.bg-warning {
-            background: #f59e0b;
-            color: #0f172a;
+            background: #fffbeb !important;
+            color: #92400e !important;
+            border-color: #fde68a;
         }
         
         .badge.bg-danger {
-            background: #ef4444;
-            color: white;
+            background: #fef2f2 !important;
+            color: #991b1b !important;
+            border-color: #fecaca;
         }
         
         .badge.bg-light {
-            background: #f1f5f9;
-            color: #475569;
+            background: #f8fafc !important;
+            color: #475569 !important;
+            border-color: #e2e8f0;
+        }
+        
+        .badge.bg-secondary {
+            background: #f8fafc !important;
+            color: #475569 !important;
+            border-color: #cbd5e1;
         }
         
         /* ==================== FILTROS MODERNOS ==================== */
@@ -359,14 +371,13 @@ def get_common_styles():
             background: var(--am-primary-100);
             border-color: var(--am-primary-200);
             color: var(--am-primary-600);
-            transform: translateY(-2px);
             box-shadow: 0 4px 6px rgba(var(--am-primary-rgb), 0.1);
         }
         
         .filter-pill.active {
-            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
-            color: var(--am-surface);
-            border-color: var(--am-primary-600);
+            background: var(--am-primary);
+            color: white;
+            border-color: var(--am-primary);
             box-shadow: 0 4px 8px rgba(var(--am-primary-rgb), 0.25);
         }
         
@@ -397,16 +408,15 @@ def get_common_styles():
         }
         
         .btn-filter-primary {
-            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            background: var(--am-primary);
             color: var(--am-surface);
-            border-color: var(--am-primary-600);
+            border-color: var(--am-primary);
             box-shadow: 0 2px 4px rgba(var(--am-primary-rgb), 0.2);
         }
         
         .btn-filter-primary:hover {
-            background: linear-gradient(135deg, var(--am-primary-600) 0%, var(--am-primary-darker) 100%);
+            background: var(--am-primary-600);
             box-shadow: 0 4px 8px rgba(var(--am-primary-rgb), 0.3);
-            transform: translateY(-1px);
         }
         
         .btn-filter-primary:disabled {
@@ -429,14 +439,14 @@ def get_common_styles():
         
         .empty-state h3 {
             color: var(--am-muted);
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             margin: 16px 0 8px;
         }
         
         .empty-state p {
             color: var(--am-muted);
-            font-size: 14px;
+            font-size: 13px;
         }
         
         /* ==================== HOME SECTION ==================== */
@@ -446,12 +456,11 @@ def get_common_styles():
         }
         
         .welcome-banner {
-            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            background: var(--am-primary);
             color: var(--am-surface);
             padding: 48px 40px;
             border-radius: 16px;
             margin-bottom: 32px;
-            box-shadow: 0 10px 40px rgba(var(--am-primary-rgb), 0.2);
         }
         
         .welcome-banner h2 {
@@ -490,7 +499,6 @@ def get_common_styles():
         
         .stat-card:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
         }
         
         .stat-icon {
@@ -505,23 +513,23 @@ def get_common_styles():
         }
         
         .stat-icon.blue {
-            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
-            color: var(--am-surface);
+            background: #eff6ff;
+            color: #2563eb;
         }
         
         .stat-icon.green {
-            background: linear-gradient(135deg, var(--am-success) 0%, var(--am-success-dark) 100%);
-            color: var(--am-surface);
+            background: #f0fdf4;
+            color: #059669;
         }
         
         .stat-icon.red {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
+            background: #fef2f2;
+            color: #dc2626;
         }
         
         .stat-icon.purple {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-            color: white;
+            background: #f5f3ff;
+            color: #7c3aed;
         }
         
         .stat-content {
@@ -540,6 +548,7 @@ def get_common_styles():
         .stat-value {
             font-size: 28px;
             font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
             color: #0f172a;
             line-height: 1;
         }
@@ -580,11 +589,10 @@ def get_common_styles():
         
         .evaluation-card:hover {
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            transform: translateY(-4px);
         }
         
         .evaluation-card-header {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: #f8fafc;
             padding: 16px 20px;
             border-bottom: 1px solid #e2e8f0;
         }
@@ -708,25 +716,26 @@ def get_common_styles():
         .card {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
             overflow: hidden;
             height: fit-content;
         }
         
         .card-header {
             padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--am-border);
+            background: #f8fafc;
         }
         
         .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1e293b;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--am-text);
             margin: 0 0 4px 0;
         }
         
         .card-subtitle {
-            font-size: 13px;
+            font-size: 12px;
             color: #64748b;
             margin: 0;
         }

@@ -61,6 +61,25 @@
                 </t>
             </nav>
             <div class="sidebar-footer">
+                <t t-if="role_info and role_info.get('user_name')">
+                    <div style="margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,0.07);border-radius:8px;">
+                        <div style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" t-esc="role_info.get('user_name')"/>
+                        <div style="font-size:10px;margin-top:2px;">
+                            <t t-if="role_info.get('role') == 'admin'">
+                                <span style="color:#fca5a5;"><i class="fa-solid fa-shield-halved me-1"/>Administrador</span>
+                            </t>
+                            <t t-elif="role_info.get('role') == 'counselor'">
+                                <span style="color:#93c5fd;"><i class="fa-solid fa-user-tie me-1"/>Orientador/a</span>
+                            </t>
+                            <t t-elif="role_info.get('role') == 'management'">
+                                <span style="color:#fde68a;"><i class="fa-solid fa-briefcase me-1"/>Equipo Directivo</span>
+                            </t>
+                            <t t-else="">
+                                <span style="color:#86efac;"><i class="fa-solid fa-chalkboard-user me-1"/>Tutor/a</span>
+                            </t>
+                        </div>
+                    </div>
+                </t>
                 <a href="/web" class="btn btn-outline-light btn-sm w-100">
                     <i class="fa-solid fa-arrow-left me-2"/>Volver a Odoo
                 </a>

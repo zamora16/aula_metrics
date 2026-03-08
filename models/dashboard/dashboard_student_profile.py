@@ -58,14 +58,14 @@ class DashboardStudentProfile(models.TransientModel):
         alerts_history_html   = self._get_student_alerts_history_html(student_id)
         participations_html   = self._get_participations_html(student_id)
         qualitative_html      = self._get_qualitative_responses_html(student_id)
-        official_surveys_html = self._get_official_surveys_html(student_id)
+        official_surveys_data = self._get_official_surveys_html(student_id)
 
         return self._build_profile_html_chartjs(
             student, role_info, kpis,
             evolution_charts, radar_chart,
             alerts_html, alerts_history_html,
             participations_html, qualitative_html,
-            official_surveys=official_surveys_html,
+            official_surveys_data=official_surveys_data,
         )
 
     @api.model
@@ -200,110 +200,378 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _build_profile_html_chartjs(self, student, role_info, kpis, evolution, radar,
                                      alerts, alerts_history, participations,
-                                     qualitative='', official_surveys=''):
-        """Contexto completo para el perfil con Chart.js."""
-        group_name = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
+                                     qualitative='', official_surveys_data=None):
+        """
+        Contexto completo para el perfil con layout rediseñado:
+        3 capas sticky + 4 pestañas principales + barra flotante + drawer lateral.
+        """
+        if official_surveys_data is None:
+            official_surveys_data = {
+                'timeline_html': '', 'evolution_html': '',
+                'has_surveys': False, 'student_id': student.id,
+            }
 
-        has_official    = bool(official_surveys and official_surveys.strip())
-        active_oficial  = 'show active' if has_official else ''
-        active_centro   = ''            if has_official else 'show active'
-        tab_oficial_cls = 'nav-link active' if has_official else 'nav-link'
-        tab_centro_cls  = 'nav-link'        if has_official else 'nav-link active'
-
-        oficial_content = official_surveys if has_official else """
-            <div class="text-center py-5">
-                <i class="fa-solid fa-clipboard-list fa-3x mb-3" style="color:var(--am-border);"></i>
-                <p class="text-muted mb-0">Este alumno aún no tiene resultados de cuestionarios oficiales.</p>
-            </div>"""
-
-        centro_content = (radar or '') + (evolution or '')
-        if not centro_content.strip():
-            centro_content = """
-            <div class="text-center py-5">
-                <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"></i>
-                <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
-            </div>"""
+        group_name     = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
+        sid            = student.id
+        timeline_html  = official_surveys_data.get('timeline_html', '')
+        evol_ofic_html = official_surveys_data.get('evolution_html', '')
+        has_surveys    = official_surveys_data.get('has_surveys', False)
 
         chart_libs = (
             '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>\n'
             '<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>'
         )
 
+        # ── Contenido de las sub-pestañas ──────────────────────────────
+        ofic_empty = """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-clipboard-list fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">Este alumno aún no tiene resultados de cuestionarios oficiales.</p>
+            </div>"""
+        centro_quant_content = radar or """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
+            </div>"""
+        evol_ofic_content = evol_ofic_html or """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-chart-line fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">Se necesitan al menos dos evaluaciones para mostrar la evolución.</p>
+            </div>"""
+        evol_centro_content = evolution or """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">No hay datos de evolución de métricas del centro disponibles.</p>
+            </div>"""
+        cual_content = qualitative or """
+            <div class="text-center py-5">
+                <i class="fa-solid fa-message fa-3x mb-3" style="color:var(--am-border);"></i>
+                <p class="text-muted mb-0">No hay respuestas cualitativas registradas.</p>
+            </div>"""
+
         content_html = f"""
-        <div class="container-fluid">
-            <div class="kpi-grid">{kpis}</div>
 
-            <div class="card mb-4">
-                <div class="card-header" style="padding-bottom:0;border-bottom:none;">
-                    <ul class="nav nav-tabs" style="border-bottom:none;margin-bottom:-1px;gap:4px;">
-                        <li class="nav-item">
-                            <a class="{tab_oficial_cls}" data-bs-toggle="tab" href="#tab-oficial"
-                               style="font-size:13px;font-weight:600;">
-                                <i class="fa-solid fa-clipboard-check me-1"></i>Cuestionarios Oficiales
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="{tab_centro_cls}" data-bs-toggle="tab" href="#tab-centro"
-                               style="font-size:13px;font-weight:600;">
-                                <i class="fa-solid fa-school me-1"></i>Cuestionarios del Centro
-                            </a>
-                        </li>
-                    </ul>
+        <!-- ═══ CAPA 1: Encabezado del alumno ════════════════════════════ -->
+        <div class="am-sticky-l1">
+            <div class="d-flex align-items-center gap-3">
+                <div class="am-avatar-circle">
+                    <i class="fa-solid fa-user"></i>
                 </div>
-                <div class="card-body" style="padding-top:20px;">
-                    <div class="tab-content">
-                        <div class="tab-pane fade {active_oficial}" id="tab-oficial">{oficial_content}</div>
-                        <div class="tab-pane fade {active_centro}"  id="tab-centro">{centro_content}</div>
+                <div style="min-width:0;flex:1;">
+                    <div class="am-student-name">{student.name}</div>
+                    <div class="am-student-meta">
+                        <i class="fa-solid fa-users me-1"></i>{group_name}
+                        <span class="am-meta-sep">·</span>
+                        <i class="fa-solid fa-calendar me-1"></i>{fields.Date.today().strftime('%d/%m/%Y')}
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Respuestas Cualitativas</h5>
-                            <p class="card-subtitle">Textos y comentarios abiertos</p>
-                        </div>
-                        <div class="card-body">{qualitative}</div>
-                    </div>
+                <div class="flex-shrink-0">
+                    <a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Lista
+                    </a>
                 </div>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Alertas Activas</h5>
-                            <p class="card-subtitle">Puntos de atención identificados</p>
-                        </div>
-                        <div class="card-body">
-                            {alerts}
-                            <div class="mt-3">
-                                <button class="btn btn-outline-secondary btn-sm w-100" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#alertsHistory">
-                                    <i class="fa-solid fa-clock-rotate-left me-2"></i>Ver Historial de Alertas
-                                </button>
-                                <div class="collapse mt-3" id="alertsHistory">
-                                    <hr>
-                                    <h6 class="text-muted mb-3">Historial de Alertas Resueltas/Descartadas</h6>
-                                    {alerts_history}
-                                </div>
+        <!-- ═══ CAPA 2: Banda de KPIs ════════════════════════════════════ -->
+        <div class="am-sticky-l2">
+            <div class="am-kpi-strip">{kpis}</div>
+        </div>
+
+        <!-- ═══ CAPA 3: Barra de pestañas principales ════════════════════ -->
+        <div class="am-sticky-l3">
+            <div class="am-main-tab-bar">
+                <button class="am-main-tab active" data-tab="cuant" onclick="amTab('cuant',this)">
+                    <i class="fa-solid fa-chart-column me-1"></i>Datos cuantitativos
+                </button>
+                <button class="am-main-tab" data-tab="cual" onclick="amTab('cual',this)">
+                    <i class="fa-solid fa-quote-left me-1"></i>Datos cualitativos
+                </button>
+                <button class="am-main-tab" data-tab="evol" onclick="amTab('evol',this)">
+                    <i class="fa-solid fa-chart-line me-1"></i>Evolución global
+                </button>
+                <button class="am-main-tab" data-tab="alertas" onclick="amTab('alertas',this)">
+                    <i class="fa-solid fa-bell me-1"></i>Alertas
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ CONTENIDO DE PESTAÑAS ════════════════════════════════════ -->
+        <div class="am-tabs-body">
+
+            <!-- ── Tab: Datos cuantitativos ──────────────────────────── -->
+            <div id="am-pane-cuant" class="am-tab-pane am-show">
+                <div class="am-subtab-bar">
+                    <button class="am-subtab active" data-group="cuant" data-sub="ofic"
+                            onclick="amSubtab('cuant','ofic',this)">
+                        <i class="fa-solid fa-clipboard-check me-1"></i>Oficiales
+                    </button>
+                    <button class="am-subtab" data-group="cuant" data-sub="centro"
+                            onclick="amSubtab('cuant','centro',this)">
+                        <i class="fa-solid fa-school me-1"></i>Del Centro
+                    </button>
+                </div>
+                <div id="am-cuant-ofic" class="am-subpane am-show" data-group="cuant">
+                    {timeline_html if has_surveys else ofic_empty}
+                    <div class="mt-4">
+                        <div class="am-section-card">
+                            <div class="am-section-card__header">
+                                <span class="am-section-card__title">Histórico de Participación</span>
+                                <span class="am-section-card__sub">Encuestas completadas</span>
                             </div>
+                            <div class="am-section-card__body">{participations}</div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Histórico de Participación</h5>
-                            <p class="card-subtitle">Encuestas completadas</p>
-                        </div>
-                        <div class="card-body">{participations}</div>
+                <div id="am-cuant-centro" class="am-subpane" data-group="cuant">
+                    {centro_quant_content}
+                </div>
+            </div>
+
+            <!-- ── Tab: Datos cualitativos ───────────────────────────── -->
+            <div id="am-pane-cual" class="am-tab-pane">
+                <div class="am-section-card">
+                    <div class="am-section-card__header">
+                        <span class="am-section-card__title">Respuestas Cualitativas</span>
+                        <span class="am-section-card__sub">Textos y comentarios abiertos</span>
+                    </div>
+                    <div class="am-section-card__body">{cual_content}</div>
+                </div>
+            </div>
+
+            <!-- ── Tab: Evolución global ─────────────────────────────── -->
+            <div id="am-pane-evol" class="am-tab-pane">
+                <div class="am-subtab-bar">
+                    <button class="am-subtab active" data-group="evol" data-sub="ofic"
+                            onclick="amSubtab('evol','ofic',this)">
+                        <i class="fa-solid fa-clipboard-check me-1"></i>Oficiales
+                    </button>
+                    <button class="am-subtab" data-group="evol" data-sub="centro"
+                            onclick="amSubtab('evol','centro',this)">
+                        <i class="fa-solid fa-school me-1"></i>Del Centro
+                    </button>
+                </div>
+                <div id="am-evol-ofic" class="am-subpane am-show" data-group="evol">
+                    {evol_ofic_content}
+                </div>
+                <div id="am-evol-centro" class="am-subpane" data-group="evol">
+                    {evol_centro_content}
+                </div>
+            </div>
+
+            <!-- ── Tab: Alertas ──────────────────────────────────────── -->
+            <div id="am-pane-alertas" class="am-tab-pane">
+                {alerts}
+                <div class="mt-3">
+                    <button class="btn btn-outline-secondary btn-sm w-100" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#am-alerts-hist-{sid}">
+                        <i class="fa-solid fa-clock-rotate-left me-2"></i>Ver Historial de Alertas
+                    </button>
+                    <div class="collapse mt-3" id="am-alerts-hist-{sid}">
+                        <hr>
+                        <h6 class="text-muted mb-3">Alertas Resueltas / Descartadas</h6>
+                        {alerts_history}
                     </div>
                 </div>
             </div>
-        </div>"""
+
+        </div><!-- /.am-tabs-body -->
+
+        <!-- ═══ BARRA FLOTANTE (solo Cuantitativo > Oficiales) ══════════ -->
+        <div id="am-float-bar" class="am-float-bar">
+            <span id="am-float-count" class="am-float-count"></span>
+            <div id="am-float-tags" class="am-float-tags"></div>
+            <div class="am-float-actions">
+                <button type="button" class="am-btn-ghost" onclick="amClear()">
+                    <i class="fa-solid fa-xmark me-1"></i>Limpiar
+                </button>
+                <button type="button" class="am-btn-primary-inv" onclick="amGenerarInforme({sid})">
+                    <i class="fa-solid fa-file-pdf me-1"></i>Generar informe
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ DRAWER LATERAL ═══════════════════════════════════════════ -->
+        <div id="am-drawer" class="am-drawer">
+            <div class="am-drawer__overlay" onclick="amCloseDrawer()"></div>
+            <div class="am-drawer__panel">
+                <div class="am-drawer__header">
+                    <h6 id="am-drawer-title" class="am-drawer__title">Detalle</h6>
+                    <button type="button" class="am-drawer__close" onclick="amCloseDrawer()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="am-drawer__body" id="am-drawer-body"></div>
+                <div class="am-drawer__footer" id="am-drawer-footer"></div>
+            </div>
+        </div>
+
+        <script>
+        // ── Pestañas principales ─────────────────────────────────────
+        function amTab(tab, btn) {{
+            document.querySelectorAll('.am-tab-pane').forEach(function(p) {{
+                p.classList.remove('am-show');
+            }});
+            document.querySelectorAll('.am-main-tab').forEach(function(b) {{
+                b.classList.remove('active');
+            }});
+            var pane = document.getElementById('am-pane-' + tab);
+            if (pane) pane.classList.add('am-show');
+            if (btn)  btn.classList.add('active');
+            amRefreshFloatBar();
+        }}
+
+        // ── Sub-pestañas ─────────────────────────────────────────────
+        function amSubtab(group, sub, btn) {{
+            document.querySelectorAll('[data-group="' + group + '"].am-subpane').forEach(function(p) {{
+                p.classList.remove('am-show');
+            }});
+            var bar = btn ? btn.closest('.am-subtab-bar') : null;
+            if (bar) bar.querySelectorAll('.am-subtab').forEach(function(b) {{
+                b.classList.remove('active');
+            }});
+            var el = document.getElementById('am-' + group + '-' + sub);
+            if (el) el.classList.add('am-show');
+            if (btn) btn.classList.add('active');
+            amRefreshFloatBar();
+        }}
+
+        // ── Selección de filas ───────────────────────────────────────
+        var _amSel = new Map();
+
+        function amOnCheck(cb) {{
+            var rid = cb.dataset.rid, title = cb.dataset.title;
+            if (cb.checked) _amSel.set(rid, title);
+            else            _amSel.delete(rid);
+            _amSyncEvalCheckbox(cb);
+            _amRenderTags();
+            amRefreshFloatBar();
+        }}
+
+        // Nivel evaluación: marcar/desmarcar todas las filas del bloque
+        function amOnEvalCheck(evalCb) {{
+            var cardId = evalCb.dataset.evalCard;
+            var card   = document.getElementById(cardId);
+            if (!card) return;
+            card.querySelectorAll('.am-row-check').forEach(function(cb) {{
+                cb.checked = evalCb.checked;
+                var rid = cb.dataset.rid, title = cb.dataset.title;
+                if (evalCb.checked) _amSel.set(rid, title);
+                else                _amSel.delete(rid);
+            }});
+            _amRenderTags();
+            amRefreshFloatBar();
+        }}
+
+        // Sincronizar checkbox de evaluación según estado de sus filas
+        function _amSyncEvalCheckbox(rowCb) {{
+            var card = rowCb.closest('.am-eval-card');
+            if (!card) return;
+            var rows    = card.querySelectorAll('.am-row-check');
+            var total   = rows.length;
+            var checked = 0;
+            rows.forEach(function(r) {{ if (r.checked) checked++; }});
+            var evalCb = card.querySelector('.am-eval-check');
+            if (!evalCb) return;
+            if (checked === 0) {{
+                evalCb.checked       = false;
+                evalCb.indeterminate = false;
+            }} else if (checked === total) {{
+                evalCb.checked       = true;
+                evalCb.indeterminate = false;
+            }} else {{
+                evalCb.checked       = false;
+                evalCb.indeterminate = true;
+            }}
+        }}
+
+        function amClear() {{
+            document.querySelectorAll('.am-row-check:checked').forEach(function(cb) {{
+                cb.checked = false;
+            }});
+            document.querySelectorAll('.am-eval-check').forEach(function(cb) {{
+                cb.checked = false; cb.indeterminate = false;
+            }});
+            _amSel.clear();
+            _amRenderTags();
+            amRefreshFloatBar();
+        }}
+
+        function amRemove(rid) {{
+            var cb = document.querySelector('.am-row-check[data-rid="' + rid + '"]');
+            if (cb) {{ cb.checked = false; _amSyncEvalCheckbox(cb); }}
+            _amSel.delete(String(rid));
+            _amRenderTags();
+            amRefreshFloatBar();
+        }}
+
+        function _amRenderTags() {{
+            var n = _amSel.size;
+            var countEl = document.getElementById('am-float-count');
+            if (countEl) countEl.textContent = n + ' seleccionad' + (n === 1 ? 'o' : 'os');
+            var tags = document.getElementById('am-float-tags');
+            if (!tags) return;
+            tags.innerHTML = '';
+            _amSel.forEach(function(title, rid) {{
+                var t = document.createElement('span');
+                t.className = 'am-float-tag';
+                t.innerHTML = '<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;display:inline-block;">' + title + '</span>'
+                            + '<button type="button" onclick="amRemove(' + rid + ')" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;">×</button>';
+                tags.appendChild(t);
+            }});
+        }}
+
+        function amRefreshFloatBar() {{
+            var bar       = document.getElementById('am-float-bar');
+            if (!bar) return;
+            var cuant     = document.getElementById('am-pane-cuant');
+            var subOfic   = document.getElementById('am-cuant-ofic');
+            var tabActive = cuant   && cuant.classList.contains('am-show');
+            var subActive = subOfic && subOfic.classList.contains('am-show');
+            if (tabActive && subActive && _amSel.size > 0) {{
+                bar.classList.add('am-float-bar--on');
+            }} else {{
+                bar.classList.remove('am-float-bar--on');
+            }}
+        }}
+
+        // ── Drawer ───────────────────────────────────────────────────
+        function amOpenDrawer(rid) {{
+            var body   = document.getElementById('am-drawer-content-' + rid);
+            var footer = document.getElementById('am-drawer-footer-'  + rid);
+            if (!body) return;
+            // Survey title is in the first child with class that has title text
+            // We use the card title from the parent row
+            var row = document.querySelector('.am-row-check[data-rid="' + rid + '"]');
+            var title = row ? row.dataset.title : 'Detalle';
+            document.getElementById('am-drawer-title').textContent = title;
+            document.getElementById('am-drawer-body').innerHTML   = body.innerHTML;
+            document.getElementById('am-drawer-footer').innerHTML  = footer ? footer.innerHTML : '';
+            document.getElementById('am-drawer').classList.add('am-drawer--open');
+            document.body.style.overflow = 'hidden';
+        }}
+
+        function amCloseDrawer() {{
+            document.getElementById('am-drawer').classList.remove('am-drawer--open');
+            document.body.style.overflow = '';
+        }}
+
+        document.addEventListener('keydown', function(e) {{
+            if (e.key === 'Escape') amCloseDrawer();
+        }});
+
+        // ── Generar informe directo (sin modal) ─────────────────────
+        function amGenerarInforme(studentId) {{
+            if (_amSel.size === 0) return;
+            var url = '/aulametrics/student/' + studentId + '/informe_compuesto?';
+            var params = [];
+            _amSel.forEach(function(title, rid) {{
+                params.push('result_ids=' + encodeURIComponent(rid));
+            }});
+            window.open(url + params.join('&'), '_blank');
+        }}
+        </script>"""
 
         return {
             'page_title':           f'Perfil de {student.name}',
@@ -315,42 +583,290 @@ class DashboardStudentProfile(models.TransientModel):
             'topbar_subtitle':      Markup(
                 f'<i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime("%d/%m/%Y")}'
             ),
-            'topbar_extra_actions': Markup(
-                '<a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">'
-                '<i class="fa-solid fa-users"></i> Lista</a>'
-            ),
+            'topbar_extra_actions': Markup(''),
             'content_html':         Markup(content_html),
             'scripts_html':         Markup(''),
         }
 
     def _profile_styles_chartjs(self):
-        """Estilos CSS del perfil de alumno."""
+        """Estilos CSS del perfil rediseñado (layout de 3 capas sticky + 4 pestañas)."""
         return """
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-            * { margin:0; padding:0; box-sizing:border-box; }
-            body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                   background-color:var(--am-bg);color:var(--am-text);line-height:1.6;font-size:15px;padding-bottom:80px; }
-            .kpi-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-bottom:32px; }
-            .kpi-card { background:var(--am-surface);border:1px solid var(--am-border);border-radius:10px;padding:24px;transition:all 0.2s ease; }
-            .kpi-card:hover { transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-            .kpi-label { font-size:13px;font-weight:500;color:var(--am-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px; }
-            .kpi-value { font-size:36px;font-weight:700;color:var(--am-text);line-height:1;margin-bottom:4px; }
-            .kpi-description { font-size:13px;color:var(--am-muted);font-weight:400; }
-            .card { background:var(--am-surface);border:1px solid var(--am-border);border-radius:10px;margin-bottom:24px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04); }
-            .card-header { padding:20px 24px;border-bottom:1px solid var(--am-light);background:var(--am-surface); }
-            .card-title { font-size:18px;font-weight:600;color:var(--am-text);margin:0; }
-            .card-title-sm { font-size:15px;font-weight:600;color:var(--am-text);margin:0; }
-            .card-subtitle { font-size:13px;color:var(--am-muted);margin:4px 0 0;font-weight:400; }
-            .card-body { padding:24px; }
-            .col-lg-6 { flex:0 0 50%;max-width:50%;padding:0 12px; }
-            @media (max-width:991px) { .col-lg-6 { flex:0 0 100%;max-width:100%; } }
-            table { width:100%;border-collapse:collapse;font-size:14px; }
-            thead { background:var(--am-bg);border-bottom:1px solid var(--am-border); }
-            th { padding:12px 16px;text-align:left;font-weight:600;color:var(--am-muted);font-size:13px;text-transform:uppercase;letter-spacing:0.5px; }
-            td { padding:14px 16px;border-bottom:1px solid var(--am-light);color:var(--am-text); }
-            tr:last-child td { border-bottom:none; }
-            tbody tr:hover { background:var(--am-bg); }
+            /* ── Reset wrapper y ocultación de topbar estándar ─────────────── */
+            .content-wrapper { padding: 0 !important; }
+            /* El perfil tiene su propio encabezado sticky; la topbar estándar sobra */
+            .main-content > .topbar { display: none !important; }
+
+            /* ── Variables de altura de capas sticky ───────────────────── */
+            :root {
+                --am-l1: 64px;
+                --am-l2: 64px;
+                --am-l3: 45px;
+            }
+
+            /* ── Capas sticky ───────────────────────────────────────────── */
+            .am-sticky-l1 {
+                position: sticky; top: 0; z-index: 60;
+                background: var(--am-surface);
+                border-bottom: 1px solid var(--am-border);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+                padding: 12px 32px;
+                min-height: var(--am-l1);
+                display: flex; align-items: center;
+            }
+            .am-sticky-l2 {
+                position: sticky; top: var(--am-l1); z-index: 59;
+                background: var(--am-bg);
+                border-bottom: 1px solid var(--am-border);
+                padding: 10px 32px;
+                min-height: var(--am-l2);
+                display: flex; align-items: center;
+            }
+            .am-sticky-l3 {
+                position: sticky;
+                top: calc(var(--am-l1) + var(--am-l2));
+                z-index: 58;
+                background: var(--am-surface);
+                border-bottom: 2px solid var(--am-border);
+                padding: 0 32px;
+            }
+
+            /* ── Cabecera del alumno (capa 1) ───────────────────────────── */
+            .am-avatar-circle {
+                width: 40px; height: 40px; border-radius: 50%;
+                background: var(--am-bg); border: 2px solid var(--am-border);
+                display: flex; align-items: center; justify-content: center;
+                flex-shrink: 0; color: var(--am-primary); font-size: 18px;
+            }
+            .am-student-name {
+                font-size: 17px; font-weight: 700; color: var(--am-text);
+                line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .am-student-meta {
+                font-size: 12px; color: var(--am-muted); margin-top: 2px;
+            }
+            .am-meta-sep { margin: 0 6px; }
+
+            /* ── KPI strip (capa 2) ─────────────────────────────────────── */
+            .am-kpi-strip {
+                display: flex; gap: 0; align-items: center; width: 100%;
+            }
+            .kpi-card {
+                background: none; border: none; border-right: 1px solid var(--am-border);
+                border-radius: 0; padding: 4px 24px 4px 0; margin: 0 24px 0 0;
+                flex: 0 0 auto; min-width: 110px;
+                box-shadow: none;
+            }
+            .kpi-card:last-child { border-right: none; }
+            .kpi-card:hover { transform: none; box-shadow: none; }
+            .kpi-label {
+                font-size: 10px; font-weight: 600; color: var(--am-muted);
+                text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+            }
+            .kpi-value { font-size: 22px; font-weight: 700; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: var(--am-text); line-height: 1.1; }
+            .kpi-description { font-size: 10px; color: var(--am-muted); font-weight: 400; }
+
+            /* ── Pestañas principales (capa 3) ──────────────────────────── */
+            .am-main-tab-bar {
+                display: flex; gap: 0; align-items: flex-end; height: var(--am-l3);
+            }
+            .am-main-tab {
+                background: none; border: none;
+                border-bottom: 3px solid transparent;
+                padding: 10px 20px; margin-right: 4px;
+                font-size: 13px; font-weight: 500; color: var(--am-muted);
+                cursor: pointer; transition: all 0.15s; white-space: nowrap;
+                border-radius: 0; line-height: 1;
+            }
+            .am-main-tab:hover  { color: var(--am-primary); }
+            .am-main-tab.active {
+                color: var(--am-primary); font-weight: 600;
+                border-bottom-color: var(--am-primary);
+            }
+
+            /* ── Cuerpo de pestañas ─────────────────────────────────────── */
+            .am-tabs-body { padding-bottom: 80px; }
+            .am-tab-pane  { display: none; padding: 24px 32px; }
+            .am-tab-pane.am-show { display: block; }
+
+            /* ── Sub-pestañas ───────────────────────────────────────────── */
+            .am-subtab-bar {
+                display: flex; gap: 0; border-bottom: 1px solid var(--am-border);
+                margin-bottom: 24px;
+            }
+            .am-subtab {
+                background: none; border: none;
+                border-bottom: 2px solid transparent; margin-bottom: -1px;
+                padding: 8px 16px; font-size: 13px; font-weight: 500;
+                color: var(--am-muted); cursor: pointer; transition: all 0.15s;
+            }
+            .am-subtab:hover  { color: var(--am-primary); }
+            .am-subtab.active {
+                color: var(--am-primary); font-weight: 600;
+                border-bottom-color: var(--am-primary);
+            }
+            .am-subpane { display: none; }
+            .am-subpane.am-show { display: block; }
+
+            /* ── Tarjeta de sección (reemplaza .card) ───────────────────── */
+            .am-section-card {
+                background: var(--am-surface); border: 1px solid var(--am-border);
+                border-radius: 10px; margin-bottom: 24px; overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            }
+            .am-section-card__header {
+                padding: 16px 20px; border-bottom: 1px solid var(--am-border);
+                display: flex; flex-direction: column; gap: 2px;
+            }
+            .am-section-card__title { font-size: 15px; font-weight: 600; color: var(--am-text); }
+            .am-section-card__sub   { font-size: 12px; color: var(--am-muted); }
+            .am-section-card__body  { padding: 20px; }
+
+            /* ── Compatibility: card classes still used elsewhere ────────── */
+            .card {
+                background: var(--am-surface); border: 1px solid var(--am-border);
+                border-radius: 10px; margin-bottom: 24px; overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            }
+            .card-header {
+                padding: 16px 20px; border-bottom: 1px solid var(--am-border);
+                background: var(--am-surface);
+            }
+            .card-title        { font-size: 15px; font-weight: 600; color: var(--am-text); margin: 0; }
+            .card-title-sm     { font-size: 14px; font-weight: 600; color: var(--am-text); margin: 0; }
+            .card-subtitle     { font-size: 12px; color: var(--am-muted); margin: 3px 0 0; font-weight: 400; }
+            .card-body         { padding: 20px; }
+
+            /* ── Tarjeta de evaluación ───────────────────────────────────── */
+            .am-eval-card {
+                background: var(--am-surface); border: 1px solid var(--am-border);
+                border-radius: 10px; margin-bottom: 16px; overflow: hidden;
+            }
+            .am-eval-card__header {
+                display: flex; align-items: center; gap: 8px;
+                padding: 10px 16px; background: var(--am-bg);
+                border-bottom: 1px solid var(--am-border);
+            }
+            .am-eval-check { flex-shrink: 0; cursor: pointer; }
+
+            /* ── Filas de cuestionario ───────────────────────────────────── */
+            .am-survey-row {
+                display: flex; align-items: center; gap: 10px;
+                padding: 10px 16px; border-bottom: 1px solid var(--am-light);
+                transition: background 0.12s;
+            }
+            .am-survey-row:last-child { border-bottom: none; }
+            .am-survey-row:hover { background: var(--am-bg); }
+            .am-row-dot {
+                width: 9px; height: 9px; min-width: 9px;
+                border-radius: 50%; display: inline-block; flex-shrink: 0;
+            }
+            .am-row-title {
+                flex: 1; font-size: 13px; font-weight: 500; color: var(--am-text);
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+            }
+            .am-row-score { font-size: 17px; font-weight: 700; flex-shrink: 0; }
+            .am-row-max   { font-size: 10px; font-weight: 400; color: var(--am-muted); }
+            .am-row-badge { font-size: 10px; padding: 3px 8px; border-radius: 4px;
+                            white-space: nowrap; flex-shrink: 0; }
+            .am-ver-detalle {
+                background: none; border: 1px solid var(--am-border); border-radius: 5px;
+                padding: 4px 10px; font-size: 11px; font-weight: 500; cursor: pointer;
+                color: var(--am-muted); white-space: nowrap; flex-shrink: 0;
+                transition: all 0.15s;
+            }
+            .am-ver-detalle:hover {
+                border-color: var(--am-primary); color: var(--am-primary);
+                background: rgba(var(--am-primary-rgb), 0.04);
+            }
+            .am-row-check { flex-shrink: 0; cursor: pointer; }
+
+            /* ── Tablas ─────────────────────────────────────────────────── */
+            table        { width: 100%; border-collapse: collapse; font-size: 14px; }
+            thead        { background: var(--am-bg); border-bottom: 1px solid var(--am-border); }
+            th           { padding: 10px 14px; text-align: left; font-weight: 600;
+                           color: var(--am-muted); font-size: 12px; text-transform: uppercase;
+                           letter-spacing: 0.5px; }
+            td           { padding: 12px 14px; border-bottom: 1px solid var(--am-light); color: var(--am-text); }
+            tr:last-child td { border-bottom: none; }
+            tbody tr:hover   { background: var(--am-bg); }
+
+            /* ── Barra flotante de informe ───────────────────────────────── */
+            .am-float-bar {
+                position: fixed; bottom: 0; left: 260px; right: 0; z-index: 1050;
+                background: #1e293b; color: #fff;
+                display: flex; align-items: center; gap: 12px; padding: 12px 32px;
+                box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+                transform: translateY(100%); transition: transform 0.22s ease;
+            }
+            .am-float-bar.am-float-bar--on { transform: translateY(0); }
+            .am-float-count {
+                font-weight: 700; font-size: 12px; white-space: nowrap;
+                background: var(--am-primary); color: #fff;
+                padding: 2px 10px; border-radius: 12px;
+            }
+            .am-float-tags {
+                display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0;
+            }
+            .am-float-tag {
+                display: inline-flex; align-items: center; gap: 2px;
+                background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9);
+                padding: 2px 8px; border-radius: 4px; font-size: 11px;
+            }
+            .am-float-actions { display: flex; gap: 8px; flex-shrink: 0; }
+            .am-btn-ghost {
+                background: none; border: 1px solid rgba(255,255,255,0.3);
+                color: rgba(255,255,255,0.8); padding: 5px 14px; border-radius: 6px;
+                font-size: 12px; cursor: pointer; transition: all 0.15s;
+            }
+            .am-btn-ghost:hover { border-color: rgba(255,255,255,.7); color: #fff; }
+            .am-btn-primary-inv {
+                background: var(--am-primary); border: none; color: #fff;
+                padding: 5px 14px; border-radius: 6px; font-size: 12px;
+                font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+            }
+            .am-btn-primary-inv:hover { opacity: 0.88; }
+
+            /* ── Drawer lateral ─────────────────────────────────────────── */
+            .am-drawer {
+                position: fixed; inset: 0; z-index: 1100;
+                pointer-events: none;
+            }
+            .am-drawer--open { pointer-events: all; }
+            .am-drawer__overlay {
+                position: absolute; inset: 0;
+                background: rgba(0,0,0,0); transition: background 0.22s;
+            }
+            .am-drawer--open .am-drawer__overlay { background: rgba(0,0,0,0.35); }
+            .am-drawer__panel {
+                position: absolute; top: 0; right: 0;
+                width: 560px; max-width: 96vw; height: 100%;
+                background: var(--am-surface);
+                box-shadow: -6px 0 24px rgba(0,0,0,0.12);
+                display: flex; flex-direction: column;
+                transform: translateX(100%); transition: transform 0.22s ease;
+            }
+            .am-drawer--open .am-drawer__panel { transform: translateX(0); }
+            .am-drawer__header {
+                padding: 14px 20px; border-bottom: 1px solid var(--am-border);
+                display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+            }
+            .am-drawer__title {
+                flex: 1; font-size: 14px; font-weight: 600; color: var(--am-text); margin: 0;
+            }
+            .am-drawer__close {
+                background: none; border: none; color: var(--am-muted);
+                cursor: pointer; font-size: 18px; padding: 4px 6px; border-radius: 4px;
+                transition: all 0.12s;
+            }
+            .am-drawer__close:hover { background: var(--am-bg); color: var(--am-text); }
+            .am-drawer__body {
+                flex: 1; overflow-y: auto; padding: 20px;
+            }
+            .am-drawer__footer {
+                padding: 12px 20px; border-top: 1px solid var(--am-border);
+                display: flex; justify-content: flex-end; flex-shrink: 0;
+            }
         </style>"""
 
     def _error_html(self, message):

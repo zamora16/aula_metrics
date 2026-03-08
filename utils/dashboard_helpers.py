@@ -128,6 +128,7 @@ def detect_user_role(user):
     role_info = {
         'role': 'tutor',
         'user_id': user.id,
+        'user_name': user.name or '',
         'is_admin': False,
         'is_counselor': False,
         'is_management': False,
@@ -215,5 +216,6 @@ def metric_values_to_records(metric_values):
             'group_id':   mv.academic_group_id.id           if mv.academic_group_id else None,
             'group_name': mv.academic_group_id.name         if mv.academic_group_id else None,
             'curso':      mv.academic_group_id.course_level if mv.academic_group_id else None,
+            'completed_at': (mv.evaluation_id.date_start if mv.evaluation_id and mv.evaluation_id.date_start else mv.timestamp),
         })
     return records
