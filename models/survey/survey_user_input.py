@@ -189,7 +189,7 @@ class SurveyUserInput(models.Model):
         self.ensure_one()
         
         evaluation = self.env['aula_metrics.evaluation'].search([
-            ('state', 'in', ['scheduled', 'active']),
+            ('state', 'in', ['scheduled', 'active', 'closed']),
             ('survey_ids', 'in', self.survey_id.id)
         ], order='date_start desc', limit=1)
         

@@ -69,9 +69,18 @@ class QualitativeResponse(models.Model):
             )
             record.has_alert_keywords = bool(found)
             record.detected_keyword_ids = [(6, 0, found.ids)] if found else [(5, 0, 0)]
-            if record.has_alert_keywords and record.id:
-                self.env['aula_metrics.alert'].sudo().create_qualitative_alert(record)
     
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        # Trigger alert creation AFTER the record and its computed fields are persisted.
+        # Done here (not inside _compute_alert_keywords) to avoid calling create()
+        # inside a stored compute, which causes ORM flush recursion errors.
+        for record in records:
+            if record.has_alert_keywords:
+                self.env['aula_metrics.alert'].sudo().create_qualitative_alert(record)
+        return records
+
     @api.depends('student_id')
     def _compute_display_name(self):
         """Nombre mostrado según rol del usuario."""

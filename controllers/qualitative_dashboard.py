@@ -4,6 +4,7 @@ from odoo.http import request
 import json
 from collections import Counter
 import re
+from markupsafe import Markup
 
 # Importar utilidades compartidas
 from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_helpers, palette, role_service
@@ -79,8 +80,10 @@ class QualitativeDashboardController(http.Controller):
         }
         context['role_desc'] = role_labels.get(role, '')
         context['css_styles'] = dashboard_styles.get_common_styles()
-        context['wordcloud_json'] = json.dumps(context.get('wordcloud_data', []))
-        context['palette_json'] = json.dumps(palette.METRICS_PALETTE[:6])
+        # Markup prevents QWeb t-out from HTML-escaping the JSON double quotes,
+        # which would produce &quot; and break the inline JavaScript.
+        context['wordcloud_json'] = Markup(json.dumps(context.get('wordcloud_data', [])))
+        context['palette_json'] = Markup(json.dumps(palette.METRICS_PALETTE[:6]))
 
         template = (
             'aula_metrics.qualitative_dashboard_embedded'

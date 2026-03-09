@@ -131,7 +131,7 @@ class MetricValue(models.Model):
         records = self.search([
             ('evaluation_id', '=', evaluation_id),
             ('metric_name', '=', metric_name),
-            ('value_float', '!=', False)
+            ('value_float', '!=', None)
         ])
         
         if not records:

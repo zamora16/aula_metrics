@@ -21,9 +21,11 @@ class Threshold(models.Model):
     def _get_score_field_options(self):
         """Genera opciones dinámicamente desde TODOS los cuestionarios AulaMetrics (oficiales y del centro)"""
         options = []
-        # Obtener todos los cuestionarios de AulaMetrics (oficiales y ad hoc)
+        # Obtener todos los cuestionarios: oficiales (is_aulametrics) y del centro (is_adhoc)
         surveys = self.env['survey.survey'].search([
-            ('is_aulametrics', '=', True)
+            '|',
+            ('is_aulametrics', '=', True),
+            ('is_adhoc', '=', True),
         ], order='is_adhoc, title')
         
         for survey in surveys:

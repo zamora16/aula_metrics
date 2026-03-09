@@ -125,18 +125,25 @@ class DashboardStudentProfile(models.TransientModel):
     def _generate_student_kpis(self, student, df):
         """Genera las 4 tarjetas KPI del estudiante."""
         total_evals   = df['evaluation_id'].nunique() if not df.empty else 0
-        total_metrics = len(df) if not df.empty else 0
         group_name    = student.academic_group_id.name if student.academic_group_id else 'Sin grupo'
         alerts_count  = self.env['aula_metrics.alert'].search_count([
             ('student_id', '=', student.id),
             ('status',     '=', 'active'),
         ])
 
+        participations  = self.env['aula_metrics.participation'].search([
+            ('student_id', '=', student.id),
+        ])
+        total_parts     = len(participations)
+        completed_parts = len(participations.filtered(lambda p: p.state == 'completed'))
+        participation_pct = f'{round(completed_parts / total_parts * 100)}%' if total_parts else '—'
+
+        alert_cls = 'kpi-value kpi-value--danger' if alerts_count > 0 else 'kpi-value'
         kpis = [
             f'<div class="kpi-card"><div class="kpi-label">Evaluaciones</div><div class="kpi-value">{total_evals}</div><div class="kpi-description">Completadas</div></div>',
-            f'<div class="kpi-card"><div class="kpi-label">Métricas</div><div class="kpi-value">{total_metrics}</div><div class="kpi-description">Registradas</div></div>',
-            f'<div class="kpi-card"><div class="kpi-label">Grupo</div><div class="kpi-value" style="font-size:22px;font-weight:600;">{group_name}</div><div class="kpi-description">Académico</div></div>',
-            f'<div class="kpi-card"><div class="kpi-label">Alertas</div><div class="kpi-value" style="color:{"" if alerts_count == 0 else palette.UI_DANGER};">{alerts_count}</div><div class="kpi-description">Activas</div></div>',
+            f'<div class="kpi-card"><div class="kpi-label">Participación</div><div class="kpi-value">{participation_pct}</div><div class="kpi-description">Encuestas respondidas</div></div>',
+            f'<div class="kpi-card"><div class="kpi-label">Grupo</div><div class="kpi-value kpi-value--group">{group_name}</div><div class="kpi-description">Académico</div></div>',
+            f'<div class="kpi-card"><div class="kpi-label">Alertas</div><div class="{alert_cls}">{alerts_count}</div><div class="kpi-description">Activas</div></div>',
         ]
         return '\n'.join(kpis)
 
@@ -257,9 +264,9 @@ class DashboardStudentProfile(models.TransientModel):
                 <div class="am-avatar-circle">
                     <i class="fa-solid fa-user"></i>
                 </div>
-                <div style="min-width:0;flex:1;">
-                    <div class="am-student-name">{student.name}</div>
-                    <div class="am-student-meta">
+                <div style="min-width:0;flex:1;display:flex;align-items:center;gap:16px;">
+                    <div class="am-student-name" style="flex-shrink:1;min-width:0;">{student.name}</div>
+                    <div class="am-student-meta" style="flex-shrink:0;white-space:nowrap;">
                         <i class="fa-solid fa-users me-1"></i>{group_name}
                         <span class="am-meta-sep">·</span>
                         <i class="fa-solid fa-calendar me-1"></i>{fields.Date.today().strftime('%d/%m/%Y')}
@@ -589,285 +596,7 @@ class DashboardStudentProfile(models.TransientModel):
         }
 
     def _profile_styles_chartjs(self):
-        """Estilos CSS del perfil rediseñado (layout de 3 capas sticky + 4 pestañas)."""
-        return """
-        <style>
-            /* ── Reset wrapper y ocultación de topbar estándar ─────────────── */
-            .content-wrapper { padding: 0 !important; }
-            /* El perfil tiene su propio encabezado sticky; la topbar estándar sobra */
-            .main-content > .topbar { display: none !important; }
-
-            /* ── Variables de altura de capas sticky ───────────────────── */
-            :root {
-                --am-l1: 64px;
-                --am-l2: 64px;
-                --am-l3: 45px;
-            }
-
-            /* ── Capas sticky ───────────────────────────────────────────── */
-            .am-sticky-l1 {
-                position: sticky; top: 0; z-index: 60;
-                background: var(--am-surface);
-                border-bottom: 1px solid var(--am-border);
-                box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-                padding: 12px 32px;
-                min-height: var(--am-l1);
-                display: flex; align-items: center;
-            }
-            .am-sticky-l2 {
-                position: sticky; top: var(--am-l1); z-index: 59;
-                background: var(--am-bg);
-                border-bottom: 1px solid var(--am-border);
-                padding: 10px 32px;
-                min-height: var(--am-l2);
-                display: flex; align-items: center;
-            }
-            .am-sticky-l3 {
-                position: sticky;
-                top: calc(var(--am-l1) + var(--am-l2));
-                z-index: 58;
-                background: var(--am-surface);
-                border-bottom: 2px solid var(--am-border);
-                padding: 0 32px;
-            }
-
-            /* ── Cabecera del alumno (capa 1) ───────────────────────────── */
-            .am-avatar-circle {
-                width: 40px; height: 40px; border-radius: 50%;
-                background: var(--am-bg); border: 2px solid var(--am-border);
-                display: flex; align-items: center; justify-content: center;
-                flex-shrink: 0; color: var(--am-primary); font-size: 18px;
-            }
-            .am-student-name {
-                font-size: 17px; font-weight: 700; color: var(--am-text);
-                line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            }
-            .am-student-meta {
-                font-size: 12px; color: var(--am-muted); margin-top: 2px;
-            }
-            .am-meta-sep { margin: 0 6px; }
-
-            /* ── KPI strip (capa 2) ─────────────────────────────────────── */
-            .am-kpi-strip {
-                display: flex; gap: 0; align-items: center; width: 100%;
-            }
-            .kpi-card {
-                background: none; border: none; border-right: 1px solid var(--am-border);
-                border-radius: 0; padding: 4px 24px 4px 0; margin: 0 24px 0 0;
-                flex: 0 0 auto; min-width: 110px;
-                box-shadow: none;
-            }
-            .kpi-card:last-child { border-right: none; }
-            .kpi-card:hover { transform: none; box-shadow: none; }
-            .kpi-label {
-                font-size: 10px; font-weight: 600; color: var(--am-muted);
-                text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
-            }
-            .kpi-value { font-size: 22px; font-weight: 700; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: var(--am-text); line-height: 1.1; }
-            .kpi-description { font-size: 10px; color: var(--am-muted); font-weight: 400; }
-
-            /* ── Pestañas principales (capa 3) ──────────────────────────── */
-            .am-main-tab-bar {
-                display: flex; gap: 0; align-items: flex-end; height: var(--am-l3);
-            }
-            .am-main-tab {
-                background: none; border: none;
-                border-bottom: 3px solid transparent;
-                padding: 10px 20px; margin-right: 4px;
-                font-size: 13px; font-weight: 500; color: var(--am-muted);
-                cursor: pointer; transition: all 0.15s; white-space: nowrap;
-                border-radius: 0; line-height: 1;
-            }
-            .am-main-tab:hover  { color: var(--am-primary); }
-            .am-main-tab.active {
-                color: var(--am-primary); font-weight: 600;
-                border-bottom-color: var(--am-primary);
-            }
-
-            /* ── Cuerpo de pestañas ─────────────────────────────────────── */
-            .am-tabs-body { padding-bottom: 80px; }
-            .am-tab-pane  { display: none; padding: 24px 32px; }
-            .am-tab-pane.am-show { display: block; }
-
-            /* ── Sub-pestañas ───────────────────────────────────────────── */
-            .am-subtab-bar {
-                display: flex; gap: 0; border-bottom: 1px solid var(--am-border);
-                margin-bottom: 24px;
-            }
-            .am-subtab {
-                background: none; border: none;
-                border-bottom: 2px solid transparent; margin-bottom: -1px;
-                padding: 8px 16px; font-size: 13px; font-weight: 500;
-                color: var(--am-muted); cursor: pointer; transition: all 0.15s;
-            }
-            .am-subtab:hover  { color: var(--am-primary); }
-            .am-subtab.active {
-                color: var(--am-primary); font-weight: 600;
-                border-bottom-color: var(--am-primary);
-            }
-            .am-subpane { display: none; }
-            .am-subpane.am-show { display: block; }
-
-            /* ── Tarjeta de sección (reemplaza .card) ───────────────────── */
-            .am-section-card {
-                background: var(--am-surface); border: 1px solid var(--am-border);
-                border-radius: 10px; margin-bottom: 24px; overflow: hidden;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            }
-            .am-section-card__header {
-                padding: 16px 20px; border-bottom: 1px solid var(--am-border);
-                display: flex; flex-direction: column; gap: 2px;
-            }
-            .am-section-card__title { font-size: 15px; font-weight: 600; color: var(--am-text); }
-            .am-section-card__sub   { font-size: 12px; color: var(--am-muted); }
-            .am-section-card__body  { padding: 20px; }
-
-            /* ── Compatibility: card classes still used elsewhere ────────── */
-            .card {
-                background: var(--am-surface); border: 1px solid var(--am-border);
-                border-radius: 10px; margin-bottom: 24px; overflow: hidden;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            }
-            .card-header {
-                padding: 16px 20px; border-bottom: 1px solid var(--am-border);
-                background: var(--am-surface);
-            }
-            .card-title        { font-size: 15px; font-weight: 600; color: var(--am-text); margin: 0; }
-            .card-title-sm     { font-size: 14px; font-weight: 600; color: var(--am-text); margin: 0; }
-            .card-subtitle     { font-size: 12px; color: var(--am-muted); margin: 3px 0 0; font-weight: 400; }
-            .card-body         { padding: 20px; }
-
-            /* ── Tarjeta de evaluación ───────────────────────────────────── */
-            .am-eval-card {
-                background: var(--am-surface); border: 1px solid var(--am-border);
-                border-radius: 10px; margin-bottom: 16px; overflow: hidden;
-            }
-            .am-eval-card__header {
-                display: flex; align-items: center; gap: 8px;
-                padding: 10px 16px; background: var(--am-bg);
-                border-bottom: 1px solid var(--am-border);
-            }
-            .am-eval-check { flex-shrink: 0; cursor: pointer; }
-
-            /* ── Filas de cuestionario ───────────────────────────────────── */
-            .am-survey-row {
-                display: flex; align-items: center; gap: 10px;
-                padding: 10px 16px; border-bottom: 1px solid var(--am-light);
-                transition: background 0.12s;
-            }
-            .am-survey-row:last-child { border-bottom: none; }
-            .am-survey-row:hover { background: var(--am-bg); }
-            .am-row-dot {
-                width: 9px; height: 9px; min-width: 9px;
-                border-radius: 50%; display: inline-block; flex-shrink: 0;
-            }
-            .am-row-title {
-                flex: 1; font-size: 13px; font-weight: 500; color: var(--am-text);
-                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-            }
-            .am-row-score { font-size: 17px; font-weight: 700; flex-shrink: 0; }
-            .am-row-max   { font-size: 10px; font-weight: 400; color: var(--am-muted); }
-            .am-row-badge { font-size: 10px; padding: 3px 8px; border-radius: 4px;
-                            white-space: nowrap; flex-shrink: 0; }
-            .am-ver-detalle {
-                background: none; border: 1px solid var(--am-border); border-radius: 5px;
-                padding: 4px 10px; font-size: 11px; font-weight: 500; cursor: pointer;
-                color: var(--am-muted); white-space: nowrap; flex-shrink: 0;
-                transition: all 0.15s;
-            }
-            .am-ver-detalle:hover {
-                border-color: var(--am-primary); color: var(--am-primary);
-                background: rgba(var(--am-primary-rgb), 0.04);
-            }
-            .am-row-check { flex-shrink: 0; cursor: pointer; }
-
-            /* ── Tablas ─────────────────────────────────────────────────── */
-            table        { width: 100%; border-collapse: collapse; font-size: 14px; }
-            thead        { background: var(--am-bg); border-bottom: 1px solid var(--am-border); }
-            th           { padding: 10px 14px; text-align: left; font-weight: 600;
-                           color: var(--am-muted); font-size: 12px; text-transform: uppercase;
-                           letter-spacing: 0.5px; }
-            td           { padding: 12px 14px; border-bottom: 1px solid var(--am-light); color: var(--am-text); }
-            tr:last-child td { border-bottom: none; }
-            tbody tr:hover   { background: var(--am-bg); }
-
-            /* ── Barra flotante de informe ───────────────────────────────── */
-            .am-float-bar {
-                position: fixed; bottom: 0; left: 260px; right: 0; z-index: 1050;
-                background: #1e293b; color: #fff;
-                display: flex; align-items: center; gap: 12px; padding: 12px 32px;
-                box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
-                transform: translateY(100%); transition: transform 0.22s ease;
-            }
-            .am-float-bar.am-float-bar--on { transform: translateY(0); }
-            .am-float-count {
-                font-weight: 700; font-size: 12px; white-space: nowrap;
-                background: var(--am-primary); color: #fff;
-                padding: 2px 10px; border-radius: 12px;
-            }
-            .am-float-tags {
-                display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0;
-            }
-            .am-float-tag {
-                display: inline-flex; align-items: center; gap: 2px;
-                background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9);
-                padding: 2px 8px; border-radius: 4px; font-size: 11px;
-            }
-            .am-float-actions { display: flex; gap: 8px; flex-shrink: 0; }
-            .am-btn-ghost {
-                background: none; border: 1px solid rgba(255,255,255,0.3);
-                color: rgba(255,255,255,0.8); padding: 5px 14px; border-radius: 6px;
-                font-size: 12px; cursor: pointer; transition: all 0.15s;
-            }
-            .am-btn-ghost:hover { border-color: rgba(255,255,255,.7); color: #fff; }
-            .am-btn-primary-inv {
-                background: var(--am-primary); border: none; color: #fff;
-                padding: 5px 14px; border-radius: 6px; font-size: 12px;
-                font-weight: 600; cursor: pointer; transition: opacity 0.15s;
-            }
-            .am-btn-primary-inv:hover { opacity: 0.88; }
-
-            /* ── Drawer lateral ─────────────────────────────────────────── */
-            .am-drawer {
-                position: fixed; inset: 0; z-index: 1100;
-                pointer-events: none;
-            }
-            .am-drawer--open { pointer-events: all; }
-            .am-drawer__overlay {
-                position: absolute; inset: 0;
-                background: rgba(0,0,0,0); transition: background 0.22s;
-            }
-            .am-drawer--open .am-drawer__overlay { background: rgba(0,0,0,0.35); }
-            .am-drawer__panel {
-                position: absolute; top: 0; right: 0;
-                width: 560px; max-width: 96vw; height: 100%;
-                background: var(--am-surface);
-                box-shadow: -6px 0 24px rgba(0,0,0,0.12);
-                display: flex; flex-direction: column;
-                transform: translateX(100%); transition: transform 0.22s ease;
-            }
-            .am-drawer--open .am-drawer__panel { transform: translateX(0); }
-            .am-drawer__header {
-                padding: 14px 20px; border-bottom: 1px solid var(--am-border);
-                display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-            }
-            .am-drawer__title {
-                flex: 1; font-size: 14px; font-weight: 600; color: var(--am-text); margin: 0;
-            }
-            .am-drawer__close {
-                background: none; border: none; color: var(--am-muted);
-                cursor: pointer; font-size: 18px; padding: 4px 6px; border-radius: 4px;
-                transition: all 0.12s;
-            }
-            .am-drawer__close:hover { background: var(--am-bg); color: var(--am-text); }
-            .am-drawer__body {
-                flex: 1; overflow-y: auto; padding: 20px;
-            }
-            .am-drawer__footer {
-                padding: 12px 20px; border-top: 1px solid var(--am-border);
-                display: flex; justify-content: flex-end; flex-shrink: 0;
-            }
-        </style>"""
+        return dashboard_styles.get_profile_styles()
 
     def _error_html(self, message):
         raise ValueError(message)

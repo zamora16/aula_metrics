@@ -127,7 +127,7 @@ class Participation(models.Model):
             ('student_id', '=', self.student_id.id),
             ('evaluation_id', '=', self.evaluation_id.id)
         ])
-        return {m.metric_name: m.value_float for m in metrics if m.value_float}
+        return {m.metric_name: m.value_float for m in metrics if m.value_float is not None}
     
     def action_complete(self):
         """Marca la participación como completada y calcula puntuaciones"""

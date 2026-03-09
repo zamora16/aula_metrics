@@ -18,6 +18,11 @@
                             invisible="state not in ('draft', 'scheduled', 'active')"/>
                     <button name="action_reset_to_draft" type="object" string="Volver a Borrador" 
                             invisible="state != 'cancelled'"/>
+                    <button name="action_recalculate_metrics" type="object"
+                            string="Recalcular métricas"
+                            invisible="state not in ('scheduled', 'active', 'closed')"
+                            confirm="¿Regenerar todas las métricas y respuestas cualitativas de esta evaluación a partir de los cuestionarios ya completados?"
+                            icon="fa-refresh"/>
                     
                     <!-- Barra de estado -->
                     <field name="state" widget="statusbar" 

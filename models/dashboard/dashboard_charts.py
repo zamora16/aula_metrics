@@ -60,7 +60,7 @@ class DashboardCharts(models.TransientModel):
         # Generar gráficos
         charts = self._generate_charts(df, filters, available_metrics, role_info, segmentation_vars)
         
-        # Generar KPIs (retorna dict con kpi_students, kpi_groups, kpi_evals, kpi_metrics)
+        # Generar KPIs (retorna dict con kpi_students, kpi_groups, kpi_evals, kpi_participation)
         kpi_values = self._generate_kpis(df, filters, role_info)
         
         # Construir contexto para dashboard_main
@@ -167,8 +167,12 @@ class DashboardCharts(models.TransientModel):
                         multiscale_metric_names.update(numeric_names)
 
         # Paso 2: métricas individuales (no agrupadas en paso 1)
+        # Solo tipos que producen gráficos cuantitativos; 'text' va al dashboard cualitativo.
         grouped = (
-            df[~df['metric_name'].isin(multiscale_metric_names)]
+            df[
+                ~df['metric_name'].isin(multiscale_metric_names) &
+                (df['metric_type'] == 'numeric')
+            ]
             .groupby(['metric_name', 'metric_label', 'metric_type'])
             .size().reset_index(name='count')
         )

@@ -396,6 +396,51 @@ class Evaluation(models.Model):
                         'state': 'pending',
                     })
     
+    def action_recalculate_metrics(self):
+        """
+        Recalcula métricas y respuestas cualitativas para todas las participaciones
+        de esta evaluación a partir de los user_input ya completados.
+        Útil para regenerar datos cuando se repararon bugs de scoring.
+        """
+        self.ensure_one()
+        SurveyUserInput = self.env['survey.user_input']
+
+        for participation in self.participation_ids:
+            # 1. Recalcular métricas cuantitativas (metric_value)
+            try:
+                participation._calculate_scores()
+            except Exception:
+                pass
+
+            # 2. Regenerar respuestas cualitativas y de opción múltiple
+            for survey in self.survey_ids:
+                user_input = SurveyUserInput.search([
+                    ('partner_id', '=', participation.student_id.id),
+                    ('survey_id', '=', survey.id),
+                    ('state', '=', 'done'),
+                ], limit=1)
+                if not user_input:
+                    continue
+                try:
+                    user_input._save_qualitative_responses()
+                except Exception:
+                    pass
+                try:
+                    user_input._save_multiplechoice_responses()
+                except Exception:
+                    pass
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Métricas recalculadas',
+                'message': 'Se han regenerado las métricas de todos los cuestionarios completados en esta evaluación.',
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
     def action_view_participations(self):
         """Acción para ver participaciones desde el smart button"""
         self.ensure_one()

@@ -44,37 +44,30 @@ class UniversalMatrixScoring:
                 if not lines:
                     continue
                 # Calcular el máximo valor de score/sequence para normalizar (fuera del bucle)
-                max_value = self._get_max_score(question)
-                if not max_value:
+                min_val, max_val = self._get_score_range(question)
+                if max_val is None or max_val == min_val:
                     continue
-                # Normalizar todas las filas de esta matriz usando score (fallback a sequence)
+                # Determinar si las opciones tienen scores explícitos configurados (no-cero).
+                # Si ninguna opción tiene score >0, se usa sequence como valor numérico.
+                has_configured_scores = any(
+                    a.score not in (None, 0.0, False)
+                    for a in question.suggested_answer_ids
+                )
+                # Normalizar todas las filas de esta matriz usando min-max:
+                # opción mínima → 0, opción máxima → 100
                 for line in lines:
                     ans = line.suggested_answer_id
                     if ans is not None:
-                        # Usar score si está definido (None), si no fallback a sequence
-                        value = ans.score if ans.score is not None else ans.sequence
+                        if has_configured_scores:
+                            value = ans.score  # puede ser 0 legítimamente (ej. "Nunca")
+                        else:
+                            value = ans.sequence  # fallback cuando no hay scores configurados
                         if value is not None:
-                            score = (value / max_value) * 100
+                            score = (value - min_val) / (max_val - min_val) * 100
                             all_scores.append(score)
             except Exception:
                 continue
 
-    def _get_max_score(self, question):
-        """Detecta el máximo score definido en las opciones de la matriz, fallback a max_sequence si no hay scores."""
-        try:
-            answers = question.suggested_answer_ids
-            if answers:
-                scores = [ans.score for ans in answers if hasattr(ans, 'score') and ans.score not in (None, 0.0, False)]
-                if scores:
-                    return max(scores)
-                # Fallback a sequence si no hay scores
-                sequences = [ans.sequence for ans in answers if hasattr(ans, 'sequence') and ans.sequence is not None]
-                if sequences:
-                    return max(sequences)
-        except Exception:
-            pass
-        return None
-        
         # Si tenemos scores, crear la métrica única
         if all_scores:
             avg_score = sum(all_scores) / len(all_scores)
@@ -99,6 +92,37 @@ class UniversalMatrixScoring:
         metrics.extend(self._process_non_matrix_questions(user_input))
         
         return metrics
+
+    def _get_score_range(self, question):
+        """
+        Devuelve (min_val, max_val) para normalizar opciones de una pregunta matriz.
+        - Si hay scores explícitos configurados (alguno > 0): min=0, max=max_score.
+          Así "Nunca=0" siempre vale 0 y la opción máxima vale 100.
+        - Si no hay scores configurados: usa sequences con min-max real,
+          de modo que la primera opción siempre vale 0 y la última 100,
+          independientemente de que Odoo haya asignado sequences 10, 20, 30...
+        """
+        try:
+            answers = question.suggested_answer_ids
+            if answers:
+                configured = [a.score for a in answers
+                              if hasattr(a, 'score') and a.score not in (None, 0.0, False)]
+                if configured:
+                    # Scores explícitos: mínimo semántico es 0 (ej. "Nunca")
+                    return (0.0, max(configured))
+                # Sin scores: usar sequences con normalización min-max
+                sequences = [a.sequence for a in answers
+                             if hasattr(a, 'sequence') and a.sequence is not None]
+                if sequences:
+                    return (min(sequences), max(sequences))
+        except Exception:
+            pass
+        return (None, None)
+
+    def _get_max_score(self, question):
+        """Compatibilidad: delega a _get_score_range y devuelve solo el máximo."""
+        _, max_val = self._get_score_range(question)
+        return max_val
     
     def _get_max_sequence(self, question):
         """Detecta automáticamente el max_sequence de una matriz"""
@@ -466,4 +490,5 @@ class SwlsScoring:
 SCORING_STRATEGIES = {
     'SDQ': SdqScoring,
     'SWLS': SwlsScoring,
+    'ADHOC': UniversalMatrixScoring,
 }

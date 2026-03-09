@@ -118,25 +118,17 @@ class Alert(models.Model):
                 if not alert.severity:
                     alert.severity = 'moderate'
                 continue
-            if alert.qualitative_response_id and alert.qualitative_response_id.detected_keywords:
+            if alert.qualitative_response_id and alert.qualitative_response_id.detected_keyword_ids:
                 # Alerta cualitativa: usar severidad más alta de keywords detectadas
                 try:
-                    keywords_list = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
-                    
-                    # Buscar keywords en BD para obtener sus severidades
-                    keywords = self.env['aula_metrics.alert_keyword'].search([
-                        ('keyword', 'in', keywords_list),
-                        ('active', '=', True)
-                    ])
-                    
+                    keywords = alert.qualitative_response_id.detected_keyword_ids.filtered('active')
                     if keywords:
-                        # Ordenar por severidad (high > moderate > low)
                         severity_order = {'high': 3, 'moderate': 2, 'low': 1}
-                        max_severity = max(keywords.mapped('severity'), 
+                        max_severity = max(keywords.mapped('severity'),
                                          key=lambda s: severity_order.get(s, 0))
                         alert.severity = max_severity
                     else:
-                        alert.severity = 'moderate'  # Default si no se encuentran keywords
+                        alert.severity = 'moderate'
                 except:
                     alert.severity = 'moderate'
             elif alert.threshold_id:
@@ -155,8 +147,9 @@ class Alert(models.Model):
             elif alert.qualitative_response_id:
                 # Alerta cualitativa: mensaje personalizado con keywords
                 try:
-                    keywords = json.loads(alert.qualitative_response_id.detected_keywords or '[]')
-                    keywords_str = ', '.join(keywords)
+                    keywords_str = ', '.join(
+                        alert.qualitative_response_id.detected_keyword_ids.mapped('keyword')
+                    )
                     alert.message = f"Se detectaron palabras de alerta en una respuesta cualitativa: {keywords_str}"
                 except:
                     alert.message = "Se detectaron palabras de alerta en una respuesta cualitativa"
@@ -220,11 +213,7 @@ class Alert(models.Model):
             return existing
         
         # Contar keywords como score_value
-        try:
-            keywords = json.loads(qualitative_response.detected_keywords or '[]')
-            score_value = float(len(keywords))
-        except:
-            score_value = 1.0
+        score_value = float(len(qualitative_response.detected_keyword_ids)) or 1.0
         
         # Crear alerta SIN threshold (severity se calculará desde keywords)
         alert = self.create({

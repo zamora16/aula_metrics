@@ -185,15 +185,17 @@ def metric_values_to_records(metric_values):
     """
     records = []
     for mv in metric_values:
-        if mv.value_float:
-            metric_type = 'numeric'
-            unified_val = mv.value_float
+        # Check text/json FIRST: Odoo reads NULL Float fields as 0.0, so checking
+        # value_float first would misclassify text/json metrics as numeric.
+        if mv.value_text:
+            metric_type = 'text'
+            unified_val = mv.value_text
         elif mv.value_json:
             metric_type = 'json'
             unified_val = mv.value_json
-        elif mv.value_text:
-            metric_type = 'text'
-            unified_val = mv.value_text
+        elif mv.value_float is not None:
+            metric_type = 'numeric'
+            unified_val = mv.value_float
         else:
             continue
 
@@ -202,7 +204,7 @@ def metric_values_to_records(metric_values):
             'metric_label':   mv.metric_label or mv.metric_name.replace('_', ' ').capitalize(),
             'metric_type':    metric_type,
             'value':          unified_val,
-            'value_numeric':  mv.value_float if mv.value_float else None,
+            'value_numeric':  mv.value_float if mv.value_float is not None else None,
             'value_json':     mv.value_json  if mv.value_json  else None,
             'value_text':     mv.value_text  if mv.value_text  else None,
             'timestamp':      mv.timestamp,

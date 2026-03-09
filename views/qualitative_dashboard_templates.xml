@@ -208,7 +208,7 @@
                                             </td>
                                             <td><small><t t-out="resp['date']"/></small></td>
                                             <td>
-                                                <t t-if="resp['response']|length &gt; 150">
+                                                <t t-if="len(resp['response'] or '') &gt; 150">
                                                     <t t-out="resp['response'][:150]"/>...
                                                     <a href="#" class="text-primary"
                                                        t-attf-onclick="alert('#{resp['response'][:300].replace(&quot;'&quot;, &quot;\\'&quot;)}...'); return false;">

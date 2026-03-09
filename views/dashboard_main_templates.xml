@@ -103,26 +103,6 @@
                 </t>
             </div>
             <div class="topbar-actions">
-                <t t-if="role_ == 'admin'">
-                    <span class="badge bg-danger">
-                        <i class="fa-solid fa-shield-halved"/> Administrador
-                    </span>
-                </t>
-                <t t-elif="role_ == 'counselor'">
-                    <span class="badge bg-primary">
-                        <i class="fa-solid fa-user-tie"/> Orientador/a
-                    </span>
-                </t>
-                <t t-elif="role_ == 'management'">
-                    <span class="badge bg-warning text-dark">
-                        <i class="fa-solid fa-briefcase"/> Equipo Directivo
-                    </span>
-                </t>
-                <t t-else="">
-                    <span class="badge bg-success">
-                        <i class="fa-solid fa-chalkboard-user"/> Tutor/a
-                    </span>
-                </t>
                 <t t-if="topbar_extra_actions">
                     <t t-out="topbar_extra_actions"/>
                 </t>
@@ -266,9 +246,6 @@
                     <button type="button" class="btn-filter-action" onclick="selectAllEvals()">
                         <i class="fa-solid fa-check-double me-1"/>Todas
                     </button>
-                    <button type="button" class="btn-filter-action" onclick="selectNoneEvals()">
-                        <i class="fa-solid fa-xmark me-1"/>Ninguna
-                    </button>
                     <button type="submit" class="btn-filter-action btn-filter-primary">
                         <i class="fa-solid fa-magnifying-glass me-1"/>Aplicar Filtros
                     </button>
@@ -296,12 +273,12 @@
         <div class="kpi-card">
             <div class="kpi-label">Evaluaciones</div>
             <div class="kpi-value"><t t-out="kpi_evals or 0"/></div>
-            <div class="kpi-description">Completadas</div>
+            <div class="kpi-description">En el dashboard</div>
         </div>
         <div class="kpi-card">
-            <div class="kpi-label">Métricas</div>
-            <div class="kpi-value"><t t-out="kpi_metrics or 0"/></div>
-            <div class="kpi-description">Registradas</div>
+            <div class="kpi-label">Participación media</div>
+            <div class="kpi-value"><t t-out="(str(kpi_participation) + '%') if kpi_participation is not None else '—'"/></div>
+            <div class="kpi-description">Promedio de evaluaciones</div>
         </div>
     </template>
 

@@ -20,11 +20,18 @@ class DashboardChartsBuilder(models.TransientModel):
 
     def _generate_kpis(self, df, filters, role_info):
         """Retorna un dict con los contadores para la plantilla dashboard_kpis."""
+        eval_ids = df['evaluation_id'].dropna().unique().tolist()
+        if eval_ids:
+            evals = self.env['aula_metrics.evaluation'].browse([int(i) for i in eval_ids])
+            rates = [ev.participation_rate for ev in evals if ev.total_students > 0]
+            avg_participation = round(sum(rates) / len(rates)) if rates else 0
+        else:
+            avg_participation = 0
         return {
-            'kpi_students': int(df['student_id'].nunique()),
-            'kpi_groups':   int(df['group_id'].nunique()),
-            'kpi_evals':    int(df['evaluation_id'].nunique()),
-            'kpi_metrics':  int(len(df)),
+            'kpi_students':      int(df['student_id'].nunique()),
+            'kpi_groups':        int(df['group_id'].nunique()),
+            'kpi_evals':         int(df['evaluation_id'].nunique()),
+            'kpi_participation': avg_participation,
         }
 
     # ------------------------------------------------------------------
@@ -49,7 +56,7 @@ class DashboardChartsBuilder(models.TransientModel):
             )
             role = (role_info or {}).get('role', '')
             total_alerts = (
-                sum(e.get('alert_count', 0) for e in active_evals)
+                self.env['aula_metrics.alert'].search_count([('status', '=', 'active')])
                 if role in [ROLE_ADMIN, ROLE_COUNSELOR] else 0
             )
 
@@ -107,8 +114,10 @@ class DashboardChartsBuilder(models.TransientModel):
             }
             if (role_info or {}).get('role') in [ROLE_ADMIN, ROLE_COUNSELOR]:
                 entry['alert_count'] = self.env['aula_metrics.alert'].search_count([
-                    ('participation_id.evaluation_id', '=', ev.id),
                     ('status', '=', 'active'),
+                    '|',
+                    ('participation_id.evaluation_id', '=', ev.id),
+                    ('qualitative_response_id.evaluation_id', '=', ev.id),
                 ])
             result.append(entry)
         return result
@@ -136,7 +145,7 @@ class DashboardChartsBuilder(models.TransientModel):
             'kpi_students':         None,
             'kpi_groups':           None,
             'kpi_evals':            None,
-            'kpi_metrics':          None,
+            'kpi_participation':    None,
             'charts':               [],
             **self._get_home_data(role_info),
         }

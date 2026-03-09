@@ -216,7 +216,7 @@ class DashboardStudentCharts(models.TransientModel):
 
             # Rango de normalización
             all_vals = MetricValue.search_read(
-                [('metric_name', '=', metric_name), ('value_float', '!=', False)],
+                [('metric_name', '=', metric_name), ('value_float', '!=', None)],
                 ['value_float'],
             )
             all_floats   = [r['value_float'] for r in all_vals if r['value_float'] is not None]
