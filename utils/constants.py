@@ -60,7 +60,8 @@ QUERY_LIMIT_STUDENTS     = 1000
 # ─────────────────────────────────────────────────────────────────────────────
 # Estados de evaluación
 # ─────────────────────────────────────────────────────────────────────────────
-EVAL_STATES_ACTIVE = ['scheduled', 'active', 'completed']
+# Todos los estados visibles en dashboards (excluye sólo 'cancelled')
+EVAL_STATES_ACTIVE = ['draft', 'scheduled', 'active', 'closed']
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Colores semáforo para KPIs (umbral de valor 0-100)
