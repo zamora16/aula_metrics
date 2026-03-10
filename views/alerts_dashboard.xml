@@ -48,7 +48,7 @@
                                     VER CASO: solo cuando hay caso vinculado.
                                     Exclusivo de orientadores y admins (los que gestionan casos).
                                 -->
-                                <button name="action_open_case" string="Ver Caso ▶" type="object"
+                                <button name="action_open_case" string="Ver Caso" type="object"
                                         class="btn btn-primary btn-sm"
                                         invisible="not case_id"
                                         groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>

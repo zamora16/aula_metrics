@@ -23,7 +23,11 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">aula_metrics.report_survey_result_document</field>
         <field name="report_file">aula_metrics.report_survey_result_document</field>
-        <field name="print_report_name">'Informe_%s_%s' % (object.student_id.name.replace(' ','_'), object.completed_at.strftime('%Y%m%d'))</field>
+        <field name="print_report_name">'%s_%s_%s' % (
+            object.student_id.name.replace(' ','_'),
+            (object.survey_id.survey_code or object.survey_id.title or '').replace(' ','_')[:30],
+            object.completed_at.strftime('%Y%m%d'),
+        )</field>
         <field name="binding_model_id" ref="model_aula_metrics_survey_result"/>
         <field name="binding_type">report</field>
         <field name="paperformat_id" ref="paperformat_no_margin"/>
@@ -43,10 +47,10 @@
 
                         /* Neutralizar estilos de Odoo sobre .article */
                         .article {
-                            position: absolute !important;
-                            top: 0 !important;
-                            left: 0 !important;
-                            right: 0 !important;
+                            position: static !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            min-height: 0 !important;
                             height: auto !important;
                         }
 

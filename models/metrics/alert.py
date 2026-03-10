@@ -129,7 +129,7 @@ class Alert(models.Model):
                         alert.severity = max_severity
                     else:
                         alert.severity = 'moderate'
-                except:
+                except Exception:
                     alert.severity = 'moderate'
             elif alert.threshold_id:
                 # Alerta cuantitativa: usar severidad del threshold
@@ -151,7 +151,7 @@ class Alert(models.Model):
                         alert.qualitative_response_id.detected_keyword_ids.mapped('keyword')
                     )
                     alert.message = f"Se detectaron palabras de alerta en una respuesta cualitativa: {keywords_str}"
-                except:
+                except Exception:
                     alert.message = "Se detectaron palabras de alerta en una respuesta cualitativa"
             elif alert.threshold_id:
                 # Alerta cuantitativa: mensaje del threshold
@@ -268,7 +268,6 @@ class Alert(models.Model):
         group = participation.student_id.academic_group_id
         thresholds = self.env['aula_metrics.threshold'].search([
             ('active', '=', True),
-            ('survey_id', 'in', participation.evaluation_id.survey_ids.ids),
             ('group_threshold_percentage', '>', 0)
         ])
         if not thresholds:

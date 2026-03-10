@@ -2,10 +2,13 @@
 """
 Dashboard Data Queries - Consultas y preparación de datos para dashboards
 """
+import logging
 from odoo import models, api
 import pandas as pd
 from ...utils import role_service, dashboard_helpers
 from ...utils.constants import ROLE_TUTOR, EVAL_STATES_ACTIVE
+
+_logger = logging.getLogger(__name__)
 
 
 class DashboardDataQueries(models.Model):
@@ -96,10 +99,7 @@ class DashboardDataQueries(models.Model):
                 'course_level': g.course_level,
             } for g in groups]
         except Exception as e:
-            # Log the error and return empty list
-            import logging
-            _logger = logging.getLogger(__name__)
-            _logger.error(f"Error in get_available_groups: {e}")
+            _logger.error("Error in get_available_groups: %s", e)
             return []
 
     @api.model
@@ -131,10 +131,7 @@ class DashboardDataQueries(models.Model):
                 'state': e.state,
             } for e in evaluations]
         except Exception as e:
-            # Log the error and return empty list
-            import logging
-            _logger = logging.getLogger(__name__)
-            _logger.error(f"Error in get_available_evaluations: {e}")
+            _logger.error("Error in get_available_evaluations: %s", e)
             return []
 
     @api.model
@@ -182,10 +179,7 @@ class DashboardDataQueries(models.Model):
             
             return variables
         except Exception as e:
-            # Log the error and return basic variables
-            import logging
-            _logger = logging.getLogger(__name__)
-            _logger.error(f"Error in get_segmentation_variables: {e}")
+            _logger.error("Error in get_segmentation_variables: %s", e)
             return [{
                 'value': 'gender',
                 'label': 'Género',

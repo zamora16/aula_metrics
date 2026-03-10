@@ -174,10 +174,6 @@ class DashboardChartsController(http.Controller):
         try:
             env = request.env
 
-            pages              = []
-            eval_names_seen    = []
-            survey_titles_seen = []
-
             if result_ids:
                 results_ordered = env['aula_metrics.survey_result'].search([
                     ('id',             'in', result_ids),
@@ -222,8 +218,14 @@ class DashboardChartsController(http.Controller):
                 data=report_data,
             )
 
-            student_name = (student.name or 'alumno').replace(' ', '_')
-            filename     = f'informe_compuesto_{student_name}.pdf'
+            import unicodedata, re
+            def _slug(s):
+                s = unicodedata.normalize('NFKD', s or '').encode('ascii', 'ignore').decode()
+                return re.sub(r'[^\w]+', '_', s).strip('_')
+            _alumno = _slug(student.name or 'alumno')
+            _grupo  = _slug(student.academic_group_id.name if student.academic_group_id else '')
+            _fecha  = _date.today().strftime('%Y%m%d')
+            filename = f'{_alumno}_{_grupo}_{_fecha}.pdf' if _grupo else f'{_alumno}_{_fecha}.pdf'
             return request.make_response(
                 pdf_bytes,
                 headers=[

@@ -189,7 +189,7 @@ class MetricValue(models.Model):
                     try:
                         record.unlink()
                         deleted_count += 1
-                    except:
+                    except Exception:
                         pass
         
         return deleted_count

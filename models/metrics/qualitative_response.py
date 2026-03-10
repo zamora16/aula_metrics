@@ -3,6 +3,7 @@
 from odoo import api, fields, models
 import re
 import unicodedata
+from ...utils.constants import GROUP_COUNSELOR
 
 class QualitativeResponse(models.Model):
     _name = 'aula_metrics.qualitative_response'
@@ -15,9 +16,6 @@ class QualitativeResponse(models.Model):
             c for c in unicodedata.normalize('NFD', text)
             if unicodedata.category(c) != 'Mn'
         ).lower()
-    _name = 'aula_metrics.qualitative_response'
-    _description = 'Respuesta Cualitativa (Texto Abierto)'
-    _order = 'response_date desc'
     
     # Relaciones
     student_id = fields.Many2one('res.partner', string='Estudiante', required=True, ondelete='cascade', index=True)
@@ -85,7 +83,7 @@ class QualitativeResponse(models.Model):
     def _compute_display_name(self):
         """Nombre mostrado según rol del usuario."""
         user = self.env.user
-        is_counselor = user.has_group('aula_metrics.group_counselor')
+        is_counselor = user.has_group(GROUP_COUNSELOR)
         
         for record in self:
             if is_counselor:

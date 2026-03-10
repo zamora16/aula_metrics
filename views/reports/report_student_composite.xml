@@ -21,8 +21,10 @@
                     print-color-adjust: exact !important;
                 }
                 .article {
-                    position: absolute !important;
-                    top: 0 !important; left: 0 !important; right: 0 !important;
+                    position: static !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    min-height: 0 !important;
                     height: auto !important;
                 }
 
@@ -32,10 +34,15 @@
                     font-size: 9pt;
                     color: #1e293b;
                     width: 100%;
-                    page-break-after: always;
+                    display: block;
                 }
-                .am-report:last-child { page-break-after: avoid; }
                 .am-report p { margin: 0 0 5pt 0; }
+
+                /* ── Anti-corte en saltos de página ── */
+                .am-header { page-break-inside: avoid; }
+                .am-global { page-break-inside: avoid; }
+                .am-footer { page-break-inside: avoid; }
+                .am-scales tr { page-break-inside: avoid; }
 
                 /* ── CABECERA ── */
                 .am-header {
@@ -223,7 +230,7 @@
 
             <!-- ══════════ PÁGINAS DE RESULTADOS ══════════ -->
             <t t-foreach="pages or []" t-as="d">
-                    <main class="am-report">
+                    <main class="am-report" style="page-break-before: always; break-before: page;">
                         <div class="am-header">
                             <div class="tag">AulaMetrics &#183; <t t-esc="d.get('evaluation_name', '')"/></div>
                             <h1><t t-esc="d.get('survey_title', '')"/></h1>

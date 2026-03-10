@@ -70,16 +70,10 @@ class DashboardCharts(models.TransientModel):
         )
         
     def _get_segmentation_variables(self, filters, role_info):
-        """Obtiene variables de segmentación disponibles dinámicamente.
-        
-        Args:
-            filters (dict): Filtros actuales aplicados
-            role_info (dict): Información del rol del usuario
-        
-        Returns:
-            list: Lista de dicts con estructura {value, label, type, options}
-        """
-        return dashboard_data_queries.get_segmentation_variables(self, filters, role_info)
+        """Obtiene variables de segmentación disponibles dinámicamente."""
+        return self.env['aula_metrics.dashboard.data_queries'].get_segmentation_variables(
+            filters, role_info
+        )
     def _build_segment_options_html(self, segmentation_vars):
         """Construye el HTML del selector de segmentación.
         
