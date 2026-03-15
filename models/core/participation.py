@@ -34,7 +34,14 @@ class Participation(models.Model):
         store=True,
         readonly=True
     )
-    
+
+    student_code = fields.Char(
+        related='student_id.student_code',
+        string='Código Alumno',
+        store=False,
+        readonly=True
+    )
+
     student_gender = fields.Selection(
         related='student_id.gender',
         string='Género',

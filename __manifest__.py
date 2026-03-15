@@ -14,6 +14,7 @@
         'security/record_rules.xml',
         'data/users_groups.xml',
         # 2. Datos
+        'data/sequences.xml',
         'data/alert_keywords.xml',
         'data/surveys/survey_sdq.xml',
         'data/surveys/survey_swls.xml',

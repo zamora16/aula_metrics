@@ -170,15 +170,15 @@
                         <tr>
                             <td>
                                 <div class="meta-label">Alumno/a</div>
-                                <t t-esc="student_name or (docs and docs[0].name) or ''"/>
+                                <t t-out="student_name or (docs and docs[0].name) or ''"/>
                             </td>
                             <td>
                                 <div class="meta-label">Grupo</div>
-                                <t t-esc="student_group or ''"/>
+                                <t t-out="student_group or ''"/>
                             </td>
                             <td>
                                 <div class="meta-label">Generado el</div>
-                                <t t-esc="generated_date or ''"/>
+                                <t t-out="generated_date or ''"/>
                             </td>
                         </tr>
                     </table>
@@ -190,7 +190,7 @@
                             <h3>Evaluaciones incluidas</h3>
                             <ul>
                                 <t t-foreach="evaluation_names or []" t-as="en">
-                                    <li><t t-esc="en"/></li>
+                                    <li><t t-out="en"/></li>
                                 </t>
                             </ul>
                         </div>
@@ -198,7 +198,7 @@
                             <h3>Cuestionarios incluidos</h3>
                             <ul>
                                 <t t-foreach="survey_titles or []" t-as="st">
-                                    <li><t t-esc="st"/></li>
+                                    <li><t t-out="st"/></li>
                                 </t>
                             </ul>
                         </div>
@@ -223,8 +223,8 @@
 
                 <div class="am-footer">
                     Informe compuesto generado por AulaMetrics &#183;
-                    <t t-esc="student_name or ''"/> &#183;
-                    Fecha de generaci&#243;n: <t t-esc="generated_date or ''"/>
+                    <t t-out="student_name or ''"/> &#183;
+                    Fecha de generaci&#243;n: <t t-out="generated_date or ''"/>
                 </div>
             </main>
 
@@ -232,24 +232,24 @@
             <t t-foreach="pages or []" t-as="d">
                     <main class="am-report" style="page-break-before: always; break-before: page;">
                         <div class="am-header">
-                            <div class="tag">AulaMetrics &#183; <t t-esc="d.get('evaluation_name', '')"/></div>
-                            <h1><t t-esc="d.get('survey_title', '')"/></h1>
+                            <div class="tag">AulaMetrics &#183; <t t-out="d.get('evaluation_name', '')"/></div>
+                            <h1><t t-out="d.get('survey_title', '')"/></h1>
                             <table class="meta-table">
                                 <tr>
                                     <td>
                                         <div class="meta-label">Alumno/a</div>
-                                        <t t-esc="d.get('student_name', '')"/>
+                                        <t t-out="d.get('student_name', '')"/>
                                         <t t-if="d.get('student_age')">
-                                            &#160;(<t t-esc="d['student_age']"/> a&#241;os)
+                                            &#160;(<t t-out="d['student_age']"/> a&#241;os)
                                         </t>
                                     </td>
                                     <td>
                                         <div class="meta-label">Fecha de respuesta</div>
-                                        <t t-esc="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
+                                        <t t-out="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
                                     </td>
                                     <td>
                                         <div class="meta-label">Evaluaci&#243;n</div>
-                                        <t t-esc="d.get('evaluation_name', '')"/>
+                                        <t t-out="d.get('evaluation_name', '')"/>
                                     </td>
                                 </tr>
                             </table>
@@ -262,17 +262,17 @@
                                  t-att-style="'background:{bg} !important;border:none;'.format(bg=d.get('global_sev_bg','#f8fafc'))">
                                 <span class="score-big"
                                       t-att-style="'color:{c};'.format(c=d.get('global_sev_color','#1e293b'))">
-                                    <t t-esc="'%.0f' % (d.get('raw_score') or 0)"/>
+                                    <t t-out="'%.0f' % (d.get('raw_score') or 0)"/>
                                     <t t-if="d.get('raw_score_max')">
-                                        <span style="font-weight:400;color:#64748b;font-size:0.8em;">/<t t-esc="'%.0f' % d['raw_score_max']"/></span>
+                                        <span style="font-weight:400;color:#64748b;font-size:0.8em;">/<t t-out="'%.0f' % d['raw_score_max']"/></span>
                                     </t>
                                 </span>
                                 <span class="sev-badge"
                                       t-att-style="'background:{c} !important;'.format(c=d.get('global_sev_color','#94a3b8'))">
-                                    <t t-esc="d.get('global_label', '')"/>
+                                    <t t-out="d.get('global_label', '')"/>
                                 </span>
                                 <t t-if="d.get('global_description')">
-                                    <div class="interp"><t t-esc="d['global_description']"/></div>
+                                    <div class="interp"><t t-out="d['global_description']"/></div>
                                 </t>
                             </div>
 
@@ -282,7 +282,7 @@
                                 <table class="am-scales">
                                     <t t-foreach="d['scales']" t-as="sc">
                                         <tr t-att-class="'total-sep' if sc.get('is_total') else 'scale-row'">
-                                            <td class="td-lbl"><t t-esc="sc.get('label','')"/></td>
+                                            <td class="td-lbl"><t t-out="sc.get('label','')"/></td>
                                             <td class="td-bar">
                                                 <div class="bar-track">
                                                     <div class="bar-fill"
@@ -291,18 +291,18 @@
                                             </td>
                                             <td class="td-score"
                                                 t-att-style="'color:{c};'.format(c=sc.get('sev_color','#1e293b'))">
-                                                <t t-esc="sc.get('score_str','0')"/>
-                                                <span class="max">/<t t-esc="sc.get('max_str','')"/></span>
+                                                <t t-out="sc.get('score_str','0')"/>
+                                                <span class="max">/<t t-out="sc.get('max_str','')"/></span>
                                             </td>
                                             <td class="td-sev">
                                                 <span class="sev-pill"
                                                       t-att-style="'background:{c} !important;'.format(c=sc.get('sev_color','#ccc'))">
-                                                    <t t-esc="sc.get('sev_label','')"/>
+                                                    <t t-out="sc.get('sev_label','')"/>
                                                 </span>
                                             </td>
                                         </tr>
                                         <t t-if="sc.get('description')">
-                                            <tr><td colspan="4" class="td-desc"><t t-esc="sc['description']"/></td></tr>
+                                            <tr><td colspan="4" class="td-desc"><t t-out="sc['description']"/></td></tr>
                                         </t>
                                     </t>
                                 </table>
@@ -310,9 +310,9 @@
                         </div>
 
                         <div class="am-footer">
-                            AulaMetrics &#183; <t t-esc="d.get('student_name','')"/> &#183;
-                            <t t-esc="d.get('survey_title','')"/> &#183;
-                            <t t-esc="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
+                            AulaMetrics &#183; <t t-out="d.get('student_name','')"/> &#183;
+                            <t t-out="d.get('survey_title','')"/> &#183;
+                            <t t-out="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
                             &#183; Exclusivamente informativo, no constituye diagn&#243;stico.
                         </div>
                     </main>

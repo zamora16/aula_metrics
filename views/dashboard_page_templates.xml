@@ -67,7 +67,7 @@
                         <h2 class="h4 mb-3">Acceso Denegado</h2>
                         <p class="text-muted">
                             <t t-if="message">
-                                <t t-esc="message"/>
+                                <t t-out="message"/>
                             </t>
                             <t t-else="">
                                 No tiene permisos para acceder a esta página.
@@ -103,13 +103,13 @@
                         <i class="fa-solid fa-triangle-exclamation fa-4x text-warning mb-4"/>
                         <h2 class="h4 mb-3">
                             <t t-if="error_title">
-                                <t t-esc="error_title"/>
+                                <t t-out="error_title"/>
                             </t>
                             <t t-else="">Error</t>
                         </h2>
                         <p class="text-muted">
                             <t t-if="error_message">
-                                <t t-esc="error_message"/>
+                                <t t-out="error_message"/>
                             </t>
                         </p>
                         <a href="/web" class="btn btn-primary mt-3">Volver al inicio</a>

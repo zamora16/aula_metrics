@@ -277,19 +277,19 @@
                         <!-- CABECERA -->
                         <div class="am-header">
                             <div class="tag">AulaMetrics &#183; Informe de Resultados</div>
-                            <h1><t t-esc="d['survey_title']"/></h1>
+                            <h1><t t-out="d['survey_title']"/></h1>
                             <table class="meta-table">
                                 <tr>
                                     <td>
                                         <div class="meta-label">Alumno/a</div>
-                                        <t t-esc="d['student_name']"/>
+                                        <t t-out="d['student_name']"/>
                                         <t t-if="d['student_age']">
-                                            &#160;(<t t-esc="d['student_age']"/> a&#241;os)
+                                            &#160;(<t t-out="d['student_age']"/> a&#241;os)
                                         </t>
                                     </td>
                                     <td>
                                         <div class="meta-label">Fecha de respuesta</div>
-                                        <t t-esc="d['completed_at'].strftime('%d/%m/%Y')"/>
+                                        <t t-out="d['completed_at'].strftime('%d/%m/%Y')"/>
                                     </td>
                                 </tr>
                             </table>
@@ -328,17 +328,17 @@
                                  t-att-style="'background:{bg} !important;border:none;'.format(bg=d['global_sev_bg'])">
                                 <span class="score-big"
                                       t-att-style="'color:{c};'.format(c=d['global_sev_color'])">
-                                    <t t-esc="'%.0f' % d['raw_score']"/>
+                                    <t t-out="'%.0f' % d['raw_score']"/>
                                     <t t-if="d['raw_score_max']">
-                                        <span style="font-weight:400;color:#64748b;font-size:0.8em;">/<t t-esc="'%.0f' % d['raw_score_max']"/></span>
+                                        <span style="font-weight:400;color:#64748b;font-size:0.8em;">/<t t-out="'%.0f' % d['raw_score_max']"/></span>
                                     </t>
                                 </span>
                                 <span class="sev-badge"
                                       t-att-style="'background:{c} !important;'.format(c=d['global_sev_color'])">
-                                    <t t-esc="d['global_label']"/>
+                                    <t t-out="d['global_label']"/>
                                 </span>
                                 <t t-if="d['global_description']">
-                                    <div class="interp"><t t-esc="d['global_description']"/></div>
+                                    <div class="interp"><t t-out="d['global_description']"/></div>
                                 </t>
                             </div>
 
@@ -348,7 +348,7 @@
                                 <table class="am-scales">
                                     <t t-foreach="d['scales']" t-as="sc">
                                         <tr t-att-class="'total-sep' if sc['is_total'] else 'scale-row'">
-                                            <td class="td-lbl"><t t-esc="sc['label']"/></td>
+                                            <td class="td-lbl"><t t-out="sc['label']"/></td>
                                             <td class="td-bar">
                                                 <div class="bar-track">
                                                     <div class="bar-fill"
@@ -357,20 +357,20 @@
                                             </td>
                                             <td class="td-score"
                                                 t-att-style="'color:{c};'.format(c=sc['sev_color'])">
-                                                <t t-esc="sc['score_str']"/>
-                                                <span class="max">/<t t-esc="sc['max_str']"/></span>
+                                                <t t-out="sc['score_str']"/>
+                                                <span class="max">/<t t-out="sc['max_str']"/></span>
                                             </td>
                                             <td class="td-sev">
                                                 <span class="sev-pill"
                                                       t-att-style="'background:{c} !important;'.format(c=sc['sev_color'])">
-                                                    <t t-esc="sc['sev_label']"/>
+                                                    <t t-out="sc['sev_label']"/>
                                                 </span>
                                             </td>
                                         </tr>
                                         <t t-if="sc['description']">
                                             <tr>
                                                 <td colspan="4" class="td-desc">
-                                                    <t t-esc="sc['description']"/>
+                                                    <t t-out="sc['description']"/>
                                                 </td>
                                             </tr>
                                         </t>
@@ -381,9 +381,9 @@
                             <!-- PIE -->
                             <div class="am-footer">
                                 Informe generado por AulaMetrics &#183;
-                                <t t-esc="d['student_name']"/> &#183;
-                                <t t-esc="d['survey_title']"/> &#183;
-                                <t t-esc="d['completed_at'].strftime('%d/%m/%Y')"/> &#183;
+                                <t t-out="d['student_name']"/> &#183;
+                                <t t-out="d['survey_title']"/> &#183;
+                                <t t-out="d['completed_at'].strftime('%d/%m/%Y')"/> &#183;
                                 Este informe es de car&#225;cter exclusivamente informativo y no constituye diagn&#243;stico.
                             </div>
 

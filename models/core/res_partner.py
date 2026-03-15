@@ -5,7 +5,16 @@ from datetime import date
 class ResPartner(models.Model):
     """Extensión del modelo de contactos para alumnos"""
     _inherit = 'res.partner'
-    
+
+    student_code = fields.Char(
+        string='Código de Alumno',
+        readonly=True,
+        copy=False,
+        index=True,
+        help='Identificador único permanente del alumno. Se asigna al crear el '
+             'alumno y no cambia aunque pase de grupo o de curso académico.'
+    )
+
     academic_group_id = fields.Many2one(
         'aula_metrics.academic_group',
         string='Grupo Académico',
@@ -56,4 +65,24 @@ class ResPartner(models.Model):
         else:
             # Buscar contactos SIN grupo académico
             return [('academic_group_id', '=', False)]
+
+    def _assign_student_code(self):
+        """Asigna un código único permanente a los alumnos que aún no tienen."""
+        for partner in self:
+            if not partner.student_code and partner.academic_group_id:
+                partner.student_code = self.env['ir.sequence'].next_by_code(
+                    'aula_metrics.student_code'
+                )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._assign_student_code()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        if 'academic_group_id' in vals:
+            self._assign_student_code()
+        return result
 
