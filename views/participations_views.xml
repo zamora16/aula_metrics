@@ -15,6 +15,7 @@
                         <group>
                             <field name="evaluation_id" readonly="1"/>
                             <field name="student_id" readonly="1"/>
+                            <field name="student_code" readonly="1"/>
                             <field name="academic_group_id" readonly="1"/>
                         </group>
                         <group>
@@ -49,7 +50,8 @@
                   decoration-warning="state == 'pending'"
                   decoration-danger="state == 'expired'"
                   create="false" delete="false">
-                <!-- Columnas solicitadas: Alumno | Grupo | Estado | Completada -->
+                <!-- Columnas solicitadas: Código | Alumno | Grupo | Estado | Completada -->
+                <field name="student_code" string="Código" optional="show"/>
                 <field name="student_id" string="Alumno"/>
                 <field name="academic_group_id" string="Grupo"/>
                 <field name="state" string="Estado" widget="badge"

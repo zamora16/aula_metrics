@@ -21,10 +21,14 @@
                     </group>
                     <notebook>
                         <page string="Alumnado" name="students">
-                            <field name="student_ids" widget="many2many" mode="tree">
-                                <tree editable="bottom">
-                                    <field name="name"/>
-                                    <field name="email"/>
+                            <field name="student_ids" mode="tree"
+                                   domain="[('active', 'in', [True, False])]">
+                                <tree>
+                                    <field name="student_code" string="Código" readonly="1"/>
+                                    <field name="name" string="Nombre"/>
+                                    <field name="gender" string="Género"/>
+                                    <field name="age" string="Edad"/>
+                                    <field name="email" optional="show"/>
                                 </tree>
                             </field>
                         </page>

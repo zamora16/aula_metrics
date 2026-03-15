@@ -27,25 +27,33 @@ class Participation(models.Model):
         domain=[('academic_group_id', '!=', False)]
     )
 
-    # Campos related para facilitar agrupación y filtros
+    # Grupo y género congelados en el momento de creación de la participación.
+    # NO son related: si el alumno cambia de grupo al año siguiente, los datos
+    # históricos de esta participación siguen apuntando al grupo correcto.
     academic_group_id = fields.Many2one(
-        related='student_id.academic_group_id',
+        'aula_metrics.academic_group',
         string='Grupo Académico',
         store=True,
-        readonly=True
+        readonly=True,
+        index=True,
+        ondelete='set null',
+        help='Grupo del alumno en el momento de esta participación (no cambia).'
     )
 
+    student_gender = fields.Selection([
+        ('male', 'Masculino'),
+        ('female', 'Femenino'),
+        ('other', 'Otro'),
+        ('prefer_not_say', 'Prefiero no decir'),
+    ], string='Género', store=True, readonly=True,
+        help='Género del alumno en el momento de esta participación (no cambia).')
+
+    # student_code: related sin store — el código nunca cambia en el alumno,
+    # así que leerlo en tiempo real es siempre correcto.
     student_code = fields.Char(
         related='student_id.student_code',
         string='Código Alumno',
         store=False,
-        readonly=True
-    )
-
-    student_gender = fields.Selection(
-        related='student_id.gender',
-        string='Género',
-        store=True,
         readonly=True
     )
     
@@ -88,10 +96,17 @@ class Participation(models.Model):
     
     @api.model_create_multi
     def create(self, vals_list):
-        """Genera token único al crear participación"""
+        """Genera token único y congela grupo/género en el momento de creación."""
         for vals in vals_list:
             if not vals.get('evaluation_token'):
                 vals['evaluation_token'] = str(uuid.uuid4())
+            # Congelar grupo y género del alumno en este instante
+            if vals.get('student_id'):
+                student = self.env['res.partner'].browse(vals['student_id'])
+                if not vals.get('academic_group_id'):
+                    vals['academic_group_id'] = student.academic_group_id.id or False
+                if not vals.get('student_gender'):
+                    vals['student_gender'] = student.gender or False
         return super().create(vals_list)
     
     @api.depends('student_id', 'evaluation_id')

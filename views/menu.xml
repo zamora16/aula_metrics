@@ -91,6 +91,20 @@
               action="action_academic_group"
               sequence="10"/>
 
+    <menuitem id="menu_aulametrics_students"
+              name="Alumnos"
+              parent="menu_aulametrics_config"
+              action="aula_metrics.action_student_list"
+              groups="group_aulametrics_admin,group_aulametrics_counselor"
+              sequence="20"/>
+
+    <menuitem id="menu_aulametrics_tutors"
+              name="Tutores"
+              parent="menu_aulametrics_config"
+              action="base.action_res_users"
+              groups="group_aulametrics_admin"
+              sequence="30"/>
+
     <!-- Comunicaciones Internas -->
     <menuitem id="menu_aulametrics_comms_root"
               name="Comunicaciones"

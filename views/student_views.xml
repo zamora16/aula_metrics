@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Lista de Alumnos -->
+    <record id="view_student_tree" model="ir.ui.view">
+        <field name="name">aula_metrics.student.tree</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <tree string="Alumnos"
+                  decoration-muted="not academic_group_id">
+                <field name="student_code" string="Código" optional="show"/>
+                <field name="name" string="Nombre completo"/>
+                <field name="academic_group_id" string="Grupo"/>
+                <field name="gender" string="Género" optional="hide"/>
+                <field name="birthdate" string="F. Nacimiento" optional="hide"/>
+                <field name="age" string="Edad" optional="show"/>
+                <field name="email" optional="show"/>
+                <field name="phone" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario de Alumno -->
+    <record id="view_student_form" model="ir.ui.view">
+        <field name="name">aula_metrics.student.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form string="Alumno">
+                <sheet>
+                    <field name="image_1920" widget="image"
+                           class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Nombre completo del alumno"/>
+                        </h1>
+                        <div>
+                            <field name="student_code" readonly="1"
+                                   class="o_field_char"
+                                   invisible="not student_code"/>
+                        </div>
+                    </div>
+                    <group>
+                        <group string="Datos Académicos">
+                            <field name="academic_group_id"
+                                   options="{'no_create': True}"
+                                   domain="[('active', '=', True)]"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Datos Personales">
+                            <field name="gender"/>
+                            <field name="birthdate"/>
+                            <field name="age" string="Edad actual"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Contacto">
+                            <field name="email" widget="email"/>
+                            <field name="phone" widget="phone"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda de Alumnos -->
+    <record id="view_student_search" model="ir.ui.view">
+        <field name="name">aula_metrics.student.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Alumnos">
+                <field name="name" string="Nombre"/>
+                <field name="student_code" string="Código"/>
+                <field name="academic_group_id" string="Grupo"/>
+                <filter string="Todos los alumnos" name="all_students"
+                        domain="[('academic_group_id', '!=', False)]"/>
+                <filter string="Sin grupo asignado" name="no_group"
+                        domain="[('student_code', '!=', False), ('academic_group_id', '=', False)]"/>
+                <separator/>
+                <filter string="ESO" name="eso"
+                        domain="[('academic_group_id.course_level', 'in', ['eso1','eso2','eso3','eso4'])]"/>
+                <filter string="Bachillerato" name="bach"
+                        domain="[('academic_group_id.course_level', 'in', ['bach1','bach2'])]"/>
+                <separator/>
+                <filter string="Activos" name="active_students" domain="[('active', '=', True)]"/>
+                <filter string="Archivados" name="archived_students" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Grupo" name="by_group" context="{'group_by': 'academic_group_id'}"/>
+                    <filter string="Género" name="by_gender" context="{'group_by': 'gender'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción de ventana -->
+    <record id="action_student_list" model="ir.actions.act_window">
+        <field name="name">Alumnos</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('is_student', '=', True)]</field>
+        <field name="context">{'default_customer_rank': 0, 'default_supplier_rank': 0, 'search_default_active_students': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Añadir el primer alumno
+            </p>
+            <p>
+                Los alumnos se identifican de forma permanente con su código único (ALU-XXXXX),
+                que no cambia aunque pasen de grupo o de curso académico.
+            </p>
+        </field>
+    </record>
+</odoo>
