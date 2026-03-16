@@ -14,7 +14,7 @@
             </div>
             <nav class="sidebar-nav">
                 <!-- Dashboard interno: navegación JS; resto: enlaces href -->
-                <t t-if="active_section in ('home', 'quantitative', 'qualitative')">
+                <t t-if="active_section in ('home', 'quantitative', 'qualitative', 'segmentation')">
                     <a href="#"
                        t-att-class="'sidebar-item active' if active_section == 'home' else 'sidebar-item'"
                        data-section="home"
@@ -36,6 +36,13 @@
                         <i class="fa-solid fa-comments"/>
                         <span>Datos Cualitativos</span>
                     </a>
+                    <a href="#"
+                       t-att-class="'sidebar-item active' if active_section == 'segmentation' else 'sidebar-item'"
+                       data-section="segmentation"
+                       onclick="navigateTo('segmentation'); return false;">
+                        <i class="fa-solid fa-chart-pie"/>
+                        <span>Distribución</span>
+                    </a>
                 </t>
                 <t t-else="">
                     <a href="/aulametrics/dashboard?section=home" class="sidebar-item">
@@ -49,6 +56,10 @@
                     <a href="/aulametrics/dashboard?section=qualitative" class="sidebar-item">
                         <i class="fa-solid fa-comments"/>
                         <span>Datos Cualitativos</span>
+                    </a>
+                    <a href="/aulametrics/dashboard?section=segmentation" class="sidebar-item">
+                        <i class="fa-solid fa-chart-pie"/>
+                        <span>Distribución</span>
                     </a>
                 </t>
                 <!-- Perfiles: solo counselor/admin -->
@@ -364,10 +375,31 @@
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
             const sectionEl = document.getElementById('section-' + section);
             if (sectionEl) sectionEl.classList.add('active');
-            const titles = { 'home': 'Inicio', 'quantitative': 'Datos Cuantitativos', 'qualitative': 'Datos Cualitativos' };
+            const titles = { 'home': 'Inicio', 'quantitative': 'Datos Cuantitativos', 'qualitative': 'Datos Cualitativos', 'segmentation': 'Distribución del Alumnado' };
             const titleEl = document.getElementById('sectionTitle');
             if (titleEl) titleEl.textContent = titles[section] || section;
             if (section === 'qualitative' && !window.qualitativeLoaded) loadQualitativeContent();
+            if (section === 'segmentation' && !window.segmentationLoaded) loadSegmentationContent();
+        }
+
+        function loadSegmentationContent() {
+            window.segmentationLoaded = true;
+            const contentDiv = document.getElementById('segmentationContent');
+            fetch('/aulametrics/segmentation/dashboard?embedded=true')
+                .then(response => response.text())
+                .then(html => {
+                    contentDiv.innerHTML = html;
+                    contentDiv.querySelectorAll('script').forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        if (oldScript.src) { newScript.src = oldScript.src; }
+                        else { newScript.textContent = oldScript.textContent; }
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar la distribución del alumnado</p></div>';
+                    console.error('Error cargando distribución:', error);
+                });
         }
 
         function loadQualitativeContent() {
@@ -401,40 +433,73 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const section = new URLSearchParams(window.location.search).get('section');
-            if (section && ['home', 'quantitative', 'qualitative'].includes(section)) navigateTo(section);
+            if (section && ['home', 'quantitative', 'qualitative', 'segmentation'].includes(section)) navigateTo(section);
 
             document.addEventListener('submit', function(e) {
                 const form = e.target;
-                if (form.id !== 'qualitativeFiltersForm') return;
-                e.preventDefault();
-                const params = new URLSearchParams();
-                for (const [key, value] of new FormData(form).entries()) {
-                    if (value) params.append(key, value);
-                }
-                params.append('embedded', 'true');
-                fetch('/aulametrics/qualitative/dashboard?' + params.toString())
-                    .then(response => response.text())
-                    .then(html => {
-                        const contentDiv = document.getElementById('qualitativeContent');
-                        if (!contentDiv) return;
-                        contentDiv.innerHTML = html;
-                        contentDiv.querySelectorAll('script').forEach(oldScript => {
-                            const newScript = document.createElement('script');
-                            if (oldScript.src) { newScript.src = oldScript.src; }
-                            else { newScript.textContent = oldScript.textContent; }
-                            oldScript.parentNode.replaceChild(newScript, oldScript);
-                        });
-                        setTimeout(() => {
-                            if (!window._aulametrics_wordcloud_inited) {
-                                if (typeof initWordcloudCounselor !== 'undefined') {
-                                    window._aulametrics_wordcloud_inited = true; initWordcloudCounselor();
-                                } else if (typeof initWordcloudTutor !== 'undefined') {
-                                    window._aulametrics_wordcloud_inited = true; initWordcloudTutor();
+
+                // ── Qualitative filters ──
+                if (form.id === 'qualitativeFiltersForm') {
+                    e.preventDefault();
+                    const params = new URLSearchParams();
+                    for (const [key, value] of new FormData(form).entries()) {
+                        if (value) params.append(key, value);
+                    }
+                    params.append('embedded', 'true');
+                    fetch('/aulametrics/qualitative/dashboard?' + params.toString())
+                        .then(response => response.text())
+                        .then(html => {
+                            const contentDiv = document.getElementById('qualitativeContent');
+                            if (!contentDiv) return;
+                            contentDiv.innerHTML = html;
+                            contentDiv.querySelectorAll('script').forEach(oldScript => {
+                                const newScript = document.createElement('script');
+                                if (oldScript.src) { newScript.src = oldScript.src; }
+                                else { newScript.textContent = oldScript.textContent; }
+                                oldScript.parentNode.replaceChild(newScript, oldScript);
+                            });
+                            setTimeout(() => {
+                                if (!window._aulametrics_wordcloud_inited) {
+                                    if (typeof initWordcloudCounselor !== 'undefined') {
+                                        window._aulametrics_wordcloud_inited = true; initWordcloudCounselor();
+                                    } else if (typeof initWordcloudTutor !== 'undefined') {
+                                        window._aulametrics_wordcloud_inited = true; initWordcloudTutor();
+                                    }
                                 }
-                            }
-                        }, 300);
-                    })
-                    .catch(error => console.error('Error al filtrar datos cualitativos:', error));
+                            }, 300);
+                        })
+                        .catch(error => console.error('Error al filtrar datos cualitativos:', error));
+                    return;
+                }
+
+                // ── Segmentation filters ──
+                if (form.id === 'segmentationFiltersForm') {
+                    e.preventDefault();
+                    const params = new URLSearchParams();
+                    for (const [key, value] of new FormData(form).entries()) {
+                        if (value) params.append(key, value);
+                    }
+                    params.append('embedded', 'true');
+                    const contentDiv = document.getElementById('segmentationContent');
+                    if (contentDiv) contentDiv.style.opacity = '0.5';
+                    fetch('/aulametrics/segmentation/dashboard?' + params.toString())
+                        .then(response => response.text())
+                        .then(html => {
+                            if (!contentDiv) return;
+                            contentDiv.innerHTML = html;
+                            contentDiv.style.opacity = '1';
+                            contentDiv.querySelectorAll('script').forEach(oldScript => {
+                                const newScript = document.createElement('script');
+                                if (oldScript.src) { newScript.src = oldScript.src; }
+                                else { newScript.textContent = oldScript.textContent; }
+                                oldScript.parentNode.replaceChild(newScript, oldScript);
+                            });
+                        })
+                        .catch(error => {
+                            if (contentDiv) contentDiv.style.opacity = '1';
+                            console.error('Error al filtrar distribución:', error);
+                        });
+                }
             });
         });
 //]]></script>
@@ -507,6 +572,19 @@
                                            style="font-size:48px;color:var(--am-primary);"/>
                                         <p style="margin-top:20px;color:var(--am-muted);">
                                             Cargando datos cualitativos...
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección Distribución del Alumnado -->
+                            <div class="content-section" id="section-segmentation">
+                                <div id="segmentationContent">
+                                    <div style="text-align:center;padding:60px 20px;">
+                                        <i class="fa-solid fa-spinner fa-spin"
+                                           style="font-size:48px;color:var(--am-primary);"/>
+                                        <p style="margin-top:20px;color:var(--am-muted);">
+                                            Cargando distribución del alumnado...
                                         </p>
                                     </div>
                                 </div>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Página completa (ruta directa) -->
+    <template id="segmentation_dashboard_full" name="AulaMetrics - Dashboard Distribución">
+        <html lang="es">
+            <head>
+                <meta charset="UTF-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                <title>Distribución del Alumnado - AulaMetrics</title>
+                <link rel="stylesheet"
+                      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+                      rel="stylesheet"/>
+                <t t-out="css_styles"/>
+            </head>
+            <body>
+                <div class="dashboard-header">
+                    <div>
+                        <h2>
+                            <i class="fa-solid fa-chart-pie me-2" style="color:var(--am-primary);"/>
+                            Distribución del Alumnado
+                        </h2>
+                        <div class="header-meta"><t t-out="role_desc"/></div>
+                    </div>
+                </div>
+                <div class="container-fluid">
+                    <t t-call="aula_metrics.segmentation_filter_form"/>
+                    <t t-call="aula_metrics.segmentation_content"/>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"/>
+            </body>
+        </html>
+    </template>
+
+
+    <!-- Fragmento embebido (carga diferida desde el dashboard principal) -->
+    <template id="segmentation_dashboard_embedded"
+              name="AulaMetrics - Dashboard Distribución Embebido">
+        <t t-out="css_styles"/>
+        <div class="container-fluid mt-4">
+            <div class="row mb-3">
+                <div class="col-12">
+                    <p class="text-muted" style="font-size:14px; margin-bottom:16px;">
+                        <t t-out="role_desc"/>
+                    </p>
+                </div>
+            </div>
+            <t t-call="aula_metrics.segmentation_filter_form"/>
+            <t t-call="aula_metrics.segmentation_content"/>
+        </div>
+    </template>
+
+
+    <!-- Formulario de filtros -->
+    <template id="segmentation_filter_form" name="AulaMetrics - Filtros Distribución">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card seg-filter-card">
+                    <div class="card-body seg-filter-body">
+                        <form method="get"
+                              action="/aulametrics/segmentation/dashboard"
+                              class="row g-3 align-items-end"
+                              id="segmentationFiltersForm">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold" style="font-size:13px;">
+                                    <i class="fa-solid fa-clipboard-check me-1" style="color:var(--am-primary);"/>
+                                    Evaluación
+                                </label>
+                                <select name="evaluation_id" class="form-select form-select-sm">
+                                    <option value="">Todas las evaluaciones</option>
+                                    <t t-foreach="evaluations" t-as="ev">
+                                        <option t-att-value="ev['id']"
+                                                t-att-selected="'selected' if evaluation_id == ev['id'] else None">
+                                            <t t-out="ev['name']"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-sm btn-seg-filter w-100">
+                                    <i class="fa-solid fa-magnifying-glass me-1"/>Filtrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- Cuadrícula de variables de segmentación -->
+    <template id="segmentation_content" name="AulaMetrics - Contenido Distribución">
+        <t t-if="segmentation_variables">
+            <div class="row g-4">
+                <t t-foreach="segmentation_variables" t-as="seg_var">
+                    <div class="col-12 col-xl-6">
+                        <div class="card h-100">
+                            <div class="card-header seg-card-header d-flex justify-content-between align-items-center">
+                                <div class="seg-var-title">
+                                    <i class="fa-solid fa-tag" style="color:var(--am-primary); font-size:14px;"/>
+                                    <span><t t-out="seg_var['variable_name']"/></span>
+                                </div>
+                                <span class="seg-total-badge">
+                                    <t t-out="seg_var['total']"/> alumnos
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <t t-foreach="seg_var['distribution']" t-as="opt">
+                                    <div class="seg-dist-row">
+                                        <div class="seg-dist-label-row">
+                                            <span class="seg-bar-label">
+                                                <t t-out="opt['label']"/>
+                                            </span>
+                                            <span class="seg-bar-value">
+                                                <strong style="color:var(--am-text);">
+                                                    <t t-out="opt['count']"/>
+                                                </strong>
+                                                (<t t-out="opt['pct']"/>%)
+                                            </span>
+                                        </div>
+                                        <div class="seg-bar-track">
+                                            <div class="seg-bar-fill"
+                                                 t-att-style="'width:' + str(opt['pct']) + '%; background:' + opt['color'] + ';'"/>
+                                        </div>
+                                    </div>
+                                </t>
+
+                                <t t-if="seg_var['by_group']">
+                                    <div class="seg-breakdown-section">
+                                        <details>
+                                            <summary class="seg-breakdown-summary">
+                                                <i class="fa-solid fa-chevron-right fa-xs"/>
+                                                Desglose por grupo
+                                            </summary>
+                                            <div class="seg-breakdown-body">
+                                                <t t-foreach="seg_var['by_group']" t-as="grp">
+                                                    <div class="seg-group-card">
+                                                        <div class="seg-group-header">
+                                                            <strong class="seg-group-name">
+                                                                <i class="fa-solid fa-users me-1"
+                                                                   style="color:var(--am-primary); font-size:11px;"/>
+                                                                <t t-out="grp['name']"/>
+                                                            </strong>
+                                                            <span class="seg-group-total">
+                                                                <t t-out="grp['total']"/> alumnos
+                                                            </span>
+                                                        </div>
+                                                        <t t-foreach="grp['distribution']" t-as="g_opt">
+                                                            <div class="seg-dist-row-sm">
+                                                                <div class="seg-dist-label-row-sm">
+                                                                    <span style="color:var(--am-text);">
+                                                                        <t t-out="g_opt['label']"/>
+                                                                    </span>
+                                                                    <span style="color:var(--am-muted);">
+                                                                        <t t-out="g_opt['count']"/>
+                                                                        (<t t-out="g_opt['pct']"/>%)
+                                                                    </span>
+                                                                </div>
+                                                                <div class="seg-bar-track-sm">
+                                                                    <div class="seg-bar-fill-sm"
+                                                                         t-att-style="'width:' + str(g_opt['pct']) + '%; background:' + g_opt['color'] + ';'"/>
+                                                                </div>
+                                                            </div>
+                                                        </t>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </details>
+                                    </div>
+                                </t>
+
+                                <t t-if="seg_var['by_level']">
+                                    <div class="seg-breakdown-section">
+                                        <div class="seg-level-title">
+                                            Desglose por nivel educativo
+                                        </div>
+                                        <t t-foreach="seg_var['by_level']" t-as="lvl">
+                                            <div class="seg-group-card">
+                                                <div class="seg-group-header">
+                                                    <strong class="seg-group-name">
+                                                        <i class="fa-solid fa-graduation-cap me-1"
+                                                           style="color:var(--am-primary); font-size:11px;"/>
+                                                        <t t-out="lvl['name']"/>
+                                                    </strong>
+                                                    <span class="seg-group-total">
+                                                        <t t-out="lvl['total']"/> alumnos
+                                                    </span>
+                                                </div>
+                                                <t t-foreach="lvl['distribution']" t-as="l_opt">
+                                                    <div class="seg-dist-row-sm">
+                                                        <div class="seg-dist-label-row-sm">
+                                                            <span style="color:var(--am-text);">
+                                                                <t t-out="l_opt['label']"/>
+                                                            </span>
+                                                            <span style="color:var(--am-muted);">
+                                                                <t t-out="l_opt['count']"/>
+                                                                (<t t-out="l_opt['pct']"/>%)
+                                                            </span>
+                                                        </div>
+                                                        <div class="seg-bar-track-sm">
+                                                            <div class="seg-bar-fill-sm"
+                                                                 t-att-style="'width:' + str(l_opt['pct']) + '%; background:' + l_opt['color'] + ';'"/>
+                                                        </div>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </div>
+        </t>
+
+        <t t-else="">
+            <div class="seg-empty-state">
+                <i class="fa-solid fa-chart-pie fa-4x" style="color:var(--am-muted);"/>
+                <h3 class="seg-empty-title">
+                    No hay variables de segmentación disponibles
+                </h3>
+                <p class="seg-empty-body">
+                    Las variables de segmentación provienen de preguntas de selección única
+                    marcadas como <em>Variable de segmentación</em> en los cuestionarios
+                    del centro (p.&#160;ej. nacionalidad, tipo de familia).
+                    Ajusta el filtro de evaluación o contacta con el orientador.
+                </p>
+            </div>
+        </t>
+    </template>
+
+</odoo>

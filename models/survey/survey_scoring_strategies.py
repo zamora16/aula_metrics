@@ -198,29 +198,9 @@ class UniversalMatrixScoring:
                         'question_id': main_question.id
                     })
 
-            elif main_question.question_type in ['simple_choice', 'multiple_choice']:
-                # Tratar siempre las opciones como variables de segmentación categóricas.
-                # Recopilar los valores/textos de las opciones seleccionadas y guardarlos en value_json.
-                selected = []
-                for line in relevant_lines:
-                    if line.question_id.id == main_question.id and line.suggested_answer_id:
-                        # Usar el valor (label) de la opción para segmentación
-                        val = getattr(line.suggested_answer_id, 'value', None)
-                        if val is None:
-                            # Fallback a la etiqueta si no hay 'value'
-                            val = getattr(line.suggested_answer_id, 'name', None)
-                        if val is not None:
-                            selected.append(val)
-
-                if selected:
-                    metrics.append({
-                        'metric_name': metric_name,
-                        'metric_label': metric_label,
-                        'value_float': None,
-                        'value_text': None,
-                        'value_json': selected,
-                        'question_id': main_question.id
-                    })
+            # simple_choice / multiple_choice are handled exclusively by
+            # survey_user_input._save_multiplechoice_responses() to avoid
+            # creating duplicate metric_value records.
 
         except Exception:
             pass

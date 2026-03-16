@@ -854,6 +854,186 @@ def get_common_styles():
         .me-3 {
             margin-right: 0.75rem;
         }
+
+        /* ==================== SEGMENTATION DASHBOARD ==================== */
+        .seg-filter-card {
+            border-radius: 10px;
+            border: 1px solid var(--am-border);
+            background: var(--am-surface);
+        }
+
+        .seg-filter-body {
+            padding: 16px 20px;
+        }
+
+        .btn-seg-filter {
+            background: var(--am-primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 16px;
+        }
+
+        .btn-seg-filter:hover {
+            background: var(--am-primary-600);
+            color: #fff;
+        }
+
+        .seg-card-header {
+            background: linear-gradient(135deg, var(--am-primary-100) 0%, transparent 100%);
+            border-bottom: 1px solid var(--am-border);
+            padding: 14px 20px;
+        }
+
+        .seg-var-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--am-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .seg-total-badge {
+            background: var(--am-primary);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 11px;
+            border-radius: 20px;
+        }
+
+        .seg-dist-row {
+            margin-bottom: 13px;
+        }
+
+        .seg-dist-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .seg-bar-label {
+            font-weight: 500;
+            color: var(--am-text);
+        }
+
+        .seg-bar-value {
+            color: var(--am-muted);
+        }
+
+        .seg-bar-track {
+            background: var(--am-border);
+            border-radius: 6px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .seg-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .seg-breakdown-section {
+            margin-top: 18px;
+            border-top: 1px solid var(--am-border);
+            padding-top: 14px;
+        }
+
+        .seg-breakdown-summary {
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--am-muted);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+            outline: none;
+        }
+
+        .seg-breakdown-body {
+            margin-top: 12px;
+        }
+
+        .seg-group-card {
+            background: rgba(0, 0, 0, 0.025);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .seg-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .seg-group-name {
+            font-size: 12px;
+            color: var(--am-text);
+        }
+
+        .seg-group-total {
+            font-size: 11px;
+            color: var(--am-muted);
+        }
+
+        .seg-dist-row-sm {
+            margin-bottom: 7px;
+        }
+
+        .seg-dist-label-row-sm {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        .seg-bar-track-sm {
+            background: var(--am-border);
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .seg-bar-fill-sm {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .seg-level-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--am-muted);
+            margin-bottom: 12px;
+        }
+
+        .seg-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .seg-empty-title {
+            margin-top: 20px;
+            color: var(--am-text);
+        }
+
+        .seg-empty-body {
+            color: var(--am-muted);
+            margin-top: 10px;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
     """
     return root_vars + rest_css

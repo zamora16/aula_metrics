@@ -165,24 +165,57 @@ class DashboardDataQueries(models.Model):
 
     @api.model
     def get_segmentation_variables(self, filters, role_info):
-        """Obtiene variables de segmentación disponibles dinámicamente."""
+        """Obtiene variables de segmentación disponibles dinámicamente.
+
+        Returns gender (from res.partner) plus any survey question with
+        is_segmentation=True that has actual metric_value records stored
+        via _save_multiplechoice_responses() (metric_name='question_<id>_choices').
+        """
+        variables = [
+            {
+                'value': 'gender',
+                'label': 'Género',
+                'type': 'partner_field',
+                'options': ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir'],
+            }
+        ]
+
         try:
-            variables = []
-            
-            # 1. Género (siempre disponible desde res.partner)
-            variables.append({
-                'value': 'gender',
-                'label': 'Género',
-                'type': 'partner_field',
-                'options': ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir']
-            })
-            
-            return variables
+            seg_questions = self.env['survey.question'].search(
+                [('is_segmentation', '=', True)]
+            )
+            for question in seg_questions:
+                metric_name = f'question_{question.id}_choices'
+
+                # Only include if there are actual records (respecting role filter)
+                domain = role_service.apply_group_filter(
+                    [('metric_name', '=', metric_name), ('value_json', '!=', False)],
+                    role_info,
+                    field='academic_group_id',
+                )
+                if domain is None:
+                    continue
+
+                if filters.get('evaluation_ids'):
+                    domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
+
+                if not self.env['aula_metrics.metric_value'].search_count(domain):
+                    continue
+
+                # Derive available options from the answer choices defined on the question
+                options = [
+                    ans.value or ans.name
+                    for ans in question.suggested_answer_ids
+                    if ans.value or ans.name
+                ]
+
+                variables.append({
+                    'value': metric_name,
+                    'label': question.metric_label or question.title or metric_name,
+                    'type': 'metric_json',
+                    'options': options,
+                })
         except Exception as e:
-            _logger.error("Error in get_segmentation_variables: %s", e)
-            return [{
-                'value': 'gender',
-                'label': 'Género',
-                'type': 'partner_field',
-                'options': ['Masculino', 'Femenino', 'Otro', 'Prefiere no decir']
-            }]
+            _logger.error("Error building segmentation variables: %s", e)
+
+        return variables

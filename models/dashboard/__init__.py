@@ -13,3 +13,4 @@ from . import dashboard_student_surveys
 from . import dashboard_student_charts
 from . import dashboard_home
 from . import alerts_dashboard
+from . import dashboard_segmentation

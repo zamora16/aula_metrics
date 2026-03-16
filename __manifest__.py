@@ -38,6 +38,7 @@
         'views/message_thread_views.xml',
         'views/survey_portal_templates.xml',
         'views/qualitative_dashboard_templates.xml',
+        'views/segmentation_dashboard_templates.xml',
         'views/dashboard_page_templates.xml',
         'views/dashboard_main_templates.xml',
         'views/reports/survey_result_report.xml',
