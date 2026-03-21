@@ -5,8 +5,19 @@ cualitativas y lista de alumnos.
 """
 from odoo import models, api, fields
 from markupsafe import Markup
-from ...utils import dashboard_styles, dashboard_helpers
+from ...utils import dashboard_styles, dashboard_helpers, palette
 from ...utils.constants import ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR
+
+# Colores de severidad de alertas — solo usados en este módulo
+_ALERT_SEV = {
+    'low':      {'color': '#0ea5e9', 'bg': '#f0f9ff', 'border': '#bae6fd', 'label': 'Baja'},
+    'moderate': {'color': '#f59e0b', 'bg': '#fffbeb', 'border': '#fde68a', 'label': 'Moderada'},
+    'high':     {'color': palette.UI_DANGER, 'bg': '#fef2f2', 'border': '#fecaca', 'label': 'Alta'},
+}
+_ALERT_ST = {
+    'resolved':  {'color': palette.UI_SUCCESS, 'label': 'Resuelta'},
+    'dismissed': {'color': palette.UI_MUTED,   'label': 'Descartada'},
+}
 
 
 class DashboardStudentSections(models.TransientModel):
@@ -21,23 +32,40 @@ class DashboardStudentSections(models.TransientModel):
         ], order='severity desc, alert_date desc')
 
         if not alerts:
-            return '<div class="alert alert-success"><i class="fa-solid fa-check-circle me-2"></i>No hay alertas activas para este estudiante</div>'
+            return (
+                '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;'
+                'background:var(--am-light);border:1px solid var(--am-border);'
+                'border-radius:8px;font-size:13px;color:var(--am-muted);">'
+                f'<i class="fa-solid fa-check-circle" style="color:{palette.UI_SUCCESS};font-size:16px;"></i>'
+                'No hay alertas activas para este estudiante</div>'
+            )
 
-        severity_classes = {'low': 'info', 'moderate': 'warning', 'high': 'danger'}
-        severity_labels  = {'low': 'Baja', 'moderate': 'Moderada', 'high': 'Alta'}
-
-        html = '<div class="alerts-container">'
+        html = '<div style="display:flex;flex-direction:column;gap:8px;">'
         for alert in alerts:
-            badge_class    = severity_classes.get(alert.severity, 'secondary')
-            severity_label = severity_labels.get(alert.severity, alert.severity)
+            sc = _ALERT_SEV.get(alert.severity,
+                {'color': palette.UI_MUTED, 'bg': 'var(--am-light)', 'border': 'var(--am-border)', 'label': alert.severity})
             html += f"""
-            <div class="alert alert-{badge_class} d-flex justify-content-between align-items-start">
-                <div>
-                    <h6>{alert.name}</h6>
-                    <p class="mb-1">{alert.message or ''}</p>
-                    <small class="text-muted">Creada: {alert.alert_date.strftime('%d/%m/%Y %H:%M')}</small>
+            <div style="border:1px solid {sc['border']};border-left:4px solid {sc['color']};
+                        border-radius:8px;background:{sc['bg']};padding:14px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:14px;font-weight:600;color:var(--am-text);margin-bottom:4px;">
+                            {alert.name}
+                        </div>
+                        <div style="font-size:13px;color:var(--am-text);opacity:0.85;margin-bottom:6px;">
+                            {alert.message or ''}
+                        </div>
+                        <div style="font-size:11px;color:var(--am-muted);">
+                            <i class="fa-regular fa-clock me-1"></i>
+                            Creada: {alert.alert_date.strftime('%d/%m/%Y %H:%M')}
+                        </div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+                                 border:1px solid {sc['border']};background:white;
+                                 color:{sc['color']};white-space:nowrap;flex-shrink:0;">
+                        {sc['label']}
+                    </span>
                 </div>
-                <span class="badge bg-{badge_class}">{severity_label}</span>
             </div>"""
         html += '</div>'
         return html
@@ -51,36 +79,64 @@ class DashboardStudentSections(models.TransientModel):
         ], order='resolution_date desc, alert_date desc', limit=20)
 
         if not alerts:
-            return '<div class="alert alert-light">No hay historial de alertas</div>'
+            return (
+                '<div style="padding:14px 16px;background:var(--am-light);'
+                'border:1px solid var(--am-border);border-radius:8px;'
+                'font-size:13px;color:var(--am-muted);">'
+                'No hay historial de alertas</div>'
+            )
 
-        severity_classes = {'low': 'info', 'moderate': 'warning', 'high': 'danger'}
-        severity_labels  = {'low': 'Baja', 'moderate': 'Moderada', 'high': 'Alta'}
-        status_labels    = {'resolved': 'Resuelta', 'dismissed': 'Descartada'}
-        status_colors    = {'resolved': 'success', 'dismissed': 'secondary'}
-
-        html = '<div class="alerts-history-container">'
+        html = '<div style="display:flex;flex-direction:column;gap:6px;">'
         for alert in alerts:
-            badge_class    = severity_classes.get(alert.severity, 'secondary')
-            severity_label = severity_labels.get(alert.severity, alert.severity)
-            status_label   = status_labels.get(alert.status, alert.status)
-            status_color   = status_colors.get(alert.status, 'secondary')
+            sc = _ALERT_SEV.get(alert.severity,
+                {'color': palette.UI_MUTED, 'label': alert.severity})
+            st = _ALERT_ST.get(alert.status,
+                {'color': palette.UI_MUTED, 'label': alert.status})
 
             resolution_info = ''
             if alert.resolution_date:
-                resolution_info = f'<small class="text-muted d-block">Resuelta: {alert.resolution_date.strftime("%d/%m/%Y %H:%M")}</small>'
+                resolution_info += (
+                    f'<div style="font-size:11px;color:var(--am-muted);margin-top:4px;">'
+                    f'<i class="fa-solid fa-square-check me-1"></i>'
+                    f'Resuelta: {alert.resolution_date.strftime("%d/%m/%Y %H:%M")}</div>'
+                )
             if alert.resolution_action:
-                resolution_info += f'<small class="text-muted d-block mt-1"><strong>Acción:</strong> {alert.resolution_action}</small>'
+                resolution_info += (
+                    f'<div style="font-size:11px;color:var(--am-muted);margin-top:2px;">'
+                    f'<i class="fa-solid fa-bolt me-1"></i>'
+                    f'<strong>Acción:</strong> {alert.resolution_action}</div>'
+                )
 
             html += f"""
-            <div class="alert alert-light border-start border-{badge_class} border-3 mb-2">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1">{alert.name} <span class="badge bg-{status_color} ms-2">{status_label}</span></h6>
-                        <p class="mb-1 text-muted small">{alert.message or ''}</p>
-                        <small class="text-muted">Creada: {alert.alert_date.strftime('%d/%m/%Y %H:%M')}</small>
+            <div style="border:1px solid var(--am-border);border-left:3px solid {sc['color']};
+                        border-radius:8px;background:var(--am-surface);
+                        padding:12px 16px;opacity:0.85;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:600;color:var(--am-text);margin-bottom:3px;">
+                            {alert.name}
+                        </div>
+                        <div style="font-size:12px;color:var(--am-muted);margin-bottom:4px;">
+                            {alert.message or ''}
+                        </div>
+                        <div style="font-size:11px;color:var(--am-muted);">
+                            <i class="fa-regular fa-clock me-1"></i>
+                            Creada: {alert.alert_date.strftime('%d/%m/%Y %H:%M')}
+                        </div>
                         {resolution_info}
                     </div>
-                    <span class="badge bg-{badge_class} ms-2">{severity_label}</span>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+                                     border:1px solid {sc['color']}44;color:{sc['color']};
+                                     background:{sc['color']}14;white-space:nowrap;">
+                            {sc['label']}
+                        </span>
+                        <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;
+                                     border:1px solid {st['color']}44;color:{st['color']};
+                                     background:{st['color']}14;white-space:nowrap;">
+                            {st['label']}
+                        </span>
+                    </div>
                 </div>
             </div>"""
         html += '</div>'
@@ -133,37 +189,67 @@ class DashboardStudentSections(models.TransientModel):
         ], order='response_date desc', limit=20)
 
         if not responses:
-            return '<p class="text-muted">No hay respuestas cualitativas registradas</p>'
+            return (
+                '<div style="padding:14px 16px;background:var(--am-light);'
+                'border:1px solid var(--am-border);border-radius:8px;'
+                'font-size:13px;color:var(--am-muted);">'
+                'No hay respuestas cualitativas registradas</div>'
+            )
 
-        html = '<div class="qualitative-responses">'
+        html = '<div style="display:flex;flex-direction:column;gap:10px;">'
         for resp in responses:
-            alert_class   = 'alert-warning' if resp.has_alert_keywords else ''
-            alert_badge   = ('<span class="badge bg-danger">Alerta</span>'
-                             if resp.has_alert_keywords
-                             else '<span class="badge bg-success"><i class="fa-solid fa-check"></i></span>')
+            has_alert       = resp.has_alert_keywords
+            accent_color    = palette.UI_DANGER if has_alert else palette.UI_SUCCESS
             question_title  = resp.question_id.title if resp.question_id else 'Pregunta sin título'
             evaluation_name = resp.evaluation_id.name if resp.evaluation_id else 'Sin evaluación'
             date_str        = resp.response_date.strftime('%d/%m/%Y') if resp.response_date else 'Sin fecha'
 
+            alert_badge = (
+                f'<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;'
+                f'background:#fef2f2;border:1px solid #fecaca;color:{palette.UI_DANGER};white-space:nowrap;">'
+                f'<i class="fa-solid fa-triangle-exclamation me-1"></i>Alerta</span>'
+                if has_alert else
+                f'<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;'
+                f'background:#f0fdf4;border:1px solid #bbf7d0;color:{palette.UI_SUCCESS};white-space:nowrap;">'
+                f'<i class="fa-solid fa-check me-1"></i>OK</span>'
+            )
+
             keywords_html = ''
-            if resp.has_alert_keywords and resp.detected_keyword_ids:
-                keywords_list = ', '.join(
-                    f'<strong>{kw.keyword}</strong>' for kw in resp.detected_keyword_ids
+            if has_alert and resp.detected_keyword_ids:
+                pills = ''.join(
+                    f'<span style="display:inline-block;padding:2px 8px;border-radius:12px;'
+                    f'background:#fef2f2;border:1px solid #fecaca;color:{palette.UI_DANGER};'
+                    f'font-size:11px;font-weight:600;margin:2px 3px 2px 0;">{kw.keyword}</span>'
+                    for kw in resp.detected_keyword_ids
                 )
-                if keywords_list:
-                    keywords_html = f'<div class="mt-2"><small class="text-danger">Palabras detectadas: {keywords_list}</small></div>'
+                keywords_html = (
+                    f'<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--am-border);">'
+                    f'<span style="font-size:10px;font-weight:700;text-transform:uppercase;'
+                    f'letter-spacing:0.07em;color:{palette.UI_DANGER};margin-right:6px;">Palabras detectadas</span>'
+                    f'{pills}</div>'
+                )
 
             html += f"""
-            <div class="card mb-3 {alert_class}">
-                <div class="card-header d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="mb-1">{question_title}</h6>
-                        <small class="text-muted">{evaluation_name} · {date_str} · {resp.word_count} palabras</small>
+            <div style="border:1px solid var(--am-border);border-left:4px solid {accent_color};
+                        border-radius:8px;background:var(--am-surface);overflow:hidden;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                            gap:12px;padding:12px 16px 10px;border-bottom:1px solid var(--am-border);">
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-size:13px;font-weight:600;color:var(--am-text);">
+                            {question_title}
+                        </div>
+                        <div style="font-size:11px;color:var(--am-muted);margin-top:3px;">
+                            <i class="fa-solid fa-graduation-cap me-1"></i>{evaluation_name}
+                            <span style="margin:0 5px;">·</span>
+                            <i class="fa-regular fa-calendar me-1"></i>{date_str}
+                            <span style="margin:0 5px;">·</span>
+                            {resp.word_count} palabras
+                        </div>
                     </div>
                     {alert_badge}
                 </div>
-                <div class="card-body">
-                    <p class="mb-0">{resp.response_text}</p>
+                <div style="padding:12px 16px;font-size:13px;color:var(--am-text);line-height:1.6;">
+                    {resp.response_text}
                     {keywords_html}
                 </div>
             </div>"""
@@ -232,21 +318,7 @@ class DashboardStudentSections(models.TransientModel):
                     </td>
                 </tr>'''
 
-        list_styles = dashboard_styles.get_common_styles() + """
-        <style>
-            .card { border-radius: 12px; border: 1px solid var(--am-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: var(--am-surface); }
-            .card-header { background: var(--am-surface); border-bottom: 1px solid var(--am-border); font-weight: 600; padding: 1.25rem 1.5rem; }
-            .table { margin-bottom: 0; }
-            .table thead th { background: var(--am-bg); font-weight: 600; border-bottom: 2px solid var(--am-border); padding: 1rem; }
-            .table tbody td { padding: 1rem; vertical-align: middle; }
-            .table tbody tr:hover { background: var(--am-bg); }
-            .search-box { margin-bottom: 1.5rem; }
-            .search-box input { border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }
-            .search-box input:focus { border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }
-            .filters-bar { margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; }
-            .filters-bar select { border-radius: 8px; padding: 0.75rem 1rem; border: 1px solid var(--am-border); }
-            .filters-bar select:focus { border-color: var(--am-primary); box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1); }
-        </style>"""
+        list_styles = dashboard_styles.get_common_styles()
 
         scripts_html = """
             <script>
@@ -309,7 +381,7 @@ class DashboardStudentSections(models.TransientModel):
         return {
             'page_title':           'Perfiles de Alumnos',
             'css_styles':           Markup(list_styles),
-            'head_extra':           Markup('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>'),
+            'head_extra':           Markup(''),
             'role_info':            role_info,
             'active_section':       'profiles',
             'topbar_title':         'Perfiles de Alumnos',

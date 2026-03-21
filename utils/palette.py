@@ -47,10 +47,14 @@ UI_PRIMARY_200    = '#bfdbfe'
 UI_PRIMARY_RGB    = '15, 76, 129'
 UI_SUCCESS      = '#10b981'
 UI_SUCCESS_DARK = '#059669'
-UI_MUTED        = '#64748b'   # texto/leyendas atenuadas
+UI_MUTED            = '#64748b'   # texto/leyendas atenuadas
+UI_CHALKBOARD_GREEN = '#2f855a'   # verde pizarra — referencia de media del centro
 UI_BORDER       = '#e4eaf3'   # cooler, bluer border
 UI_LIGHT        = '#f8fafc'   # light surface
 UI_WARNING      = '#f59e0b'   # amber accent
 UI_DANGER       = '#ef4444'
 UI_SIDEBAR_START = '#0f1e36'  # deep, flat sidebar
 UI_SIDEBAR_END   = '#162844'
+
+# Gradiente del panel de segmentación global (barra de filtro superior en dashboard de métricas)
+UI_SEGMENTATION_BAR_GRADIENT = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'

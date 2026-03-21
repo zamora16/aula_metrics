@@ -1034,6 +1034,112 @@ def get_common_styles():
             margin-left: auto;
             margin-right: auto;
         }
+
+        /* ==================== TABLA DE ALUMNOS / RESULTADOS ==================== */
+        .table { margin-bottom: 0; }
+        .table thead th {
+            background: var(--am-bg);
+            font-weight: 600;
+            border-bottom: 2px solid var(--am-border);
+            padding: 1rem;
+        }
+        .table tbody td { padding: 1rem; vertical-align: middle; }
+        .table tbody tr:hover { background: var(--am-bg); }
+
+        /* ==================== BUSCADOR / FILTROS DE LISTA ==================== */
+        .search-box { margin-bottom: 1.5rem; }
+        .search-box input,
+        .filters-bar select {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--am-border);
+        }
+        .search-box input:focus,
+        .filters-bar select:focus {
+            border-color: var(--am-primary);
+            box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.1);
+            outline: none;
+        }
+        .filters-bar {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* ==================== SURVEY UNIFIED CARD (tabs multi-escala) ==================== */
+        .survey-unified-card {
+            margin-bottom: 36px;
+            overflow: visible;
+        }
+        .survey-unified-card > .card-header {
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .survey-unified-card .survey-scale-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            list-style: none;
+            margin: 10px -24px -1px;
+            padding: 0 24px;
+            border-bottom: none;
+        }
+        .survey-unified-card .survey-scale-tabs .nav-link {
+            font-size: 13px;
+            font-weight: 500;
+            padding: 7px 16px;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid transparent;
+            color: var(--am-muted);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .survey-unified-card .survey-scale-tabs .nav-link:hover {
+            color: var(--am-text);
+            background: var(--am-bg);
+        }
+        .survey-unified-card .survey-scale-tabs .nav-link.am-tab-active {
+            color: var(--am-primary);
+            background: var(--am-surface);
+            border-color: var(--am-border) var(--am-border) var(--am-surface);
+        }
+        .survey-unified-card .am-tab-content {
+            border-top: 1px solid var(--am-border);
+        }
+        .survey-unified-card .am-tab-pane > .card {
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            margin: 0;
+        }
+        .survey-unified-card .am-tab-pane > .card > .card-header {
+            background: var(--am-bg);
+            border-bottom: 1px solid var(--am-border);
+            border-radius: 0;
+        }
+        .survey-unified-card .am-tab-pane > .card > .card-header .card-title,
+        .survey-unified-card .am-tab-pane > .card > .card-header .card-subtitle {
+            display: none;
+        }
+        .survey-unified-card .am-tab-pane .card .card {
+            border: none;
+            box-shadow: none;
+            margin: 0;
+            border-radius: 0;
+        }
+        /* ── Survey summary table: clases de utilidad ──────────────────── */
+        .am-td        {{ text-align:center; padding:8px 10px; }}
+        .am-td-label  {{ padding:8px 10px; font-size:12px; color:var(--am-text); white-space:nowrap; }}
+        .am-th-cell   {{ text-align:center; padding:8px 10px; font-size:10px; font-weight:800;
+                        text-transform:uppercase; letter-spacing:0.07em;
+                        color:var(--am-muted); white-space:nowrap; }}
+        .am-th-label  {{ text-align:left; padding:8px 10px; font-size:10px; font-weight:800;
+                        text-transform:uppercase; letter-spacing:0.07em; color:var(--am-muted); }}
+        .am-mono      {{ font-family:'JetBrains Mono', monospace; }}
+        .am-group-col {{ color:var(--am-muted); }}
+        .am-center-col {{ color:{palette.UI_CHALKBOARD_GREEN}; }}
     </style>
     """
     return root_vars + rest_css
@@ -1403,172 +1509,38 @@ def get_profile_styles():
                 letter-spacing: 0.1em; color: var(--am-muted); margin-bottom: 12px; display: block;
             }
             .am-bar-row {
-                display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+                display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
             }
             .am-bar-row--total {
-                border-top: 1px solid var(--am-border); padding-top: 10px; margin-top: 6px;
+                border-top: 2px solid var(--am-border); padding-top: 14px; margin-top: 10px;
             }
             .am-bar-row__label {
-                min-width: 160px; font-size: 12px; font-weight: 600;
+                min-width: 150px; font-size: 12px; font-weight: 600;
                 color: var(--am-text); flex-shrink: 0;
             }
+            .am-bar-row--total .am-bar-row__label { font-size: 13px; font-weight: 800; }
             .am-bar-row__track {
-                flex: 1; position: relative; height: 10px; border-radius: 5px;
-                background: #e2e8f0; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+                flex: 1; position: relative; height: 14px; border-radius: 7px;
+                background: linear-gradient(to bottom, #dce3ed, #e9eef5);
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.10), inset 0 -1px 0 rgba(255,255,255,0.80);
                 overflow: visible;
             }
+            .am-bar-fill {
+                position: absolute; left: 0; top: 0; height: 100%;
+                border-radius: 7px; z-index: 2;
+            }
+            .am-bar-fill::after {
+                content: ''; position: absolute; top: 0; left: 0; right: 0; height: 55%;
+                background: linear-gradient(to bottom, rgba(255,255,255,0.30), transparent);
+                border-radius: 7px 7px 0 0; pointer-events: none;
+            }
             .am-bar-row__score {
-                font-family: 'JetBrains Mono', monospace; font-size: 13px;
-                font-weight: 700; min-width: 40px; text-align: right; flex-shrink: 0;
+                font-family: 'JetBrains Mono', monospace; font-size: 12px;
+                font-weight: 700; min-width: 56px; text-align: center; flex-shrink: 0;
+                padding: 3px 8px; border-radius: 20px;
             }
             .am-bar-row__score-denom { font-weight: 400; color: var(--am-muted); font-size: 10px; }
         </style>"""
 
 
-def get_chart_styles():
-    """Estilos específicos para gráficos de Chart.js."""
-    return """
-    <style>
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 32px;
-        }
-        
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -12px 24px -12px;
-        }
-        
-        .col-lg-6 {
-            flex: 0 0 50%;
-            max-width: 50%;
-            padding: 0 12px;
-        }
-        
-        .col-12 {
-            flex: 0 0 100%;
-            max-width: 100%;
-            padding: 0 12px;
-        }
-        
-        @media (max-width: 992px) {
-            .col-lg-6 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
 
-        /* ====== SURVEY UNIFIED CARD (multi-escala en una sola card) ====== */
-        .survey-unified-card {
-            margin-bottom: 36px;
-            overflow: visible;
-        }
-        .survey-unified-card > .card-header {
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-        .survey-unified-card .survey-scale-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2px;
-            list-style: none;
-            margin: 10px -24px -1px;
-            padding: 0 24px;
-            border-bottom: none;
-        }
-        .survey-unified-card .survey-scale-tabs .nav-link {
-            font-size: 13px;
-            font-weight: 500;
-            padding: 7px 16px;
-            border-radius: 8px 8px 0 0;
-            border: 1px solid transparent;
-            color: var(--am-muted);
-            background: transparent;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .survey-unified-card .survey-scale-tabs .nav-link:hover {
-            color: var(--am-text);
-            background: var(--am-bg);
-        }
-        .survey-unified-card .survey-scale-tabs .nav-link.am-tab-active {
-            color: var(--am-primary);
-            background: var(--am-surface);
-            border-color: var(--am-border) var(--am-border) var(--am-surface);
-        }
-        .survey-unified-card .am-tab-content {
-            border-top: 1px solid var(--am-border);
-        }
-        /* Aplanar cards internas dentro de los panes */
-        .survey-unified-card .am-tab-pane > .card {
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
-            margin: 0;
-        }
-        .survey-unified-card .am-tab-pane > .card > .card-header {
-            background: var(--am-bg);
-            border-bottom: 1px solid var(--am-border);
-            border-radius: 0;
-        }
-        /* Ocultar título interno (el pill tab ya nombra la escala) */
-        .survey-unified-card .am-tab-pane > .card > .card-header .card-title,
-        .survey-unified-card .am-tab-pane > .card > .card-header .card-subtitle {
-            display: none;
-        }
-        /* Cards de segundo nivel (dentro de toggle wrapper) */
-        .survey-unified-card .am-tab-pane .card .card {
-            border: none;
-            box-shadow: none;
-            margin: 0;
-            border-radius: 0;
-        }
-
-        /* ====== CUESTIONARIOS MULTI-ESCALA (legado, puede quitarse) ====== */
-        .survey-group {
-            margin-bottom: 36px;
-        }
-        .survey-group-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            padding: 0 2px;
-        }
-        .survey-group-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--am-text);
-        }
-        .survey-group-subscales-toggle {
-            margin-top: 10px;
-            padding: 0 2px;
-        }
-        .subscales-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 20px;
-            padding: 16px 0 4px;
-        }
-        .subscale-item .card {
-            margin-bottom: 0;
-        }
-        .subscale-item .card-header {
-            padding: 14px 20px;
-        }
-        .subscale-item .card-title {
-            font-size: 14px;
-        }
-        .subscale-item .card-body {
-            padding: 12px 16px;
-        }
-        @media (max-width: 768px) {
-            .subscales-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-    """

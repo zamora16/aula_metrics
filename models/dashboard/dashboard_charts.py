@@ -103,7 +103,7 @@ class DashboardCharts(models.TransientModel):
         segment_options_html = self._build_segment_options_html(segmentation_vars)
         
         return f"""
-        <div class="global-segmentation-bar mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="global-segmentation-bar mb-4" style="background: {palette.UI_SEGMENTATION_BAR_GRADIENT}; padding: 16px 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-3">
                     <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 8px;">

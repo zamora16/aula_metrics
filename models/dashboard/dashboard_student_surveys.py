@@ -231,7 +231,7 @@ class DashboardStudentSurveys(models.TransientModel):
             for idx, sn in enumerate(scale_order):
                 sdata    = survey_data['scales'][sn]
                 is_total = sn == 'total'
-                color    = '#0f4c81' if is_total else _LINE_COLORS[idx % len(_LINE_COLORS)]
+                color    = palette.UI_PRIMARY if is_total else _LINE_COLORS[idx % len(_LINE_COLORS)]
                 values_list = [sdata['values'].get(ev) for ev in eval_labels]
                 datasets.append({
                     'label':            sdata['label'],
@@ -273,7 +273,7 @@ class DashboardStudentSurveys(models.TransientModel):
                     ref_datasets.append({
                         'label':           f'Media centro ({center_count})',
                         'data':            [cm] * len(eval_labels),
-                        'borderColor':     '#2f855a',
+                        'borderColor':     palette.UI_CHALKBOARD_GREEN,
                         'backgroundColor': 'transparent',
                         'borderWidth':     1,
                         'borderDash':      [3, 3],
@@ -305,16 +305,16 @@ class DashboardStudentSurveys(models.TransientModel):
                 first_val = known[0][1]  if known else None
 
                 # Δ% overall (primer → último conocido)
-                delta_html = '<td style="text-align:center;padding:8px 10px;">—</td>'
+                delta_html = '<td class="am-td">—</td>'
                 if first_val is not None and last_val is not None and first_val != 0:
                     pct_change = (last_val - first_val) / first_val * 100
                     arrow  = '↑' if pct_change > 0 else ('↓' if pct_change < 0 else '→')
                     color  = '#059669' if pct_change > 0 else ('#dc2626' if pct_change < 0 else '#64748b')
                     bg     = '#f0fdf4' if pct_change > 0 else ('#fef2f2' if pct_change < 0 else '#f8fafc')
                     delta_html = (
-                        f'<td style="text-align:center;padding:8px 10px;">'
-                        f'<span style="display:inline-block;background:{bg};color:{color};'
-                        f'border-radius:12px;padding:2px 8px;font-family:\'JetBrains Mono\',monospace;'
+                        f'<td class="am-td">'
+                        f'<span class="am-mono" style="display:inline-block;background:{bg};color:{color};'
+                        f'border-radius:12px;padding:2px 8px;'
                         f'font-size:11px;font-weight:700;white-space:nowrap;">'
                         f'{arrow} {abs(pct_change):.0f}%</span></td>'
                     )
@@ -323,12 +323,11 @@ class DashboardStudentSurveys(models.TransientModel):
                 val_cells = ''
                 for v in vals:
                     if v is None:
-                        val_cells += '<td style="text-align:center;padding:8px 10px;color:var(--am-muted);">—</td>'
+                        val_cells += '<td class="am-td" style="color:var(--am-muted);">—</td>'
                     else:
                         s_max = max(maxes_cache[sid].get(sn, scale_max), 1)
                         val_cells += (
-                            f'<td style="text-align:center;padding:8px 10px;'
-                            f'font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;">'
+                            f'<td class="am-td am-mono" style="font-size:13px;font-weight:700;">'
                             f'{v:.0f}'
                             f'<span style="font-size:10px;font-weight:400;color:var(--am-muted);">/{s_max:.0f}</span>'
                             f'</td>'
@@ -338,15 +337,13 @@ class DashboardStudentSurveys(models.TransientModel):
                 gm = group_means.get(sn)
                 cm = center_means.get(sn)
                 gm_cell = (
-                    f'<td style="text-align:center;padding:8px 10px;'
-                    f'font-family:\'JetBrains Mono\',monospace;font-size:12px;color:#64748b;">'
+                    f'<td class="am-td am-mono am-group-col" style="font-size:12px;">'
                     f'{gm:.1f}</td>'
-                ) if gm is not None and group_count > 0 else '<td style="text-align:center;padding:8px 10px;color:var(--am-muted);">—</td>'
+                ) if gm is not None and group_count > 0 else '<td class="am-td" style="color:var(--am-muted);">—</td>'
                 cm_cell = (
-                    f'<td style="text-align:center;padding:8px 10px;'
-                    f'font-family:\'JetBrains Mono\',monospace;font-size:12px;color:#2f855a;">'
+                    f'<td class="am-td am-mono am-center-col" style="font-size:12px;">'
                     f'{cm:.1f}</td>'
-                ) if cm is not None and center_count > 0 else '<td style="text-align:center;padding:8px 10px;color:var(--am-muted);">—</td>'
+                ) if cm is not None and center_count > 0 else '<td class="am-td" style="color:var(--am-muted);">—</td>'
 
                 row_style = (
                     'border-top:2px solid var(--am-border);font-weight:700;background:var(--am-light);'
@@ -354,28 +351,22 @@ class DashboardStudentSurveys(models.TransientModel):
                 )
                 summary_rows += (
                     f'<tr style="{row_style}">'
-                    f'<td style="padding:8px 10px;font-size:12px;font-weight:{"700" if is_total else "500"};'
-                    f'color:var(--am-text);white-space:nowrap;">{label}</td>'
+                    f'<td class="am-td-label" style="font-weight:{"700" if is_total else "500"};">'
+                    f'{label}</td>'
                     f'{val_cells}{delta_html}{gm_cell}{cm_cell}'
                     f'</tr>'
                 )
 
             # Cabecera de tabla con nombres de evaluación
             eval_th = ''.join(
-                f'<th style="text-align:center;padding:8px 10px;font-size:10px;font-weight:800;'
-                f'text-transform:uppercase;letter-spacing:0.07em;color:var(--am-muted);'
-                f'white-space:nowrap;">{ev}</th>'
+                f'<th class="am-th-cell">{ev}</th>'
                 for ev in eval_labels
             )
             gn_th = (
-                f'<th style="text-align:center;padding:8px 10px;font-size:10px;font-weight:800;'
-                f'text-transform:uppercase;letter-spacing:0.07em;color:#64748b;white-space:nowrap;">'
-                f'Grupo (media)</th>'
+                '<th class="am-th-cell am-group-col">Grupo (media)</th>'
             ) if group_count > 0 else ''
             cn_th = (
-                f'<th style="text-align:center;padding:8px 10px;font-size:10px;font-weight:800;'
-                f'text-transform:uppercase;letter-spacing:0.07em;color:#2f855a;white-space:nowrap;">'
-                f'Centro (media)</th>'
+                '<th class="am-th-cell am-center-col">Centro (media)</th>'
             ) if center_count > 0 else ''
 
             summary_table = f"""
@@ -384,11 +375,9 @@ class DashboardStudentSurveys(models.TransientModel):
                               border:1px solid var(--am-border);border-radius:8px;overflow:hidden;">
                     <thead>
                         <tr style="background:var(--am-light);">
-                            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;
-                                       text-transform:uppercase;letter-spacing:0.07em;color:var(--am-muted);">Escala</th>
+                            <th class="am-th-label">Escala</th>
                             {eval_th}
-                            <th style="text-align:center;padding:8px 10px;font-size:10px;font-weight:800;
-                                       text-transform:uppercase;letter-spacing:0.07em;color:var(--am-muted);">Evolución</th>
+                            <th class="am-th-cell">Evolución</th>
                             {gn_th}{cn_th}
                         </tr>
                     </thead>
@@ -442,13 +431,13 @@ class DashboardStudentSurveys(models.TransientModel):
                         scales: {{
                             x: {{
                                 grid: {{ display: false }},
-                                ticks: {{ font: {{ size: 11 }}, color: '#64748b' }}
+                                ticks: {{ font: {{ size: 11 }}, color: '{palette.UI_MUTED}' }}
                             }},
                             y: {{
                                 beginAtZero: true,
                                 suggestedMax: {scale_max:.0f},
                                 grid: {{ color: 'rgba(0,0,0,0.04)' }},
-                                ticks: {{ font: {{ size: 11 }}, color: '#64748b' }}
+                                ticks: {{ font: {{ size: 11 }}, color: '{palette.UI_MUTED}' }}
                             }}
                         }},
                         animation: {{ duration: 500 }}
@@ -550,10 +539,9 @@ class DashboardStudentSurveys(models.TransientModel):
 
                 s_pct    = pct(score)
                 bar_html = (
-                    f'<div title="{display_name}: {score:.0f}/{scale_max:.0f}" '
-                    f'style="position:absolute;left:0;top:0;'
-                    f'width:{s_pct:.1f}%;height:100%;background:{fill_color};'
-                    f'border-radius:5px;z-index:2;"></div>'
+                    f'<div class="am-bar-fill" '
+                    f'title="{display_name}: {score:.0f}/{scale_max:.0f}" '
+                    f'style="width:{s_pct:.1f}%;background:{fill_color};"></div>'
                 )
 
                 g_mean = g_means.get(scale_name)
@@ -563,13 +551,13 @@ class DashboardStudentSurveys(models.TransientModel):
                 if g_mean is not None:
                     gp   = pct(g_mean)
                     g_mk = (f'<div title="Media grupo: {g_mean:.1f}" '
-                            f'style="position:absolute;left:{gp:.1f}%;top:-4px;'
-                            f'height:18px;width:2px;background:#94a3b8;border-radius:1px;z-index:4;"></div>')
+                            f'style="position:absolute;left:{gp:.1f}%;top:-5px;'
+                            f'height:24px;width:3px;background:#94a3b8;border-radius:2px;z-index:4;"></div>')
                 if c_mean is not None:
                     cp   = pct(c_mean)
                     c_mk = (f'<div title="Media centro: {c_mean:.1f}" '
-                            f'style="position:absolute;left:{cp:.1f}%;top:-4px;'
-                            f'height:18px;width:2px;background:var(--am-primary);border-radius:1px;z-index:4;"></div>')
+                            f'style="position:absolute;left:{cp:.1f}%;top:-5px;'
+                            f'height:24px;width:3px;background:var(--am-primary);border-radius:2px;z-index:4;"></div>')
 
                 row_cls = 'am-bar-row am-bar-row--total' if is_total else 'am-bar-row'
                 bars.append(f"""
@@ -578,7 +566,10 @@ class DashboardStudentSurveys(models.TransientModel):
                     <div class="am-bar-row__track">
                         {bar_html}{g_mk}{c_mk}
                     </div>
-                    <span class="am-bar-row__score" style="color:{val_color};">{score:.0f}<span class="am-bar-row__score-denom">/{scale_max:.0f}</span></span>
+                    <span class="am-bar-row__score"
+                          style="color:{val_color};background:{fill_color}20;border:1px solid {fill_color}55;">
+                        {score:.0f}<span class="am-bar-row__score-denom">/{scale_max:.0f}</span>
+                    </span>
                 </div>""")
             scale_bars_html = (
                 '<span class="am-drawer-section-label">Desglose por subescalas</span>\n'
