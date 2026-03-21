@@ -47,9 +47,10 @@ class Case(models.Model):
     academic_group_id = fields.Many2one(
         'aula_metrics.academic_group',
         string='Grupo Académico',
-        related='student_id.academic_group_id',
         store=True,
         readonly=True,
+        ondelete='set null',
+        help='Grupo del alumno cuando se abrió el caso (dato histórico, no cambia al cambiar de curso).'
     )
 
     # ── Fechas ───────────────────────────────────────────────────────────────
@@ -114,6 +115,13 @@ class Case(models.Model):
     # ── ORM overrides ─────────────────────────────────────────────────────────
     @api.model_create_multi
     def create(self, vals_list):
+        # Congelar el grupo académico del alumno en el momento de abrir el caso.
+        # Si el alumno cambia de grupo al año siguiente, el caso sigue mostrado
+        # en el grupo en que ocurrió, preservando el historial correcto.
+        for vals in vals_list:
+            if 'academic_group_id' not in vals and vals.get('student_id'):
+                student = self.env['res.partner'].browse(vals['student_id'])
+                vals['academic_group_id'] = student.academic_group_id.id or False
         records = super().create(vals_list)
         for record in records:
             # Registrar en chatter el motivo de apertura con un mensaje interno

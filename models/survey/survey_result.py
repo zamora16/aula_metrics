@@ -102,6 +102,19 @@ class SurveyResult(models.Model):
     )
 
     # ──────────────────────────────────────────────
+    # Snapshot histórico
+    # ──────────────────────────────────────────────
+    academic_group_id = fields.Many2one(
+        'aula_metrics.academic_group',
+        string='Grupo Académico',
+        store=True,
+        readonly=True,
+        ondelete='set null',
+        help='Grupo del alumno en el momento de completar el cuestionario (dato histórico, '
+             'no cambia al cambiar de curso o grupo).'
+    )
+
+    # ──────────────────────────────────────────────
     # Computed
     # ──────────────────────────────────────────────
     age_at_completion = fields.Integer(
@@ -239,6 +252,18 @@ class SurveyResult(models.Model):
             'global_description':  self.baremo_description or '',
             'scales':              scales,
         }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Congela el grupo académico del alumno en el momento de crear el resultado.
+        Así las comparativas históricas de peer comparison usan el grupo correcto
+        aunque el alumno cambie de grupo al año siguiente.
+        """
+        for vals in vals_list:
+            if 'academic_group_id' not in vals and vals.get('student_id'):
+                student = self.env['res.partner'].browse(vals['student_id'])
+                vals['academic_group_id'] = student.academic_group_id.id or False
+        return super().create(vals_list)
 
     @api.model
     def create_from_scoring(self, student_id, survey_id, user_input_id, evaluation_id,

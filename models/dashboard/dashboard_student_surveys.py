@@ -109,7 +109,7 @@ class DashboardStudentSurveys(models.TransientModel):
                     continue
                 scale_maxes = maxes_cache[sx]
                 scale_meta  = meta_cache[sx]
-                ctx         = self._get_survey_result_context(sx, student_id)
+                ctx         = self._get_survey_result_context(sx, student_id, evaluation_id=ev_data['id'] or None)
                 for r in surveys_in_eval[sx]:
                     row_html, drawer_html = self._build_survey_result_row(
                         r, scale_maxes, ctx, scale_meta, show_checkbox=True,
@@ -813,18 +813,46 @@ class DashboardStudentSurveys(models.TransientModel):
         }})();
         </script>"""
 
-    def _get_survey_result_context(self, survey_id, student_id):
-        """Calcula medias por escala del grupo y del centro para comparativa."""
-        SurveyResult = self.env['aula_metrics.survey_result']
-        student  = self.env['res.partner'].browse(student_id)
-        group_id = student.academic_group_id.id if student.academic_group_id else None
+    def _get_survey_result_context(self, survey_id, student_id, evaluation_id=None):
+        """Calcula medias por escala del grupo y del centro para comparativa.
 
-        all_others   = SurveyResult.search([
+        Usa el academic_group_id congelado en cada SurveyResult (no el grupo actual
+        del alumno) para que las comparativas históricas sean correctas aunque el
+        alumno haya cambiado de grupo al año siguiente.
+
+        Si se proporciona evaluation_id, la comparativa se acota a esa evaluación
+        (mismo cohorte exacto), lo que es lo correcto para la vista de timeline.
+        Sin evaluation_id se compara contra todos los resultados históricos del
+        centro (útil para la gráfica de evolución multi-año).
+        """
+        SurveyResult = self.env['aula_metrics.survey_result']
+
+        base_domain = [
             ('survey_id', '=', survey_id),
             ('student_id', '!=', student_id),
-        ])
+        ]
+        if evaluation_id:
+            base_domain.append(('evaluation_id', '=', evaluation_id))
+
+        all_others = SurveyResult.search(base_domain)
+
+        # Obtener el grupo histórico del alumno: usar el academic_group_id congelado
+        # en su propio SurveyResult para esta evaluación/cuestionario.
+        ref_domain = [('survey_id', '=', survey_id), ('student_id', '=', student_id)]
+        if evaluation_id:
+            ref_domain.append(('evaluation_id', '=', evaluation_id))
+        ref_result = SurveyResult.search(ref_domain, order='completed_at desc', limit=1)
+
+        if ref_result and ref_result.academic_group_id:
+            frozen_group_id = ref_result.academic_group_id.id
+        else:
+            # Fallback para registros anteriores a la congelación
+            student = self.env['res.partner'].browse(student_id)
+            frozen_group_id = student.academic_group_id.id if student.academic_group_id else None
+
+        # Filtrar peers usando el academic_group_id congelado en cada resultado
         group_others = all_others.filtered(
-            lambda r: group_id and r.student_id.academic_group_id.id == group_id
+            lambda r: frozen_group_id and r.academic_group_id.id == frozen_group_id
         )
 
         def avg_scales(records):
