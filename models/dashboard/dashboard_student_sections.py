@@ -282,38 +282,76 @@ class DashboardStudentSections(models.TransientModel):
                 group_id   = student.academic_group_id.id   if student.academic_group_id else 0
                 email      = student.email or 'N/A'
 
-                metrics_count = self.env['aula_metrics.metric_value'].search_count([
-                    ('student_id', '=', student.id)
+                evals_done = self.env['aula_metrics.participation'].search_count([
+                    ('student_id', '=', student.id),
+                    ('state', '=', 'completed'),
                 ])
                 alerts_count = self.env['aula_metrics.alert'].search_count([
                     ('student_id', '=', student.id),
                     ('status', '=', 'active'),
                 ])
 
-                alerts_badge = (
-                    f'<span class="badge bg-danger">{alerts_count} alerta(s)</span>'
-                    if alerts_count > 0
-                    else '<span class="badge bg-success"><i class="fa-solid fa-check"></i></span>'
-                )
+                if alerts_count > 0:
+                    alerts_badge = (
+                        f'<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;'
+                        f'background:#fef2f2;border:1px solid #fecaca;color:{palette.UI_DANGER};white-space:nowrap;">'
+                        f'{alerts_count} alerta{"s" if alerts_count > 1 else ""}</span>'
+                    )
+                else:
+                    alerts_badge = (
+                        f'<span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;'
+                        f'background:#f0fdf4;border:1px solid #bbf7d0;color:{palette.UI_SUCCESS};">'
+                        f'Sin alertas</span>'
+                    )
+
+                initials = ''.join(w[0].upper() for w in student.name.split()[:2]) if student.name else '?'
                 students_rows += f'''
-                <tr data-group-id="{group_id}">
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="student-avatar me-3">
-                                <i class="fa-solid fa-user-circle fa-2x text-primary"></i>
+                <tr data-group-id="{group_id}" style="transition:background 0.12s;"
+                    onmouseover="this.style.background='var(--am-light)'"
+                    onmouseout="this.style.background=''">
+                    <td style="padding:12px 16px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                                        background:var(--am-primary-light,#eff6ff);
+                                        border:1px solid var(--am-border);
+                                        display:flex;align-items:center;justify-content:center;
+                                        font-size:12px;font-weight:700;color:var(--am-primary);">
+                                {initials}
                             </div>
-                            <div>
-                                <div class="fw-bold">{student.name}</div>
-                                <small class="text-muted">{email}</small>
+                            <div style="min-width:0;">
+                                <div style="font-size:14px;font-weight:600;color:var(--am-text);
+                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    {student.name}
+                                </div>
+                                <div style="font-size:11px;color:var(--am-muted);margin-top:1px;">
+                                    {email}
+                                </div>
                             </div>
                         </div>
                     </td>
-                    <td>{group_name}</td>
-                    <td class="text-center">{metrics_count}</td>
-                    <td>{alerts_badge}</td>
-                    <td class="text-end">
-                        <a href="/aulametrics/student/{student.id}" class="btn btn-sm btn-outline-primary">
-                            <i class="fa-solid fa-chart-line me-1"></i> Ver Perfil
+                    <td style="padding:12px 16px;">
+                        <span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+                                     background:var(--am-light);border:1px solid var(--am-border);
+                                     color:var(--am-text);white-space:nowrap;">
+                            {group_name}
+                        </span>
+                    </td>
+                    <td style="padding:12px 16px;text-align:center;">
+                        <span style="font-size:20px;font-weight:800;color:var(--am-text);line-height:1;">
+                            {evals_done}
+                        </span>
+                    </td>
+                    <td style="padding:12px 16px;">{alerts_badge}</td>
+                    <td style="padding:12px 16px;text-align:right;">
+                        <a href="/aulametrics/student/{student.id}"
+                           style="display:inline-flex;align-items:center;gap:6px;
+                                  padding:5px 14px;border-radius:7px;font-size:12px;font-weight:600;
+                                  border:1px solid var(--am-primary);color:var(--am-primary);
+                                  text-decoration:none;background:var(--am-primary-light,#eff6ff);
+                                  transition:all 0.15s;"
+                           onmouseover="this.style.background='var(--am-primary)';this.style.color='#fff';"
+                           onmouseout="this.style.background='var(--am-primary-light,#eff6ff)';this.style.color='var(--am-primary)';">
+                            <i class="fa-solid fa-chart-line" style="font-size:11px;"></i>Ver perfil
                         </a>
                     </td>
                 </tr>'''
@@ -363,12 +401,30 @@ class DashboardStudentSections(models.TransientModel):
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="studentsTable">
+                        <table class="table" id="studentsTable"
+                               style="border-collapse:collapse;width:100%;">
                             <thead>
-                                <tr>
-                                    <th>Estudiante</th><th>Grupo</th>
-                                    <th class="text-center">Métricas</th>
-                                    <th>Estado</th><th class="text-end">Acciones</th>
+                                <tr style="background:var(--am-light);">
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;
+                                               text-transform:uppercase;letter-spacing:0.07em;
+                                               color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               white-space:nowrap;">Estudiante</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;
+                                               text-transform:uppercase;letter-spacing:0.07em;
+                                               color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               white-space:nowrap;">Grupo</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;
+                                               text-transform:uppercase;letter-spacing:0.07em;
+                                               color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               text-align:center;white-space:nowrap;">Evaluaciones</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;
+                                               text-transform:uppercase;letter-spacing:0.07em;
+                                               color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               white-space:nowrap;">Alertas</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;
+                                               text-transform:uppercase;letter-spacing:0.07em;
+                                               color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               text-align:right;white-space:nowrap;"></th>
                                 </tr>
                             </thead>
                             <tbody>{students_rows}</tbody>
