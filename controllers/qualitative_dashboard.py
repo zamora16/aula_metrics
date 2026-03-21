@@ -18,28 +18,65 @@ from .dashboard_controller import _render
 class QualitativeDashboardController(http.Controller):
     
     @http.route('/aulametrics/qualitative/dashboard', type='http', auth='user')
-    def qualitative_dashboard(self, evaluation_id=None, question_id=None, embedded=None, **kwargs):
+    def qualitative_dashboard(self, evaluation_id=None, question_id=None,
+                              course_level=None, group_id=None, embedded=None, **kwargs):
         """
         Dashboard principal de datos cualitativos.
         Muestra diferentes vistas según el rol del usuario.
-        
+
         Args:
-            embedded: Si es 'true', devuelve solo el contenido sin wrapper HTML
+            evaluation_id: Filtrar por evaluación específica
+            question_id:   Filtrar por pregunta específica
+            course_level:  Filtrar por nivel educativo (solo counselor/admin/management)
+            group_id:      Filtrar por grupo concreto (solo counselor/admin)
+            embedded:      Si es 'true', devuelve solo el contenido sin wrapper HTML
         """
-        
+
         # Detectar rol del usuario (incluye allowed_group_ids para tutores)
         user = request.env.user
         role_info = self._detect_user_role(user)
         role = role_info['role']
-        
-        # Obtener respuestas según permisos del rol
-        domain = []
+
+        # ── Dominio base: evaluación + pregunta ───────────────────────────────
+        # Se usa para construir las listas de filtros y para las preguntas
+        # disponibles; NO incluye todavía el filtro de nivel/grupo.
+        base_domain = []
         if evaluation_id:
-            domain.append(('evaluation_id', '=', int(evaluation_id)))
+            base_domain.append(('evaluation_id', '=', int(evaluation_id)))
         if question_id:
-            domain.append(('question_id', '=', int(question_id)))
-        
-        # Aplicar filtro de grupos (solo tutores; el resto tiene acceso global)
+            base_domain.append(('question_id', '=', int(question_id)))
+
+        base_filtered = role_service.apply_group_filter(base_domain, role_info, field='academic_group_id')
+        if base_filtered is None:
+            base_responses = request.env['aula_metrics.qualitative_response']
+        else:
+            base_responses = request.env['aula_metrics.qualitative_response'].search(
+                base_filtered,
+                order='response_date desc',
+                limit=QUERY_LIMIT_QUALITATIVE,
+            )
+
+        # ── Listas de filtros disponibles (derivadas del dominio base) ────────
+        accessible_groups = base_responses.mapped('academic_group_id').sorted(key=lambda g: g.name)
+        level_dict = dict(
+            request.env['aula_metrics.academic_group']._fields['course_level'].selection
+        )
+        seen_levels = {}
+        for g in accessible_groups:
+            if g.course_level and g.course_level not in seen_levels:
+                seen_levels[g.course_level] = level_dict.get(g.course_level, g.course_level)
+        # Sorted by key (eso1, eso2, … bach1, bach2) keeps natural order
+        available_levels = sorted(seen_levels.items(), key=lambda x: x[0])
+        # Pass ALL accessible groups to the template; the JS cascade filters client-side
+        available_groups = accessible_groups if role in [ROLE_COUNSELOR, ROLE_ADMIN] else []
+
+        # ── Dominio completo: base + nivel/grupo ──────────────────────────────
+        domain = list(base_domain)
+        if course_level:
+            domain.append(('academic_group_id.course_level', '=', course_level))
+        if group_id:
+            domain.append(('academic_group_id', '=', int(group_id)))
+
         filtered_domain = role_service.apply_group_filter(domain, role_info, field='academic_group_id')
         if filtered_domain is None:
             responses = request.env['aula_metrics.qualitative_response']
@@ -49,20 +86,24 @@ class QualitativeDashboardController(http.Controller):
                 order='response_date desc',
                 limit=QUERY_LIMIT_QUALITATIVE,
             )
-        
+
         # Obtener filtros disponibles
         evaluations = self._get_available_evaluations(role_info)
-        questions = self._get_available_questions(responses)
-        
+        questions = self._get_available_questions(base_responses)  # usa base para no perder opciones
+
         # Construir contexto según rol
         context = {
             'role': role,
             'evaluations': evaluations,
             'questions': questions,
+            'available_levels': available_levels,   # list of (key, label) tuples
+            'available_groups': available_groups,   # recordset or []
             'evaluation_id': int(evaluation_id) if evaluation_id else None,
             'question_id': int(question_id) if question_id else None,
+            'course_level': course_level or None,
+            'group_id': int(group_id) if group_id else None,
         }
-        
+
         # Añadir datos específicos por rol
         if role in [ROLE_COUNSELOR, ROLE_ADMIN]:
             context.update(self._get_counselor_data(responses))
