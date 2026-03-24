@@ -25,6 +25,8 @@ class SegmentationDashboardController(http.Controller):
 
         context = {
             'role': role_info['role'],
+            'role_info': role_info,
+            'active_section': 'segmentation',
             'role_desc': _ROLE_LABELS.get(role_info['role'], ''),
             'evaluations': model.get_available_evaluations(role_info),
             'evaluation_id': int(evaluation_id) if evaluation_id else None,

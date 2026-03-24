@@ -120,6 +120,8 @@ class QualitativeDashboardController(http.Controller):
             ROLE_MANAGEMENT: 'Vista agregada del centro - Solo estadísticas',
         }
         context['role_desc'] = role_labels.get(role, '')
+        context['role_info'] = role_info
+        context['active_section'] = 'qualitative'
         context['css_styles'] = dashboard_styles.get_common_styles()
         # Markup prevents QWeb t-out from HTML-escaping the JSON double quotes,
         # which would produce &quot; and break the inline JavaScript.

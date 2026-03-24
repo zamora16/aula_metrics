@@ -56,7 +56,10 @@ class DashboardChartsEvolution(models.TransientModel):
                 <p class="card-subtitle">Tendencia temporal por curso académico</p>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="260"></canvas>
+                <figure class="mb-0">
+                    <figcaption class="visually-hidden">Evolución de {label} por curso académico. Gráfico de líneas con la tendencia temporal de la métrica para cada curso.</figcaption>
+                    <canvas id="{chart_id}" height="260" role="img" aria-label="Evolución: {label} por curso académico"></canvas>
+                </figure>
             </div>
         </div>
         
@@ -149,6 +152,10 @@ class DashboardChartsEvolution(models.TransientModel):
             return ''
         
         # Dataset 2: Trayectorias individuales de cada alumno (anonimizado)
+        # Diferenciación accesible: color + patrón de trazo + forma de punto
+        _DASH_PATTERNS = [[5, 5], [10, 4], [15, 5, 5, 5], [3, 3], [8, 3, 2, 3], [12, 3, 3, 3]]
+        _POINT_STYLES  = ['circle', 'rect', 'triangle', 'cross', 'star', 'rectRot']
+
         individual_datasets = []
         students = df['student_id'].unique()
         total_students = len(students)
@@ -167,18 +174,20 @@ class DashboardChartsEvolution(models.TransientModel):
             
             # Solo agregar si tiene al menos 2 puntos temporales
             if len(student_data_points) >= 2:
-                # Generar color único para cada alumno usando HSL
+                # Color + trazo + punto únicos por alumno (accesible en blanco/negro)
                 hue = (idx * 360 / total_students) % 360
                 individual_datasets.append({
                     'label': f'Alumno {idx}',
                     'data': student_data_points,
-                    'borderColor': f'hsl({hue}, 70%, 55%)',
+                    'borderColor': f'hsl({hue}, 70%, 45%)',
                     'backgroundColor': 'transparent',
                     'borderWidth': 2,
+                    'borderDash': _DASH_PATTERNS[(idx - 1) % len(_DASH_PATTERNS)],
                     'tension': 0.2,
-                    'pointRadius': 3,
-                    'pointHoverRadius': 5,
-                    'pointBackgroundColor': f'hsl({hue}, 70%, 55%)',
+                    'pointRadius': 4,
+                    'pointHoverRadius': 6,
+                    'pointStyle': _POINT_STYLES[(idx - 1) % len(_POINT_STYLES)],
+                    'pointBackgroundColor': f'hsl({hue}, 70%, 45%)',
                     'pointBorderColor': '#ffffff',
                     'pointBorderWidth': 1
                 })
@@ -213,7 +222,10 @@ class DashboardChartsEvolution(models.TransientModel):
                 <p class="card-subtitle">Trayectorias individuales (coloreadas) y media del grupo (negro)</p>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="260"></canvas>
+                <figure class="mb-0">
+                    <figcaption class="visually-hidden">Evolución de {label}: trayectorias individuales y media del grupo. Línea gruesa negra = media del grupo; líneas delgadas con diferentes trazos = trayectorias individuales anónimas.</figcaption>
+                    <canvas id="{chart_id}" height="260" role="img" aria-label="Evolución: {label} — trayectorias individuales y media del grupo"></canvas>
+                </figure>
             </div>
         </div>
         
@@ -339,7 +351,10 @@ class DashboardChartsEvolution(models.TransientModel):
                 <p class="card-subtitle">Tendencia temporal por grupo</p>
             </div>
             <div class="card-body">
-                <canvas id="{chart_id}" height="260"></canvas>
+                <figure class="mb-0">
+                    <figcaption class="visually-hidden">Evolución de {label} por grupo. Gráfico de líneas con la tendencia temporal de la métrica para cada grupo académico.</figcaption>
+                    <canvas id="{chart_id}" height="260" role="img" aria-label="Evolución: {label} por grupo"></canvas>
+                </figure>
             </div>
         </div>
         

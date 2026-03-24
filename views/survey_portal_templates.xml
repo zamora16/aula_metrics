@@ -13,15 +13,15 @@
                 <title>Evaluación - AulaMetrics</title>
                 <style>
                     :root {
-                        --primary: #2c3e50;
-                        --accent: #3498db;
-                        --success: #27ae60;
-                        --warning: #f39c12;
-                        --bg: #f5f7fa;
+                        --primary: #0f1e36;
+                        --accent: #0f4c81;
+                        --success: #10b981;
+                        --warning: #f59e0b;
+                        --bg: #f1f5fb;
                         --card: #ffffff;
-                        --text: #2c3e50;
-                        --text-light: #7f8c8d;
-                        --border: #e2e8f0;
+                        --text: #0f1e36;
+                        --text-light: #64748b;
+                        --border: #e4eaf3;
                     }
                     * { box-sizing: border-box; }
                     body {
@@ -87,7 +87,7 @@
                         transition: all 0.2s;
                     }
                     .am-btn-primary { background: var(--accent); color: white; }
-                    .am-btn-primary:hover { background: #2980b9; }
+                    .am-btn-primary:hover { background: #0b3a66; }
                     .am-badge {
                         display: inline-flex;
                         align-items: center;
@@ -187,13 +187,13 @@
                 <title><t t-out="survey.title"/> - AulaMetrics</title>
                 <style>
                     :root {
-                        --primary: #2c3e50;
-                        --accent: #3498db;
-                        --bg: #f5f7fa;
+                        --primary: #0f1e36;
+                        --accent: #0f4c81;
+                        --bg: #f1f5fb;
                         --card: #ffffff;
-                        --text: #2c3e50;
-                        --text-light: #7f8c8d;
-                        --border: #e2e8f0;
+                        --text: #0f1e36;
+                        --text-light: #64748b;
+                        --border: #e4eaf3;
                         --error: #ef4444;
                     }
                     * { box-sizing: border-box; }
@@ -268,7 +268,7 @@
                     .sf-option:has(input:checked) {
                         border-color: var(--accent);
                         background: #eff6ff;
-                        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+                        box-shadow: 0 2px 8px rgba(15, 76, 129, 0.15);
                     }
                     .sf-option span { 
                         flex: 1;
@@ -317,7 +317,7 @@
                         transition: all 0.2s;
                     }
                     .sf-btn-submit { background: var(--accent); color: white; }
-                    .sf-btn-submit:hover { background: #2980b9; }
+                    .sf-btn-submit:hover { background: #0b3a66; }
                     .sf-btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
                     @media (max-width: 700px) {
                         .sf-container { padding: 1rem 0.5rem; }

@@ -199,6 +199,9 @@
                                         <i class="fa-solid fa-chart-line" aria-hidden="true"/>
                                         <span class="evaluation-info-label">Participación:</span>
                                         <span t-att-class="'participation-badge ' + ev.get('participation_class', '')">
+                                            <t t-if="ev.get('participation_class') == 'high'">Alta — </t>
+                                            <t t-elif="ev.get('participation_class') == 'medium'">Media — </t>
+                                            <t t-elif="ev.get('participation_class') == 'low'">Baja — </t>
                                             <t t-out="ev['participation_display']"/>
                                         </span>
                                     </div>
@@ -213,9 +216,12 @@
                                         <div class="evaluation-info-item">
                                             <i class="fa-solid fa-bell" aria-hidden="true"/>
                                             <span class="evaluation-info-label">Alertas:</span>
-                                            <span t-att-class="'alerts-badge' + (' zero' if ev.get('alert_count', 0) == 0 else '')">
+                                            <span t-att-class="'alerts-badge' + (' zero' if ev.get('alert_count', 0) == 0 else '')"
+                                                  t-att-aria-label="'Sin alertas' if ev.get('alert_count', 0) == 0 else str(ev.get('alert_count', 0)) + ' alertas activas'">
                                                 <i t-att-class="'fa-solid ' + ('fa-check-circle' if ev.get('alert_count', 0) == 0 else 'fa-exclamation-triangle')" aria-hidden="true"/>
                                                 <t t-out="ev.get('alert_count', 0)"/>
+                                                <t t-if="ev.get('alert_count', 0) == 0"> Sin alertas</t>
+                                                <t t-else=""> alertas</t>
                                             </span>
                                         </div>
                                     </t>
@@ -247,15 +253,18 @@
                     <i class="fa-solid fa-filter" aria-hidden="true"/>
                     <span>Filtrar por Evaluaciones</span>
                 </div>
-                <div class="filter-pills-container">
+                <div class="filter-pills-container" role="group" aria-label="Filtrar por evaluación">
                     <t t-foreach="available_evaluations or []" t-as="ev">
                         <t t-set="is_active" t-value="(selected_evals and ev['id'] in selected_evals) or not selected_evals"/>
-                        <span t-att-class="'filter-pill eval-pill' + (' active' if is_active else '')"
-                              data-type="eval"
-                              t-att-data-value="ev['id']"
-                              onclick="togglePill(this)">
+                        <button type="button"
+                                t-att-class="'filter-pill eval-pill' + (' active' if is_active else '')"
+                                role="checkbox"
+                                t-att-aria-checked="'true' if is_active else 'false'"
+                                data-type="eval"
+                                t-att-data-value="ev['id']"
+                                onclick="togglePill(this)">
                             <t t-out="ev['name']"/>
-                        </span>
+                        </button>
                     </t>
                 </div>
                 <div class="filter-actions">
@@ -305,15 +314,22 @@
     <template id="dashboard_scripts" name="AulaMetrics - Scripts JavaScript">
         <script>//<![CDATA[
         function togglePill(pill) {
-            pill.classList.toggle('active');
+            const isActive = pill.classList.toggle('active');
+            pill.setAttribute('aria-checked', isActive ? 'true' : 'false');
         }
 
         function selectAllEvals() {
-            document.querySelectorAll('.eval-pill').forEach(pill => pill.classList.add('active'));
+            document.querySelectorAll('.eval-pill').forEach(pill => {
+                pill.classList.add('active');
+                pill.setAttribute('aria-checked', 'true');
+            });
         }
 
         function selectNoneEvals() {
-            document.querySelectorAll('.eval-pill').forEach(pill => pill.classList.remove('active'));
+            document.querySelectorAll('.eval-pill').forEach(pill => {
+                pill.classList.remove('active');
+                pill.setAttribute('aria-checked', 'false');
+            });
         }
 
         document.getElementById('hub-filters').addEventListener('submit', function(e) {
@@ -343,7 +359,7 @@
                     if (newKpis && kpiContainer) {
                         kpiContainer.innerHTML = newKpis.innerHTML;
                         kpiContainer.style.opacity = '0';
-                        setTimeout(() => { kpiContainer.style.opacity = '1'; }, 50);
+                        requestAnimationFrame(() => { requestAnimationFrame(() => { kpiContainer.style.opacity = '1'; }); });
                     }
                     const newCharts = tempDiv.querySelector('.charts-container');
                     if (newCharts && chartsContainer) {
@@ -354,7 +370,7 @@
                             newScript.textContent = oldScript.textContent;
                             oldScript.parentNode.replaceChild(newScript, oldScript);
                         });
-                        setTimeout(() => { chartsContainer.style.opacity = '1'; }, 50);
+                        requestAnimationFrame(() => { requestAnimationFrame(() => { chartsContainer.style.opacity = '1'; }); });
                     }
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnContent;
@@ -367,25 +383,41 @@
                     submitBtn.innerHTML = originalBtnContent;
                     if (kpiContainer) {
                         kpiContainer.style.opacity = '1';
-                        kpiContainer.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fa-solid fa-exclamation-triangle" style="font-size:32px;color:var(--am-danger);"></i><p style="margin-top:12px;color:var(--am-muted);">Error al cargar datos. Intenta de nuevo.</p></div>';
+                        kpiContainer.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true" style="font-size:32px;color:var(--am-danger);"></i><p style="margin-top:12px;color:var(--am-muted);">Error al cargar datos.</p><button onclick="document.getElementById(\'hub-filters\').dispatchEvent(new Event(\'submit\', {bubbles:true,cancelable:true}))" style="margin-top:12px;padding:8px 20px;background:var(--am-primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Reintentar</button></div>';
                     }
                     if (chartsContainer) chartsContainer.style.opacity = '1';
                 });
         });
 
-        function navigateTo(section) {
-            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+        function navigateTo(section, skipPush) {
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+                item.removeAttribute('aria-current');
+            });
             const activeItem = document.querySelector('[data-section="' + section + '"]');
-            if (activeItem) activeItem.classList.add('active');
+            if (activeItem) {
+                activeItem.classList.add('active');
+                activeItem.setAttribute('aria-current', 'page');
+            }
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
             const sectionEl = document.getElementById('section-' + section);
             if (sectionEl) sectionEl.classList.add('active');
             const titles = { 'home': 'Inicio', 'quantitative': 'Datos Cuantitativos', 'qualitative': 'Datos Cualitativos', 'segmentation': 'Distribución del Alumnado' };
             const titleEl = document.getElementById('sectionTitle');
             if (titleEl) titleEl.textContent = titles[section] || section;
+            if (!skipPush) history.pushState({ section: section }, '', '?section=' + section);
             if (section === 'qualitative' && !window.qualitativeLoaded) loadQualitativeContent();
             if (section === 'segmentation' && !window.segmentationLoaded) loadSegmentationContent();
         }
+
+        window.addEventListener('popstate', function(e) {
+            const section = (e.state && e.state.section)
+                || new URLSearchParams(window.location.search).get('section')
+                || 'home';
+            if (['home', 'quantitative', 'qualitative', 'segmentation'].includes(section)) {
+                navigateTo(section, true);
+            }
+        });
 
         function loadSegmentationContent() {
             window.segmentationLoaded = true;
@@ -403,7 +435,7 @@
                     });
                 })
                 .catch(error => {
-                    contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar la distribución del alumnado</p></div>';
+                    contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar la distribución del alumnado</p><button onclick="window.segmentationLoaded=false;loadSegmentationContent();" style="margin-top:12px;padding:8px 20px;background:var(--am-primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Reintentar</button></div>';
                     console.error('Error cargando distribución:', error);
                 });
         }
@@ -433,7 +465,7 @@
                     }, 500);
                 })
                 .catch(error => {
-                    contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar datos cualitativos</p></div>';
+                    contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar datos cualitativos</p><button onclick="window.qualitativeLoaded=false;loadQualitativeContent();" style="margin-top:12px;padding:8px 20px;background:var(--am-primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Reintentar</button></div>';
                     console.error('Error cargando datos cualitativos:', error);
                 });
         }

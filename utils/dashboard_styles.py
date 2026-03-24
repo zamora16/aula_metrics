@@ -4,12 +4,19 @@ Estilos CSS compartidos para todos los dashboards de AulaMetrics
 """
 from . import palette
 
+# Module-level cache: CSS is fully deterministic (palette constants only),
+# so we generate it once and reuse across all requests.
+_common_styles_cache = None
+
 
 def get_common_styles():
     """
     Retorna los estilos CSS compartidos por todos los dashboards.
     Incluye layout principal, sidebar, topbar, cards, badges, etc.
     """
+    global _common_styles_cache
+    if _common_styles_cache is not None:
+        return _common_styles_cache
     root_vars = f"""
     <style>
         :root {{
@@ -25,6 +32,9 @@ def get_common_styles():
             --am-success: {palette.UI_SUCCESS};
             --am-success-dark: {palette.UI_SUCCESS_DARK};
             --am-muted: {palette.UI_MUTED};
+            --am-text-secondary: {palette.UI_TEXT_SECONDARY};
+            --am-subtle: {palette.UI_SUBTLE};
+            --am-subtle-border: {palette.UI_SUBTLE_BORDER};
             --am-border: {palette.UI_BORDER};
             --am-light: {palette.UI_LIGHT};
             --am-warning: {palette.UI_WARNING};
@@ -167,7 +177,7 @@ def get_common_styles():
         }
         
         .topbar-date {
-            color: #64748b;
+            color: var(--am-muted);
             font-size: 14px;
         }
         
@@ -198,7 +208,7 @@ def get_common_styles():
         .card-header {
             padding: 20px 24px;
             border-bottom: 1px solid var(--am-border);
-            background: #f8fafc;
+            background: var(--am-light);
         }
         
         .card-title {
@@ -210,7 +220,7 @@ def get_common_styles():
         
         .card-subtitle {
             font-size: 12px;
-            color: #64748b;
+            color: var(--am-muted);
             margin: 4px 0 0 0;
         }
         
@@ -242,7 +252,7 @@ def get_common_styles():
         .kpi-label {
             font-size: 12px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--am-muted);
             text-transform: uppercase;
             letter-spacing: 0.08em;
             margin-bottom: 8px;
@@ -252,7 +262,7 @@ def get_common_styles():
             font-size: 30px;
             font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
-            color: #0f172a;
+            color: var(--am-text);
             margin: 8px 0;
         }
         
@@ -297,15 +307,15 @@ def get_common_styles():
         }
         
         .badge.bg-light {
-            background: #f8fafc !important;
-            color: #475569 !important;
-            border-color: #e2e8f0;
+            background: var(--am-light) !important;
+            color: var(--am-text-secondary) !important;
+            border-color: var(--am-border);
         }
         
         .badge.bg-secondary {
-            background: #f8fafc !important;
-            color: #475569 !important;
-            border-color: #cbd5e1;
+            background: var(--am-light) !important;
+            color: var(--am-text-secondary) !important;
+            border-color: var(--am-subtle-border);
         }
         
         /* ==================== FILTROS MODERNOS ==================== */
@@ -335,7 +345,7 @@ def get_common_styles():
         
         .filter-header span {
             font-weight: 600;
-            color: #0f172a;
+            color: var(--am-text);
             font-size: 15px;
             letter-spacing: -0.01em;
             flex-shrink: 0;
@@ -360,8 +370,14 @@ def get_common_styles():
             transition: all 0.2s ease;
             font-size: 14px;
             font-weight: 500;
+            font-family: inherit;
             border: 2px solid var(--am-border);
             user-select: none;
+            /* reset <button> defaults */
+            appearance: none;
+            -webkit-appearance: none;
+            line-height: inherit;
+            text-align: left;
         }
         
         .filter-pill:hover {
@@ -391,17 +407,17 @@ def get_common_styles():
             font-size: 14px;
             font-weight: 500;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--am-border);
             background: white;
-            color: #64748b;
+            color: var(--am-muted);
             cursor: pointer;
             transition: all 0.2s ease;
         }
         
         .btn-filter-action:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
-            color: #475569;
+            background: var(--am-light);
+            border-color: var(--am-subtle-border);
+            color: var(--am-text-secondary);
         }
         
         .btn-filter-primary {
@@ -485,7 +501,7 @@ def get_common_styles():
         .stat-card {
             background: white;
             border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--am-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             padding: 24px;
             display: flex;
@@ -536,7 +552,7 @@ def get_common_styles():
         .stat-label {
             font-size: 13px;
             font-weight: 500;
-            color: #64748b;
+            color: var(--am-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -546,7 +562,7 @@ def get_common_styles():
             font-size: 28px;
             font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
-            color: #0f172a;
+            color: var(--am-text);
             line-height: 1;
         }
         
@@ -558,7 +574,7 @@ def get_common_styles():
         .section-title {
             font-size: 20px;
             font-weight: 600;
-            color: #0f172a;
+            color: var(--am-text);
             margin-bottom: 16px;
             display: flex;
             align-items: center;
@@ -578,7 +594,7 @@ def get_common_styles():
         .evaluation-card {
             background: white;
             border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--am-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             overflow: hidden;
             transition: all 0.2s ease;
@@ -589,15 +605,15 @@ def get_common_styles():
         }
         
         .evaluation-card-header {
-            background: #f8fafc;
+            background: var(--am-light);
             padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--am-border);
         }
         
         .evaluation-card-title {
             font-size: 16px;
             font-weight: 600;
-            color: #0f172a;
+            color: var(--am-text);
             margin: 0;
             display: flex;
             align-items: center;
@@ -614,7 +630,7 @@ def get_common_styles():
             gap: 10px;
             margin-bottom: 12px;
             font-size: 14px;
-            color: #475569;
+            color: var(--am-text-secondary);
         }
         
         .evaluation-info-item:last-child {
@@ -624,19 +640,19 @@ def get_common_styles():
         .evaluation-info-item i {
             width: 20px;
             text-align: center;
-            color: #64748b;
+            color: var(--am-muted);
             font-size: 16px;
         }
         
         .evaluation-info-label {
             font-weight: 500;
-            color: #64748b;
+            color: var(--am-muted);
             min-width: 100px;
         }
         
         .evaluation-info-value {
             font-weight: 600;
-            color: #0f172a;
+            color: var(--am-text);
         }
         
         .participation-badge {
@@ -682,24 +698,24 @@ def get_common_styles():
         .empty-evaluations {
             text-align: center;
             padding: 60px 20px;
-            color: #94a3b8;
+            color: var(--am-subtle);
         }
         
         .empty-evaluations i {
             font-size: 48px;
-            color: #cbd5e1;
+            color: var(--am-subtle-border);
             margin-bottom: 16px;
         }
         
         .empty-evaluations h3 {
-            color: #64748b;
+            color: var(--am-muted);
             font-size: 18px;
             font-weight: 600;
             margin: 16px 0 8px;
         }
         
         .empty-evaluations p {
-            color: #94a3b8;
+            color: var(--am-subtle);
             font-size: 14px;
         }
         
@@ -721,7 +737,7 @@ def get_common_styles():
         .card-header {
             padding: 16px 20px;
             border-bottom: 1px solid var(--am-border);
-            background: #f8fafc;
+            background: var(--am-light);
         }
         
         .card-title {
@@ -733,7 +749,7 @@ def get_common_styles():
         
         .card-subtitle {
             font-size: 12px;
-            color: #64748b;
+            color: var(--am-muted);
             margin: 0;
         }
         
@@ -837,7 +853,7 @@ def get_common_styles():
         }
         
         .text-muted {
-            color: #94a3b8;
+            color: var(--am-subtle);
         }
         
         .mb-4 {
@@ -1173,7 +1189,8 @@ def get_common_styles():
         }
     </style>
     """
-    return root_vars + rest_css
+    _common_styles_cache = root_vars + rest_css
+    return _common_styles_cache
 
 
 def get_profile_styles():
