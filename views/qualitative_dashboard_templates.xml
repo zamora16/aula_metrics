@@ -81,8 +81,8 @@
 
                             <!-- Evaluación: siempre visible; col más estrecho cuando hay filtros extra -->
                             <div t-att-class="'col-md-3' if (role in ['counselor', 'admin'] and available_levels) else 'col-md-5'">
-                                <label class="form-label">Evaluación</label>
-                                <select name="evaluation_id" class="form-select">
+                                <label class="form-label" for="qEvalSelect">Evaluación</label>
+                                <select id="qEvalSelect" name="evaluation_id" class="form-select">
                                     <option value="">Todas las evaluaciones</option>
                                     <t t-foreach="evaluations" t-as="ev">
                                         <option t-att-value="ev.id"
@@ -95,8 +95,8 @@
 
                             <!-- Pregunta: siempre visible; col más estrecho cuando hay filtros extra -->
                             <div t-att-class="'col-md-3' if (role in ['counselor', 'admin'] and available_levels) else 'col-md-5'">
-                                <label class="form-label">Pregunta</label>
-                                <select name="question_id" class="form-select">
+                                <label class="form-label" for="qQuestionSelect">Pregunta</label>
+                                <select id="qQuestionSelect" name="question_id" class="form-select">
                                     <option value="">Todas las preguntas</option>
                                     <t t-foreach="questions" t-as="q">
                                         <option t-att-value="q.id"
@@ -110,8 +110,8 @@
                             <!-- Nivel educativo: counselor/admin/management cuando hay datos -->
                             <t t-if="role != 'tutor' and available_levels">
                                 <div class="col-md-2">
-                                    <label class="form-label">Nivel</label>
-                                    <select name="course_level" class="form-select">
+                                    <label class="form-label" for="qLevelSelect">Nivel</label>
+                                    <select id="qLevelSelect" name="course_level" class="form-select">
                                         <option value="">Todos los niveles</option>
                                         <t t-foreach="available_levels" t-as="lv">
                                             <option t-att-value="lv[0]"

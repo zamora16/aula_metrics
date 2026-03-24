@@ -122,6 +122,11 @@
                                         </div>
                                         <div class="seg-bar-track">
                                             <div class="seg-bar-fill"
+                                                 role="progressbar"
+                                                 t-att-aria-valuenow="opt['pct']"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100"
+                                                 t-att-aria-label="opt['label'] + ': ' + str(opt['pct']) + '%'"
                                                  t-att-style="'width:' + str(opt['pct']) + '%; background:' + opt['color'] + ';'"/>
                                         </div>
                                     </div>

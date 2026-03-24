@@ -17,56 +17,61 @@
                 <t t-if="active_section in ('home', 'quantitative', 'qualitative', 'segmentation')">
                     <a href="#"
                        t-att-class="'sidebar-item active' if active_section == 'home' else 'sidebar-item'"
+                       t-att-aria-current="'page' if active_section == 'home' else False"
                        data-section="home"
                        onclick="navigateTo('home'); return false;">
-                        <i class="fa-solid fa-house"/>
+                        <i class="fa-solid fa-house" aria-hidden="true"/>
                         <span>Inicio</span>
                     </a>
                     <a href="#"
                        t-att-class="'sidebar-item active' if active_section == 'quantitative' else 'sidebar-item'"
+                       t-att-aria-current="'page' if active_section == 'quantitative' else False"
                        data-section="quantitative"
                        onclick="navigateTo('quantitative'); return false;">
-                        <i class="fa-solid fa-chart-line"/>
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"/>
                         <span>Datos Cuantitativos</span>
                     </a>
                     <a href="#"
                        t-att-class="'sidebar-item active' if active_section == 'qualitative' else 'sidebar-item'"
+                       t-att-aria-current="'page' if active_section == 'qualitative' else False"
                        data-section="qualitative"
                        onclick="navigateTo('qualitative'); return false;">
-                        <i class="fa-solid fa-comments"/>
+                        <i class="fa-solid fa-comments" aria-hidden="true"/>
                         <span>Datos Cualitativos</span>
                     </a>
                     <a href="#"
                        t-att-class="'sidebar-item active' if active_section == 'segmentation' else 'sidebar-item'"
+                       t-att-aria-current="'page' if active_section == 'segmentation' else False"
                        data-section="segmentation"
                        onclick="navigateTo('segmentation'); return false;">
-                        <i class="fa-solid fa-chart-pie"/>
+                        <i class="fa-solid fa-chart-pie" aria-hidden="true"/>
                         <span>Distribución</span>
                     </a>
                 </t>
                 <t t-else="">
                     <a href="/aulametrics/dashboard?section=home" class="sidebar-item">
-                        <i class="fa-solid fa-house"/>
+                        <i class="fa-solid fa-house" aria-hidden="true"/>
                         <span>Inicio</span>
                     </a>
                     <a href="/aulametrics/dashboard?section=quantitative" class="sidebar-item">
-                        <i class="fa-solid fa-chart-line"/>
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"/>
                         <span>Datos Cuantitativos</span>
                     </a>
                     <a href="/aulametrics/dashboard?section=qualitative" class="sidebar-item">
-                        <i class="fa-solid fa-comments"/>
+                        <i class="fa-solid fa-comments" aria-hidden="true"/>
                         <span>Datos Cualitativos</span>
                     </a>
                     <a href="/aulametrics/dashboard?section=segmentation" class="sidebar-item">
-                        <i class="fa-solid fa-chart-pie"/>
+                        <i class="fa-solid fa-chart-pie" aria-hidden="true"/>
                         <span>Distribución</span>
                     </a>
                 </t>
                 <!-- Perfiles: solo counselor/admin -->
                 <t t-if="role_info and role_info.get('role') in ('admin', 'counselor')">
                     <a href="/aulametrics/students"
-                       t-att-class="'sidebar-item active' if active_section == 'profiles' else 'sidebar-item'">
-                        <i class="fa-solid fa-users"/>
+                       t-att-class="'sidebar-item active' if active_section == 'profiles' else 'sidebar-item'"
+                       t-att-aria-current="'page' if active_section == 'profiles' else False">
+                        <i class="fa-solid fa-users" aria-hidden="true"/>
                         <span>Perfiles de Alumnos</span>
                     </a>
                 </t>
@@ -77,22 +82,22 @@
                         <div style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" t-out="role_info.get('user_name')"/>
                         <div style="font-size:10px;margin-top:2px;">
                             <t t-if="role_info.get('role') == 'admin'">
-                                <span style="color:#fca5a5;"><i class="fa-solid fa-shield-halved me-1"/>Administrador</span>
+                                <span style="color:#fca5a5;"><i class="fa-solid fa-shield-halved me-1" aria-hidden="true"/>Administrador</span>
                             </t>
                             <t t-elif="role_info.get('role') == 'counselor'">
-                                <span style="color:#93c5fd;"><i class="fa-solid fa-user-tie me-1"/>Orientador/a</span>
+                                <span style="color:#93c5fd;"><i class="fa-solid fa-user-tie me-1" aria-hidden="true"/>Orientador/a</span>
                             </t>
                             <t t-elif="role_info.get('role') == 'management'">
-                                <span style="color:#fde68a;"><i class="fa-solid fa-briefcase me-1"/>Equipo Directivo</span>
+                                <span style="color:#fde68a;"><i class="fa-solid fa-briefcase me-1" aria-hidden="true"/>Equipo Directivo</span>
                             </t>
                             <t t-else="">
-                                <span style="color:#86efac;"><i class="fa-solid fa-chalkboard-user me-1"/>Tutor/a</span>
+                                <span style="color:#86efac;"><i class="fa-solid fa-chalkboard-user me-1" aria-hidden="true"/>Tutor/a</span>
                             </t>
                         </div>
                     </div>
                 </t>
                 <a href="/web" class="btn btn-outline-light btn-sm w-100">
-                    <i class="fa-solid fa-arrow-left me-2"/>Volver a Odoo
+                    <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"/>Volver a Odoo
                 </a>
             </div>
         </aside>
@@ -132,7 +137,7 @@
         <div class="home-section">
             <div class="welcome-banner">
                 <h2>
-                    <i class="fa-solid fa-hand-wave me-3" style="color:#fbbf24;"/>
+                    <i class="fa-solid fa-hand-wave me-3" style="color:#fbbf24;" aria-hidden="true"/>
                     Bienvenido al Dashboard de AulaMetrics
                 </h2>
                 <p>Panel de control para el seguimiento del bienestar del alumnado</p>
@@ -141,7 +146,7 @@
             <div class="quick-stats-container">
                 <div class="stat-card">
                     <div class="stat-icon blue">
-                        <i class="fa-solid fa-clipboard-check"/>
+                        <i class="fa-solid fa-clipboard-check" aria-hidden="true"/>
                     </div>
                     <div class="stat-content">
                         <div class="stat-label">Evaluaciones Activas</div>
@@ -150,7 +155,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon green">
-                        <i class="fa-solid fa-chart-line"/>
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"/>
                     </div>
                     <div class="stat-content">
                         <div class="stat-label">Participación Promedio</div>
@@ -160,7 +165,7 @@
                 <t t-if="role_info and role_info.get('role') in ('admin', 'counselor')">
                     <div class="stat-card">
                         <div class="stat-icon red">
-                            <i class="fa-solid fa-bell"/>
+                            <i class="fa-solid fa-bell" aria-hidden="true"/>
                         </div>
                         <div class="stat-content">
                             <div class="stat-label">Alertas Activas</div>
@@ -178,27 +183,27 @@
                             <div class="evaluation-card">
                                 <div class="evaluation-card-header">
                                     <h4 class="evaluation-card-title">
-                                        <i class="fa-solid fa-clipboard-check"/>
+                                        <i class="fa-solid fa-clipboard-check" aria-hidden="true"/>
                                         <t t-out="ev['name']"/>
                                     </h4>
                                 </div>
                                 <div class="evaluation-card-body">
                                     <div class="evaluation-info-item">
-                                        <i class="fa-solid fa-calendar-days"/>
+                                        <i class="fa-solid fa-calendar-days" aria-hidden="true"/>
                                         <span class="evaluation-info-label">Período:</span>
                                         <span class="evaluation-info-value">
                                             <t t-out="ev['date_range']"/>
                                         </span>
                                     </div>
                                     <div class="evaluation-info-item">
-                                        <i class="fa-solid fa-chart-line"/>
+                                        <i class="fa-solid fa-chart-line" aria-hidden="true"/>
                                         <span class="evaluation-info-label">Participación:</span>
                                         <span t-att-class="'participation-badge ' + ev.get('participation_class', '')">
                                             <t t-out="ev['participation_display']"/>
                                         </span>
                                     </div>
                                     <div class="evaluation-info-item">
-                                        <i class="fa-solid fa-users"/>
+                                        <i class="fa-solid fa-users" aria-hidden="true"/>
                                         <span class="evaluation-info-label">Completados:</span>
                                         <span class="evaluation-info-value">
                                             <t t-out="ev['completed_students']"/> / <t t-out="ev['total_students']"/>
@@ -206,10 +211,10 @@
                                     </div>
                                     <t t-if="role_info and role_info.get('role') in ('admin', 'counselor') and 'alert_count' in ev">
                                         <div class="evaluation-info-item">
-                                            <i class="fa-solid fa-bell"/>
+                                            <i class="fa-solid fa-bell" aria-hidden="true"/>
                                             <span class="evaluation-info-label">Alertas:</span>
                                             <span t-att-class="'alerts-badge' + (' zero' if ev.get('alert_count', 0) == 0 else '')">
-                                                <i t-att-class="'fa-solid ' + ('fa-check-circle' if ev.get('alert_count', 0) == 0 else 'fa-exclamation-triangle')"/>
+                                                <i t-att-class="'fa-solid ' + ('fa-check-circle' if ev.get('alert_count', 0) == 0 else 'fa-exclamation-triangle')" aria-hidden="true"/>
                                                 <t t-out="ev.get('alert_count', 0)"/>
                                             </span>
                                         </div>
@@ -221,7 +226,7 @@
                 </t>
                 <t t-else="">
                     <div class="empty-evaluations">
-                        <i class="fa-solid fa-clipboard-question"/>
+                        <i class="fa-solid fa-clipboard-question" aria-hidden="true"/>
                         <h3>No hay evaluaciones activas</h3>
                         <p>No se encontraron evaluaciones activas en este momento</p>
                     </div>
@@ -239,7 +244,7 @@
         <div class="filter-panel-compact">
             <form id="hub-filters" method="get" action="/aulametrics/dashboard">
                 <div class="filter-header">
-                    <i class="fa-solid fa-filter"/>
+                    <i class="fa-solid fa-filter" aria-hidden="true"/>
                     <span>Filtrar por Evaluaciones</span>
                 </div>
                 <div class="filter-pills-container">
@@ -255,10 +260,10 @@
                 </div>
                 <div class="filter-actions">
                     <button type="button" class="btn-filter-action" onclick="selectAllEvals()">
-                        <i class="fa-solid fa-check-double me-1"/>Todas
+                        <i class="fa-solid fa-check-double me-1" aria-hidden="true"/>Todas
                     </button>
                     <button type="submit" class="btn-filter-action btn-filter-primary">
-                        <i class="fa-solid fa-magnifying-glass me-1"/>Aplicar Filtros
+                        <i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"/>Aplicar Filtros
                     </button>
                 </div>
             </form>
@@ -385,6 +390,7 @@
         function loadSegmentationContent() {
             window.segmentationLoaded = true;
             const contentDiv = document.getElementById('segmentationContent');
+            contentDiv.innerHTML = '<div role="status" aria-live="polite" style="text-align:center;padding:60px 20px;color:var(--am-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x" aria-hidden="true" style="color:var(--am-primary);"></i><p style="margin-top:16px;">Cargando distribución...</p></div>';
             fetch('/aulametrics/segmentation/dashboard?embedded=true')
                 .then(response => response.text())
                 .then(html => {
@@ -405,6 +411,7 @@
         function loadQualitativeContent() {
             window.qualitativeLoaded = true;
             const contentDiv = document.getElementById('qualitativeContent');
+            contentDiv.innerHTML = '<div role="status" aria-live="polite" style="text-align:center;padding:60px 20px;color:var(--am-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x" aria-hidden="true" style="color:var(--am-primary);"></i><p style="margin-top:16px;">Cargando datos cualitativos...</p></div>';
             fetch('/aulametrics/qualitative/dashboard?embedded=true')
                 .then(response => response.text())
                 .then(html => {

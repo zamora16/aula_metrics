@@ -12,9 +12,6 @@ def get_common_styles():
     """
     root_vars = f"""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
-
         :root {{
             --am-bg: {palette.UI_BG};
             --am-surface: {palette.UI_SURFACE};
@@ -243,7 +240,7 @@ def get_common_styles():
         }
         
         .kpi-label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
@@ -1140,6 +1137,40 @@ def get_common_styles():
         .am-mono      {{ font-family:'JetBrains Mono', monospace; }}
         .am-group-col {{ color:var(--am-muted); }}
         .am-center-col {{ color:{palette.UI_CHALKBOARD_GREEN}; }}
+
+        /* ==================== TOUCH TARGETS & ACCESSIBILITY ==================== */
+        .filter-pill,
+        .btn-filter-action,
+        .btn-seg-filter {
+            min-height: 44px;
+        }
+
+        .filter-pill:focus-visible,
+        .btn-filter-action:focus-visible,
+        .btn-seg-filter:focus-visible {
+            outline: 3px solid var(--am-primary);
+            outline-offset: 3px;
+        }
+
+        *:focus-visible {
+            outline: 2px solid var(--am-primary);
+            outline-offset: 2px;
+        }
+
+        .sidebar-item:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.8);
+            outline-offset: 2px;
+        }
+
+        /* ==================== REDUCED MOTION ==================== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
     """
     return root_vars + rest_css
@@ -1235,7 +1266,7 @@ def get_profile_styles():
                 transform: translateY(-1px);
             }
             .kpi-label {
-                font-size: 11px; font-weight: 600; color: var(--am-muted);
+                font-size: 12px; font-weight: 600; color: var(--am-muted);
                 text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;
             }
             .kpi-value {
