@@ -8,11 +8,11 @@ from markupsafe import Markup
 from ...utils import dashboard_styles, dashboard_helpers, palette
 from ...utils.constants import ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR
 
-# Colores de severidad de alertas — solo usados en este módulo
+# Colores de severidad de alertas — referencia palette.py como única fuente de verdad
 _ALERT_SEV = {
-    'low':      {'color': '#0ea5e9', 'bg': '#f0f9ff', 'border': '#bae6fd', 'label': 'Baja'},
-    'moderate': {'color': '#f59e0b', 'bg': '#fffbeb', 'border': '#fde68a', 'label': 'Moderada'},
-    'high':     {'color': palette.UI_DANGER, 'bg': '#fef2f2', 'border': '#fecaca', 'label': 'Alta'},
+    'low':      {'color': palette.ALERT_LOW_COLOR,  'bg': palette.ALERT_LOW_BG,  'border': palette.ALERT_LOW_BORDER,  'label': 'Baja'},
+    'moderate': {'color': palette.ALERT_MOD_COLOR,  'bg': palette.ALERT_MOD_BG,  'border': palette.ALERT_MOD_BORDER,  'label': 'Moderada'},
+    'high':     {'color': palette.ALERT_HIGH_COLOR, 'bg': palette.ALERT_HIGH_BG, 'border': palette.ALERT_HIGH_BORDER, 'label': 'Alta'},
 }
 _ALERT_ST = {
     'resolved':  {'color': palette.UI_SUCCESS, 'label': 'Resuelta'},
@@ -206,11 +206,11 @@ class DashboardStudentSections(models.TransientModel):
 
             alert_badge = (
                 f'<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;'
-                f'background:#fef2f2;border:1px solid #fecaca;color:{palette.UI_DANGER};white-space:nowrap;">'
+                f'background:{palette.ALERT_HIGH_BG};border:1px solid {palette.ALERT_HIGH_BORDER};color:{palette.ALERT_HIGH_COLOR};white-space:nowrap;">'
                 f'<i class="fa-solid fa-triangle-exclamation me-1"></i>Alerta</span>'
                 if has_alert else
                 f'<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;'
-                f'background:#f0fdf4;border:1px solid #bbf7d0;color:{palette.UI_SUCCESS};white-space:nowrap;">'
+                f'background:{palette.BADGE_OK_BG};border:1px solid {palette.BADGE_OK_BORDER};color:{palette.UI_SUCCESS};white-space:nowrap;">'
                 f'<i class="fa-solid fa-check me-1"></i>OK</span>'
             )
 
@@ -218,7 +218,7 @@ class DashboardStudentSections(models.TransientModel):
             if has_alert and resp.detected_keyword_ids:
                 pills = ''.join(
                     f'<span style="display:inline-block;padding:2px 8px;border-radius:12px;'
-                    f'background:#fef2f2;border:1px solid #fecaca;color:{palette.UI_DANGER};'
+                    f'background:{palette.ALERT_HIGH_BG};border:1px solid {palette.ALERT_HIGH_BORDER};color:{palette.ALERT_HIGH_COLOR};'
                     f'font-size:11px;font-weight:600;margin:2px 3px 2px 0;">{kw.keyword}</span>'
                     for kw in resp.detected_keyword_ids
                 )
@@ -294,13 +294,13 @@ class DashboardStudentSections(models.TransientModel):
                 if alerts_count > 0:
                     alerts_badge = (
                         f'<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;'
-                        f'background:#fef2f2;border:1px solid #fecaca;color:{palette.UI_DANGER};white-space:nowrap;">'
+                        f'background:{palette.ALERT_HIGH_BG};border:1px solid {palette.ALERT_HIGH_BORDER};color:{palette.ALERT_HIGH_COLOR};white-space:nowrap;">'
                         f'{alerts_count} alerta{"s" if alerts_count > 1 else ""}</span>'
                     )
                 else:
                     alerts_badge = (
                         f'<span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;'
-                        f'background:#f0fdf4;border:1px solid #bbf7d0;color:{palette.UI_SUCCESS};">'
+                        f'background:{palette.BADGE_OK_BG};border:1px solid {palette.BADGE_OK_BORDER};color:{palette.UI_SUCCESS};">'
                         f'Sin alertas</span>'
                     )
 

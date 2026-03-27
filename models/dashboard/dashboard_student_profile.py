@@ -12,7 +12,7 @@ from odoo import models, api, fields
 import pandas as pd
 
 from markupsafe import Markup
-from ...utils import dashboard_styles, dashboard_helpers, palette, role_service
+from ...utils import dashboard_styles, dashboard_profile_styles, dashboard_helpers, palette, role_service
 
 
 class DashboardStudentProfile(models.TransientModel):
@@ -311,11 +311,11 @@ class DashboardStudentProfile(models.TransientModel):
                 <div class="am-subtab-bar">
                     <button class="am-subtab active" data-group="cuant" data-sub="ofic"
                             onclick="amSubtab('cuant','ofic',this)">
-                        <i class="fa-solid fa-clipboard-check me-1"></i>Oficiales
+                        <i class="fa-solid fa-clipboard-check me-1"></i>Cuestionarios Oficiales
                     </button>
                     <button class="am-subtab" data-group="cuant" data-sub="centro"
                             onclick="amSubtab('cuant','centro',this)">
-                        <i class="fa-solid fa-school me-1"></i>Del Centro
+                        <i class="fa-solid fa-school me-1"></i>Cuestionarios del Centro
                     </button>
                 </div>
                 <div id="am-cuant-ofic" class="am-subpane am-show" data-group="cuant">
@@ -351,11 +351,11 @@ class DashboardStudentProfile(models.TransientModel):
                 <div class="am-subtab-bar">
                     <button class="am-subtab active" data-group="evol" data-sub="ofic"
                             onclick="amSubtab('evol','ofic',this)">
-                        <i class="fa-solid fa-clipboard-check me-1"></i>Oficiales
+                        <i class="fa-solid fa-clipboard-check me-1"></i>Cuestionarios Oficiales
                     </button>
                     <button class="am-subtab" data-group="evol" data-sub="centro"
                             onclick="amSubtab('evol','centro',this)">
-                        <i class="fa-solid fa-school me-1"></i>Del Centro
+                        <i class="fa-solid fa-school me-1"></i>Cuestionarios del Centro
                     </button>
                 </div>
                 <div id="am-evol-ofic" class="am-subpane am-show" data-group="evol">
@@ -553,10 +553,35 @@ class DashboardStudentProfile(models.TransientModel):
             var row = document.querySelector('.am-row-check[data-rid="' + rid + '"]');
             var title = row ? row.dataset.title : 'Detalle';
             document.getElementById('am-drawer-title').textContent = title;
-            document.getElementById('am-drawer-body').innerHTML   = body.innerHTML;
-            document.getElementById('am-drawer-footer').innerHTML  = footer ? footer.innerHTML : '';
+            var drawerBody   = document.getElementById('am-drawer-body');
+            var drawerFooter = document.getElementById('am-drawer-footer');
+            drawerBody.innerHTML   = body.innerHTML;
+            drawerFooter.innerHTML = footer ? footer.innerHTML : '';
             document.getElementById('am-drawer').classList.add('am-drawer--open');
             document.body.style.overflow = 'hidden';
+            // Inicializar Chart.js desde la config JSON inerte del drawer
+            // (evita duplicados de ID y ejecución sobre canvas oculto)
+            requestAnimationFrame(function() {{
+                var cfgEl  = drawerBody.querySelector('script.am-chart-cfg');
+                var canvas = drawerBody.querySelector('canvas.am-chart-canvas');
+                if (cfgEl && canvas && typeof Chart !== 'undefined') {{
+                    try {{
+                        var cfg = JSON.parse(cfgEl.textContent);
+                        if (cfg.options && cfg.options.plugins && cfg.options.plugins.tooltip) {{
+                            cfg.options.plugins.tooltip.callbacks = {{
+                                label: function(ctx) {{
+                                    var v = typeof ctx.raw === 'object' ? ctx.raw.x : ctx.raw;
+                                    if (v === null || v === undefined) return null;
+                                    return ' ' + ctx.dataset.label + ': ' + parseFloat(v).toFixed(1);
+                                }}
+                            }};
+                        }}
+                        new Chart(canvas.getContext('2d'), cfg);
+                    }} catch(e) {{
+                        console.warn('[amDrawer] chart init error:', e);
+                    }}
+                }}
+            }});
         }}
 
         function amCloseDrawer() {{
@@ -596,7 +621,7 @@ class DashboardStudentProfile(models.TransientModel):
         }
 
     def _profile_styles_chartjs(self):
-        return dashboard_styles.get_profile_styles()
+        return dashboard_profile_styles.get_profile_styles()
 
     def _error_html(self, message):
         raise ValueError(message)

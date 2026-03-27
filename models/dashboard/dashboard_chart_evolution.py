@@ -4,7 +4,7 @@ Dashboard Chart Evolution - Gráficos de evolución temporal de métricas.
 """
 import json
 from odoo import models
-from ...utils import palette
+from ...utils import palette, dashboard_helpers, chart_defaults
 
 
 class DashboardChartsEvolution(models.TransientModel):
@@ -16,38 +16,37 @@ class DashboardChartsEvolution(models.TransientModel):
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
         
         if len(evaluations) < 2:
-            return ''
+            return f'''<div class="card"><div class="card-body" style="text-align:center;padding:40px 24px;color:var(--am-muted);"><i class="fa-solid fa-chart-line" aria-hidden="true" style="font-size:2rem;opacity:.35;margin-bottom:12px;display:block;"></i><p style="margin:0;font-size:14px;">Se necesitan al menos <strong>2 evaluaciones</strong> para mostrar la evolución de <strong>{label}</strong>.</p></div></div>'''
         
         cursos = sorted(df['curso'].unique())
-        color_palette = palette.METRICS_PALETTE
+        
+        # Etiquetas del eje X = nombre de las evaluaciones en orden cronológico
+        eval_labels = list(evaluations.index)
         
         # Preparar datasets por curso
         datasets = []
-        for idx, curso in enumerate(cursos):
+        for curso in cursos:
             df_curso = df[df['curso'] == curso]
-            data_points = []
-            
-            for eval_name, eval_date in evaluations.items():
+            y_values = []
+            for eval_name in eval_labels:
                 df_eval = df_curso[df_curso['evaluation_name'] == eval_name]['value_numeric'].dropna()
-                if len(df_eval) > 0:
-                    data_points.append({
-                        'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
-                        'y': float(df_eval.mean())
-                    })
+                y_values.append(float(df_eval.mean()) if len(df_eval) > 0 else None)
             
-            if data_points:
+            color = palette.get_color_for_label(curso)
+            if any(v is not None for v in y_values):
                 datasets.append({
                     'label': curso,
-                    'data': data_points,
-                    'borderColor': color_palette[idx % len(color_palette)],
-                    'backgroundColor': color_palette[idx % len(color_palette)] + '20',
-                    'tension': 0.3
+                    'data': y_values,
+                    'borderColor': color,
+                    'backgroundColor': color + '20',
+                    'tension': 0.3,
+                    'spanGaps': True
                 })
         
         if not datasets:
             return ''
         
-        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        chart_id = f'evolution_{dashboard_helpers.sanitize_id(label)}'
         
         return f'''
         <div class="card">
@@ -67,63 +66,19 @@ class DashboardChartsEvolution(models.TransientModel):
         new Chart(document.getElementById('{chart_id}'), {{
             type: 'line',
             data: {{
+                labels: {json.dumps(eval_labels)},
                 datasets: {json.dumps(datasets)}
             }},
             options: {{
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {{
-                    legend: {{
-                        display: true,
-                        position: 'top',
-                        labels: {{
-                            usePointStyle: true,
-                            padding: 10,
-                            font: {{ size: 10, family: "'Inter', sans-serif" }},
-                            color: '#64748b',
-                            boxWidth: 8
-                        }}
-                    }},
-                    tooltip: {{
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        cornerRadius: 6,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
-                        callbacks: {{
-                            title: function(context) {{
-                                return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
-                            }},
-                            label: function(context) {{
-                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' pts';
-                            }}
-                        }}
-                    }}
+                    legend: {json.dumps(chart_defaults.get_legend_series())},
+                    tooltip: {chart_defaults.tooltip_js(chart_defaults.CALLBACKS_SCORE_LABEL)}
                 }},
                 scales: {{
-                    x: {{
-                        type: 'time',
-                        time: {{
-                            unit: 'day',
-                            displayFormats: {{
-                                day: 'dd/MM/yyyy'
-                            }}
-                        }},
-                        grid: {{ display: false, drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#64748b'
-                        }}
-                    }},
-                    y: {{
-                        min: {y_min},
-                        max: {y_max},
-                        grid: {{ color: '#f1f5f9', drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8'
-                        }}
-                    }}
+                    x: {json.dumps(chart_defaults.get_scale_x_categorical())},
+                    y: {json.dumps(chart_defaults.get_scale_y_score(y_min, y_max))}
                 }}
             }}
         }});
@@ -136,19 +91,19 @@ class DashboardChartsEvolution(models.TransientModel):
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
         
         if len(evaluations) < 2:
-            return ''
+            return f'''<div class="card"><div class="card-body" style="text-align:center;padding:40px 24px;color:var(--am-muted);"><i class="fa-solid fa-chart-line" aria-hidden="true" style="font-size:2rem;opacity:.35;margin-bottom:12px;display:block;"></i><p style="margin:0;font-size:14px;">Se necesitan al menos <strong>2 evaluaciones</strong> para mostrar la evolución de <strong>{label}</strong>.</p></div></div>'''
+        
+        # Etiquetas del eje X = nombre de las evaluaciones en orden cronológico
+        eval_labels = list(evaluations.index)
         
         # Dataset 1: Media del grupo en cada evaluación
-        group_data_points = []
-        for eval_name, eval_date in evaluations.items():
+        group_y_values = [None] * len(eval_labels)
+        for i, eval_name in enumerate(eval_labels):
             df_eval = df[df['evaluation_name'] == eval_name]['value_numeric'].dropna()
             if len(df_eval) > 0:
-                group_data_points.append({
-                    'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
-                    'y': float(df_eval.mean())
-                })
+                group_y_values[i] = float(df_eval.mean())
         
-        if not group_data_points:
+        if all(v is None for v in group_y_values):
             return ''
         
         # Dataset 2: Trayectorias individuales de cada alumno (anonimizado)
@@ -162,23 +117,19 @@ class DashboardChartsEvolution(models.TransientModel):
         
         for idx, student_id in enumerate(students, 1):
             df_student = df[df['student_id'] == student_id]
-            student_data_points = []
-            
-            for eval_name, eval_date in evaluations.items():
+            y_values = [None] * len(eval_labels)
+            for i, eval_name in enumerate(eval_labels):
                 df_student_eval = df_student[df_student['evaluation_name'] == eval_name]['value_numeric'].dropna()
                 if len(df_student_eval) > 0:
-                    student_data_points.append({
-                        'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
-                        'y': float(df_student_eval.iloc[0])
-                    })
+                    y_values[i] = float(df_student_eval.iloc[0])
             
-            # Solo agregar si tiene al menos 2 puntos temporales
-            if len(student_data_points) >= 2:
+            # Solo agregar si tiene al menos 2 puntos (no-None)
+            if sum(1 for v in y_values if v is not None) >= 2:
                 # Color + trazo + punto únicos por alumno (accesible en blanco/negro)
                 hue = (idx * 360 / total_students) % 360
                 individual_datasets.append({
                     'label': f'Alumno {idx}',
-                    'data': student_data_points,
+                    'data': y_values,
                     'borderColor': f'hsl({hue}, 70%, 45%)',
                     'backgroundColor': 'transparent',
                     'borderWidth': 2,
@@ -195,16 +146,16 @@ class DashboardChartsEvolution(models.TransientModel):
         # Dataset de media grupal (destacado con línea negra gruesa)
         group_dataset = {
             'label': 'Media del grupo',
-            'data': group_data_points,
-            'borderColor': '#1e293b',
-            'backgroundColor': '#1e293b20',
+            'data': group_y_values,
+            'borderColor': palette.UI_CHART_EMPHASIS,
+            'backgroundColor': palette.UI_CHART_EMPHASIS + '20',
             'borderWidth': 4,
             'borderDash': [],
             'tension': 0.3,
             'fill': True,
             'pointRadius': 5,
             'pointHoverRadius': 7,
-            'pointBackgroundColor': '#1e293b',
+            'pointBackgroundColor': palette.UI_CHART_EMPHASIS,
             'pointBorderColor': '#ffffff',
             'pointBorderWidth': 2,
             'order': 0  # Dibujarse encima
@@ -233,42 +184,15 @@ class DashboardChartsEvolution(models.TransientModel):
         new Chart(document.getElementById('{chart_id}'), {{
             type: 'line',
             data: {{
+                labels: {json.dumps(eval_labels)},
                 datasets: {json.dumps(all_datasets)}
             }},
             options: {{
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {{
-                    legend: {{ 
-                        display: true,
-                        position: 'top',
-                        labels: {{
-                            usePointStyle: true,
-                            padding: 10,
-                            font: {{ size: 10, family: "'Inter', sans-serif" }},
-                            color: '#64748b',
-                            boxWidth: 8
-                        }}
-                    }},
-                    tooltip: {{
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        cornerRadius: 6,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
-                        callbacks: {{
-                            title: function(context) {{
-                                return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
-                            }},
-                            label: function(context) {{
-                                if (context.dataset.label === 'Media del grupo') {{
-                                    return 'Media: ' + context.parsed.y.toFixed(1) + ' pts';
-                                }} else {{
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' pts';
-                                }}
-                            }}
-                        }}
-                    }}
+                    legend: {json.dumps(chart_defaults.get_legend_series())},
+                    tooltip: {chart_defaults.tooltip_js(chart_defaults.CALLBACKS_SCORE_LABEL_WITH_GROUP_MEAN)}
                 }},
                 interaction: {{
                     mode: 'nearest',
@@ -276,29 +200,8 @@ class DashboardChartsEvolution(models.TransientModel):
                     intersect: false
                 }},
                 scales: {{
-                    x: {{
-                        type: 'time',
-                        time: {{
-                            unit: 'day',
-                            displayFormats: {{
-                                day: 'dd/MM/yyyy'
-                            }}
-                        }},
-                        grid: {{ display: false, drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#64748b'
-                        }}
-                    }},
-                    y: {{
-                        min: {y_min},
-                        max: {y_max},
-                        grid: {{ color: '#f1f5f9', drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8'
-                        }}
-                    }}
+                    x: {json.dumps(chart_defaults.get_scale_x_categorical())},
+                    y: {json.dumps(chart_defaults.get_scale_y_score(y_min, y_max))}
                 }}
             }}
         }});
@@ -311,38 +214,37 @@ class DashboardChartsEvolution(models.TransientModel):
         evaluations = df.groupby('evaluation_name')['completed_at'].min().sort_values()
         
         if len(evaluations) < 2:
-            return ''
+            return f'''<div class="card"><div class="card-body" style="text-align:center;padding:40px 24px;color:var(--am-muted);"><i class="fa-solid fa-chart-line" aria-hidden="true" style="font-size:2rem;opacity:.35;margin-bottom:12px;display:block;"></i><p style="margin:0;font-size:14px;">Se necesitan al menos <strong>2 evaluaciones</strong> para mostrar la evolución de <strong>{label}</strong>.</p></div></div>'''
         
         grupos = sorted(df['group_name'].unique())
-        color_palette = palette.METRICS_PALETTE
+        
+        # Etiquetas del eje X = nombre de las evaluaciones en orden cronológico
+        eval_labels = list(evaluations.index)
         
         # Preparar datasets por grupo
         datasets = []
-        for idx, grupo in enumerate(grupos):
+        for grupo in grupos:
             df_grupo = df[df['group_name'] == grupo]
-            data_points = []
-            
-            for eval_name, eval_date in evaluations.items():
+            y_values = []
+            for eval_name in eval_labels:
                 df_eval = df_grupo[df_grupo['evaluation_name'] == eval_name]['value_numeric'].dropna()
-                if len(df_eval) > 0:
-                    data_points.append({
-                        'x': eval_date.isoformat() if hasattr(eval_date, 'isoformat') else str(eval_date),
-                        'y': float(df_eval.mean())
-                    })
+                y_values.append(float(df_eval.mean()) if len(df_eval) > 0 else None)
             
-            if data_points:
+            color = palette.get_color_for_label(grupo)
+            if any(v is not None for v in y_values):
                 datasets.append({
                     'label': grupo,
-                    'data': data_points,
-                    'borderColor': color_palette[idx % len(color_palette)],
-                    'backgroundColor': color_palette[idx % len(color_palette)] + '20',
-                    'tension': 0.3
+                    'data': y_values,
+                    'borderColor': color,
+                    'backgroundColor': color + '20',
+                    'tension': 0.3,
+                    'spanGaps': True
                 })
         
         if not datasets:
             return ''
         
-        chart_id = f'evolution_{label.replace(" ", "_").replace("/", "_").replace(".", "_")}'
+        chart_id = f'evolution_{dashboard_helpers.sanitize_id(label)}'
         
         return f'''
         <div class="card">
@@ -362,63 +264,19 @@ class DashboardChartsEvolution(models.TransientModel):
         new Chart(document.getElementById('{chart_id}'), {{
             type: 'line',
             data: {{
+                labels: {json.dumps(eval_labels)},
                 datasets: {json.dumps(datasets)}
             }},
             options: {{
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {{
-                    legend: {{
-                        display: true,
-                        position: 'top',
-                        labels: {{
-                            usePointStyle: true,
-                            padding: 10,
-                            font: {{ size: 10, family: "'Inter', sans-serif" }},
-                            color: '#64748b',
-                            boxWidth: 8
-                        }}
-                    }},
-                    tooltip: {{
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        cornerRadius: 6,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
-                        callbacks: {{
-                            title: function(context) {{
-                                return new Date(context[0].parsed.x).toLocaleDateString('es-ES');
-                            }},
-                            label: function(context) {{
-                                return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' pts';
-                            }}
-                        }}
-                    }}
+                    legend: {json.dumps(chart_defaults.get_legend_series())},
+                    tooltip: {chart_defaults.tooltip_js(chart_defaults.CALLBACKS_SCORE_LABEL)}
                 }},
                 scales: {{
-                    x: {{
-                        type: 'time',
-                        time: {{
-                            unit: 'day',
-                            displayFormats: {{
-                                day: 'dd/MM/yyyy'
-                            }}
-                        }},
-                        grid: {{ display: false, drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#64748b'
-                        }}
-                    }},
-                    y: {{
-                        min: {y_min},
-                        max: {y_max},
-                        grid: {{ color: '#f1f5f9', drawBorder: false }},
-                        ticks: {{
-                            font: {{ size: 11, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8'
-                        }}
-                    }}
+                    x: {json.dumps(chart_defaults.get_scale_x_categorical())},
+                    y: {json.dumps(chart_defaults.get_scale_y_score(y_min, y_max))}
                 }}
             }}
         }});

@@ -421,57 +421,16 @@
 
         <script>
             (function() {
-                var wordcloudData = <t t-out="wordcloud_json"/>;
-                var paletteColors = <t t-out="palette_json"/>;
-
-                function initWordcloud() {
-                    var el = document.getElementById('wordcloud');
-                    if (!el) return;
-                    if (!wordcloudData || wordcloudData.length === 0) {
-                        el.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:#94a3b8;">No hay suficientes palabras para generar la nube</div>';
-                        return;
-                    }
-                    // Altura dinámica: escala con nº de palabras (mín 140px, máx 280px)
-                    var h = Math.min(280, Math.max(140, wordcloudData.length * 9));
-                    el.style.height = h + 'px';
-
-                    var words = wordcloudData.map(function(d) {
-                        return {text: d[0], size: Math.sqrt(d[1]) * 10 + 11};
-                    });
-
-                    var layout = d3.layout.cloud()
-                        .size([el.offsetWidth || 800, h])
-                        .words(words)
-                        .padding(6)
-                        .rotate(function() { return ~~(Math.random() * 2) * 90; })
-                        .font("Plus Jakarta Sans")
-                        .fontSize(function(d) { return d.size; })
-                        .on("end", function(words) {
-                            d3.select("#wordcloud").append("svg")
-                                .attr("width", layout.size()[0])
-                                .attr("height", layout.size()[1])
-                                .append("g")
-                                .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
-                                .selectAll("text")
-                                .data(words)
-                                .enter().append("text")
-                                .style("font-size", function(d) { return d.size + "px"; })
-                                .style("font-family", "Plus Jakarta Sans")
-                                .style("font-weight", "700")
-                                .style("fill", function(d, i) { return paletteColors[i % paletteColors.length]; })
-                                .attr("text-anchor", "middle")
-                                .attr("transform", function(d) {
-                                    return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
-                                })
-                                .text(function(d) { return d.text; });
-                        });
-                    layout.start();
+                var _wc_data   = <t t-out="wordcloud_json"/>;
+                var _wc_colors = <t t-out="palette_json"/>;
+                function initWordcloudCounselor() {
+                    window.amWordcloud.init('wordcloud', _wc_data, _wc_colors);
                 }
-
+                window.initWordcloudCounselor = initWordcloudCounselor;
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initWordcloud);
+                    document.addEventListener('DOMContentLoaded', initWordcloudCounselor);
                 } else {
-                    setTimeout(initWordcloud, 100);
+                    setTimeout(initWordcloudCounselor, 100);
                 }
             })();
         </script>
@@ -568,50 +527,16 @@
 
         <script>
             (function() {
-                var wordcloudData = <t t-out="wordcloud_json"/>;
-                var paletteColors = <t t-out="palette_json"/>;
-
-                function initWordcloud() {
-                    if (!wordcloudData || wordcloudData.length === 0) {
-                        var el = document.getElementById('wordcloud');
-                        if (el) el.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">No hay suficientes palabras para generar la nube</div>';
-                        return;
-                    }
-                    var wordcloudEl = document.getElementById('wordcloud');
-                    if (!wordcloudEl) return;
-
-                    var words = wordcloudData.map(function(d) { return {text: d[0], size: Math.sqrt(d[1]) * 10 + 10}; });
-
-                    var layout = d3.layout.cloud()
-                        .size([wordcloudEl.offsetWidth || 800, 350])
-                        .words(words)
-                        .padding(5)
-                        .rotate(function() { return ~~(Math.random() * 2) * 90; })
-                        .font("Inter")
-                        .fontSize(function(d) { return d.size; })
-                        .on("end", function(words) {
-                            d3.select("#wordcloud").append("svg")
-                                .attr("width", layout.size()[0])
-                                .attr("height", layout.size()[1])
-                                .append("g")
-                                .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
-                                .selectAll("text")
-                                .data(words)
-                                .enter().append("text")
-                                .style("font-size", function(d) { return d.size + "px"; })
-                                .style("font-family", "Inter")
-                                .style("fill", function(d, i) { return paletteColors[i % paletteColors.length]; })
-                                .attr("text-anchor", "middle")
-                                .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
-                                .text(function(d) { return d.text; });
-                        });
-                    layout.start();
+                var _wc_data   = <t t-out="wordcloud_json"/>;
+                var _wc_colors = <t t-out="palette_json"/>;
+                function initWordcloudTutor() {
+                    window.amWordcloud.init('wordcloud', _wc_data, _wc_colors, 350);
                 }
-
+                window.initWordcloudTutor = initWordcloudTutor;
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initWordcloud);
+                    document.addEventListener('DOMContentLoaded', initWordcloudTutor);
                 } else {
-                    setTimeout(initWordcloud, 100);
+                    setTimeout(initWordcloudTutor, 100);
                 }
             })();
         </script>

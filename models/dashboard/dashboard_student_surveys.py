@@ -309,8 +309,8 @@ class DashboardStudentSurveys(models.TransientModel):
                 if first_val is not None and last_val is not None and first_val != 0:
                     pct_change = (last_val - first_val) / first_val * 100
                     arrow  = '↑' if pct_change > 0 else ('↓' if pct_change < 0 else '→')
-                    color  = '#059669' if pct_change > 0 else ('#dc2626' if pct_change < 0 else '#64748b')
-                    bg     = '#f0fdf4' if pct_change > 0 else ('#fef2f2' if pct_change < 0 else '#f8fafc')
+                    color  = palette.UI_SUCCESS_DARK if pct_change > 0 else (palette.UI_DANGER_DARK if pct_change < 0 else palette.UI_MUTED)
+                    bg     = palette.BADGE_OK_BG if pct_change > 0 else (palette.ALERT_HIGH_BG if pct_change < 0 else palette.UI_LIGHT)
                     delta_html = (
                         f'<td class="am-td">'
                         f'<span class="am-mono" style="display:inline-block;background:{bg};color:{color};'
@@ -333,17 +333,23 @@ class DashboardStudentSurveys(models.TransientModel):
                             f'</td>'
                         )
 
-                # Comparativa grupo/centro (solo total o si hay pocos sub-escalas)
+                # Comparativa grupo/centro — solo renderizar si la columna existe en cabecera
                 gm = group_means.get(sn)
                 cm = center_means.get(sn)
-                gm_cell = (
-                    f'<td class="am-td am-mono am-group-col" style="font-size:12px;">'
-                    f'{gm:.1f}</td>'
-                ) if gm is not None and group_count > 0 else '<td class="am-td" style="color:var(--am-muted);">—</td>'
-                cm_cell = (
-                    f'<td class="am-td am-mono am-center-col" style="font-size:12px;">'
-                    f'{cm:.1f}</td>'
-                ) if cm is not None and center_count > 0 else '<td class="am-td" style="color:var(--am-muted);">—</td>'
+                gm_cell = ''
+                if group_count > 0:
+                    gm_cell = (
+                        f'<td class="am-td am-mono am-group-col" style="font-size:12px;">{gm:.1f}</td>'
+                        if gm is not None
+                        else '<td class="am-td" style="color:var(--am-muted);">—</td>'
+                    )
+                cm_cell = ''
+                if center_count > 0:
+                    cm_cell = (
+                        f'<td class="am-td am-mono am-center-col" style="font-size:12px;">{cm:.1f}</td>'
+                        if cm is not None
+                        else '<td class="am-td" style="color:var(--am-muted);">—</td>'
+                    )
 
                 row_style = (
                     'border-top:2px solid var(--am-border);font-weight:700;background:var(--am-light);'
@@ -486,29 +492,7 @@ class DashboardStudentSurveys(models.TransientModel):
         g_means = context['group_means']  if has_ctx else {}
         c_means = context['center_means'] if has_ctx else {}
 
-        # ── Leyenda marcadores ─────────────────────────────────────────
-        legend_parts = []
-        if has_ctx and context.get('group_count'):
-            n = context['group_count']
-            legend_parts.append(
-                f'<span class="am-drawer-legend__item">'
-                f'<span class="am-drawer-legend__line" style="background:#94a3b8;"></span>'
-                f'Media grupo ({n})'
-                f'</span>'
-            )
-        if has_ctx and context.get('center_count'):
-            n = context['center_count']
-            legend_parts.append(
-                f'<span class="am-drawer-legend__item">'
-                f'<span class="am-drawer-legend__line" style="background:var(--am-primary);"></span>'
-                f'Media centro ({n})'
-                f'</span>'
-            )
-        legend_html = (
-            '<div class="am-drawer-legend">' + ''.join(legend_parts) + '</div>'
-        ) if legend_parts else ''
-
-        # ── Barras por sub-escala (contenido del drawer) ───────────────
+        # ── Gráfico Chart.js horizontal por sub-escala ─────────────────
         scale_scores    = result.get_scale_scores()
         scale_bars_html = ''
 
@@ -521,60 +505,155 @@ class DashboardStudentSurveys(models.TransientModel):
             )
             ordered_scales = non_total + (['total'] if has_total else [])
 
-            bars = []
             _sev_fill = {0: '#34d399', 1: '#fbbf24', 2: '#f87171'}
+
+            # Construir datos para Chart.js
+            labels       = []
+            scores       = []
+            bar_colors   = []
+            g_mean_pts   = []   # scatter dataset — un punto por barra
+            c_mean_pts   = []
+            scale_maxes_ordered = []
+
             for scale_name in ordered_scales:
                 scale_data   = scale_scores[scale_name]
                 score        = scale_data.get('score', 0) if isinstance(scale_data, dict) else float(scale_data)
                 s_sev        = min(scale_data.get('severity', 0) if isinstance(scale_data, dict) else 0, 2)
-                sev_info_s   = severity_mapping.get(s_sev, {})
-                val_color    = sev_info_s.get('color', '#6b7280')
                 fill_color   = _sev_fill.get(s_sev, '#34d399')
                 scale_max    = max(scale_maxes.get(scale_name, 10), 1)
                 display_name = (_meta.get(scale_name) or {}).get('label') or scale_name.replace('_', ' ').capitalize()
-                is_total     = scale_name == 'total' and has_total and len(ordered_scales) > 1
 
-                def pct(v, mx=scale_max):
-                    return min(v / mx * 100, 100)
-
-                s_pct    = pct(score)
-                bar_html = (
-                    f'<div class="am-bar-fill" '
-                    f'title="{display_name}: {score:.0f}/{scale_max:.0f}" '
-                    f'style="width:{s_pct:.1f}%;background:{fill_color};"></div>'
-                )
+                labels.append(display_name)
+                scores.append(round(score, 2))
+                bar_colors.append(fill_color)
+                scale_maxes_ordered.append(scale_max)
 
                 g_mean = g_means.get(scale_name)
                 c_mean = c_means.get(scale_name)
-                g_mk   = ''
-                c_mk   = ''
-                if g_mean is not None:
-                    gp   = pct(g_mean)
-                    g_mk = (f'<div title="Media grupo: {g_mean:.1f}" '
-                            f'style="position:absolute;left:{gp:.1f}%;top:-5px;'
-                            f'height:24px;width:3px;background:#94a3b8;border-radius:2px;z-index:4;"></div>')
-                if c_mean is not None:
-                    cp   = pct(c_mean)
-                    c_mk = (f'<div title="Media centro: {c_mean:.1f}" '
-                            f'style="position:absolute;left:{cp:.1f}%;top:-5px;'
-                            f'height:24px;width:3px;background:var(--am-primary);border-radius:2px;z-index:4;"></div>')
+                # Para scatter: x = valor de la media, y = label del eje categórico
+                g_mean_pts.append(round(g_mean, 2) if g_mean is not None else None)
+                c_mean_pts.append(round(c_mean, 2) if c_mean is not None else None)
 
-                row_cls = 'am-bar-row am-bar-row--total' if is_total else 'am-bar-row'
-                bars.append(f"""
-                <div class="{row_cls}">
-                    <span class="am-bar-row__label">{display_name}</span>
-                    <div class="am-bar-row__track">
-                        {bar_html}{g_mk}{c_mk}
-                    </div>
-                    <span class="am-bar-row__score"
-                          style="color:{val_color};background:{fill_color}20;border:1px solid {fill_color}55;">
-                        {score:.0f}<span class="am-bar-row__score-denom">/{scale_max:.0f}</span>
-                    </span>
-                </div>""")
-            scale_bars_html = (
-                '<span class="am-drawer-section-label">Desglose por subescalas</span>\n'
-                + '\n'.join(bars)
-            ) if bars else ''
+            import json as _json
+            canvas_id  = f'am-drawer-chart-{rid}'
+            chart_h    = max(120, len(labels) * 44)  # altura mínima 120px
+            scale_max_global = max(scale_maxes_ordered) if scale_maxes_ordered else 10
+
+            # Datasets: barras del alumno + marcadores de media (line/showLine:false)
+            # NOTA: scatter + indexAxis:'y' no funciona en Chart.js 4.x sobre eje
+            # categórico. Usamos type:'line' con showLine:false como workaround.
+            has_g = any(v is not None for v in g_mean_pts)
+            has_c = any(v is not None for v in c_mean_pts)
+
+            datasets = [
+                {
+                    'type': 'bar',
+                    'label': 'Alumno',
+                    'data': scores,
+                    'backgroundColor': bar_colors,
+                    'borderRadius': 5,
+                    'borderSkipped': False,
+                    'barThickness': 18,
+                    'order': 2,
+                }
+            ]
+            if has_g:
+                datasets.append({
+                    'type': 'line',
+                    'label': 'Media grupo',
+                    'data': g_mean_pts,   # indexed igual que labels
+                    'showLine': False,
+                    'backgroundColor': '#94a3b8',
+                    'borderColor': '#94a3b8',
+                    'pointStyle': 'rectRot',
+                    'pointRadius': 7,
+                    'pointHoverRadius': 9,
+                    'borderWidth': 0,
+                    'order': 1,
+                    'spanGaps': True,
+                })
+            if has_c:
+                datasets.append({
+                    'type': 'line',
+                    'label': 'Media centro',
+                    'data': c_mean_pts,   # indexed igual que labels
+                    'showLine': False,
+                    'backgroundColor': palette.UI_PRIMARY,
+                    'borderColor': palette.UI_PRIMARY,
+                    'pointStyle': 'rectRot',
+                    'pointRadius': 7,
+                    'pointHoverRadius': 9,
+                    'borderWidth': 0,
+                    'order': 0,
+                    'spanGaps': True,
+                })
+
+            chart_cfg = {
+                'type': 'bar',
+                'data': {
+                    'labels': labels,
+                    'datasets': datasets,
+                },
+                'options': {
+                    'indexAxis': 'y',
+                    'responsive': True,
+                    'maintainAspectRatio': False,
+                    'animation': {'duration': 500, 'easing': 'easeOutQuart'},
+                    'layout': {'padding': {'right': 8}},
+                    'scales': {
+                        'x': {
+                            'min': 0,
+                            'max': scale_max_global,
+                            'grid': {'color': palette.UI_GRID_LINE},
+                            'ticks': {
+                                'color': palette.UI_MUTED,
+                                'font': {'size': 10, 'family': palette.CHART_FONT},
+                            },
+                            'border': {'dash': [3, 3]},
+                        },
+                        'y': {
+                            'grid': {'display': False},
+                            'ticks': {
+                                'color': palette.UI_TEXT,
+                                'font': {'size': 11, 'family': palette.CHART_FONT, 'weight': '600'},
+                            },
+                        },
+                    },
+                    'plugins': {
+                        'legend': {
+                            'display': (has_g or has_c),
+                            'position': 'top',
+                            'align': 'end',
+                            'labels': {
+                                'boxWidth': 10,
+                                'boxHeight': 10,
+                                'padding': 12,
+                                'usePointStyle': True,
+                                'font': {'size': 11, 'family': palette.CHART_FONT},
+                                'color': palette.UI_MUTED,
+                            },
+                        },
+                        'tooltip': {
+                            'backgroundColor': palette.UI_TOOLTIP_BG,
+                            'padding': 10,
+                            'cornerRadius': 6,
+                            'titleFont': {'size': 12, 'weight': '600', 'family': palette.CHART_FONT},
+                            'bodyFont': {'size': 11, 'family': palette.CHART_FONT},
+                        },
+                    },
+                },
+            }
+
+            cfg_json = _json.dumps(chart_cfg)
+
+            # Config almacenada en <script type="application/json"> (nunca ejecuta)
+            # amOpenDrawer la lee y pasa el canvas visible a Chart.js
+            scale_bars_html = f"""
+<span class="am-drawer-section-label">Desglose por subescalas</span>
+<div style="position:relative;height:{chart_h}px;margin-bottom:8px;">
+    <canvas class="am-chart-canvas" style="display:block;width:100%;height:100%;"></canvas>
+</div>
+<script type="application/json" class="am-chart-cfg">{cfg_json}</script>"""
 
         desc_html = ''
         if result.baremo_description:
@@ -604,7 +683,7 @@ class DashboardStudentSurveys(models.TransientModel):
         drawer_html = f"""
         <div id="am-drawer-content-{rid}" style="display:none;">
             <div class="am-drawer__date">{meta_str}</div>
-            {desc_html}{legend_html}{scale_bars_html}{notes_html}
+            {desc_html}{scale_bars_html}{notes_html}
         </div>
         <div id="am-drawer-footer-{rid}" style="display:none;">
             <a href="{pdf_url}" target="_blank" class="btn-primary">

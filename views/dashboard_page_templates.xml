@@ -42,6 +42,17 @@
                     </main>
                 </div>
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"/>
+                <script>
+                    /* Respect prefers-reduced-motion for all Chart.js instances */
+                    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches &amp;&amp; window.Chart) {
+                        Chart.defaults.animation = false;
+                    }
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches &amp;&amp; window.Chart) {
+                            Chart.defaults.animation = false;
+                        }
+                    });
+                </script>
                 <t t-out="scripts_html"/>
             </body>
         </html>

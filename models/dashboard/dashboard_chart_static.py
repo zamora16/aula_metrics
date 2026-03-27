@@ -3,10 +3,9 @@
 Dashboard Chart Static - Gráficos comparativos estáticos de métricas.
 """
 import json
-from collections import Counter
 import pandas as pd
 from odoo import models
-from ...utils import palette, dashboard_helpers
+from ...utils import palette, dashboard_helpers, chart_defaults
 
 
 class DashboardChartsStatic(models.TransientModel):
@@ -17,11 +16,8 @@ class DashboardChartsStatic(models.TransientModel):
         cursos = sorted(df['curso'].unique())
         stats = []
         
-        # Paleta de colores consistente para cursos
-        color_palette = palette.METRICS_PALETTE
-        
         # Preparar datos generales
-        for idx, curso in enumerate(cursos):
+        for curso in cursos:
             df_curso = df[df['curso'] == curso]
             df_curso_values = df_curso['value_numeric'].dropna()
             if len(df_curso_values) > 0:
@@ -33,7 +29,7 @@ class DashboardChartsStatic(models.TransientModel):
                     'mean': mean_val,
                     'n_alumnos': n_alumnos,
                     'n_grupos': n_grupos,
-                    'color': color_palette[idx % len(color_palette)]
+                    'color': palette.get_color_for_label(curso)
                 })
         
         if not stats:
@@ -46,9 +42,19 @@ class DashboardChartsStatic(models.TransientModel):
         for seg_var in segmentation_vars:
             var_value = seg_var['value']
             var_type = seg_var['type']
-            var_options = seg_var['options']
             
             stats_by_segmentation[var_value] = {}
+            
+            # Pre-fetch para metric_json: una sola query para todos los alumnos
+            seg_map = {}
+            if var_type == 'metric_json':
+                all_student_ids = [int(sid) for sid in df['student_id'].unique() if sid != "***"]
+                all_seg_records = MetricValue.search([
+                    ('student_id', 'in', all_student_ids),
+                    ('metric_name', '=', var_value),
+                    ('value_json', '!=', False)
+                ])
+                seg_map = {rec.student_id.id: rec.value_json for rec in all_seg_records}
             
             for curso in cursos:
                 df_curso = df[df['curso'] == curso]
@@ -67,31 +73,26 @@ class DashboardChartsStatic(models.TransientModel):
                             }
                 
                 elif var_type == 'metric_json':
-                    # Variable de opciones múltiples desde metric_value
+                    # Variable de opciones múltiples — datos pre-cargados en seg_map
                     for student_id in df_curso['student_id'].unique():
                         if student_id == "***":  # Skip anonymized
                             continue
                         
-                        # Buscar el valor de la variable de segmentación para este estudiante
-                        seg_records = MetricValue.search([
-                            ('student_id', '=', int(student_id)),
-                            ('metric_name', '=', var_value),
-                            ('value_json', '!=', False)
-                        ], limit=1)
+                        selected_options = seg_map.get(int(student_id))
+                        if not selected_options:
+                            continue
                         
-                        if seg_records and seg_records.value_json:
-                            selected_options = seg_records.value_json
-                            student_value = df_curso[df_curso['student_id'] == student_id]['value_numeric'].iloc[0]
-                            
-                            if pd.notna(student_value):
-                                for option in selected_options:
-                                    if option not in stats_by_segmentation[var_value][curso]:
-                                        stats_by_segmentation[var_value][curso][option] = {
-                                            'sum': 0.0,
-                                            'count': 0
-                                        }
-                                    stats_by_segmentation[var_value][curso][option]['sum'] += float(student_value)
-                                    stats_by_segmentation[var_value][curso][option]['count'] += 1
+                        student_value = df_curso[df_curso['student_id'] == student_id]['value_numeric'].iloc[0]
+                        
+                        if pd.notna(student_value):
+                            for option in selected_options:
+                                if option not in stats_by_segmentation[var_value][curso]:
+                                    stats_by_segmentation[var_value][curso][option] = {
+                                        'sum': 0.0,
+                                        'count': 0
+                                    }
+                                stats_by_segmentation[var_value][curso][option]['sum'] += float(student_value)
+                                stats_by_segmentation[var_value][curso][option]['count'] += 1
                     
                     # Calcular medias
                     for option in stats_by_segmentation[var_value][curso]:
@@ -111,22 +112,24 @@ class DashboardChartsStatic(models.TransientModel):
         
         chart_height = min(350, max(200, len(stats) * 25))
         segment_options_html = self._build_segment_options_html(segmentation_vars)
+        wide_class = ' card--wide' if len(stats) > 12 else ''
         
         styles = dashboard_helpers.get_chart_card_styles()
+        _tooltip = chart_defaults.tooltip_js()
         
         return f'''
-        <div class="card">
-            <div class="card-header" style="{styles['chart-card-header']}">
-                <div>
+        <div class="card{wide_class}">
+            <div class="card-header am-card-header--controls">
+                <div class="am-card-header__info">
                     <h5 class="card-title">{label}</h5>
                     <p class="card-subtitle">Comparativa por curso</p>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
+                <div class="am-card-header__controls">
+                    <select id="segment_{chart_id}" class="am-segment-select" title="Segmentar datos">
                         {segment_options_html}
                     </select>
-                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-primary-100')" onmouseout="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-bg')">
-                        Ordenar
+                    <button id="sort_{chart_id}" class="am-icon-btn" title="Descendente">
+                        <i class="fa-solid fa-arrow-down-wide-short"></i>
                     </button>
                 </div>
             </div>
@@ -161,7 +164,7 @@ class DashboardChartsStatic(models.TransientModel):
                         type: 'line',
                         label: threshold.label + ' (' + threshold.operator + ' ' + threshold.value + ')',
                         data: thresholdData,
-                        borderColor: '#ef4444',
+                        borderColor: '{palette.UI_DANGER}',
                         borderWidth: 2,
                         borderDash: [5, 5],
                         pointRadius: 0,
@@ -193,29 +196,29 @@ class DashboardChartsStatic(models.TransientModel):
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {{
-                        legend: {{ display: false }},
-                        tooltip: {{
-                            backgroundColor: '#1e293b',
-                            padding: 12,
-                            cornerRadius: 6,
-                            titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
-                            bodyFont: {{ family: "'Inter', sans-serif", size: 12 }}
-                        }}
+                        legend: {{ display: chartData.thresholds.length > 0, position: 'top', labels: {{ font: {{ size: 11, family: "{palette.CHART_FONT}" }}, color: '{palette.CHART_TICK_COLOR}' }} }},
+                        tooltip: {_tooltip}
                     }},
                     scales: {{
                         x: {{
                             min: {y_min},
                             max: {y_max},
-                            grid: {{ color: '#f1f5f9', drawBorder: false }},
+                            title: {{
+                                display: true,
+                                text: 'Puntuaci\u00f3n',
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
+                            }},
+                            grid: {{ color: '{palette.UI_GRID_LINE}', drawBorder: false }},
                             ticks: {{
-                                font: {{ size: 11, family: "'Inter', sans-serif" }},
-                                color: '#94a3b8'
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
                             }}
                         }},
                         y: {{
                             grid: {{ display: false, drawBorder: false }},
                             ticks: {{
-                                font: {{ size: 11, family: "'Inter', sans-serif", weight: '500' }},
+                                font: {{ size: 11, family: "{palette.CHART_FONT}", weight: '500' }},
                                 color: '#0f172a'
                             }}
                         }}
@@ -284,7 +287,7 @@ class DashboardChartsStatic(models.TransientModel):
                         }},
                         ...createThresholdDatasets(entries.length)
                     ];
-                    chart.options.plugins.legend.display = false;
+                    chart.options.plugins.legend.display = chartData.thresholds.length > 0;
                 }}
                 
                 chart.update();
@@ -297,14 +300,16 @@ class DashboardChartsStatic(models.TransientModel):
             
             document.getElementById('sort_{chart_id}').addEventListener('click', function() {{
                 ascending = !ascending;
-                this.innerHTML = ascending ? 'Orden: Ascendente' : 'Orden: Descendente';
+                var icon = this.querySelector('i');
+                icon.className = ascending ? 'fa-solid fa-arrow-up-short-wide' : 'fa-solid fa-arrow-down-wide-short';
+                this.title = ascending ? 'Ascendente' : 'Descendente';
                 updateChart();
             }});
         }})();
         </script>
         '''
 
-    def _chart_numeric_distribution(self, df, label, segmentation_vars):
+    def _chart_numeric_distribution(self, df, label, segmentation_vars, y_max=100, y_min=0):
         """Vista Tutor: Distribución anónima del grupo - SOLO evaluación más reciente."""
         if df.empty:
             return ''
@@ -317,9 +322,11 @@ class DashboardChartsStatic(models.TransientModel):
         if len(values) == 0:
             return ''
         
-        # Crear bins (rangos) para el histograma
-        bins = [0, 40, 60, 80, 100]
-        bin_labels = ['0-40 (Bajo)', '40-60 (Medio-Bajo)', '60-80 (Medio-Alto)', '80-100 (Alto)']
+        # Crear bins dinámicos a partir del rango real de la métrica
+        n_bins = 4
+        step = (y_max - y_min) / n_bins
+        bins = [round(y_min + i * step, 1) for i in range(n_bins + 1)]
+        bin_labels = [f'{bins[i]:.0f}–{bins[i+1]:.0f}' for i in range(n_bins)]
         bin_colors = palette.BIN_COLORS
         
         # Contar cuántos alumnos en cada rango
@@ -358,23 +365,19 @@ class DashboardChartsStatic(models.TransientModel):
                         distribution_by_segmentation[var_value][gender_label] = seg_counts
             
             elif var_type == 'metric_json':
-                # Variable de opciones múltiples desde metric_value
-                student_segments = {}
-                
-                for student_id in df_latest['student_id'].unique():
-                    if student_id == "***":  # Skip anonymized
-                        continue
-                    
-                    seg_records = MetricValue.search([
-                        ('student_id', '=', int(student_id)),
-                        ('metric_name', '=', var_value),
-                        ('value_json', '!=', False)
-                    ], limit=1)
-                    
-                    if seg_records and seg_records.value_json:
-                        for option in seg_records.value_json:
-                            student_segments[student_id] = option
-                            break  # Tomar solo la primera opción si hay múltiples
+                # Batch query para evitar N+1: una sola búsqueda para todos los alumnos
+                all_student_ids = [int(sid) for sid in df_latest['student_id'].unique() if sid != "***"]
+                all_seg_records = MetricValue.search([
+                    ('student_id', 'in', all_student_ids),
+                    ('metric_name', '=', var_value),
+                    ('value_json', '!=', False)
+                ])
+                # student_id (int) → primera opción elegida
+                student_segments = {
+                    rec.student_id.id: rec.value_json[0]
+                    for rec in all_seg_records
+                    if rec.value_json
+                }
                 
                 # Calcular distribución por cada opción
                 for option in seg_var['options']:
@@ -396,6 +399,12 @@ class DashboardChartsStatic(models.TransientModel):
         
         segment_options_html = self._build_segment_options_html(segmentation_vars)
         styles = dashboard_helpers.get_chart_card_styles()
+        _tooltip = chart_defaults.tooltip_js(
+            "label: function(context) {"
+            " let percentage = (chartData.totalAlumnos > 0)"
+            "   ? ((context.parsed.y / chartData.totalAlumnos) * 100).toFixed(1) : 0;"
+            " return context.parsed.y + ' alumnos (' + percentage + '%)'; }"
+        )
         
         return f'''
         <div class="card">
@@ -445,35 +454,29 @@ class DashboardChartsStatic(models.TransientModel):
                     maintainAspectRatio: true,
                     plugins: {{
                         legend: {{ display: false }},
-                        tooltip: {{
-                            backgroundColor: '#1e293b',
-                            padding: 12,
-                            cornerRadius: 6,
-                            titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
-                            bodyFont: {{ family: "'Inter', sans-serif", size: 12 }},
-                            callbacks: {{
-                                label: function(context) {{
-                                    let percentage = (chartData.totalAlumnos > 0) ? ((context.parsed.y / chartData.totalAlumnos) * 100).toFixed(1) : 0;
-                                    return context.parsed.y + ' alumnos (' + percentage + '%)';
-                                }}
-                            }}
-                        }}
+                        tooltip: {_tooltip}
                     }},
                     scales: {{
                         x: {{
                             grid: {{ display: false, drawBorder: false }},
                             ticks: {{
-                                font: {{ size: 11, family: "'Inter', sans-serif" }},
-                                color: '#64748b'
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
                             }}
                         }},
                         y: {{
                             beginAtZero: true,
-                            grid: {{ color: '#f1f5f9', drawBorder: false }},
+                            title: {{
+                                display: true,
+                                text: 'N\u00ba alumnos',
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
+                            }},
+                            grid: {{ color: '{palette.UI_GRID_LINE}', drawBorder: false }},
                             ticks: {{
                                 stepSize: 1,
-                                font: {{ size: 11, family: "'Inter', sans-serif" }},
-                                color: '#94a3b8'
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
                             }}
                         }}
                     }}
@@ -528,10 +531,7 @@ class DashboardChartsStatic(models.TransientModel):
         grupos = sorted(df['group_name'].unique())
         stats = []
         
-        # Paleta de colores para grupos
-        color_palette = palette.METRICS_PALETTE
-        
-        for idx, grupo in enumerate(grupos):
+        for grupo in grupos:
             df_grupo = df[df['group_name'] == grupo]['value_numeric'].dropna()
             if len(df_grupo) > 0:
                 mean_val = float(df_grupo.mean())
@@ -541,7 +541,7 @@ class DashboardChartsStatic(models.TransientModel):
                     'grupo': grupo,
                     'mean': mean_val,
                     'n_alumnos': n_alumnos,
-                    'color': color_palette[idx % len(color_palette)]
+                    'color': palette.get_color_for_label(grupo)
                 })
         
         if not stats:
@@ -554,9 +554,19 @@ class DashboardChartsStatic(models.TransientModel):
         for seg_var in segmentation_vars:
             var_value = seg_var['value']  # 'gender' o 'question_116_choices'
             var_type = seg_var['type']    # 'partner_field' o 'metric_json'
-            var_options = seg_var['options']
             
             stats_by_segmentation[var_value] = {}
+            
+            # Pre-fetch para metric_json: una sola query para todos los alumnos
+            seg_map = {}
+            if var_type == 'metric_json':
+                all_student_ids = [int(sid) for sid in df['student_id'].unique() if sid != "***"]
+                all_seg_records = MetricValue.search([
+                    ('student_id', 'in', all_student_ids),
+                    ('metric_name', '=', var_value),
+                    ('value_json', '!=', False)
+                ])
+                seg_map = {rec.student_id.id: rec.value_json for rec in all_seg_records}
             
             for grupo in grupos:
                 df_grupo = df[df['group_name'] == grupo]
@@ -575,33 +585,26 @@ class DashboardChartsStatic(models.TransientModel):
                             }
                 
                 elif var_type == 'metric_json':
-                    # Variable de opciones múltiples desde metric_value
-                    # Necesitamos cruzar con metric_value para obtener las opciones elegidas
+                    # Variable de opciones múltiples — datos pre-cargados en seg_map
                     for student_id in df_grupo['student_id'].unique():
                         if student_id == "***":  # Skip anonymized
                             continue
                         
-                        # Buscar el valor de la variable de segmentación para este estudiante
-                        seg_records = MetricValue.search([
-                            ('student_id', '=', int(student_id)),
-                            ('metric_name', '=', var_value),
-                            ('value_json', '!=', False)
-                        ], limit=1)
+                        selected_options = seg_map.get(int(student_id))
+                        if not selected_options:
+                            continue
                         
-                        if seg_records and seg_records.value_json:
-                            # value_json es una lista como ['Bajo'] o ['Urbano']
-                            selected_options = seg_records.value_json
-                            student_value = df_grupo[df_grupo['student_id'] == student_id]['value_numeric'].iloc[0]
-                            
-                            if pd.notna(student_value):
-                                for option in selected_options:
-                                    if option not in stats_by_segmentation[var_value][grupo]:
-                                        stats_by_segmentation[var_value][grupo][option] = {
-                                            'sum': 0.0,
-                                            'count': 0
-                                        }
-                                    stats_by_segmentation[var_value][grupo][option]['sum'] += float(student_value)
-                                    stats_by_segmentation[var_value][grupo][option]['count'] += 1
+                        student_value = df_grupo[df_grupo['student_id'] == student_id]['value_numeric'].iloc[0]
+                        
+                        if pd.notna(student_value):
+                            for option in selected_options:
+                                if option not in stats_by_segmentation[var_value][grupo]:
+                                    stats_by_segmentation[var_value][grupo][option] = {
+                                        'sum': 0.0,
+                                        'count': 0
+                                    }
+                                stats_by_segmentation[var_value][grupo][option]['sum'] += float(student_value)
+                                stats_by_segmentation[var_value][grupo][option]['count'] += 1
                     
                     # Calcular medias
                     for option in stats_by_segmentation[var_value][grupo]:
@@ -625,20 +628,22 @@ class DashboardChartsStatic(models.TransientModel):
         chart_height = min(350, max(200, len(stats) * 25))
         segment_options_html = self._build_segment_options_html(segmentation_vars)
         styles = dashboard_helpers.get_chart_card_styles()
+        wide_class = ' card--wide' if len(stats) > 12 else ''
+        _tooltip = chart_defaults.tooltip_js()
         
         return f'''
-        <div class="card">
-            <div class="card-header" style="{styles['chart-card-header']}">
-                <div>
+        <div class="card{wide_class}">
+            <div class="card-header am-card-header--controls">
+                <div class="am-card-header__info">
                     <h5 class="card-title">{label}</h5>
                     <p class="card-subtitle">Comparativa por grupo</p>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <select id="segment_{chart_id}" style="{styles['chart-segment-selector']}">
+                <div class="am-card-header__controls">
+                    <select id="segment_{chart_id}" class="am-segment-select" title="Segmentar datos">
                         {segment_options_html}
                     </select>
-                    <button id="sort_{chart_id}" style="padding: 6px 12px; background: var(--am-bg); border: 1px solid var(--am-border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--am-muted); font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-primary-100')" onmouseout="this.style.background=getComputedStyle(document.documentElement).getPropertyValue('--am-bg')">
-                        Ordenar
+                    <button id="sort_{chart_id}" class="am-icon-btn" title="Descendente">
+                        <i class="fa-solid fa-arrow-down-wide-short"></i>
                     </button>
                 </div>
             </div>
@@ -675,7 +680,7 @@ class DashboardChartsStatic(models.TransientModel):
                         type: 'line',
                         label: threshold.label + ' (' + threshold.operator + ' ' + threshold.value + ')',
                         data: thresholdData,
-                        borderColor: '#ef4444',
+                        borderColor: '{palette.UI_DANGER}',
                         borderWidth: 2,
                         borderDash: [5, 5],
                         pointRadius: 0,
@@ -707,29 +712,29 @@ class DashboardChartsStatic(models.TransientModel):
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {{
-                        legend: {{ display: false }},
-                        tooltip: {{
-                            backgroundColor: '#1e293b',
-                            padding: 12,
-                            cornerRadius: 6,
-                            titleFont: {{ family: "'Inter', sans-serif", size: 13, weight: '600' }},
-                            bodyFont: {{ family: "'Inter', sans-serif", size: 12 }}
-                        }}
+                        legend: {{ display: chartData.thresholds.length > 0, position: 'top', labels: {{ font: {{ size: 11, family: "{palette.CHART_FONT}" }}, color: '{palette.CHART_TICK_COLOR}' }} }},
+                        tooltip: {_tooltip}
                     }},
                     scales: {{
                         x: {{
                             min: {y_min},
                             max: {y_max},
-                            grid: {{ color: '#f1f5f9', drawBorder: false }},
+                            title: {{
+                                display: true,
+                                text: 'Puntuaci\u00f3n',
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
+                            }},
+                            grid: {{ color: '{palette.UI_GRID_LINE}', drawBorder: false }},
                             ticks: {{
-                                font: {{ size: 11, family: "'Inter', sans-serif" }},
-                                color: '#94a3b8'
+                                font: {{ size: 11, family: "{palette.CHART_FONT}" }},
+                                color: '{palette.CHART_TICK_COLOR}'
                             }}
                         }},
                         y: {{
                             grid: {{ display: false, drawBorder: false }},
                             ticks: {{
-                                font: {{ size: 11, family: "'Inter', sans-serif", weight: '500' }},
+                                font: {{ size: 11, family: "{palette.CHART_FONT}", weight: '500' }},
                                 color: '#0f172a'
                             }}
                         }}
@@ -821,7 +826,7 @@ class DashboardChartsStatic(models.TransientModel):
                         }},
                         ...createThresholdDatasets(entries.length)
                     ];
-                    chart.options.plugins.legend.display = false;
+                    chart.options.plugins.legend.display = chartData.thresholds.length > 0;
                 }}
                 
                 chart.update();
@@ -834,7 +839,9 @@ class DashboardChartsStatic(models.TransientModel):
             
             document.getElementById('sort_{chart_id}').addEventListener('click', function() {{
                 ascending = !ascending;
-                this.innerHTML = ascending ? 'Orden: Ascendente' : 'Orden: Descendente';
+                var icon = this.querySelector('i');
+                icon.className = ascending ? 'fa-solid fa-arrow-up-short-wide' : 'fa-solid fa-arrow-down-wide-short';
+                this.title = ascending ? 'Ascendente' : 'Descendente';
                 updateChart();
             }});
         }})();
@@ -896,7 +903,7 @@ class DashboardChartsStatic(models.TransientModel):
                 datasets: [{{
                     label: 'Respuestas',
                     data: {json.dumps(values)},
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: '{palette.BIN_COLORS[0]}',
                     borderRadius: 6,
                     borderSkipped: false
                 }}]
@@ -908,11 +915,11 @@ class DashboardChartsStatic(models.TransientModel):
                 plugins: {{
                     legend: {{ display: false }},
                     tooltip: {{
-                        backgroundColor: '#1e293b',
+                        backgroundColor: '{palette.UI_TOOLTIP_BG}',
                         padding: 12,
                         cornerRadius: 6,
-                        titleFont: {{ family: "'Inter', sans-serif", size: 13 }},
-                        bodyFont: {{ family: "'Inter', sans-serif", size: 13 }},
+                        titleFont: {{ family: "{palette.CHART_FONT}", size: 13 }},
+                        bodyFont: {{ family: "{palette.CHART_FONT}", size: 13 }},
                         callbacks: {{
                             label: function(context) {{
                                 const value = context.parsed.x;
@@ -925,17 +932,17 @@ class DashboardChartsStatic(models.TransientModel):
                 scales: {{
                     x: {{
                         beginAtZero: true,
-                        grid: {{ color: '#f1f5f9', drawBorder: false }},
+                        grid: {{ color: '{palette.UI_GRID_LINE}', drawBorder: false }},
                         ticks: {{
-                            font: {{ size: 12, family: "'Inter', sans-serif" }},
-                            color: '#94a3b8',
+                            font: {{ size: 12, family: "{palette.CHART_FONT}" }},
+                            color: '{palette.CHART_TICK_COLOR}',
                             precision: 0
                         }}
                     }},
                     y: {{
                         grid: {{ display: false, drawBorder: false }},
                         ticks: {{
-                            font: {{ size: 12, family: "'Inter', sans-serif" }},
+                            font: {{ size: 12, family: "{palette.CHART_FONT}" }},
                             color: '#475569',
                             crossAlign: 'far'
                         }}

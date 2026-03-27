@@ -3,8 +3,10 @@
 Funciones auxiliares compartidas para dashboards de AulaMetrics
 Incluye: formatters, sanitizers, chart helpers, detección de roles.
 """
+from collections import Counter
 from datetime import datetime
 import json
+import re
 from .constants import (
     GROUP_ADMIN, GROUP_COUNSELOR, GROUP_MANAGEMENT,
     ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT,
@@ -221,3 +223,53 @@ def metric_values_to_records(metric_values):
             'completed_at': (mv.evaluation_id.date_start if mv.evaluation_id and mv.evaluation_id.date_start else mv.timestamp),
         })
     return records
+
+
+# ---------------------------------------------------------------------------
+# Análisis de texto
+# ---------------------------------------------------------------------------
+
+_WORDCLOUD_STOPWORDS = {
+    'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'ser', 'se', 'no', 'haber',
+    'por', 'con', 'su', 'para', 'como', 'estar', 'tener', 'le', 'lo', 'todo',
+    'pero', 'más', 'hacer', 'o', 'poder', 'decir', 'este', 'ir', 'otro', 'ese',
+    'la', 'si', 'me', 'ya', 'ver', 'porque', 'dar', 'cuando', 'él', 'muy',
+    'sin', 'vez', 'mucho', 'saber', 'qué', 'sobre', 'mi', 'alguno', 'mismo',
+    'yo', 'también', 'hasta', 'año', 'dos', 'querer', 'entre', 'así', 'primero',
+    'desde', 'grande', 'eso', 'ni', 'nos', 'llegar', 'pasar', 'tiempo', 'ella',
+    'sí', 'día', 'uno', 'bien', 'poco', 'deber', 'entonces', 'poner', 'cosa',
+    'tanto', 'hombre', 'parecer', 'nuestro', 'tan', 'donde', 'ahora', 'parte',
+    'después', 'vida', 'quedar', 'siempre', 'creer', 'hablar', 'llevar', 'dejar',
+    'nada', 'cada', 'seguir', 'menos', 'nuevo', 'encontrar', 'algo', 'solo',
+    'decir', 'estos', 'trabajar', 'llamar', 'mundo', 'venir', 'pensar', 'salir',
+    'volver', 'tomar', 'conocer', 'vivir', 'sentir', 'tratar', 'mirar', 'contar',
+    'empezar', 'esperar', 'buscar', 'existir', 'entrar', 'trabajar', 'escribir',
+    'perder', 'producir', 'ocurrir', 'entender', 'pedir', 'recibir', 'recordar',
+    'terminar', 'permitir', 'aparecer', 'conseguir', 'comenzar', 'servir',
+    'sacar', 'necesitar', 'mantener', 'resultar', 'leer', 'caer', 'cambiar',
+    'presentar', 'crear', 'abrir', 'considerar', 'oír', 'acabar', 'mil', 'tu',
+    'te', 'les', 'ha', 'he', 'hay', 'estoy', 'esta', 'están', 'son', 'fue',
+    'del', 'al', 'una', 'unos', 'unas', 'los', 'las', 'es', 'era', 'eres',
+    'creo', 'me', 'gustaría', 'hubiera', 'debería', 'podría', 'sería',
+}
+
+
+def generate_wordcloud(responses, top_n=50):
+    """
+    Genera datos para wordcloud (frecuencia de palabras) a partir de un iterable
+    de objetos con atributo ``response_text``.
+
+    Filtra stopwords en español y palabras de menos de 4 letras.
+
+    Args:
+        responses: iterable de objetos con .response_text (str)
+        top_n:     número máximo de palabras a devolver (default 50)
+
+    Returns:
+        list[tuple[str, int]]: pares (palabra, frecuencia) ordenados por frecuencia desc.
+    """
+    all_words = []
+    for r in responses:
+        words = re.findall(r'\b[a-záéíóúñü]{4,}\b', r.response_text.lower())
+        all_words.extend(w for w in words if w not in _WORDCLOUD_STOPWORDS)
+    return Counter(all_words).most_common(top_n)

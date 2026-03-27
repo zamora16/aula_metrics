@@ -282,26 +282,46 @@ class DashboardCharts(models.TransientModel):
         if not primary_names:
             primary_names, secondary_names = metric_names[:1], metric_names[1:]
 
+        role = role_info.get('role', 'counselor')
+
         # Construir lista ordenada: escala total primero, luego sub-escalas
+        # Separar by_html y evo_html para poder gestionar el toggle globalmente
         ordered_scales = []
+        any_evolution  = False
         for mn in primary_names[:1] + secondary_names:
             df_scale = df_survey[df_survey['metric_name'] == mn].copy()
             if df_scale.empty:
                 continue
             label = df_scale['metric_label'].iloc[0]
             y_min, y_max = self._get_y_range_for_metric(df_scale)
-            chart_html = self._chart_numeric_metric(df_scale, label, role_info, segmentation_vars, y_max, y_min)
-            if chart_html:
-                ordered_scales.append((mn, label, chart_html))
+
+            evaluations   = df_scale['evaluation_name'].dropna().unique()
+            has_evolution = len(evaluations) >= 2
+            if has_evolution:
+                any_evolution = True
+
+            if role == ROLE_MANAGEMENT:
+                by_html  = self._chart_numeric_by_course(df_scale, label, segmentation_vars, y_max, y_min)
+                evo_html = self._chart_numeric_evolution_by_course(df_scale, label, y_max, y_min) if has_evolution else ''
+            elif role == ROLE_TUTOR:
+                by_html  = self._chart_numeric_distribution(df_scale, label, segmentation_vars, y_max, y_min)
+                evo_html = ''
+            else:  # counselor/admin
+                by_html  = self._chart_numeric_by_groups(df_scale, label, segmentation_vars, y_max, y_min)
+                evo_html = self._chart_numeric_evolution_by_groups(df_scale, label, y_max, y_min) if has_evolution else ''
+
+            if by_html or evo_html:
+                ordered_scales.append((mn, label, by_html, evo_html))
 
         if not ordered_scales:
             return ''
 
-        group_id  = dashboard_helpers.sanitize_id(survey_code or survey_title)
-        nav_items = []
-        tab_panes = []
+        group_id   = dashboard_helpers.sanitize_id(survey_code or survey_title)
+        toggle_id  = f'toggle_{group_id}'
+        nav_items  = []
+        tab_panes  = []
 
-        for i, (mn, label, chart_html) in enumerate(ordered_scales):
+        for i, (mn, label, by_html, evo_html) in enumerate(ordered_scales):
             tab_id   = f'scale-{group_id}-{i}'
             is_first = (i == 0)
             bold     = ' fw-semibold' if is_first else ''
@@ -314,20 +334,37 @@ class DashboardCharts(models.TransientModel):
                 f'data-am-tab="{tab_id}" data-am-group="{group_id}">'
                 f'{label}</button></li>'
             )
+            evo_div = (f'<div class="am-tab-evo" style="display:none;">{evo_html}</div>'
+                       if evo_html else '')
             tab_panes.append(
                 f'<div class="am-tab-pane" id="{tab_id}" style="{visible}">'
-                f'{chart_html}'
+                f'<div class="am-tab-comparativa">{by_html}</div>'
+                f'{evo_div}'
                 f'</div>'
             )
 
         nav_html   = '\n'.join(nav_items)
         panes_html = '\n'.join(tab_panes)
 
+        # Toggle global en el header (igual que en tarjetas de métrica única)
+        toggle_html = ''
+        if any_evolution:
+            toggle_html = f'''
+            <div class="am-view-toggle" role="group" aria-label="Tipo de vista">
+                <button id="{toggle_id}_bars" class="am-vtoggle-btn am-vtoggle-btn--active">
+                    <i class="fa-solid fa-chart-bar"></i><span>Comparativa</span>
+                </button>
+                <button id="{toggle_id}_lines" class="am-vtoggle-btn">
+                    <i class="fa-solid fa-chart-line"></i><span>Evolución</span>
+                </button>
+            </div>'''
+
         return f"""
     <div class="card survey-unified-card" id="survey-card-{group_id}">
         <div class="card-header">
-            <div style="margin-bottom:10px;">
-                <h5 class="card-title">{survey_title}</h5>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+                <h5 class="card-title" style="margin:0;">{survey_title}</h5>
+                {toggle_html}
             </div>
             <ul class="nav survey-scale-tabs">
                 {nav_html}
@@ -341,21 +378,47 @@ class DashboardCharts(models.TransientModel):
     (function() {{
         const card = document.getElementById('survey-card-{group_id}');
         if (!card) return;
+
+        // ── Toggle comparativa / evolución (global para todas las escalas) ──
+        const btnBars  = document.getElementById('{toggle_id}_bars');
+        const btnLines = document.getElementById('{toggle_id}_lines');
+        if (btnBars && btnLines) {{
+            function setSurveyView(showEvo) {{
+                btnBars.classList.toggle('am-vtoggle-btn--active', !showEvo);
+                btnLines.classList.toggle('am-vtoggle-btn--active', showEvo);
+                card.querySelectorAll('.am-tab-comparativa').forEach(function(d) {{
+                    d.style.display = showEvo ? 'none' : '';
+                }});
+                card.querySelectorAll('.am-tab-evo').forEach(function(d) {{
+                    d.style.display = showEvo ? '' : 'none';
+                }});
+                // Resize charts in the currently visible pane
+                card.querySelectorAll('.am-tab-pane').forEach(function(p) {{
+                    if (p.style.display === 'none') return;
+                    p.querySelectorAll('canvas').forEach(function(c) {{
+                        const ch = Chart.getChart(c.id);
+                        if (ch) {{ ch.resize(); ch.update(); }}
+                    }});
+                }});
+            }}
+            btnBars.addEventListener('click', function() {{ setSurveyView(false); }});
+            btnLines.addEventListener('click', function() {{ setSurveyView(true); }});
+        }}
+
+        // ── Tab switching ──
         card.querySelectorAll('[data-am-tab]').forEach(function(btn) {{
             btn.addEventListener('click', function(e) {{
                 e.preventDefault();
                 e.stopPropagation();
-                const savedY = window.scrollY;
+                const savedY   = window.scrollY;
                 const targetId = btn.getAttribute('data-am-tab');
                 const group    = btn.getAttribute('data-am-group');
-                // deactivate all in this group
                 card.querySelectorAll('[data-am-group="' + group + '"]').forEach(function(b) {{
                     b.classList.remove('am-tab-active');
                 }});
                 card.querySelectorAll('.am-tab-pane').forEach(function(p) {{
                     p.style.display = 'none';
                 }});
-                // activate selected
                 btn.classList.add('am-tab-active');
                 const pane = document.getElementById(targetId);
                 if (pane) {{
@@ -394,7 +457,7 @@ class DashboardCharts(models.TransientModel):
                 charts_html += by_courses_html or evo_html
 
         elif role == ROLE_TUTOR:
-            charts_html += self._chart_numeric_distribution(df, label, segmentation_vars)
+            charts_html += self._chart_numeric_distribution(df, label, segmentation_vars, y_max, y_min)
             if has_evolution:
                 charts_html += self._chart_numeric_evolution_distribution(df, label, y_max, y_min)
         else:  # counselor/admin
@@ -439,14 +502,15 @@ class DashboardCharts(models.TransientModel):
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
                 <div>
                     <h5 class="card-title">__LABEL__</h5>
-                    <p class="card-subtitle">__SUBTITLE__</p>
                 </div>
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <button id="__TOGGLE_ID___bars" class="btn btn-sm btn-outline-primary active" style="padding:6px 10px;" title="__COMPARATIVA_TITLE__">
-                        <i class="fa fa-bar-chart"></i>
+                <div class="am-view-toggle" role="group" aria-label="Tipo de vista">
+                    <button id="__TOGGLE_ID___bars" class="am-vtoggle-btn am-vtoggle-btn--active">
+                        <i class="fa-solid fa-chart-bar"></i>
+                        <span>Comparativa</span>
                     </button>
-                    <button id="__TOGGLE_ID___lines" class="btn btn-sm btn-outline-primary" style="padding:6px 10px;" title="Evolución temporal">
-                        <i class="fa fa-line-chart"></i>
+                    <button id="__TOGGLE_ID___lines" class="am-vtoggle-btn">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Evolución</span>
                     </button>
                 </div>
             </div>
@@ -457,11 +521,11 @@ class DashboardCharts(models.TransientModel):
         </div>
 
         <style>
-        /* Ocultar header interno SOLO de la vista de evolución (la comparativa mantiene sus controles) */
-        #__WRAP_EVO__ .card-header { display: none; }
-        /* Ocultar título/subtítulo de la header de la comparativa embebida pero conservar controles */
-        #__WRAP_BY__ .card-header .card-title, #__WRAP_BY__ .card-header .card-subtitle { display: none; }
-        /* Ajustes visuales para que el contenido embebido se vea consistente */
+        /* Ocultar solo título/subtítulo de las cards embebidas — los controles permanecen visibles */
+        #__WRAP_EVO__ .card-header, #__WRAP_BY__ .card-header { border-bottom: none; padding-bottom: 0; }
+        #__WRAP_EVO__ .card-header .am-card-header__info, #__WRAP_BY__ .card-header .am-card-header__info { display: none; }
+        /* Quitar borde/sombra de las cards anidadas para que se vean como contenido plano */
+        #__WRAP_BY__ > .card, #__WRAP_EVO__ > .card { border: none; border-radius: 0; box-shadow: none; }
         #__WRAP_BY__ .card-body, #__WRAP_EVO__ .card-body { padding: 16px; }
         </style>
 
@@ -475,15 +539,8 @@ class DashboardCharts(models.TransientModel):
             function setView(showEvo) {
                 viewBy.style.display = showEvo ? 'none' : 'block';
                 viewEvo.style.display = showEvo ? 'block' : 'none';
-                
-                // Actualizar botones
-                if (showEvo) {
-                    btnBars.classList.remove('active');
-                    btnLines.classList.add('active');
-                } else {
-                    btnBars.classList.add('active');
-                    btnLines.classList.remove('active');
-                }
+                btnBars.classList.toggle('am-vtoggle-btn--active', !showEvo);
+                btnLines.classList.toggle('am-vtoggle-btn--active', showEvo);
 
                 // Forzar resize/update de Chart.js para asegurar render correcto
                 try {
@@ -502,12 +559,11 @@ class DashboardCharts(models.TransientModel):
 
             btnBars.addEventListener('click', function() { setView(false); });
             btnLines.addEventListener('click', function() { setView(true); });
-            // Por defecto: mostrar comparativa por grupo/curso
             setView(false);
         })();
         </script>
         '''
-        return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__SUBTITLE__', subtitle).replace('__COMPARATIVA_TITLE__', comparativa_title).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
+        return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__SUBTITLE__', subtitle).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
 
     def _get_semaphore_color(self, value):
         """Retorna color gradiente según valor normalizado 0-100."""
