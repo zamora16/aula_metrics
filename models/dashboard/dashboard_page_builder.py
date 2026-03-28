@@ -8,7 +8,6 @@ Este módulo NO genera HTML — sólo prepara los dicts de datos que QWeb consum
 from markupsafe import Markup
 from odoo import models, fields
 from ...utils import dashboard_styles, dashboard_helpers, role_service
-from ...utils.constants import ROLE_ADMIN, ROLE_COUNSELOR
 
 
 class DashboardChartsBuilder(models.TransientModel):
@@ -38,95 +37,142 @@ class DashboardChartsBuilder(models.TransientModel):
     # Home section data
     # ------------------------------------------------------------------
 
+    # Labels y orden de visualización por estado de evaluación
+    _EVAL_STATE_META = {
+        'active':    {'label': 'Activa',     'css': 'state-active'},
+        'scheduled': {'label': 'Programada', 'css': 'state-scheduled'},
+        'closed':    {'label': 'Cerrada',    'css': 'state-closed'},
+        'draft':     {'label': 'Borrador',   'css': 'state-draft'},
+        'cancelled': {'label': 'Cancelada',  'css': 'state-cancelled'},
+    }
+    _EVAL_STATE_ORDER = ['active', 'scheduled', 'draft', 'closed', 'cancelled']
+
     def _get_home_data(self, role_info):
         """
         Extrae los datos estructurados para dashboard_home_section.
-        Reemplaza a _home_section(), _build_evaluation_cards() y _build_quick_stats().
+
+        Muestra TODAS las evaluaciones (no solo activas) con sus estados,
+        y KPIs agregados: conteos por estado, participación media global,
+        participación media de activas, y total de alertas activas.
 
         Returns:
-            dict con: home_evaluations, home_total_evaluations,
-                      home_avg_participation, home_total_alerts
+            dict con claves home_evaluations, home_kpi_active,
+            home_kpi_scheduled, home_kpi_closed, home_kpi_avg_all,
+            home_kpi_avg_active, home_kpi_alerts
         """
         try:
-            active_evals = self._get_active_evaluations(role_info)
-            total = len(active_evals)
-            avg = (
-                sum(e['participation_rate'] for e in active_evals) / total
-                if active_evals else 0.0
+            all_evals = self._get_all_evaluations(role_info)
+
+            # ── Conteos por estado ────────────────────────────────────────
+            counts = {'active': 0, 'scheduled': 0, 'closed': 0, 'draft': 0}
+            for ev in all_evals:
+                state = ev['state']
+                if state in counts:
+                    counts[state] += 1
+
+            # ── Participación media (excluye borradores y canceladas) ─────
+            measurable = [e for e in all_evals if e['state'] in ('active', 'closed') and e['total_students'] > 0]
+            active_only = [e for e in all_evals if e['state'] == 'active' and e['total_students'] > 0]
+
+            avg_all = (
+                sum(e['participation_rate'] for e in measurable) / len(measurable)
+                if measurable else None
             )
-            role = (role_info or {}).get('role', '')
-            total_alerts = (
-                self.env['aula_metrics.alert'].search_count([('status', '=', 'active')])
-                if role in [ROLE_ADMIN, ROLE_COUNSELOR] else 0
+            avg_active = (
+                sum(e['participation_rate'] for e in active_only) / len(active_only)
+                if active_only else None
             )
 
+            # ── Alertas activas (todos los roles, sin datos individuales) ─
+            total_alerts = self.env['aula_metrics.alert'].search_count(
+                [('status', '=', 'active')]
+            )
+
+            # ── Formatear cards de evaluaciones ──────────────────────────
+            state_meta = self._EVAL_STATE_META
+            state_order = {s: i for i, s in enumerate(self._EVAL_STATE_ORDER)}
+            sorted_evals = sorted(all_evals, key=lambda e: (state_order.get(e['state'], 99), -(e['date_start'].timestamp() if e['date_start'] else 0)))
+
             formatted = []
-            for ev in active_evals:
+            for ev in sorted_evals:
                 rate = ev['participation_rate']
+                pct  = round(rate)
+                meta = state_meta.get(ev['state'], {'label': ev['state'], 'css': 'state-draft'})
                 formatted.append({
-                    'name': ev['name'],
-                    'date_range': dashboard_helpers.format_date_range(
-                        ev['date_start'], ev['date_end']
-                    ),
-                    'participation_display': dashboard_helpers.format_participation_rate(rate),
-                    'participation_class': (
-                        'high' if rate >= 80 else ('medium' if rate >= 50 else 'low')
-                    ),
-                    'completed_students': ev['completed_students'],
-                    'total_students': ev['total_students'],
-                    'alert_count': ev.get('alert_count', 0),
+                    'id':                   ev['id'],
+                    'name':                 ev['name'],
+                    'state':                ev['state'],
+                    'state_label':          meta['label'],
+                    'state_css':            meta['css'],
+                    'date_range':           dashboard_helpers.format_date_range(
+                                                ev['date_start'], ev['date_end']
+                                            ),
+                    'groups':               ev['groups'],
+                    'surveys':              ev['surveys'],
+                    'completed_students':   ev['completed_students'],
+                    'total_students':       ev['total_students'],
+                    'participation_pct':    pct,
+                    'participation_class':  'high' if rate >= 80 else ('medium' if rate >= 50 else 'low'),
                 })
 
             return {
-                'home_evaluations': formatted,
-                'home_total_evaluations': total,
-                'home_avg_participation': dashboard_helpers.format_participation_rate(avg),
-                'home_total_alerts': total_alerts,
+                'home_evaluations':   formatted,
+                'home_kpi_active':    counts['active'],
+                'home_kpi_scheduled': counts['scheduled'],
+                'home_kpi_closed':    counts['closed'],
+                'home_kpi_avg_all':   dashboard_helpers.format_participation_rate(avg_all) if avg_all is not None else None,
+                'home_kpi_avg_active': dashboard_helpers.format_participation_rate(avg_active) if avg_active is not None else None,
+                'home_kpi_alerts':    total_alerts,
             }
         except Exception:
             return {
-                'home_evaluations': [],
-                'home_total_evaluations': 0,
-                'home_avg_participation': '0%',
-                'home_total_alerts': 0,
+                'home_evaluations':    [],
+                'home_kpi_active':     0,
+                'home_kpi_scheduled':  0,
+                'home_kpi_closed':     0,
+                'home_kpi_avg_all':    None,
+                'home_kpi_avg_active': None,
+                'home_kpi_alerts':     0,
             }
 
-    def _get_active_evaluations(self, role_info):
-        """Evaluaciones activas filtradas por rol, con conteo de alertas para counselor/admin."""
+    def _get_all_evaluations(self, role_info):
+        """Todas las evaluaciones (excl. canceladas) filtradas por rol."""
         domain = role_service.apply_group_filter(
-            [('state', '=', 'active')],
+            [('state', 'not in', ['cancelled'])],
             role_info,
             field='academic_group_ids',
         )
         if domain is None:
             return []
 
+        total_groups = self.env['aula_metrics.academic_group'].search_count([])
+
         result = []
         for ev in self.env['aula_metrics.evaluation'].search(domain, order='date_start desc'):
-            entry = {
-                'id':                  ev.id,
-                'name':                ev.name,
-                'date_start':          ev.date_start,
-                'date_end':            ev.date_end,
-                'participation_rate':  ev.participation_rate,
-                'total_students':      ev.total_students,
-                'completed_students':  ev.completed_students,
-            }
-            if (role_info or {}).get('role') in [ROLE_ADMIN, ROLE_COUNSELOR]:
-                entry['alert_count'] = self.env['aula_metrics.alert'].search_count([
-                    ('status', '=', 'active'),
-                    '|',
-                    ('participation_id.evaluation_id', '=', ev.id),
-                    ('qualitative_response_id.evaluation_id', '=', ev.id),
-                ])
-            result.append(entry)
+            group_names = ev.academic_group_ids.mapped('name')
+            if total_groups and len(group_names) >= total_groups:
+                groups_label = 'Todos los grupos'
+            else:
+                groups_label = ', '.join(group_names) or '—'
+            result.append({
+                'id':                ev.id,
+                'name':              ev.name,
+                'state':             ev.state,
+                'date_start':        ev.date_start,
+                'date_end':          ev.date_end,
+                'participation_rate': ev.participation_rate,
+                'total_students':    ev.total_students,
+                'completed_students': ev.completed_students,
+                'groups':            groups_label,
+                'surveys':           ', '.join(ev.survey_ids.mapped('title')) or '—',
+            })
         return result
 
     # ------------------------------------------------------------------
     # Page context builders  →  used by generate_dashboard()
     # ------------------------------------------------------------------
 
-    def _build_html_empty(self, metrics, groups, evaluations, filters, role_info):
+    def _build_html_empty(self, evaluations, filters, role_info):
         """Contexto para dashboard_main cuando no hay datos de métricas."""
         date_str = dashboard_helpers.format_date(fields.Date.today())
         return {
@@ -150,8 +196,7 @@ class DashboardChartsBuilder(models.TransientModel):
             **self._get_home_data(role_info),
         }
 
-    def _build_html(self, metrics, groups, evaluations, filters, role_info,
-                    kpi_values, charts, segmentation_vars):
+    def _build_html(self, evaluations, filters, role_info, kpi_values, charts):
         """Contexto para dashboard_main con datos completos."""
         date_str = dashboard_helpers.format_date(fields.Date.today())
         chart_libs = Markup(

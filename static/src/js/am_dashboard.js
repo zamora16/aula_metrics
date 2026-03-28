@@ -36,6 +36,39 @@ function selectNoneEvals() {
     });
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   FILTER PILLS — single-select / radio behaviour
+   Used by qualitative and segmentation filters.
+   ────────────────────────────────────────────────────────────────────────── */
+
+function selectSinglePill(pill, value) {
+    const container = pill.closest('.filter-pills-container');
+    container.querySelectorAll('.filter-pill').forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-pressed', 'false');
+    });
+    pill.classList.add('active');
+    pill.setAttribute('aria-pressed', 'true');
+    const hidden = pill.closest('form').querySelector('input[name="evaluation_id"]');
+    if (hidden) hidden.value = value;
+}
+
+function resetSinglePill(form) {
+    form.querySelectorAll('.eval-pill').forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-pressed', 'false');
+    });
+    const hidden = form.querySelector('input[name="evaluation_id"]');
+    if (hidden) hidden.value = '';
+}
+
+function selectAllPillsInForm(form) {
+    form.querySelectorAll('.eval-pill').forEach(p => {
+        p.classList.add('active');
+        p.setAttribute('aria-checked', 'true');
+    });
+}
+
 
 /* ──────────────────────────────────────────────────────────────────────────
    SCRIPT RE-EXECUTION HELPER
@@ -84,15 +117,6 @@ function loadQualitativeContent() {
         .then(html => {
             contentDiv.innerHTML = html;
             _reexecScripts(contentDiv);
-            setTimeout(() => {
-                if (!window._aulametrics_wordcloud_inited) {
-                    if (typeof initWordcloudCounselor !== 'undefined') {
-                        window._aulametrics_wordcloud_inited = true; initWordcloudCounselor();
-                    } else if (typeof initWordcloudTutor !== 'undefined') {
-                        window._aulametrics_wordcloud_inited = true; initWordcloudTutor();
-                    }
-                }
-            }, 500);
         })
         .catch(error => {
             contentDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;"><i class="fa-solid fa-exclamation-triangle" aria-hidden="true" style="font-size:48px;color:var(--am-danger);"></i><p style="margin-top:20px;color:var(--am-muted);">Error al cargar datos cualitativos</p><button onclick="window.qualitativeLoaded=false;loadQualitativeContent();" style="margin-top:12px;padding:8px 20px;background:var(--am-primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Reintentar</button></div>';
@@ -216,10 +240,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // ── Qualitative filters ──
         if (form.id === 'qualitativeFiltersForm') {
             e.preventDefault();
+            const evalValues = Array.from(form.querySelectorAll('.eval-pill.active')).map(p => p.dataset.value);
             const params = new URLSearchParams();
-            for (const [key, value] of new FormData(form).entries()) {
-                if (value) params.append(key, value);
-            }
+            if (evalValues.length > 0) params.append('evaluation_ids', evalValues.join(','));
             params.append('embedded', 'true');
             fetch('/aulametrics/qualitative/dashboard?' + params.toString())
                 .then(response => response.text())
@@ -228,15 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!contentDiv) return;
                     contentDiv.innerHTML = html;
                     _reexecScripts(contentDiv);
-                    setTimeout(() => {
-                        if (!window._aulametrics_wordcloud_inited) {
-                            if (typeof initWordcloudCounselor !== 'undefined') {
-                                window._aulametrics_wordcloud_inited = true; initWordcloudCounselor();
-                            } else if (typeof initWordcloudTutor !== 'undefined') {
-                                window._aulametrics_wordcloud_inited = true; initWordcloudTutor();
-                            }
-                        }
-                    }, 300);
                 })
                 .catch(error => console.error('Error al filtrar datos cualitativos:', error));
             return;
@@ -245,10 +259,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // ── Segmentation filters ──
         if (form.id === 'segmentationFiltersForm') {
             e.preventDefault();
+            const evalValues = Array.from(form.querySelectorAll('.eval-pill.active')).map(p => p.dataset.value);
             const params = new URLSearchParams();
-            for (const [key, value] of new FormData(form).entries()) {
-                if (value) params.append(key, value);
-            }
+            if (evalValues.length > 0) params.append('evaluation_ids', evalValues.join(','));
             params.append('embedded', 'true');
             const contentDiv = document.getElementById('segmentationContent');
             if (contentDiv) contentDiv.style.opacity = '0.5';
@@ -262,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     if (contentDiv) contentDiv.style.opacity = '1';
-                    console.error('Error al filtrar distribuci\u00f3n:', error);
+                    console.error('Error al filtrar distribución:', error);
                 });
         }
     });
@@ -289,42 +302,111 @@ window.amWordcloud = {
     init: function(elementId, data, colors, fixedHeight) {
         var el = document.getElementById(elementId);
         if (!el) return;
+        el.innerHTML = '';  // clear any previous render (prevents double-init stacking SVGs)
         if (!data || data.length === 0) {
             el.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:#94a3b8;">No hay suficientes palabras para generar la nube</div>';
             return;
         }
-        var h = fixedHeight || Math.min(280, Math.max(140, data.length * 9));
-        el.style.height = h + 'px';
+
+        // Use a generous internal canvas so D3 has room to place all words without clipping.
+        // After rendering we'll compute the actual occupied bbox and fit the SVG to it.
+        var layoutW = Math.max(el.offsetWidth || 0, 960);
+        var layoutH = fixedHeight || Math.min(520, Math.max(220, data.length * 13));
 
         var words = data.map(function(d) {
-            return { text: d[0], size: Math.sqrt(d[1]) * 10 + 11 };
+            return { text: d[0], size: Math.sqrt(d[1]) * 10 + 11, freq: d[1] };
         });
 
+        // Shared floating tooltip (created once, reused by all wordclouds)
+        var tip = document.getElementById('am-wc-tip');
+        if (!tip) {
+            tip = document.createElement('div');
+            tip.id = 'am-wc-tip';
+            tip.style.cssText = [
+                'position:fixed',
+                'pointer-events:none',
+                'background:#1e293b',
+                'color:#fff',
+                'font-family:Plus Jakarta Sans,sans-serif',
+                'font-size:12px',
+                'font-weight:600',
+                'padding:5px 11px',
+                'border-radius:6px',
+                'box-shadow:0 4px 12px rgba(0,0,0,0.25)',
+                'opacity:0',
+                'transition:opacity 0.12s ease',
+                'z-index:9999',
+                'white-space:nowrap',
+            ].join(';');
+            document.body.appendChild(tip);
+        }
+
+        // Padding = half the largest word's font size so rotated words never bleed out.
+        var maxSize = words.reduce(function(m, w) { return Math.max(m, w.size); }, 0);
+        var wcPad = Math.ceil(maxSize / 2) + 8;
+
         var layout = d3.layout.cloud()
-            .size([el.offsetWidth || 800, h])
+            .size([layoutW, layoutH])
             .words(words)
             .padding(6)
             .rotate(function() { return ~~(Math.random() * 2) * 90; })
             .font('Plus Jakarta Sans')
             .fontSize(function(d) { return d.size; })
             .on('end', function(placedWords) {
-                d3.select('#' + elementId).append('svg')
-                    .attr('width', layout.size()[0])
-                    .attr('height', layout.size()[1])
-                    .append('g')
-                    .attr('transform', 'translate(' + layout.size()[0] / 2 + ',' + layout.size()[1] / 2 + ')')
-                    .selectAll('text')
+                var svg = d3.select('#' + elementId).append('svg')
+                    .style('display', 'block')
+                    .style('overflow', 'hidden');  // clip anything that escapes the viewBox
+
+                var group = svg.append('g')
+                    .attr('transform', 'translate(' + layoutW / 2 + ',' + layoutH / 2 + ')');
+
+                group.selectAll('text')
                     .data(placedWords)
                     .enter().append('text')
                     .style('font-size', function(d) { return d.size + 'px'; })
                     .style('font-family', 'Plus Jakarta Sans')
                     .style('font-weight', '700')
                     .style('fill', function(d, i) { return colors[i % colors.length]; })
+                    .style('cursor', 'default')
                     .attr('text-anchor', 'middle')
                     .attr('transform', function(d) {
                         return 'translate(' + [d.x, d.y] + ')rotate(' + d.rotate + ')';
                     })
-                    .text(function(d) { return d.text; });
+                    .text(function(d) { return d.text; })
+                    .on('mouseover', function(event, d) {
+                        tip.textContent = d.freq + (d.freq === 1 ? ' aparición' : ' apariciones');
+                        tip.style.opacity = '1';
+                    })
+                    .on('mousemove', function(event) {
+                        tip.style.left = (event.clientX + 14) + 'px';
+                        tip.style.top  = (event.clientY - 34) + 'px';
+                    })
+                    .on('mouseout', function() {
+                        tip.style.opacity = '0';
+                    });
+
+                // Fit viewBox to actual rendered content.
+                // getBBox is in group-local space (origin = canvas centre).
+                // Add wcPad so half-size rotated words are never cut off.
+                try {
+                    var bbox = group.node().getBBox();
+                    if (bbox.width > 0 && bbox.height > 0) {
+                        var tx = layoutW / 2, ty = layoutH / 2;
+                        var vx = tx + bbox.x - wcPad;
+                        var vy = ty + bbox.y - wcPad;
+                        var vw = bbox.width  + wcPad * 2;
+                        var vh = bbox.height + wcPad * 2;
+                        svg.attr('viewBox', [vx, vy, vw, vh].join(' '))
+                           .attr('width', '100%')
+                           .attr('height', vh + 'px');
+                        el.style.height = vh + 'px';
+                        return;
+                    }
+                } catch (e) { /* fall through */ }
+
+                // Fallback
+                svg.attr('width', '100%').attr('height', layoutH + 'px');
+                el.style.height = layoutH + 'px';
             });
         layout.start();
     }

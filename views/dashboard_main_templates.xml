@@ -129,115 +129,171 @@
 
     <!-- =====================================================================
          SECCIÓN HOME
-         Variables: home_evaluations (list[dict]), home_total_evaluations (int),
-                    home_avg_participation (str), home_total_alerts (int),
-                    role_info (dict)
+         Variables: home_evaluations (list[dict]), home_kpi_active (int),
+                    home_kpi_scheduled (int), home_kpi_closed (int),
+                    home_kpi_avg_all (str|None), home_kpi_avg_active (str|None),
+                    home_kpi_alerts (int), role_info (dict)
          ===================================================================== -->
     <template id="dashboard_home_section" name="AulaMetrics - Sección Inicio">
         <div class="home-section">
+
+            <!-- ── Banner de bienvenida ── -->
             <div class="welcome-banner">
-                <h2>
-                    <i class="fa-solid fa-hand-wave me-3" style="color:#fbbf24;" aria-hidden="true"/>
-                    Bienvenido al Dashboard de AulaMetrics
-                </h2>
-                <p>Panel de control para el seguimiento del bienestar del alumnado</p>
+                <div class="welcome-banner-icon" aria-hidden="true">
+                    <i class="fa-solid fa-chart-line"/>
+                </div>
+                <div class="welcome-banner-body">
+                    <h2>Dashboard AulaMetrics</h2>
+                    <p>Seguimiento del bienestar psicosocial del alumnado</p>
+                </div>
             </div>
 
+            <!-- ── KPIs agregados ── -->
             <div class="quick-stats-container">
+
+                <!-- Evaluaciones: total con desglose por estado -->
                 <div class="stat-card">
                     <div class="stat-icon blue">
                         <i class="fa-solid fa-clipboard-check" aria-hidden="true"/>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-label">Evaluaciones Activas</div>
-                        <div class="stat-value"><t t-out="home_total_evaluations or 0"/></div>
+                        <div class="stat-label">Evaluaciones</div>
+                        <div class="stat-value">
+                            <t t-out="(home_kpi_active or 0) + (home_kpi_scheduled or 0) + (home_kpi_closed or 0)"/>
+                        </div>
+                        <div class="stat-meta">
+                            <t t-if="home_kpi_active">
+                                <span class="stat-meta-dot active"><t t-out="home_kpi_active"/> activa<t t-if="home_kpi_active != 1">s</t></span>
+                            </t>
+                            <t t-if="home_kpi_scheduled">
+                                <span class="stat-meta-dot scheduled"><t t-out="home_kpi_scheduled"/> prog.</span>
+                            </t>
+                            <t t-if="home_kpi_closed">
+                                <span class="stat-meta-dot closed"><t t-out="home_kpi_closed"/> cerrada<t t-if="home_kpi_closed != 1">s</t></span>
+                            </t>
+                            <t t-if="not home_kpi_active and not home_kpi_scheduled and not home_kpi_closed">
+                                <span class="stat-meta-empty">Ninguna todavía</span>
+                            </t>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Participación media global -->
                 <div class="stat-card">
                     <div class="stat-icon green">
                         <i class="fa-solid fa-chart-line" aria-hidden="true"/>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-label">Participación Promedio</div>
-                        <div class="stat-value"><t t-out="home_avg_participation or '0%'"/></div>
+                        <div class="stat-label">Participación media</div>
+                        <div class="stat-value">
+                            <t t-if="home_kpi_avg_all"><t t-out="home_kpi_avg_all"/></t>
+                            <t t-else=""><span style="font-size:20px;color:var(--am-muted);">—</span></t>
+                        </div>
                     </div>
                 </div>
-                <t t-if="role_info and role_info.get('role') in ('admin', 'counselor')">
+
+                <!-- Participación activas (solo si hay alguna activa) -->
+                <t t-if="home_kpi_active and home_kpi_avg_active">
                     <div class="stat-card">
-                        <div class="stat-icon red">
-                            <i class="fa-solid fa-bell" aria-hidden="true"/>
+                        <div class="stat-icon purple">
+                            <i class="fa-solid fa-bolt" aria-hidden="true"/>
                         </div>
                         <div class="stat-content">
-                            <div class="stat-label">Alertas Activas</div>
-                            <div class="stat-value"><t t-out="home_total_alerts or 0"/></div>
+                            <div class="stat-label">Part. evaluaciones activas</div>
+                            <div class="stat-value"><t t-out="home_kpi_avg_active"/></div>
+                            <div class="stat-meta">
+                                <span class="stat-meta-empty">En curso ahora</span>
+                            </div>
                         </div>
                     </div>
                 </t>
+
+                <!-- Alertas activas -->
+                <div class="stat-card">
+                    <div t-att-class="'stat-icon ' + ('red' if home_kpi_alerts else 'green')">
+                        <i t-att-class="'fa-solid ' + ('fa-bell' if home_kpi_alerts else 'fa-bell-slash')" aria-hidden="true"/>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Alertas activas</div>
+                        <div class="stat-value"><t t-out="home_kpi_alerts or 0"/></div>
+                        <div class="stat-meta">
+                            <t t-if="not home_kpi_alerts">
+                                <span class="stat-meta-empty">Sin alertas pendientes</span>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
+            <!-- ── Grid de evaluaciones ── -->
             <div class="evaluations-section">
-                <h3 class="section-title">Evaluaciones Activas</h3>
+                <div class="section-header">
+                    <h3 class="section-title">Evaluaciones</h3>
+                </div>
+
                 <t t-if="home_evaluations">
                     <div class="evaluations-grid">
                         <t t-foreach="home_evaluations" t-as="ev">
-                            <div class="evaluation-card">
+                            <div t-att-class="'evaluation-card eval-state-' + ev['state']">
+
+                                <!-- Cabecera: estado + nombre -->
                                 <div class="evaluation-card-header">
+                                    <span t-att-class="'eval-state-badge ' + ev['state_css']">
+                                        <t t-out="ev['state_label']"/>
+                                    </span>
                                     <h4 class="evaluation-card-title">
-                                        <i class="fa-solid fa-clipboard-check" aria-hidden="true"/>
                                         <t t-out="ev['name']"/>
                                     </h4>
                                 </div>
+
+                                <!-- Cuerpo: fechas, grupos, cuestionarios -->
                                 <div class="evaluation-card-body">
                                     <div class="evaluation-info-item">
                                         <i class="fa-solid fa-calendar-days" aria-hidden="true"/>
-                                        <span class="evaluation-info-label">Período:</span>
-                                        <span class="evaluation-info-value">
-                                            <t t-out="ev['date_range']"/>
-                                        </span>
-                                    </div>
-                                    <div class="evaluation-info-item">
-                                        <i class="fa-solid fa-chart-line" aria-hidden="true"/>
-                                        <span class="evaluation-info-label">Participación:</span>
-                                        <span t-att-class="'participation-badge ' + ev.get('participation_class', '')">
-                                            <t t-if="ev.get('participation_class') == 'high'">Alta — </t>
-                                            <t t-elif="ev.get('participation_class') == 'medium'">Media — </t>
-                                            <t t-elif="ev.get('participation_class') == 'low'">Baja — </t>
-                                            <t t-out="ev['participation_display']"/>
-                                        </span>
+                                        <span class="evaluation-info-value"><t t-out="ev['date_range']"/></span>
                                     </div>
                                     <div class="evaluation-info-item">
                                         <i class="fa-solid fa-users" aria-hidden="true"/>
-                                        <span class="evaluation-info-label">Completados:</span>
-                                        <span class="evaluation-info-value">
-                                            <t t-out="ev['completed_students']"/> / <t t-out="ev['total_students']"/>
+                                        <span class="evaluation-info-value"><t t-out="ev['groups']"/></span>
+                                    </div>
+                                    <div class="evaluation-info-item">
+                                        <i class="fa-solid fa-clipboard" aria-hidden="true"/>
+                                        <span class="evaluation-info-value"><t t-out="ev['surveys']"/></span>
+                                    </div>
+                                </div>
+
+                                <!-- Pie: barra de progreso de participación -->
+                                <div class="evaluation-card-footer">
+                                    <div class="eval-progress-header">
+                                        <span>Participación</span>
+                                        <span t-att-class="'eval-progress-pct participation-badge ' + ev.get('participation_class', '')">
+                                            <t t-out="ev['participation_pct']"/>%
+                                            (<t t-out="ev['completed_students']"/>/<t t-out="ev['total_students']"/>)
                                         </span>
                                     </div>
-                                    <t t-if="role_info and role_info.get('role') in ('admin', 'counselor') and 'alert_count' in ev">
-                                        <div class="evaluation-info-item">
-                                            <i class="fa-solid fa-bell" aria-hidden="true"/>
-                                            <span class="evaluation-info-label">Alertas:</span>
-                                            <span t-att-class="'alerts-badge' + (' zero' if ev.get('alert_count', 0) == 0 else '')"
-                                                  t-att-aria-label="'Sin alertas' if ev.get('alert_count', 0) == 0 else str(ev.get('alert_count', 0)) + ' alertas activas'">
-                                                <i t-att-class="'fa-solid ' + ('fa-check-circle' if ev.get('alert_count', 0) == 0 else 'fa-exclamation-triangle')" aria-hidden="true"/>
-                                                <t t-out="ev.get('alert_count', 0)"/>
-                                                <t t-if="ev.get('alert_count', 0) == 0"> Sin alertas</t>
-                                                <t t-else=""> alertas</t>
-                                            </span>
-                                        </div>
-                                    </t>
+                                    <div class="eval-progress-track" role="progressbar"
+                                         t-att-aria-valuenow="ev['participation_pct']"
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        <div t-att-class="'eval-progress-fill ' + ev.get('participation_class', 'low')"
+                                             t-att-style="'width:' + str(ev['participation_pct']) + '%'"/>
+                                    </div>
                                 </div>
+
                             </div>
                         </t>
                     </div>
                 </t>
+
                 <t t-else="">
                     <div class="empty-evaluations">
                         <i class="fa-solid fa-clipboard-question" aria-hidden="true"/>
-                        <h3>No hay evaluaciones activas</h3>
-                        <p>No se encontraron evaluaciones activas en este momento</p>
+                        <h3>No hay evaluaciones registradas</h3>
+                        <p>Las evaluaciones que crees aparecerán aquí con su estado y progreso.</p>
                     </div>
                 </t>
             </div>
+
         </div>
     </template>
 

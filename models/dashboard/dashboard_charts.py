@@ -41,8 +41,7 @@ class DashboardCharts(models.TransientModel):
         # Si no hay datos disponibles, mostrar mensaje
         if not available_metrics:
             return self._build_html_empty(
-                available_metrics, available_groups, available_evaluations, 
-                filters, role_info
+                available_evaluations, filters, role_info
             )
 
         # Consultar valores de métricas según filtros
@@ -50,8 +49,7 @@ class DashboardCharts(models.TransientModel):
         
         if not metric_values:
             return self._build_html_empty(
-                available_metrics, available_groups, available_evaluations,
-                filters, role_info
+                available_evaluations, filters, role_info
             )
 
         # Preparar DataFrame
@@ -65,8 +63,7 @@ class DashboardCharts(models.TransientModel):
         
         # Construir contexto para dashboard_main
         return self._build_html(
-            available_metrics, available_groups, available_evaluations, 
-            filters, role_info, kpi_values, charts, segmentation_vars
+            available_evaluations, filters, role_info, kpi_values, charts
         )
         
     def _get_segmentation_variables(self, filters, role_info):
@@ -522,8 +519,10 @@ class DashboardCharts(models.TransientModel):
 
         <style>
         /* Ocultar solo título/subtítulo de las cards embebidas — los controles permanecen visibles */
-        #__WRAP_EVO__ .card-header, #__WRAP_BY__ .card-header { border-bottom: none; padding-bottom: 0; }
+        #__WRAP_EVO__ .card-header, #__WRAP_BY__ .card-header { border-bottom: none; padding: 8px 20px; }
         #__WRAP_EVO__ .card-header .am-card-header__info, #__WRAP_BY__ .card-header .am-card-header__info { display: none; }
+        /* Centrar controles en su espacio — al quedar solos, alinear a la derecha */
+        #__WRAP_EVO__ .am-card-header--controls, #__WRAP_BY__ .am-card-header--controls { justify-content: flex-end; align-items: center; }
         /* Quitar borde/sombra de las cards anidadas para que se vean como contenido plano */
         #__WRAP_BY__ > .card, #__WRAP_EVO__ > .card { border: none; border-radius: 0; box-shadow: none; }
         #__WRAP_BY__ .card-body, #__WRAP_EVO__ .card-body { padding: 16px; }
@@ -565,17 +564,6 @@ class DashboardCharts(models.TransientModel):
         '''
         return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__SUBTITLE__', subtitle).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
 
-    def _get_semaphore_color(self, value):
-        """Retorna color gradiente según valor normalizado 0-100."""
-        if value >= 80:
-            return '#f97316'  # Naranja oscuro - Alto
-        elif value >= 60:
-            return '#fb923c'  # Naranja suave - Medio-Alto
-        elif value >= 40:
-            return '#60a5fa'  # Azul claro - Medio-Bajo
-        else:
-            return '#3b82f6'  # Azul oscuro - Bajo
-    
     def _get_thresholds_for_metric(self, metric_name):
         """Obtiene umbrales activos configurados para una métrica.
         

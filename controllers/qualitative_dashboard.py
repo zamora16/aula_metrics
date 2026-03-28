@@ -16,64 +16,38 @@ from .dashboard_controller import _render
 class QualitativeDashboardController(http.Controller):
     
     @http.route('/aulametrics/qualitative/dashboard', type='http', auth='user')
-    def qualitative_dashboard(self, evaluation_id=None, question_id=None,
-                              course_level=None, group_id=None, embedded=None, **kwargs):
+    def qualitative_dashboard(self, evaluation_ids=None, embedded=None, **kwargs):
         """
         Dashboard principal de datos cualitativos.
         Muestra diferentes vistas según el rol del usuario.
 
         Args:
-            evaluation_id: Filtrar por evaluación específica
-            question_id:   Filtrar por pregunta específica
-            course_level:  Filtrar por nivel educativo (solo counselor/admin/management)
-            group_id:      Filtrar por grupo concreto (solo counselor/admin)
-            embedded:      Si es 'true', devuelve solo el contenido sin wrapper HTML
+            evaluation_ids: IDs de evaluaciones separados por coma (o vacío = todas)
+            embedded:       Si es 'true', devuelve solo el contenido sin wrapper HTML
         """
+
+        # Acceso directo (no embebido) → redirigir al hub principal con la
+        # sección activa. El hub carga este endpoint vía AJAX con embedded=true.
+        if embedded != 'true':
+            return request.redirect('/aulametrics/dashboard?section=qualitative')
 
         # Detectar rol del usuario (incluye allowed_group_ids para tutores)
         user = request.env.user
         role_info = self._detect_user_role(user)
         role = role_info['role']
 
-        # ── Dominio base: evaluación + pregunta ───────────────────────────────
-        # Se usa para construir las listas de filtros y para las preguntas
-        # disponibles; NO incluye todavía el filtro de nivel/grupo.
-        base_domain = []
-        if evaluation_id:
-            base_domain.append(('evaluation_id', '=', int(evaluation_id)))
-        if question_id:
-            base_domain.append(('question_id', '=', int(question_id)))
+        # ── Parsear IDs de evaluación (multi-select, mismo formato que cuantitativo) ──
+        selected_eval_ids = []
+        if evaluation_ids:
+            try:
+                selected_eval_ids = [int(e) for e in evaluation_ids.split(',') if e.strip().isdigit()]
+            except (ValueError, AttributeError):
+                pass
 
-        base_filtered = role_service.apply_group_filter(base_domain, role_info, field='academic_group_id')
-        if base_filtered is None:
-            base_responses = request.env['aula_metrics.qualitative_response']
-        else:
-            base_responses = request.env['aula_metrics.qualitative_response'].search(
-                base_filtered,
-                order='response_date desc',
-                limit=QUERY_LIMIT_QUALITATIVE,
-            )
-
-        # ── Listas de filtros disponibles (derivadas del dominio base) ────────
-        accessible_groups = base_responses.mapped('academic_group_id').sorted(key=lambda g: g.name)
-        level_dict = dict(
-            request.env['aula_metrics.academic_group']._fields['course_level'].selection
-        )
-        seen_levels = {}
-        for g in accessible_groups:
-            if g.course_level and g.course_level not in seen_levels:
-                seen_levels[g.course_level] = level_dict.get(g.course_level, g.course_level)
-        # Sorted by key (eso1, eso2, … bach1, bach2) keeps natural order
-        available_levels = sorted(seen_levels.items(), key=lambda x: x[0])
-        # Pass ALL accessible groups to the template; the JS cascade filters client-side
-        available_groups = accessible_groups if role in [ROLE_COUNSELOR, ROLE_ADMIN] else []
-
-        # ── Dominio completo: base + nivel/grupo ──────────────────────────────
-        domain = list(base_domain)
-        if course_level:
-            domain.append(('academic_group_id.course_level', '=', course_level))
-        if group_id:
-            domain.append(('academic_group_id', '=', int(group_id)))
+        # ── Dominio: filtro por evaluaciones seleccionadas ────────────────────
+        domain = []
+        if selected_eval_ids:
+            domain.append(('evaluation_id', 'in', selected_eval_ids))
 
         filtered_domain = role_service.apply_group_filter(domain, role_info, field='academic_group_id')
         if filtered_domain is None:
@@ -85,21 +59,13 @@ class QualitativeDashboardController(http.Controller):
                 limit=QUERY_LIMIT_QUALITATIVE,
             )
 
-        # Obtener filtros disponibles
         evaluations = self._get_available_evaluations(role_info)
-        questions = self._get_available_questions(base_responses)  # usa base para no perder opciones
 
-        # Construir contexto según rol
+        # Contexto base
         context = {
             'role': role,
             'evaluations': evaluations,
-            'questions': questions,
-            'available_levels': available_levels,   # list of (key, label) tuples
-            'available_groups': available_groups,   # recordset or []
-            'evaluation_id': int(evaluation_id) if evaluation_id else None,
-            'question_id': int(question_id) if question_id else None,
-            'course_level': course_level or None,
-            'group_id': int(group_id) if group_id else None,
+            'selected_evals': selected_eval_ids,
         }
 
         # Añadir datos específicos por rol
@@ -121,17 +87,23 @@ class QualitativeDashboardController(http.Controller):
         context['role_info'] = role_info
         context['active_section'] = 'qualitative'
         context['css_styles'] = dashboard_styles.get_common_styles()
-        # Markup prevents QWeb t-out from HTML-escaping the JSON double quotes,
-        # which would produce &quot; and break the inline JavaScript.
-        context['wordcloud_json'] = Markup(json.dumps(context.get('wordcloud_data', [])))
         context['palette_json'] = Markup(json.dumps(palette.METRICS_PALETTE[:6]))
 
-        template = (
-            'aula_metrics.qualitative_dashboard_embedded'
-            if embedded == 'true'
-            else 'aula_metrics.qualitative_dashboard_full'
-        )
-        return _render(template, context)
+        # Serializar wordclouds como un único JSON array para el template
+        if 'wordclouds' in context:
+            context['wordclouds_json'] = Markup(json.dumps([
+                {
+                    'id': wc['id'],
+                    'data': wc['data'],
+                    'data_by_group': wc['data_by_group'],
+                }
+                for wc in context['wordclouds']
+            ]))
+        else:
+            # tutor / management: único wordcloud_json
+            context['wordcloud_json'] = Markup(json.dumps(context.get('wordcloud_data', [])))
+
+        return _render('aula_metrics.qualitative_dashboard_embedded', context)
     
     def _detect_user_role(self, user):
         """Detecta el rol del usuario con sus grupos académicos permitidos."""
@@ -181,7 +153,7 @@ class QualitativeDashboardController(http.Controller):
     def _get_counselor_data(self, responses):
         """
         Vista completa identificada para counselor.
-        Incluye tabla de respuestas + wordcloud.
+        Incluye tabla de respuestas + un wordcloud por binomio (evaluación, pregunta).
         """
         
         # Preparar datos de tabla
@@ -199,14 +171,62 @@ class QualitativeDashboardController(http.Controller):
                 'keywords': [k.keyword for k in r.detected_keyword_ids] if r.detected_keyword_ids else [],
                 'question': r.question_id.title
             })
-        
-        # Generar wordcloud data
-        wordcloud_data = self._generate_wordcloud(responses)
-        
+
+        # Agrupar por binomio (evaluación, pregunta) preservando orden
+        from collections import OrderedDict
+        groups = OrderedDict()
+        for r in responses:
+            key = (r.evaluation_id.id, r.question_id.id)
+            if key not in groups:
+                groups[key] = {
+                    'eval_name': r.evaluation_id.name or '',
+                    'question_title': r.question_id.title or '',
+                    'responses': [],
+                }
+            groups[key]['responses'].append(r)
+
+        # Generar un wordcloud por grupo (con desglose por grupo académico)
+        wordclouds = []
+        for idx, (key, grp) in enumerate(groups.items()):
+            wc_data = self._generate_wordcloud(grp['responses'])
+            if not wc_data:
+                continue
+
+            # Desglose por grupo académico dentro de este binomio
+            group_map = {}
+            for r in grp['responses']:
+                if not r.academic_group_id:
+                    continue
+                gid = r.academic_group_id.id
+                if gid not in group_map:
+                    group_map[gid] = {'group': r.academic_group_id, 'responses': []}
+                group_map[gid]['responses'].append(r)
+
+            groups_list = sorted(
+                [{'id': gid, 'name': info['group'].name or 'Sin grupo'}
+                 for gid, info in group_map.items()],
+                key=lambda g: g['name']
+            )
+            data_by_group = {}
+            for gid, info in group_map.items():
+                gdata = self._generate_wordcloud(info['responses'])
+                if gdata:
+                    data_by_group[str(gid)] = gdata
+
+            wordclouds.append({
+                'id': 'wordcloud_%d' % idx,
+                'eval_name': grp['eval_name'],
+                'question_title': grp['question_title'],
+                'data': wc_data,
+                'count': len(grp['responses']),
+                'groups': groups_list,
+                'data_by_group': data_by_group,
+            })
+
         return {
             'view_type': 'counselor',
             'responses': table_data,
-            'wordcloud_data': wordcloud_data,  # No hacer json.dumps aquí
+            'wordclouds': wordclouds,
             'total_responses': len(responses),
             'responses_with_alerts': len([r for r in responses if r.has_alert_keywords])
         }

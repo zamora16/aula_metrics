@@ -4,7 +4,7 @@
     <!-- =====================================================================
          QUALITATIVE DASHBOARD — Full page (standalone route)
          Values expected: css_styles, role_desc, evaluations, questions,
-                          evaluation_id, question_id, view_type,
+                          selected_evals, question_id, view_type,
                           + role-specific keys (see sub-templates below)
          ===================================================================== -->
     <template id="qualitative_dashboard_full" name="AulaMetrics - Dashboard Cualitativo">
@@ -33,7 +33,6 @@
                                         Análisis Cualitativo
                                     </h2>
                                 </div>
-                                <div class="header-meta"><t t-out="role_desc"/></div>
                             </div>
                         </div>
                         <div class="container-fluid">
@@ -56,14 +55,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.7/d3.layout.cloud.min.js"/>
         <t t-out="css_styles"/>
 
-        <div class="container-fluid mt-4">
-            <div class="row mb-3">
-                <div class="col-12">
-                    <p class="text-muted" style="font-size:14px; margin-bottom:16px;">
-                        <t t-out="role_desc"/>
-                    </p>
-                </div>
-            </div>
+        <div class="container-fluid">
             <t t-call="aula_metrics.qualitative_filter_form"/>
             <t t-call="aula_metrics.qualitative_role_content"/>
         </div>
@@ -73,168 +65,39 @@
     <!-- =====================================================================
          SHARED: Filter form
          Values: evaluations, questions, available_levels, available_groups,
-                 evaluation_id, question_id, course_level, group_id, role
+                 selected_evals, question_id, course_level, group_id, role
          ===================================================================== -->
     <template id="qualitative_filter_form" name="AulaMetrics - Filtros Cualitativos">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <form method="get"
-                              action="/aulametrics/qualitative/dashboard"
-                              class="row g-3"
-                              id="qualitativeFiltersForm">
-
-                            <!-- Evaluación: siempre visible; col más estrecho cuando hay filtros extra -->
-                            <div t-att-class="'col-md-3' if (role in ['counselor', 'admin'] and available_levels) else 'col-md-5'">
-                                <label class="form-label" for="qEvalSelect">Evaluación</label>
-                                <select id="qEvalSelect" name="evaluation_id" class="form-select">
-                                    <option value="">Todas las evaluaciones</option>
-                                    <t t-foreach="evaluations" t-as="ev">
-                                        <option t-att-value="ev.id"
-                                                t-att-selected="'selected' if evaluation_id == ev.id else None">
-                                            <t t-out="ev.name"/>
-                                        </option>
-                                    </t>
-                                </select>
-                            </div>
-
-                            <!-- Pregunta: siempre visible; col más estrecho cuando hay filtros extra -->
-                            <div t-att-class="'col-md-3' if (role in ['counselor', 'admin'] and available_levels) else 'col-md-5'">
-                                <label class="form-label" for="qQuestionSelect">Pregunta</label>
-                                <select id="qQuestionSelect" name="question_id" class="form-select">
-                                    <option value="">Todas las preguntas</option>
-                                    <t t-foreach="questions" t-as="q">
-                                        <option t-att-value="q.id"
-                                                t-att-selected="'selected' if question_id == q.id else None">
-                                            <t t-out="q.title[:80]"/>
-                                        </option>
-                                    </t>
-                                </select>
-                            </div>
-
-                            <!-- Nivel educativo: counselor/admin/management cuando hay datos -->
-                            <t t-if="role != 'tutor' and available_levels">
-                                <div class="col-md-2">
-                                    <label class="form-label" for="qLevelSelect">Nivel</label>
-                                    <select id="qLevelSelect" name="course_level" class="form-select">
-                                        <option value="">Todos los niveles</option>
-                                        <t t-foreach="available_levels" t-as="lv">
-                                            <option t-att-value="lv[0]"
-                                                    t-att-selected="'selected' if course_level == lv[0] else None">
-                                                <t t-out="lv[1]"/>
-                                            </option>
-                                        </t>
-                                    </select>
-                                </div>
-                            </t>
-
-                            <!-- Grupo concreto: solo counselor/admin; cascade JS filtra por nivel -->
-                            <t t-if="role in ['counselor', 'admin'] and available_groups">
-                                <div class="col-md-2">
-                                    <label class="form-label">Grupo</label>
-                                    <select id="amGroupSelect" name="group_id" class="form-select">
-                                        <option value="">Todos los grupos</option>
-                                        <t t-foreach="available_groups" t-as="grp">
-                                            <option t-att-value="grp.id"
-                                                    t-att-data-level="grp.course_level"
-                                                    t-att-selected="'selected' if group_id == grp.id else None">
-                                                <t t-out="grp.name"/>
-                                            </option>
-                                        </t>
-                                    </select>
-                                </div>
-                            </t>
-
-                            <!-- JS: cascade nivel → grupo en tiempo real -->
-                            <t t-if="role in ['counselor', 'admin'] and available_groups">
-                                <script>
-                                (function() {
-                                    function cascadeGroups() {
-                                        var levelSel = document.querySelector('[name="course_level"]');
-                                        var groupSel = document.getElementById('amGroupSelect');
-                                        if (!levelSel || !groupSel) return;
-
-                                        var selectedLevel = levelSel.value;
-                                        var opts = groupSel.querySelectorAll('option[data-level]');
-
-                                        opts.forEach(function(opt) {
-                                            var match = !selectedLevel || opt.dataset.level === selectedLevel;
-                                            opt.hidden = !match;
-                                            // Reset selection if current choice no longer matches
-                                            if (!match &amp;&amp; opt.selected) {
-                                                opt.selected = false;
-                                                groupSel.value = '';
-                                            }
-                                        });
-                                    }
-
-                                    function init() {
-                                        var levelSel = document.querySelector('[name="course_level"]');
-                                        if (levelSel) {
-                                            levelSel.addEventListener('change', cascadeGroups);
-                                            // Apply immediately in case level is pre-selected
-                                            cascadeGroups();
-                                        }
-                                    }
-
-                                    if (document.readyState === 'loading') {
-                                        document.addEventListener('DOMContentLoaded', init);
-                                    } else {
-                                        init();
-                                    }
-                                })();
-                                </script>
-                            </t>
-
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                            </div>
-
-                        </form>
-
-                        <!-- Indicador de filtros activos de segmentación -->
-                        <t t-if="course_level or group_id">
-                            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span style="font-size:11px;font-weight:700;text-transform:uppercase;
-                                             letter-spacing:0.07em;color:var(--am-muted);">Filtrando por</span>
-                                <t t-if="course_level">
-                                    <t t-foreach="available_levels" t-as="lv">
-                                        <t t-if="lv[0] == course_level">
-                                            <span style="display:inline-flex;align-items:center;gap:5px;
-                                                         padding:3px 10px;border-radius:20px;font-size:12px;
-                                                         font-weight:600;background:var(--am-light);
-                                                         border:1px solid var(--am-border);color:var(--am-text);">
-                                                <i class="fa-solid fa-layer-group" style="font-size:10px;color:var(--am-muted);"/>
-                                                <t t-out="lv[1]"/>
-                                            </span>
-                                        </t>
-                                    </t>
-                                </t>
-                                <t t-if="group_id">
-                                    <t t-foreach="available_groups" t-as="grp">
-                                        <t t-if="grp.id == group_id">
-                                            <span style="display:inline-flex;align-items:center;gap:5px;
-                                                         padding:3px 10px;border-radius:20px;font-size:12px;
-                                                         font-weight:600;background:var(--am-light);
-                                                         border:1px solid var(--am-border);color:var(--am-text);">
-                                                <i class="fa-solid fa-users" style="font-size:10px;color:var(--am-muted);"/>
-                                                <t t-out="grp.name"/>
-                                            </span>
-                                        </t>
-                                    </t>
-                                </t>
-                                <a href="/aulametrics/qualitative/dashboard"
-                                   style="font-size:11px;color:var(--am-muted);text-decoration:none;margin-left:4px;"
-                                   t-attf-href="/aulametrics/qualitative/dashboard?evaluation_id=#{evaluation_id or ''}&amp;question_id=#{question_id or ''}">
-                                    Quitar filtros
-                                </a>
-                            </div>
-                        </t>
-
-                    </div>
+        <div class="filter-panel-compact">
+            <form method="get"
+                  action="/aulametrics/qualitative/dashboard"
+                  id="qualitativeFiltersForm">
+                <div class="filter-header">
+                    <i class="fa-solid fa-filter" aria-hidden="true"/>
+                    <span>Filtrar por Evaluaciones</span>
                 </div>
-            </div>
+                <div class="filter-pills-container" role="group" aria-label="Filtrar por evaluación">
+                    <t t-foreach="evaluations" t-as="ev">
+                        <t t-set="is_active" t-value="(selected_evals and ev.id in selected_evals) or not selected_evals"/>
+                        <button type="button"
+                                t-att-class="'filter-pill eval-pill' + (' active' if is_active else '')"
+                                role="checkbox"
+                                t-att-aria-checked="'true' if is_active else 'false'"
+                                t-att-data-value="ev.id"
+                                onclick="togglePill(this)">
+                            <t t-out="ev.name"/>
+                        </button>
+                    </t>
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn-filter-action" onclick="selectAllPillsInForm(this.closest('form'))">
+                        <i class="fa-solid fa-check-double me-1" aria-hidden="true"/>Todas
+                    </button>
+                    <button type="submit" class="btn-filter-action btn-filter-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"/>Aplicar Filtros
+                    </button>
+                </div>
+            </form>
         </div>
     </template>
 
@@ -276,23 +139,49 @@
             </div>
         </div>
 
-        <div class="row">
-            <!-- Wordcloud: altura dinámica, oculto si no hay palabras -->
-            <div class="col-12 mb-4">
-                <div style="border:1px solid var(--am-border);border-radius:10px;
-                            background:var(--am-surface);overflow:hidden;">
-                    <div style="padding:12px 18px;border-bottom:1px solid var(--am-border);
-                                display:flex;align-items:center;gap:8px;">
-                        <i class="fa-solid fa-wind" style="color:var(--am-muted);font-size:12px;"/>
-                        <span style="font-size:13px;font-weight:600;color:var(--am-text);">Nube de Palabras</span>
+        <!-- Nubes de palabras: una por binomio Evaluación+Pregunta -->
+        <t t-if="wordclouds">
+            <!-- 1 nube → centrada a 8/12; 2+ nubes → grid de 2 columnas -->
+            <div t-att-class="'row justify-content-center' if len(wordclouds) == 1 else 'row'">
+                <t t-foreach="wordclouds" t-as="wc">
+                    <div t-att-class="'col-xl-8 col-lg-10 col-12 mb-4' if len(wordclouds) == 1 else 'col-md-6 col-12 mb-4'">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <h5 class="card-title mb-0" style="font-size:13px;">
+                                        <i class="fa-solid fa-wind me-2" style="color:var(--am-muted);font-size:11px;"/>
+                                        <t t-out="wc['question_title']"/>
+                                    </h5>
+                                    <div style="font-size:11px;color:var(--am-muted);margin-top:3px;">
+                                        <i class="fa-regular fa-calendar me-1"/>
+                                        <t t-out="wc['eval_name']"/>
+                                        <span style="margin-left:8px;color:var(--am-subtle);">
+                                            · <t t-out="wc['count']"/> respuestas
+                                        </span>
+                                    </div>
+                                </div>
+                                <t t-if="len(wc['groups']) > 1">
+                                    <select class="form-select form-select-sm am-wc-group-select"
+                                            t-att-data-wc-id="wc['id']"
+                                            style="width:auto;min-width:140px;font-size:12px;flex-shrink:0;">
+                                        <option value="">Todos los grupos</option>
+                                        <t t-foreach="wc['groups']" t-as="grp">
+                                            <option t-att-value="grp['id']"><t t-out="grp['name']"/></option>
+                                        </t>
+                                    </select>
+                                </t>
+                            </div>
+                            <div class="card-body">
+                                <div t-att-id="wc['id']" style="width:100%;"/>
+                            </div>
+                        </div>
                     </div>
-                    <div style="padding:12px 18px;">
-                        <div id="wordcloud" style="width:100%;"/>
-                    </div>
-                </div>
+                </t>
             </div>
+        </t>
 
             <!-- Responses table -->
+            <div class="row">
             <div class="col-12">
                 <div style="border:1px solid var(--am-border);border-radius:10px;
                             background:var(--am-surface);overflow:hidden;">
@@ -334,10 +223,7 @@
                                                    text-transform:uppercase;letter-spacing:0.07em;
                                                    color:var(--am-muted);text-align:left;
                                                    border-bottom:1px solid var(--am-border);">Respuesta</th>
-                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
-                                                   text-transform:uppercase;letter-spacing:0.07em;
-                                                   color:var(--am-muted);text-align:center;white-space:nowrap;
-                                                   border-bottom:1px solid var(--am-border);">Palabras</th>
+
                                         <th style="padding:10px 16px;font-size:11px;font-weight:700;
                                                    text-transform:uppercase;letter-spacing:0.07em;
                                                    color:var(--am-muted);text-align:center;
@@ -386,11 +272,7 @@
                                                     <t t-out="resp['response']"/>
                                                 </t>
                                             </td>
-                                            <td style="padding:12px 16px;vertical-align:middle;
-                                                       text-align:center;font-size:13px;font-weight:600;
-                                                       color:var(--am-text);">
-                                                <t t-out="resp['word_count']"/>
-                                            </td>
+
                                             <td style="padding:12px 16px;vertical-align:middle;text-align:center;">
                                                 <t t-if="resp['has_alerts']">
                                                     <span style="display:inline-block;padding:3px 10px;
@@ -417,24 +299,37 @@
                     </t>
                 </div>
             </div>
-        </div>
+            </div>
 
         <script>
             (function() {
-                var _wc_data   = <t t-out="wordcloud_json"/>;
-                var _wc_colors = <t t-out="palette_json"/>;
-                function initWordcloudCounselor() {
-                    window.amWordcloud.init('wordcloud', _wc_data, _wc_colors);
+                var _wc_palette = <t t-out="palette_json"/>;
+                var _wc_list    = <t t-out="wordclouds_json"/>;
+                function initAllWordclouds() {
+                    _wc_list.forEach(function(wc) {
+                        window.amWordcloud.init(wc.id, wc.data, _wc_palette);
+                    });
+                    document.querySelectorAll('.am-wc-group-select').forEach(function(sel) {
+                        sel.addEventListener('change', function() {
+                            var wcId = this.dataset.wcId;
+                            var gid  = this.value;
+                            var wc   = _wc_list.find(function(w) { return w.id === wcId; });
+                            if (!wc) return;
+                            var data = gid ? (wc.data_by_group[String(gid)] || []) : wc.data;
+                            window.amWordcloud.init(wcId, data, _wc_palette);
+                        });
+                    });
                 }
-                window.initWordcloudCounselor = initWordcloudCounselor;
+                window.initWordcloudCounselor = initAllWordclouds;
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initWordcloudCounselor);
+                    document.addEventListener('DOMContentLoaded', initAllWordclouds);
                 } else {
-                    setTimeout(initWordcloudCounselor, 100);
+                    setTimeout(initAllWordclouds, 100);
                 }
             })();
         </script>
     </template>
+
 
 
     <!-- =====================================================================

@@ -54,11 +54,11 @@ class DashboardSegmentation(models.TransientModel):
         return result
 
     @api.model
-    def get_segmentation_variables(self, role_info, evaluation_id=None):
+    def get_segmentation_variables(self, role_info, evaluation_ids=None):
         """Variables de segmentación con distribución de respuestas, filtradas por rol y evaluación."""
         base_domain = []
-        if evaluation_id:
-            base_domain.append(('evaluation_id', '=', int(evaluation_id)))
+        if evaluation_ids:
+            base_domain.append(('evaluation_id', 'in', [int(e) for e in evaluation_ids]))
 
         filtered_domain = role_service.apply_group_filter(
             base_domain, role_info, field='academic_group_id'

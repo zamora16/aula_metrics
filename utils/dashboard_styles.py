@@ -119,15 +119,16 @@ def get_common_styles():
             text-decoration: none;
             border-radius: 8px;
             margin-bottom: 4px;
-            transition: all 0.2s ease;
+            transition: background 0.18s ease, color 0.18s ease, transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
         }
         
         .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.88);
+            transform: translateX(3px);
         }
         
         .sidebar-item.active {
@@ -193,6 +194,22 @@ def get_common_styles():
             font-size: 14px;
         }
         
+        .dashboard-header {
+            background: white;
+            border-bottom: 1px solid var(--am-border);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0;
+            color: var(--am-text);
+        }
+
         .content-wrapper {
             flex: 1;
             padding: 32px;
@@ -208,19 +225,21 @@ def get_common_styles():
         }
         
         /* ==================== CARDS ==================== */
-        /* Nivel 1: card base — elevación limpia sin border redundante */
+        /* Nivel 1: card base — elevación en dos capas para mejor profundidad visual */
         .card {
             background: white;
             border-radius: 16px;
-            box-shadow: 0 1px 4px rgba(15, 30, 54, 0.06);
+            box-shadow: 0 1px 3px rgba(15, 30, 54, 0.05), 0 6px 18px rgba(15, 30, 54, 0.08);
+            border: 1px solid var(--am-border);
             margin-bottom: 24px;
             overflow: hidden;
+            transition: box-shadow 0.2s ease;
         }
         
         .card-header {
             padding: 20px 24px;
-            border-bottom: 1px solid var(--am-border);
-            background: var(--am-light);
+            border-bottom: 2px solid var(--am-border);
+            background: linear-gradient(to bottom, #edf2fb, var(--am-light));
         }
         
         .card-title {
@@ -483,29 +502,62 @@ def get_common_styles():
         }
         
         .welcome-banner {
-            background:
-                linear-gradient(135deg, var(--am-primary) 0%, #1a5fa0 55%, #0d3a6e 100%),
-                radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
-            background-size: cover, 22px 22px;
-            color: var(--am-surface);
-            padding: 48px 40px;
-            border-radius: 20px;
-            margin-bottom: 32px;
-            box-shadow: 0 4px 24px rgba(15, 30, 54, 0.18);
-        }
-        
-        .welcome-banner h2 {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 0 0 12px 0;
             display: flex;
             align-items: center;
+            gap: 20px;
+            padding: 28px 32px;
+            border-radius: 16px;
+            margin-bottom: 28px;
+            background: linear-gradient(135deg, var(--am-primary) 0%, var(--am-primary-600) 100%);
+            box-shadow: 0 2px 12px rgba(15, 30, 54, 0.14);
         }
-        
-        .welcome-banner p {
-            font-size: 16px;
-            opacity: 0.95;
+
+        .welcome-banner-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .welcome-banner-body h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin: 0 0 4px 0;
+            line-height: 1.2;
+        }
+
+        .welcome-banner-body p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.75);
             margin: 0;
+        }
+
+        /* ── Cabecera de sección con contador ── */
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--am-text);
+            margin: 0;
+        }
+
+        .section-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--am-muted);
         }
         
         /* ==================== ESTADÍSTICAS RÁPIDAS ==================== */
@@ -585,25 +637,11 @@ def get_common_styles():
             line-height: 1;
         }
         
-        /* ==================== EVALUACIONES ACTIVAS ==================== */
+        /* ==================== EVALUACIONES ==================== */
         .evaluations-section {
-            margin-top: 32px;
+            margin-top: 28px;
         }
-        
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--am-text);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title i {
-            color: var(--am-primary);
-        }
-        
+
         .evaluations-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -621,12 +659,6 @@ def get_common_styles():
         .evaluation-card:hover {
             box-shadow: 0 8px 24px rgba(15, 30, 54, 0.12);
             transform: translateY(-2px);
-        }
-        
-        .evaluation-card-header {
-            background: var(--am-light);
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--am-border);
         }
         
         .evaluation-card-title {
@@ -663,12 +695,6 @@ def get_common_styles():
             font-size: 16px;
         }
         
-        .evaluation-info-label {
-            font-weight: 500;
-            color: var(--am-muted);
-            min-width: 100px;
-        }
-        
         .evaluation-info-value {
             font-weight: 600;
             color: var(--am-text);
@@ -698,23 +724,6 @@ def get_common_styles():
             color: var(--am-danger-darker);
         }
         
-        .alerts-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            background: #fee2e2;
-            color: var(--am-danger-darker);
-        }
-        
-        .alerts-badge.zero {
-            background: #d1fae5;
-            color: var(--am-success-dark);
-        }
-        
         .empty-evaluations {
             text-align: center;
             padding: 60px 20px;
@@ -738,7 +747,127 @@ def get_common_styles():
             color: var(--am-subtle);
             font-size: 14px;
         }
-        
+
+        /* ── Meta line bajo el valor del stat-card ── */
+        .stat-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .stat-meta-dot {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .stat-meta-dot.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .stat-meta-dot.scheduled {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .stat-meta-dot.closed {
+            background: var(--am-light);
+            color: var(--am-muted);
+        }
+
+        .stat-meta-empty {
+            font-size: 11px;
+            color: var(--am-muted);
+        }
+
+        /* ── Estado en cards de evaluación ── */
+        .evaluation-card-header {
+            background: var(--am-light);
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--am-border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .eval-state-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 6px;
+            width: fit-content;
+        }
+
+        .eval-state-badge.state-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .eval-state-badge.state-scheduled {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .eval-state-badge.state-closed {
+            background: var(--am-light);
+            color: var(--am-muted);
+        }
+
+        .eval-state-badge.state-draft {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .eval-state-badge.state-cancelled {
+            background: #fee2e2;
+            color: var(--am-danger-darker);
+        }
+
+        /* Borde lateral de color según estado */
+        .evaluation-card.eval-state-active   { border-left: 3px solid #22c55e; }
+        .evaluation-card.eval-state-scheduled { border-left: 3px solid #3b82f6; }
+        .evaluation-card.eval-state-closed    { border-left: 3px solid var(--am-border); }
+        .evaluation-card.eval-state-draft     { border-left: 3px solid #f59e0b; }
+
+        /* ── Pie de card: barra de progreso ── */
+        .evaluation-card-footer {
+            padding: 14px 20px 18px;
+            border-top: 1px solid var(--am-border);
+        }
+
+        .eval-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--am-muted);
+            font-weight: 500;
+        }
+
+        .eval-progress-track {
+            height: 7px;
+            background: var(--am-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .eval-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .eval-progress-fill.high   { background: #22c55e; }
+        .eval-progress-fill.medium { background: #f59e0b; }
+        .eval-progress-fill.low    { background: #ef4444; }
+
         /* ==================== CHARTS ==================== */
         .charts-container {
             display: grid;
@@ -746,12 +875,12 @@ def get_common_styles():
             gap: 24px;
         }
 
-        /* Cards con muchos grupos (>12 filas) pueden ocupar columna completa */
+        /* Cards con muchos grupos (>12 filas) ocupan la fila completa */
         .charts-container .card--wide {
             grid-column: 1 / -1;
         }
 
-        @media (max-width: 1280px) {
+        @media (max-width: 1100px) {
             .charts-container {
                 grid-template-columns: 1fr;
             }
@@ -759,6 +888,10 @@ def get_common_styles():
         
         .charts-container .card {
             height: fit-content;
+        }
+
+        .charts-container .card:hover {
+            box-shadow: 0 4px 8px rgba(15, 30, 54, 0.08), 0 14px 32px rgba(15, 30, 54, 0.10);
         }
         
         .charts-container .card-header {
@@ -859,11 +992,7 @@ def get_common_styles():
             }
             
             .welcome-banner {
-                padding: 32px 24px;
-            }
-            
-            .welcome-banner h2 {
-                font-size: 24px;
+                padding: 20px 20px;
             }
         }
         
@@ -889,29 +1018,6 @@ def get_common_styles():
         }
 
         /* ==================== SEGMENTATION DASHBOARD ==================== */
-        .seg-filter-card {
-            border-radius: 10px;
-            border: 1px solid var(--am-border);
-            background: var(--am-surface);
-        }
-
-        .seg-filter-body {
-            padding: 16px 20px;
-        }
-
-        .btn-seg-filter {
-            background: var(--am-primary);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 7px 16px;
-        }
-
-        .btn-seg-filter:hover {
-            background: var(--am-primary-600);
-            color: #fff;
-        }
-
         .seg-card-header {
             background: linear-gradient(135deg, var(--am-primary-100) 0%, transparent 100%);
             border-bottom: 1px solid var(--am-border);
@@ -1178,14 +1284,12 @@ def get_common_styles():
 
         /* ==================== TOUCH TARGETS & ACCESSIBILITY ==================== */
         .filter-pill,
-        .btn-filter-action,
-        .btn-seg-filter {
+        .btn-filter-action {
             min-height: 44px;
         }
 
         .filter-pill:focus-visible,
-        .btn-filter-action:focus-visible,
-        .btn-seg-filter:focus-visible {
+        .btn-filter-action:focus-visible {
             outline: 3px solid var(--am-primary);
             outline-offset: 3px;
         }
@@ -1277,7 +1381,7 @@ def get_common_styles():
             transition: background 0.15s, color 0.15s, border-color 0.15s;
         }
         .am-icon-btn:hover {
-            background: var(--am-primary-light);
+            background: var(--am-primary-100);
             border-color: var(--am-primary-200);
             color: var(--am-primary);
         }
@@ -1307,7 +1411,7 @@ def get_common_styles():
             background: transparent;
             border: none;
             cursor: pointer;
-            transition: background 0.15s, color 0.15s;
+            transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
             white-space: nowrap;
             min-height: 32px;
         }
@@ -1315,12 +1419,13 @@ def get_common_styles():
             border-left: 1px solid var(--am-border);
         }
         .am-vtoggle-btn:hover:not(.am-vtoggle-btn--active) {
-            background: var(--am-primary-light);
+            background: var(--am-primary-100);
             color: var(--am-primary);
         }
         .am-vtoggle-btn--active {
             background: var(--am-primary);
             color: white;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
         }
         .am-vtoggle-btn:focus-visible {
             outline: 2px solid var(--am-primary);

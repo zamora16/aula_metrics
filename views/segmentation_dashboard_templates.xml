@@ -24,7 +24,6 @@
                                     <i class="fa-solid fa-chart-pie me-2" aria-hidden="true" style="color:var(--am-primary);"/>
                                     Distribución del Alumnado
                                 </h2>
-                                <div class="header-meta"><t t-out="role_desc"/></div>
                             </div>
                         </div>
                         <div class="container-fluid">
@@ -43,14 +42,7 @@
     <template id="segmentation_dashboard_embedded"
               name="AulaMetrics - Dashboard Distribución Embebido">
         <t t-out="css_styles"/>
-        <div class="container-fluid mt-4">
-            <div class="row mb-3">
-                <div class="col-12">
-                    <p class="text-muted" style="font-size:14px; margin-bottom:16px;">
-                        <t t-out="role_desc"/>
-                    </p>
-                </div>
-            </div>
+        <div class="container-fluid">
             <t t-call="aula_metrics.segmentation_filter_form"/>
             <t t-call="aula_metrics.segmentation_content"/>
         </div>
@@ -59,38 +51,36 @@
 
     <!-- Formulario de filtros -->
     <template id="segmentation_filter_form" name="AulaMetrics - Filtros Distribución">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card seg-filter-card">
-                    <div class="card-body seg-filter-body">
-                        <form method="get"
-                              action="/aulametrics/segmentation/dashboard"
-                              class="row g-3 align-items-end"
-                              id="segmentationFiltersForm">
-                            <div class="col-md-5">
-                                <label class="form-label fw-semibold" style="font-size:13px;">
-                                    <i class="fa-solid fa-clipboard-check me-1" style="color:var(--am-primary);"/>
-                                    Evaluación
-                                </label>
-                                <select name="evaluation_id" class="form-select form-select-sm">
-                                    <option value="">Todas las evaluaciones</option>
-                                    <t t-foreach="evaluations" t-as="ev">
-                                        <option t-att-value="ev['id']"
-                                                t-att-selected="'selected' if evaluation_id == ev['id'] else None">
-                                            <t t-out="ev['name']"/>
-                                        </option>
-                                    </t>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-sm btn-seg-filter w-100">
-                                    <i class="fa-solid fa-magnifying-glass me-1"/>Filtrar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+        <div class="filter-panel-compact">
+            <form method="get"
+                  action="/aulametrics/segmentation/dashboard"
+                  id="segmentationFiltersForm">
+                <div class="filter-header">
+                    <i class="fa-solid fa-filter" aria-hidden="true"/>
+                    <span>Filtrar por Evaluaciones</span>
                 </div>
-            </div>
+                <div class="filter-pills-container" role="group" aria-label="Filtrar por evaluación">
+                    <t t-foreach="evaluations" t-as="ev">
+                        <t t-set="is_active" t-value="(selected_evals and ev['id'] in selected_evals) or not selected_evals"/>
+                        <button type="button"
+                                t-att-class="'filter-pill eval-pill' + (' active' if is_active else '')"
+                                role="checkbox"
+                                t-att-aria-checked="'true' if is_active else 'false'"
+                                t-att-data-value="ev['id']"
+                                onclick="togglePill(this)">
+                            <t t-out="ev['name']"/>
+                        </button>
+                    </t>
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="btn-filter-action" onclick="selectAllPillsInForm(this.closest('form'))">
+                        <i class="fa-solid fa-check-double me-1" aria-hidden="true"/>Todas
+                    </button>
+                    <button type="submit" class="btn-filter-action btn-filter-primary">
+                        <i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"/>Aplicar Filtros
+                    </button>
+                </div>
+            </form>
         </div>
     </template>
 
