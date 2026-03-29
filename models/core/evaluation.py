@@ -212,6 +212,7 @@ class Evaluation(models.Model):
     
     def action_activate(self):
         """Activar evaluación (scheduled -> active) y enviar emails de notificación"""
+        self.ensure_one()
         # Validar que la fecha de inicio no sea en el pasado
         self._check_start_date_not_past()
         

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from datetime import date as _date
+import unicodedata
+import re
 from odoo import http
 from odoo.http import request
 from markupsafe import Markup
@@ -136,8 +139,6 @@ class DashboardChartsController(http.Controller):
             evaluation_ids: IDs de evaluaciones a incluir
             survey_ids:     IDs de cuestionarios a incluir
         """
-        from datetime import date as _date
-
         role_info = self._detect_user_role()
 
         # Modo directo: IDs de resultado ya seleccionados (nuevo flujo desde la barra flotante)
@@ -218,7 +219,6 @@ class DashboardChartsController(http.Controller):
                 data=report_data,
             )
 
-            import unicodedata, re
             def _slug(s):
                 s = unicodedata.normalize('NFKD', s or '').encode('ascii', 'ignore').decode()
                 return re.sub(r'[^\w]+', '_', s).strip('_')

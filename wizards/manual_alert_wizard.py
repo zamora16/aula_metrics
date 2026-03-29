@@ -64,15 +64,12 @@ class ManualAlertWizard(models.TransientModel):
         """Un tutor solo puede notificar sobre alumnos de sus grupos.
         Orientadores y admins pueden notificar sobre cualquier alumno.
         """
-        tutor_group = self.env.ref(GROUP_TUTOR)
-        counselor_group = self.env.ref(GROUP_COUNSELOR)
-        admin_group = self.env.ref(GROUP_ADMIN)
         user = self.env.user
         # Orientadores y admins no tienen restricción
-        if user in counselor_group.users or user in admin_group.users:
+        if user.has_group(GROUP_COUNSELOR) or user.has_group(GROUP_ADMIN):
             return
         # Tutores: verificar que el alumno pertenece a uno de sus grupos
-        if user in tutor_group.users:
+        if user.has_group(GROUP_TUTOR):
             for wiz in self:
                 if wiz.student_id.academic_group_id.tutor_id != user:
                     raise ValidationError(
