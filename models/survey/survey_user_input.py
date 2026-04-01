@@ -38,13 +38,13 @@ class SurveyUserInput(models.Model):
                 # Capturar respuestas cualitativas y de opciones múltiples
                 try:
                     user_input._save_qualitative_responses()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _logger.error('_mark_done: error guardando respuestas cualitativas para user_input %s: %s', user_input.id, e, exc_info=True)
 
                 try:
                     user_input._save_multiplechoice_responses()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _logger.error('_mark_done: error guardando respuestas múltiple opción para user_input %s: %s', user_input.id, e, exc_info=True)
 
                 evaluations = self.env['aula_metrics.evaluation'].search([
                     ('state', 'in', ['scheduled', 'active']),
@@ -68,8 +68,8 @@ class SurveyUserInput(models.Model):
                     try:
                         participation._calculate_scores()
                         participation.check_alerts()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        _logger.error('_mark_done: error en scores/alertas para participación %s: %s', participation.id, e, exc_info=True)
 
                     # Verificar si completó todos los cuestionarios
                     try:
@@ -79,21 +79,25 @@ class SurveyUserInput(models.Model):
                             ('survey_id', 'in', all_surveys.ids),
                             ('state', '=', 'done'),
                         ]
-                        if evaluation and evaluation.state == 'active':
-                            if evaluation.date_end:
-                                domain.append(('create_date', '<=', evaluation.date_end))
-                        else:
-                            if evaluation and evaluation.date_start:
-                                domain.append(('create_date', '>=', evaluation.date_start))
+                        # Siempre acotar por AMBOS extremos de la ventana temporal de
+                        # la evaluación, independientemente del estado.  Sin el filtro
+                        # date_start, las respuestas de evaluaciones anteriores (que
+                        # reutilizan los mismos cuestionarios) se cuentan de más y la
+                        # comprobación `== len(all_surveys)` nunca se cumple.
+                        if evaluation.date_start:
+                            domain.append(('create_date', '>=', evaluation.date_start))
+                        if evaluation.date_end:
+                            domain.append(('create_date', '<=', evaluation.date_end))
 
                         completed_surveys = self.env['survey.user_input'].search_count(domain)
 
                         if completed_surveys == len(all_surveys):
                             participation.action_complete()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        _logger.error('_mark_done: error verificando completitud para participación %s: %s', participation.id, e, exc_info=True)
 
-            except Exception:
+            except Exception as e:
+                _logger.error('_mark_done: error procesando user_input %s: %s', self.id, e, exc_info=True)
                 continue
 
         return res

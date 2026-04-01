@@ -80,11 +80,12 @@ class Alert(models.Model):
     def _compute_case_id(self):
         """Busca el caso de orientación vinculado a esta alerta (si existe)."""
         for alert in self:
-            case = self.env['aula_metrics.case'].sudo().search(
+            case = self.env['aula_metrics.case'].search(
                 [('alert_id', '=', alert.id)], limit=1
             )
             alert.case_id = case
 
+    @api.depends('academic_group_id.course_level')
     def _compute_course_level_general(self):
         """Extrae solo el nivel de curso (Primero, Segundo...) sin la letra del grupo."""
         for alert in self:
@@ -159,6 +160,7 @@ class Alert(models.Model):
             else:
                 alert.message = False
     
+    @api.depends('alert_type', 'alert_level', 'threshold_id.name', 'academic_group_id.name', 'student_id.name', 'course_level_general')
     def _compute_name(self):
         """Computa el nombre de la alerta según permisos del usuario."""
         for alert in self:

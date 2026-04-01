@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 from datetime import date as _date
 import unicodedata
 import re
@@ -8,6 +9,8 @@ from markupsafe import Markup
 # Importar utilidades compartidas
 from odoo.addons.aula_metrics.utils import role_service
 from odoo.addons.aula_metrics.utils.constants import ROLE_MANAGEMENT
+
+_logger = logging.getLogger(__name__)
 
 _HTML_HEADERS = [('Content-Type', 'text/html; charset=utf-8')]
 
@@ -120,12 +123,13 @@ class DashboardChartsController(http.Controller):
             )
             return _render('aula_metrics.dashboard_page_base', values)
         except Exception as e:
+            _logger.error('Error al generar perfil de alumno %s: %s', student_id, e, exc_info=True)
             error_msg = str(e)
             if 'permiso' in error_msg.lower() or 'access' in error_msg.lower():
-                return _render('aula_metrics.dashboard_access_denied', {'message': error_msg})
+                return _render('aula_metrics.dashboard_access_denied', {'message': 'No tienes permiso para ver este perfil.'})
             return _render('aula_metrics.dashboard_error_page', {
                 'error_title': 'Error al generar el perfil',
-                'error_message': error_msg,
+                'error_message': 'No se pudo generar el perfil del alumno. Contacta con el administrador.',
             })
 
     @http.route('/aulametrics/student/<int:student_id>/informe_compuesto',
@@ -235,9 +239,10 @@ class DashboardChartsController(http.Controller):
             )
 
         except Exception as e:
+            _logger.error('Error al generar informe compuesto para alumno %s: %s', student_id, e, exc_info=True)
             return _render('aula_metrics.dashboard_error_page', {
                 'error_title':   'Error al generar el informe compuesto',
-                'error_message': str(e),
+                'error_message': 'No se pudo generar el informe. Contacta con el administrador.',
             })
 
     def _parse_hub_filters(self, kwargs):

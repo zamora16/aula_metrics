@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import logging
+from markupsafe import escape
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 class Evaluation(models.Model):
     """Evaluación Programada - Asignación de cuestionarios a grupos académicos"""
@@ -296,18 +300,23 @@ class Evaluation(models.Model):
         """Genera el HTML del email para el alumno"""
         evaluation = participation.evaluation_id
         evaluation_url = f"{base_url}/evaluacion/{participation.evaluation_token}"
-        
+        student_name = escape(participation.student_id.name or '')
+        eval_name = escape(evaluation.name or '')
+        date_start = escape(str(evaluation.date_start or ''))
+        date_end = escape(str(evaluation.date_end or ''))
+        surveys = escape(', '.join(evaluation.survey_ids.mapped('title')))
+
         return f"""
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <h2 style="color: #333;">¡Evaluación Activada!</h2>
-    <p>Hola <strong>{participation.student_id.name}</strong>,</p>
-    <p>Se ha activado la evaluación <strong>"{evaluation.name}"</strong> en el sistema AulaMetrics.</p>
+    <p>Hola <strong>{student_name}</strong>,</p>
+    <p>Se ha activado la evaluación <strong>"{eval_name}"</strong> en el sistema AulaMetrics.</p>
     <p><strong>Detalles de la evaluación:</strong></p>
     <ul>
-        <li><strong>Nombre:</strong> {evaluation.name}</li>
-        <li><strong>Fecha de inicio:</strong> {evaluation.date_start}</li>
-        <li><strong>Fecha de expiración:</strong> {evaluation.date_end}</li>
-        <li><strong>Cuestionarios incluidos:</strong> {', '.join(evaluation.survey_ids.mapped('title'))}</li>
+        <li><strong>Nombre:</strong> {eval_name}</li>
+        <li><strong>Fecha de inicio:</strong> {date_start}</li>
+        <li><strong>Fecha de expiración:</strong> {date_end}</li>
+        <li><strong>Cuestionarios incluidos:</strong> {surveys}</li>
     </ul>
     <p>Para participar en la evaluación, haz clic en el siguiente enlace:</p>
     <p style="text-align: center; margin: 30px 0;">
@@ -328,19 +337,24 @@ class Evaluation(models.Model):
     
     def _get_tutor_email_body(self, evaluation, tutor, tutor_groups):
         """Genera el HTML del email para el tutor"""
-        group_names = ', '.join(tutor_groups.mapped('name'))
-        
+        tutor_name = escape(tutor.name or '')
+        eval_name = escape(evaluation.name or '')
+        group_names = escape(', '.join(tutor_groups.mapped('name')))
+        date_start = escape(str(evaluation.date_start or ''))
+        date_end = escape(str(evaluation.date_end or ''))
+        surveys = escape(', '.join(evaluation.survey_ids.mapped('title')))
+
         return f"""
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <h2 style="color: #333;">Evaluación Activada</h2>
-    <p>Hola <strong>{tutor.name}</strong>,</p>
-    <p>Se ha activado la evaluación <strong>"{evaluation.name}"</strong> para los siguientes grupos a su cargo:</p>
+    <p>Hola <strong>{tutor_name}</strong>,</p>
+    <p>Se ha activado la evaluación <strong>"{eval_name}"</strong> para los siguientes grupos a su cargo:</p>
     <p><strong>Grupos afectados:</strong> {group_names}</p>
     <p><strong>Detalles de la evaluación:</strong></p>
     <ul>
-        <li><strong>Fecha de inicio:</strong> {evaluation.date_start}</li>
-        <li><strong>Fecha de expiración:</strong> {evaluation.date_end}</li>
-        <li><strong>Cuestionarios incluidos:</strong> {', '.join(evaluation.survey_ids.mapped('title'))}</li>
+        <li><strong>Fecha de inicio:</strong> {date_start}</li>
+        <li><strong>Fecha de expiración:</strong> {date_end}</li>
+        <li><strong>Cuestionarios incluidos:</strong> {surveys}</li>
         <li><strong>Número de alumnos:</strong> {evaluation.total_students}</li>
     </ul>
     <p>Le recomendamos informar a sus alumnos sobre esta evaluación y recordarles que participen antes de la fecha límite.</p>
@@ -362,7 +376,7 @@ class Evaluation(models.Model):
             mail = self.env['mail.mail'].create(mail_values)
             mail.send()
         except Exception as e:
-            pass
+            _logger.error('Error enviando email a %s: %s', recipient_email, e, exc_info=True)
     
     def action_close(self):
         """Cerrar evaluación (active -> closed)"""
@@ -410,8 +424,8 @@ class Evaluation(models.Model):
             # 1. Recalcular métricas cuantitativas (metric_value)
             try:
                 participation._calculate_scores()
-            except Exception:
-                pass
+            except Exception as e:
+                _logger.error('Error recalculando scores para participación %s: %s', participation.id, e, exc_info=True)
 
             # 2. Regenerar respuestas cualitativas y de opción múltiple
             for survey in self.survey_ids:
@@ -424,12 +438,12 @@ class Evaluation(models.Model):
                     continue
                 try:
                     user_input._save_qualitative_responses()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _logger.error('Error guardando respuestas cualitativas para user_input %s: %s', user_input.id, e, exc_info=True)
                 try:
                     user_input._save_multiplechoice_responses()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _logger.error('Error guardando respuestas múltiple opción para user_input %s: %s', user_input.id, e, exc_info=True)
 
         return {
             'type': 'ir.actions.client',
@@ -460,21 +474,27 @@ class Evaluation(models.Model):
         """Método que se ejecuta automáticamente para actualizar estados de evaluaciones
         basado en las fechas de inicio y fin"""
         now = fields.Datetime.now()
-        
-        # 1. Activar evaluaciones programadas que han llegado a su fecha de inicio
+
+        # 1. Activar evaluaciones programadas cuya fecha de inicio ya llegó
+        #    y cuya fecha de fin todavía no ha pasado.
+        #    Se activa directamente sin pasar por _check_start_date_not_past(),
+        #    ya que esa validación solo aplica a activaciones manuales: el cron
+        #    activa precisamente evaluaciones con date_start en el pasado.
         scheduled_evaluations = self.search([
             ('state', '=', 'scheduled'),
-            ('date_start', '<=', now)
+            ('date_start', '<=', now),
+            ('date_end', '>', now),
         ])
-        
+
         for evaluation in scheduled_evaluations:
-            evaluation.action_activate()
-        
+            evaluation.write({'state': 'active'})
+            evaluation._send_activation_emails()
+
         # 2. Cerrar evaluaciones activas que han expirado
         active_evaluations = self.search([
             ('state', '=', 'active'),
             ('date_end', '<=', now)
         ])
-        
+
         for evaluation in active_evaluations:
             evaluation.action_close()

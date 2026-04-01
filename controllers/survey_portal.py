@@ -99,12 +99,10 @@ class AulaMetricsSurveyPortal(http.Controller):
             ('survey_id', '=', survey.id),
             ('state', '=', 'done'),
         ]
-        if eval_rec and eval_rec.state == 'active':
-            if eval_rec.date_end:
-                done_domain.append(('create_date', '<=', eval_rec.date_end))
-        else:
-            if eval_rec and eval_rec.date_start:
-                done_domain.append(('create_date', '>=', eval_rec.date_start))
+        if eval_rec and eval_rec.date_start:
+            done_domain.append(('create_date', '>=', eval_rec.date_start))
+        if eval_rec and eval_rec.date_end:
+            done_domain.append(('create_date', '<=', eval_rec.date_end))
 
         done_exists = request.env['survey.user_input'].sudo().search_count(done_domain)
         if done_exists:
@@ -179,39 +177,33 @@ class AulaMetricsSurveyPortal(http.Controller):
             # Determine evaluation window rules: when evaluation is already 'active'
             # accept any recent 'done' user_input up to date_end; otherwise restrict to create_date >= date_start.
             eval_rec = participation.evaluation_id
-            if eval_rec and eval_rec.state == 'active':
-                done_domain = [
-                    ('partner_id', '=', participation.student_id.id),
-                    ('survey_id', '=', survey.id),
-                    ('state', '=', 'done')
-                ]
-                if eval_rec.date_end:
-                    done_domain.append(('create_date', '<=', eval_rec.date_end))
-                done_ui = request.env['survey.user_input'].sudo().search(done_domain, order='create_date desc', limit=1)
-            else:
-                done_ui = request.env['survey.user_input'].sudo().search([
-                    ('partner_id', '=', participation.student_id.id),
-                    ('survey_id', '=', survey.id),
-                    ('state', '=', 'done'),
-                    ('create_date', '>=', participation.evaluation_id.date_start)
-                ], order='create_date desc', limit=1)
+            done_domain = [
+                ('partner_id', '=', participation.student_id.id),
+                ('survey_id', '=', survey.id),
+                ('state', '=', 'done'),
+            ]
+            if eval_rec and eval_rec.date_start:
+                done_domain.append(('create_date', '>=', eval_rec.date_start))
+            if eval_rec and eval_rec.date_end:
+                done_domain.append(('create_date', '<=', eval_rec.date_end))
+            done_ui = request.env['survey.user_input'].sudo().search(done_domain, order='create_date desc', limit=1)
 
             if done_ui:
                 is_completed = True
                 ui_for_return = done_ui
             else:
-                # fallback: most recent user_input for this student/survey (respecting evaluation window when not active)
-                if eval_rec and eval_rec.state == 'active':
-                    ui_for_return = request.env['survey.user_input'].sudo().search([
-                        ('partner_id', '=', participation.student_id.id),
-                        ('survey_id', '=', survey.id),
-                    ], order='create_date desc', limit=1)
-                else:
-                    ui_for_return = request.env['survey.user_input'].sudo().search([
-                        ('partner_id', '=', participation.student_id.id),
-                        ('survey_id', '=', survey.id),
-                        ('create_date', '>=', participation.evaluation_id.date_start)
-                    ], order='create_date desc', limit=1)
+                # fallback: most recent user_input for this student/survey respecting evaluation window
+                fallback_domain = [
+                    ('partner_id', '=', participation.student_id.id),
+                    ('survey_id', '=', survey.id),
+                ]
+                if eval_rec and eval_rec.date_start:
+                    fallback_domain.append(('create_date', '>=', eval_rec.date_start))
+                if eval_rec and eval_rec.date_end:
+                    fallback_domain.append(('create_date', '<=', eval_rec.date_end))
+                ui_for_return = request.env['survey.user_input'].sudo().search(
+                    fallback_domain, order='create_date desc', limit=1
+                )
                 is_completed = False
 
             result.append({
@@ -227,19 +219,17 @@ class AulaMetricsSurveyPortal(http.Controller):
         """Obtiene o crea user_input para la participación."""
         SurveyUserInput = request.env['survey.user_input'].sudo()
         
-        # Prefer most recent user_input; when evaluation is not active restrict to those created during the evaluation window
+        # Buscar user_input existente dentro de la ventana temporal de esta evaluación
         eval_rec = participation.evaluation_id
-        if eval_rec and eval_rec.state == 'active':
-            user_input = SurveyUserInput.search([
-                ('partner_id', '=', participation.student_id.id),
-                ('survey_id', '=', survey.id),
-            ], order='create_date desc', limit=1)
-        else:
-            user_input = SurveyUserInput.search([
-                ('partner_id', '=', participation.student_id.id),
-                ('survey_id', '=', survey.id),
-                ('create_date', '>=', participation.evaluation_id.date_start)
-            ], order='create_date desc', limit=1)
+        search_domain = [
+            ('partner_id', '=', participation.student_id.id),
+            ('survey_id', '=', survey.id),
+        ]
+        if eval_rec and eval_rec.date_start:
+            search_domain.append(('create_date', '>=', eval_rec.date_start))
+        if eval_rec and eval_rec.date_end:
+            search_domain.append(('create_date', '<=', eval_rec.date_end))
+        user_input = SurveyUserInput.search(search_domain, order='create_date desc', limit=1)
 
         if not user_input:
             user_input = SurveyUserInput.create({

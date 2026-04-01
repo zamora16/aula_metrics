@@ -161,48 +161,50 @@ class MetricValue(models.Model):
     @api.model
     def clean_duplicate_metrics(self):
         """
-        Limpia métricas duplicadas, manteniendo solo el registro con datos.
-        Útil para limpiar duplicados creados por errores de guardado múltiple.
+        Limpia métricas duplicadas usando SQL directo en lugar de cargar todos los
+        registros en memoria. Mantiene el registro con datos más completos por grupo
+        (prioridad: tiene valor > timestamp más reciente > id más alto).
+
+        La agrupación es la misma que define el constraint único del modelo:
+        (survey_id, student_id, evaluation_id, metric_name, question_id).
         """
-        # Buscar todos los registros
-        all_records = self.search([], order='id')
-        
-        # Agrupar por la clave única
-        groups = {}
-        for record in all_records:
-            key = (
-                record.survey_id.id,
-                record.student_id.id,
-                record.evaluation_id.id,
-                record.metric_name,
-                record.question_id.id if record.question_id else False
+        # Una sola query con ROW_NUMBER() identifica qué registros son duplicados.
+        # rn = 1 → el registro a conservar; rn > 1 → duplicados a eliminar.
+        self.env.cr.execute("""
+            WITH ranked AS (
+                SELECT
+                    id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            survey_id,
+                            student_id,
+                            evaluation_id,
+                            metric_name,
+                            COALESCE(question_id, 0)
+                        ORDER BY
+                            -- Primero los registros que tienen algún valor
+                            CASE
+                                WHEN value_float IS NOT NULL
+                                  OR value_text  IS NOT NULL
+                                  OR value_json  IS NOT NULL
+                                THEN 0 ELSE 1
+                            END ASC,
+                            -- Luego el más reciente
+                            timestamp DESC,
+                            -- Desempate por id más alto
+                            id DESC
+                    ) AS rn
+                FROM aula_metrics_metric_value
             )
-            
-            if key not in groups:
-                groups[key] = []
-            groups[key].append(record)
-        
-        # Eliminar duplicados de cada grupo
-        deleted_count = 0
-        for key, records in groups.items():
-            if len(records) > 1:
-                # Ordenar por prioridad: primero los que tienen datos
-                records_sorted = sorted(records, key=lambda r: (
-                    bool(r.value_float or r.value_json or r.value_text),
-                    r.timestamp,
-                    r.id
-                ), reverse=True)
-                
-                # Mantener el primero (el que tiene datos más recientes)
-                keep = records_sorted[0]
-                to_delete = records_sorted[1:]
-                
-                # Eliminar los demás
-                for record in to_delete:
-                    try:
-                        record.unlink()
-                        deleted_count += 1
-                    except Exception:
-                        pass
-        
-        return deleted_count
+            SELECT id FROM ranked WHERE rn > 1
+        """)
+        ids_to_delete = [row[0] for row in self.env.cr.fetchall()]
+
+        if not ids_to_delete:
+            return 0
+
+        # unlink() a través del ORM para que Odoo invalide su caché
+        duplicates = self.browse(ids_to_delete)
+        count = len(duplicates)
+        duplicates.unlink()
+        return count

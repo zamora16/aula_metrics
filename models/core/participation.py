@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
 from odoo import models, fields, api
 import uuid
+
+_logger = logging.getLogger(__name__)
 
 class Participation(models.Model):
     """Seguimiento de participación de alumnos en evaluaciones"""
@@ -239,7 +242,8 @@ class Participation(models.Model):
                                 'timestamp': fields.Datetime.now(),
                             })
             
-            except Exception:
+            except Exception as e:
+                _logger.error('Error calculando scores para participación %s: %s', self.id, e, exc_info=True)
                 continue
     
     def check_alerts(self):
