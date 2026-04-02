@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, api
-import datetime
+from odoo import models, fields, api, _
 
 class AcademicGroup(models.Model):
     _name = 'aula_metrics.academic_group'
@@ -23,11 +22,22 @@ class AcademicGroup(models.Model):
         ('bach2', '2º Bachillerato'),
     ], string='Nivel Educativo', required=True)
     
-    academic_year = fields.Char(
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
         string='Curso Académico',
         required=True,
-        default=lambda self: self._default_academic_year(),
-        help='Ejemplo: 2024-2025'
+        ondelete='restrict',
+        index=True,
+        default=lambda self: self.env['aula_metrics.academic_year']._get_default_year(),
+        help='Curso académico al que pertenece este grupo'
+    )
+
+    # Campo de conveniencia: nombre del curso para mostrar en filtros y búsquedas.
+    academic_year = fields.Char(
+        related='academic_year_id.name',
+        string='Curso',
+        store=True,
+        readonly=True,
     )
     
     tutor_id = fields.Many2one(
@@ -63,17 +73,24 @@ class AcademicGroup(models.Model):
         """Calcula automáticamente el número de alumnos"""
         for group in self:
             group.student_count = len(group.student_ids)
-    
-    def _default_academic_year(self):
-        """Genera el curso académico actual según el mes (sept-agosto)"""
-        today = datetime.date.today()
-        if today.month >= 9:
-            return f"{today.year}-{today.year + 1}"
-        else:
-            return f"{today.year - 1}-{today.year}"
-    
+
+    def action_view_students_list(self):
+        """Abre la lista de alumnos de este grupo con vista completa."""
+        self.ensure_one()
+        view_tree = self.env.ref('aula_metrics.view_student_tree').id
+        view_form = self.env.ref('aula_metrics.view_student_form').id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Alumnos — %s') % self.name,
+            'res_model': 'res.partner',
+            'view_mode': 'tree,form',
+            'views': [(view_tree, 'tree'), (view_form, 'form')],
+            'domain': [('academic_group_id', '=', self.id)],
+            'context': {'default_academic_group_id': self.id},
+        }
+
     _sql_constraints = [
-        ('name_academic_year_unique', 
-         'UNIQUE(name, academic_year)', 
+        ('name_academic_year_unique',
+         'UNIQUE(name, academic_year_id)',
          'Ya existe un grupo con ese nombre en este curso académico.')
     ]

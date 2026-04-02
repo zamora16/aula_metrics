@@ -7,15 +7,27 @@
         <field name="arch" type="xml">
             <form string="Grupo Académico">
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object" name="action_view_students_list"
+                                class="oe_stat_button" icon="fa-graduation-cap">
+                            <field name="student_count" widget="statinfo" string="Alumnos"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" string="Grupo"/>
+                        <h1>
+                            <field name="name" placeholder="Ej: 1º ESO A"/>
+                        </h1>
+                    </div>
                     <group>
                         <group>
-                            <field name="name" placeholder="Ej: 1º ESO A"/>
                             <field name="course_level"/>
-                            <field name="academic_year"/>
+                            <field name="academic_year_id"
+                                   options="{'no_create': True}"
+                                   string="Curso Académico"/>
                         </group>
                         <group>
                             <field name="tutor_id" options="{'no_create': True}"/>
-                            <field name="student_count"/>
                             <field name="active"/>
                         </group>
                     </group>
@@ -23,12 +35,12 @@
                         <page string="Alumnado" name="students">
                             <field name="student_ids" mode="tree"
                                    domain="[('active', 'in', [True, False])]">
-                                <tree>
+                                <tree editable="bottom" create="0" delete="0">
                                     <field name="student_code" string="Código" readonly="1"/>
-                                    <field name="name" string="Nombre"/>
-                                    <field name="gender" string="Género"/>
-                                    <field name="age" string="Edad"/>
-                                    <field name="email" optional="show"/>
+                                    <field name="name" string="Nombre" readonly="1"/>
+                                    <field name="gender" string="Género" readonly="1"/>
+                                    <field name="age" string="Edad" readonly="1"/>
+                                    <field name="email" optional="show" readonly="1"/>
                                 </tree>
                             </field>
                         </page>
@@ -46,7 +58,7 @@
             <tree string="Grupos Académicos">
                 <field name="name"/>
                 <field name="course_level"/>
-                <field name="academic_year"/>
+                <field name="academic_year_id"/>
                 <field name="tutor_id" widget="many2one_avatar_user"/>
                 <field name="student_count"/>
                 <field name="active" invisible="1"/>
@@ -62,7 +74,7 @@
             <search string="Buscar Grupos">
                 <field name="name"/>
                 <field name="tutor_id"/>
-                <field name="academic_year"/>
+                <field name="academic_year_id" string="Curso Académico"/>
                 <filter string="Activos" name="active" domain="[('active', '=', True)]"/>
                 <filter string="Archivados" name="inactive" domain="[('active', '=', False)]"/>
                 <separator/>
@@ -70,7 +82,7 @@
                 <filter string="Bachillerato" name="bach" domain="[('course_level', 'in', ['bach1', 'bach2'])]"/>
                 <group expand="0" string="Agrupar por">
                     <filter string="Nivel" name="group_by_level" context="{'group_by': 'course_level'}"/>
-                    <filter string="Curso Académico" name="group_by_year" context="{'group_by': 'academic_year'}"/>
+                    <filter string="Curso Académico" name="group_by_year" context="{'group_by': 'academic_year_id'}"/>
                     <filter string="Tutor" name="group_by_tutor" context="{'group_by': 'tutor_id'}"/>
                 </group>
             </search>

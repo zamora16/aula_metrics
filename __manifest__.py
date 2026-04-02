@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "AulaMetrics",
-    'version': '1.0.1',
+    'version': '1.0.2',
     'summary': "Sistema de evaluación psicosocial para centros educativos",
 
     'author': "Angel Zamora",
@@ -26,6 +26,7 @@
         'views/dashboard.xml',
         'views/dashboard_hub.xml',
         'views/student_views.xml',
+        'views/academic_year_views.xml',
         'views/academic_group_views.xml',
         'views/survey_extension_views.xml',
         'views/evaluation_views.xml',
@@ -48,6 +49,7 @@
         # 5. Wizards (antes del menú para que las acciones existan al resolverlas)
         'wizards/resolve_alert_wizard_views.xml',
         'wizards/manual_alert_wizard_views.xml',
+        'wizards/new_academic_year_wizard_views.xml',
         'views/menu.xml',
     ],
     'demo': [],

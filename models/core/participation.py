@@ -51,6 +51,18 @@ class Participation(models.Model):
     ], string='Género', store=True, readonly=True,
         help='Género del alumno en el momento de esta participación (no cambia).')
 
+    # Curso académico congelado en el momento de creación.
+    # Permite filtrar datos históricos por año aunque el alumno cambie de grupo.
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
+        string='Curso Académico',
+        store=True,
+        readonly=True,
+        index=True,
+        ondelete='set null',
+        help='Curso académico en el momento de esta participación (no cambia).'
+    )
+
     # student_code: related sin store — el código nunca cambia en el alumno,
     # así que leerlo en tiempo real es siempre correcto.
     student_code = fields.Char(
@@ -99,7 +111,7 @@ class Participation(models.Model):
     
     @api.model_create_multi
     def create(self, vals_list):
-        """Genera token único y congela grupo/género en el momento de creación."""
+        """Genera token único y congela grupo/género/año en el momento de creación."""
         for vals in vals_list:
             if not vals.get('evaluation_token'):
                 vals['evaluation_token'] = str(uuid.uuid4())
@@ -110,6 +122,10 @@ class Participation(models.Model):
                     vals['academic_group_id'] = student.academic_group_id.id or False
                 if not vals.get('student_gender'):
                     vals['student_gender'] = student.gender or False
+            # Congelar el curso académico desde la evaluación
+            if not vals.get('academic_year_id') and vals.get('evaluation_id'):
+                evaluation = self.env['aula_metrics.evaluation'].browse(vals['evaluation_id'])
+                vals['academic_year_id'] = evaluation.academic_year_id.id or False
         return super().create(vals_list)
     
     @api.depends('student_id', 'evaluation_id')

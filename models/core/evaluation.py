@@ -25,6 +25,16 @@ class Evaluation(models.Model):
         help='Descripción de los objetivos de esta evaluación'
     )
     
+    # Curso académico al que pertenece esta evaluación
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
+        string='Curso Académico',
+        index=True,
+        ondelete='restrict',
+        default=lambda self: self.env['aula_metrics.academic_year']._get_default_year(),
+        help='Curso académico de referencia para esta evaluación'
+    )
+
     # Usuario responsable
     user_id = fields.Many2one(
         'res.users',

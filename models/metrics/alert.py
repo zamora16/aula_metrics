@@ -15,7 +15,21 @@ class Alert(models.Model):
     participation_id = fields.Many2one('aula_metrics.participation', string='Participación', ondelete='cascade')
     qualitative_response_id = fields.Many2one('aula_metrics.qualitative_response', string='Respuesta Cualitativa', ondelete='cascade')
     student_id = fields.Many2one('res.partner', string='Alumno')
-    academic_group_id = fields.Many2one('aula_metrics.academic_group', string='Grupo Académico')
+    academic_group_id = fields.Many2one(
+        'aula_metrics.academic_group',
+        string='Grupo Académico',
+        readonly=True,
+        help='Grupo del alumno en el momento de generar la alerta (dato histórico).'
+    )
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
+        string='Curso Académico',
+        compute='_compute_academic_year_id',
+        store=True,
+        readonly=True,
+        index=True,
+        help='Curso académico de la alerta, derivado del grupo académico.'
+    )
     score_value = fields.Float(string='Valor de Puntuación', default=0.0)
     alert_date = fields.Datetime(string='Fecha de Alerta', default=fields.Datetime.now)
     status = fields.Selection([
@@ -84,6 +98,12 @@ class Alert(models.Model):
                 [('alert_id', '=', alert.id)], limit=1
             )
             alert.case_id = case
+
+    @api.depends('academic_group_id.academic_year_id')
+    def _compute_academic_year_id(self):
+        """Deriva el curso académico desde el grupo académico de la alerta."""
+        for alert in self:
+            alert.academic_year_id = alert.academic_group_id.academic_year_id
 
     @api.depends('academic_group_id.course_level')
     def _compute_course_level_general(self):

@@ -80,30 +80,19 @@
               sequence="30"/>
 
     <!-- Configuración -->
-    <menuitem id="menu_aulametrics_config" 
-              name="Configuración" 
-              parent="menu_aulametrics_root" 
+    <menuitem id="menu_aulametrics_config"
+              name="Configuración"
+              parent="menu_aulametrics_root"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_management"
               sequence="100"/>
-    
-    <menuitem id="menu_academic_groups" 
-              name="Grupos Académicos" 
+
+    <!-- Punto de entrada principal: Cursos Académicos -->
+    <menuitem id="menu_academic_years"
+              name="Cursos Académicos"
               parent="menu_aulametrics_config"
-              action="action_academic_group"
+              action="action_academic_year_list"
+              groups="group_aulametrics_admin,group_aulametrics_counselor,group_aulametrics_management"
               sequence="10"/>
-
-    <menuitem id="menu_aulametrics_students"
-              name="Alumnos"
-              parent="menu_aulametrics_config"
-              action="aula_metrics.action_student_list"
-              groups="group_aulametrics_admin,group_aulametrics_counselor"
-              sequence="20"/>
-
-    <menuitem id="menu_aulametrics_tutors"
-              name="Tutores"
-              parent="menu_aulametrics_config"
-              action="base.action_res_users"
-              groups="group_aulametrics_admin"
-              sequence="30"/>
 
     <!-- Comunicaciones Internas -->
     <menuitem id="menu_aulametrics_comms_root"

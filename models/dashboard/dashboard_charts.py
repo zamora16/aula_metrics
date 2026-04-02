@@ -35,7 +35,7 @@ class DashboardCharts(models.TransientModel):
         # Obtener opciones disponibles para los filtros
         available_metrics = self.env['aula_metrics.dashboard.data_queries'].get_available_metrics(filters, role_info)
         available_groups = self.env['aula_metrics.dashboard.data_queries'].get_available_groups(filters, role_info)
-        available_evaluations = self.env['aula_metrics.dashboard.data_queries'].get_available_evaluations(role_info)
+        available_evaluations = self.env['aula_metrics.dashboard.data_queries'].get_available_evaluations(role_info, filters)
         segmentation_vars = self.env['aula_metrics.dashboard.data_queries'].get_segmentation_variables(filters, role_info)
 
         # Si no hay datos disponibles, mostrar mensaje

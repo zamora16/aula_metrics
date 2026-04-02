@@ -1,4 +1,8 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_academic_year_admin,access.academic.year.admin,model_aula_metrics_academic_year,group_aulametrics_admin,1,1,1,1
+access_academic_year_counselor,access.academic.year.counselor,model_aula_metrics_academic_year,group_aulametrics_counselor,1,0,0,0
+access_academic_year_tutor,access.academic.year.tutor,model_aula_metrics_academic_year,group_aulametrics_tutor,1,0,0,0
+access_academic_year_management,access.academic.year.management,model_aula_metrics_academic_year,group_aulametrics_management,1,0,0,0
 access_academic_group_admin,access.academic.group.admin,model_aula_metrics_academic_group,group_aulametrics_admin,1,1,1,1
 access_academic_group_counselor,access.academic.group.counselor,model_aula_metrics_academic_group,group_aulametrics_counselor,1,1,1,1
 access_academic_group_tutor,access.academic.group.tutor,model_aula_metrics_academic_group,group_aulametrics_tutor,1,0,0,0
@@ -28,6 +32,7 @@ access_resolve_alert_wizard_counselor,access.resolve.alert.wizard.counselor,mode
 access_manual_alert_wizard_admin,access.manual.alert.wizard.admin,model_aula_metrics_manual_alert_wizard,group_aulametrics_admin,1,1,1,1
 access_manual_alert_wizard_counselor,access.manual.alert.wizard.counselor,model_aula_metrics_manual_alert_wizard,group_aulametrics_counselor,1,1,1,1
 access_manual_alert_wizard_tutor,access.manual.alert.wizard.tutor,model_aula_metrics_manual_alert_wizard,group_aulametrics_tutor,1,1,1,1
+access_new_academic_year_wizard_admin,access.new.academic.year.wizard.admin,model_aula_metrics_new_academic_year_wizard,group_aulametrics_admin,1,1,1,1
 access_dashboard_charts_admin,access.dashboard.charts.admin,model_aula_metrics_dashboard_charts,group_aulametrics_admin,1,1,1,1
 access_dashboard_charts_counselor,access.dashboard.charts.counselor,model_aula_metrics_dashboard_charts,group_aulametrics_counselor,1,1,1,1
 access_dashboard_charts_tutor,access.dashboard.charts.tutor,model_aula_metrics_dashboard_charts,group_aulametrics_tutor,1,0,0,0

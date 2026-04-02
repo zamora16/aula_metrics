@@ -6,13 +6,16 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <tree string="Alumnos"
+                  editable="top"
                   decoration-muted="not academic_group_id">
-                <field name="student_code" string="Código" optional="show"/>
-                <field name="name" string="Nombre completo"/>
-                <field name="academic_group_id" string="Grupo"/>
-                <field name="gender" string="Género" optional="hide"/>
-                <field name="birthdate" string="F. Nacimiento" optional="hide"/>
-                <field name="age" string="Edad" optional="show"/>
+                <field name="name" string="Nombre"/>
+                <field name="academic_group_id"
+                       string="Grupo"
+                       options="{'no_create': True}"
+                       domain="[('active', '=', True)]"/>
+                <field name="gender" string="Género"/>
+                <field name="age" string="Edad" readonly="1"/>
+                <field name="student_code" string="Código" optional="show" readonly="1"/>
                 <field name="email" optional="show"/>
                 <field name="phone" optional="hide"/>
             </tree>

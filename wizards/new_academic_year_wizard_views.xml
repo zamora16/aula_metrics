@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista del Wizard -->
+    <record id="view_new_academic_year_wizard_form" model="ir.ui.view">
+        <field name="name">aula_metrics.new_academic_year_wizard.form</field>
+        <field name="model">aula_metrics.new_academic_year_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Nuevo Curso Académico">
+                <sheet>
+                    <div class="o_form_view">
+                        <group string="Curso de origen">
+                            <field name="source_year_id" options="{'no_create': True}"/>
+                        </group>
+
+                        <group string="Nuevo curso">
+                            <field name="new_year_name" placeholder="Ej: 2026-2027"/>
+                            <field name="new_year_date_start"/>
+                            <field name="new_year_date_end"/>
+                        </group>
+
+                        <div class="alert alert-info" role="alert">
+                            <strong>¿Qué ocurrirá al crear el nuevo curso?</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Se crearán <strong><field name="preview_group_count" readonly="1" nolabel="1" class="d-inline"/></strong> grupos vacíos con la misma estructura que el curso origen.</li>
+                                <li>Los grupos del curso origen quedarán <strong>archivados</strong>.</li>
+                                <li>El curso origen pasará a estado <strong>Cerrado</strong>.</li>
+                                <li>Los alumnos <strong>conservan su historial</strong> vinculado a los grupos del curso anterior. Deberás reasignarlos manualmente a los nuevos grupos.</li>
+                            </ul>
+                        </div>
+
+                        <group string="Vista previa de grupos a crear" col="1">
+                            <field name="source_group_ids" readonly="1" nolabel="1">
+                                <tree string="Grupos del curso origen">
+                                    <field name="name"/>
+                                    <field name="course_level"/>
+                                    <field name="tutor_id"/>
+                                    <field name="student_count" string="Alumnos actuales"/>
+                                </tree>
+                            </field>
+                        </group>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_create_new_year" type="object"
+                            string="Crear nuevo curso" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción del Wizard -->
+    <record id="action_new_academic_year_wizard" model="ir.actions.act_window">
+        <field name="name">Nuevo Curso Académico</field>
+        <field name="res_model">aula_metrics.new_academic_year_wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

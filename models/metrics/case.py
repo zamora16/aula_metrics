@@ -52,6 +52,15 @@ class Case(models.Model):
         ondelete='set null',
         help='Grupo del alumno cuando se abrió el caso (dato histórico, no cambia al cambiar de curso).'
     )
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
+        string='Curso Académico',
+        store=True,
+        readonly=True,
+        index=True,
+        ondelete='set null',
+        help='Curso académico cuando se abrió el caso (dato histórico).'
+    )
 
     # ── Fechas ───────────────────────────────────────────────────────────────
     open_date = fields.Date(
@@ -115,13 +124,21 @@ class Case(models.Model):
     # ── ORM overrides ─────────────────────────────────────────────────────────
     @api.model_create_multi
     def create(self, vals_list):
-        # Congelar el grupo académico del alumno en el momento de abrir el caso.
+        # Congelar el grupo académico y el curso del alumno en el momento de abrir el caso.
         # Si el alumno cambia de grupo al año siguiente, el caso sigue mostrado
-        # en el grupo en que ocurrió, preservando el historial correcto.
+        # en el grupo y curso en que ocurrió, preservando el historial correcto.
         for vals in vals_list:
             if 'academic_group_id' not in vals and vals.get('student_id'):
                 student = self.env['res.partner'].browse(vals['student_id'])
                 vals['academic_group_id'] = student.academic_group_id.id or False
+            if 'academic_year_id' not in vals:
+                group_id = vals.get('academic_group_id')
+                if not group_id and vals.get('student_id'):
+                    student = self.env['res.partner'].browse(vals['student_id'])
+                    group_id = student.academic_group_id.id or False
+                if group_id:
+                    group = self.env['aula_metrics.academic_group'].browse(group_id)
+                    vals['academic_year_id'] = group.academic_year_id.id or False
         records = super().create(vals_list)
         for record in records:
             # Registrar en chatter el motivo de apertura con un mensaje interno

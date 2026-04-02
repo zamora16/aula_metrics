@@ -2,6 +2,7 @@
 """
 Modelos de núcleo: entidades base del dominio educativo.
 """
+from . import academic_year
 from . import res_partner
 from . import academic_group
 from . import threshold

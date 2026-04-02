@@ -90,6 +90,16 @@ class MetricValue(models.Model):
         help='Grupo del alumno en el momento de registrar esta métrica (dato histórico, no cambia al cambiar de curso).'
     )
 
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
+        string='Curso Académico',
+        store=True,
+        readonly=True,
+        index=True,
+        ondelete='set null',
+        help='Curso académico de la evaluación en el momento de registrar esta métrica (dato histórico).'
+    )
+
     # Campos auxiliares
     notes = fields.Text(
         string='Notas',
@@ -106,13 +116,16 @@ class MetricValue(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Congela el grupo académico del alumno en el momento de crear la métrica.
+        """Congela el grupo académico y el curso del alumno en el momento de crear la métrica.
         Así los datos históricos no se alteran cuando el alumno cambia de grupo al año siguiente.
         """
         for vals in vals_list:
             if 'academic_group_id' not in vals and vals.get('student_id'):
                 student = self.env['res.partner'].browse(vals['student_id'])
                 vals['academic_group_id'] = student.academic_group_id.id or False
+            if 'academic_year_id' not in vals and vals.get('evaluation_id'):
+                evaluation = self.env['aula_metrics.evaluation'].browse(vals['evaluation_id'])
+                vals['academic_year_id'] = evaluation.academic_year_id.id or False
         return super().create(vals_list)
 
     def name_get(self):

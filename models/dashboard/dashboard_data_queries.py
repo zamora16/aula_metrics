@@ -30,6 +30,8 @@ class DashboardDataQueries(models.Model):
         # Filtrar por evaluaciones si se especifica
         if filters.get('evaluation_ids'):
             domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
+        elif filters.get('academic_year_id'):
+            domain.append(('academic_year_id', '=', filters['academic_year_id']))
 
         # Agrupar por metric_name y obtener labels
         result = MetricValue.read_group(
@@ -91,6 +93,8 @@ class DashboardDataQueries(models.Model):
                 else:
                     # Si no hay grupos válidos, retornar lista vacía
                     return []
+            elif filters.get('academic_year_id'):
+                domain.append(('academic_year_id', '=', filters['academic_year_id']))
 
             groups = AcademicGroup.search(domain, order='name')
             return [{
@@ -103,12 +107,18 @@ class DashboardDataQueries(models.Model):
             return []
 
     @api.model
-    def get_available_evaluations(self, role_info):
-        """Obtiene las evaluaciones disponibles según rol."""
+    def get_available_evaluations(self, role_info, filters=None):
+        """Obtiene las evaluaciones disponibles según rol y curso académico."""
+        if filters is None:
+            filters = {}
         try:
             Evaluation = self.env['aula_metrics.evaluation']
 
             domain = [('state', 'in', EVAL_STATES_ACTIVE)]
+
+            # Filtro por curso académico
+            if filters.get('academic_year_id'):
+                domain.append(('academic_year_id', '=', filters['academic_year_id']))
 
             # Restricciones por rol
             if role_info.get('role') == ROLE_TUTOR:
@@ -146,6 +156,8 @@ class DashboardDataQueries(models.Model):
         # Filtros de evaluación
         if filters.get('evaluation_ids'):
             domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
+        elif filters.get('academic_year_id'):
+            domain.append(('academic_year_id', '=', filters['academic_year_id']))
         
         return MetricValue.search(domain)
 

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!-- Vista de Formulario — hub de gestión de un curso académico          -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <record id="view_academic_year_form" model="ir.ui.view">
+        <field name="name">aula_metrics.academic_year.form</field>
+        <field name="model">aula_metrics.academic_year</field>
+        <field name="arch" type="xml">
+            <form string="Curso Académico">
+                <header>
+                    <button name="action_open_new_year_wizard"
+                            string="Pasar de Curso"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'active'"
+                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"
+                            title="Crea el siguiente curso copiando la estructura de éste"/>
+                    <button name="action_activate" string="Activar Curso" type="object"
+                            class="btn-secondary"
+                            invisible="state == 'active'"/>
+                    <button name="action_close" string="Cerrar Curso" type="object"
+                            invisible="state != 'active'"
+                            groups="aula_metrics.group_aulametrics_admin"/>
+                    <button name="action_reset_draft" string="Restablecer a Borrador" type="object"
+                            invisible="state != 'closed'"
+                            groups="aula_metrics.group_aulametrics_admin"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,closed"/>
+                </header>
+                <sheet>
+                    <!-- Contadores rápidos ─────────────────────────────── -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_groups" type="object"
+                                class="oe_stat_button" icon="fa-th-large">
+                            <field name="group_count" widget="statinfo" string="Grupos"/>
+                        </button>
+                        <button name="action_view_students" type="object"
+                                class="oe_stat_button" icon="fa-graduation-cap">
+                            <field name="total_student_count" widget="statinfo" string="Alumnos"/>
+                        </button>
+                    </div>
+
+                    <!-- Título ─────────────────────────────────────────── -->
+                    <div class="oe_title">
+                        <label for="name" string="Curso Académico"/>
+                        <h1>
+                            <field name="name" placeholder="Ej: 2025-2026"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Período Lectivo">
+                            <field name="date_start" string="Inicio"/>
+                            <field name="date_end" string="Fin"/>
+                        </group>
+                    </group>
+
+                    <!-- Grupos de este curso ─────────────────────────── -->
+                    <notebook>
+                        <page string="Grupos y Tutores" name="groups">
+                            <p class="text-muted mb-2" invisible="group_count > 0">
+                                Aún no hay grupos en este curso. Añade los grupos
+                                directamente en la tabla de abajo.
+                            </p>
+                            <field name="academic_group_ids"
+                                   context="{'default_academic_year_id': active_id}">
+                                <tree editable="bottom" string="Grupos de este Curso">
+                                    <field name="name"
+                                           string="Grupo"
+                                           placeholder="Ej: 1º ESO A"/>
+                                    <field name="course_level" string="Nivel"/>
+                                    <field name="tutor_id"
+                                           widget="many2one_avatar_user"
+                                           string="Tutor/a"
+                                           options="{'no_create': True}"/>
+                                    <field name="student_count"
+                                           string="Alumnos"
+                                           readonly="1"/>
+                                    <field name="active"
+                                           optional="show"
+                                           string="Activo"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!-- Vista de Lista — selector de curso                                  -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <record id="view_academic_year_tree" model="ir.ui.view">
+        <field name="name">aula_metrics.academic_year.tree</field>
+        <field name="model">aula_metrics.academic_year</field>
+        <field name="arch" type="xml">
+            <tree string="Cursos Académicos"
+                  decoration-success="state == 'active'"
+                  decoration-muted="state == 'closed'">
+                <field name="name" string="Curso"/>
+                <field name="date_start" string="Inicio" optional="show"/>
+                <field name="date_end" string="Fin" optional="show"/>
+                <field name="group_count" string="Grupos"/>
+                <field name="total_student_count" string="Alumnos"/>
+                <field name="state" widget="badge"/>
+                <field name="is_current" column_invisible="True"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!-- Vista de Búsqueda                                                   -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <record id="view_academic_year_search" model="ir.ui.view">
+        <field name="name">aula_metrics.academic_year.search</field>
+        <field name="model">aula_metrics.academic_year</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Cursos Académicos">
+                <field name="name" string="Nombre del Curso"/>
+                <filter name="active_years" string="Activo" domain="[('state', '=', 'active')]"/>
+                <filter name="closed_years" string="Cerrados" domain="[('state', '=', 'closed')]"/>
+                <filter name="draft_years" string="Borradores" domain="[('state', '=', 'draft')]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!-- Acción de Ventana                                                   -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!-- Acción de servidor enlazada al listado: aparece en el menú ⚙️ Acción,
+         visible para admin y orientador sin necesidad de seleccionar filas -->
+    <record id="action_server_pasar_de_curso" model="ir.actions.server">
+        <field name="name">Pasar de Curso</field>
+        <field name="model_id" ref="model_aula_metrics_academic_year"/>
+        <field name="binding_model_id" ref="model_aula_metrics_academic_year"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = env['aula_metrics.academic_year'].action_open_new_year_wizard()</field>
+        <field name="groups_id" eval="[(4, ref('aula_metrics.group_aulametrics_admin')), (4, ref('aula_metrics.group_aulametrics_counselor'))]"/>
+    </record>
+
+    <record id="action_academic_year_list" model="ir.actions.act_window">
+        <field name="name">Cursos Académicos</field>
+        <field name="res_model">aula_metrics.academic_year</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea el primer curso académico
+            </p>
+            <p>
+                Cada curso académico contiene sus propios grupos, tutores y
+                alumnos. Desde aquí gestionas toda la estructura del centro.
+            </p>
+        </field>
+    </record>
+</odoo>

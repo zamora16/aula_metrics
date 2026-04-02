@@ -246,10 +246,27 @@ class DashboardChartsController(http.Controller):
             })
 
     def _parse_hub_filters(self, kwargs):
-        """Parsea los parámetros GET a un dict de filtros (SIMPLIFICADO: solo evaluaciones)."""
+        """Parsea los parámetros GET a un dict de filtros."""
         filters = {
             'evaluation_ids': [],
+            'academic_year_id': None,
         }
+
+        # Filtro por curso académico (selector global de cabecera)
+        if kwargs.get('academic_year_id'):
+            try:
+                year_id = int(kwargs['academic_year_id'])
+                year = request.env['aula_metrics.academic_year'].browse(year_id)
+                if year.exists():
+                    filters['academic_year_id'] = year_id
+            except (ValueError, TypeError):
+                pass
+
+        # Si no se especifica año, usar el curso activo por defecto
+        if filters['academic_year_id'] is None:
+            current_year = request.env['aula_metrics.academic_year'].get_current_year()
+            if current_year:
+                filters['academic_year_id'] = current_year.id
 
         # Solo evaluaciones (filtro maestro del que se derivan métricas y grupos)
         if kwargs.get('evaluation_ids'):
