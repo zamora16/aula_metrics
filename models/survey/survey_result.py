@@ -266,6 +266,65 @@ class SurveyResult(models.Model):
         return super().create(vals_list)
 
     @api.model
+    def build_composite_report_data(self, student_id, result_ids, eval_ids, survey_ids):
+        """
+        Obtiene y estructura los datos para el informe compuesto de un alumno.
+
+        Centraliza la búsqueda y el mapeo que antes vivían en el controlador HTTP,
+        permitiendo reutilizar la lógica desde cualquier contexto (tests, crons, etc.).
+
+        Args:
+            student_id (int): ID del res.partner alumno.
+            result_ids (list[int]): IDs directos de survey_result (modo nuevo).
+            eval_ids (list[int]): IDs de evaluaciones (modo legado).
+            survey_ids (list[int]): IDs de cuestionarios (modo legado).
+
+        Returns:
+            dict con claves: student_name, student_group, generated_date,
+                             evaluation_names, survey_titles, pages.
+        """
+        from datetime import date as _date
+
+        if result_ids:
+            results = self.search([
+                ('id',             'in', result_ids),
+                ('student_id',     '=',  student_id),
+                ('is_aulametrics', '=',  True),
+            ], order='evaluation_id, survey_id, completed_at asc')
+        else:
+            results = self.search([
+                ('student_id',     '=',  student_id),
+                ('is_aulametrics', '=',  True),
+                ('evaluation_id',  'in', eval_ids),
+                ('survey_id',      'in', survey_ids),
+            ], order='evaluation_id, survey_id, completed_at asc')
+
+        student = self.env['res.partner'].browse(student_id)
+        pages              = []
+        eval_names_seen    = []
+        survey_titles_seen = []
+
+        for r in results:
+            ev_name    = r.evaluation_id.name if r.evaluation_id else 'Sin evaluación'
+            survey_ttl = r.survey_id.title or ''
+            if ev_name not in eval_names_seen:
+                eval_names_seen.append(ev_name)
+            if survey_ttl not in survey_titles_seen:
+                survey_titles_seen.append(survey_ttl)
+            page_data = r.get_report_data()
+            page_data['evaluation_name'] = ev_name
+            pages.append(page_data)
+
+        return {
+            'student_name':    student.name or '',
+            'student_group':   student.academic_group_id.name if student.academic_group_id else '',
+            'generated_date':  _date.today().strftime('%d/%m/%Y'),
+            'evaluation_names': eval_names_seen,
+            'survey_titles':   survey_titles_seen,
+            'pages':           pages,
+        }
+
+    @api.model
     def create_from_scoring(self, student_id, survey_id, user_input_id, evaluation_id,
                              raw_score, scale_scores, baremo_env):
         """

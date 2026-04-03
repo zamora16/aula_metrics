@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-from odoo import models, fields
+from odoo import api, models, fields
 from .survey_scoring_strategies import SCORING_STRATEGIES
 
 _logger = logging.getLogger(__name__)
@@ -266,6 +266,140 @@ class SurveyUserInput(models.Model):
                 'response_date': self.create_date or fields.Datetime.now()
             })
     
+    @api.model
+    def get_or_create_for_participation(self, participation, survey):
+        """Obtiene o crea un user_input para la participación dada."""
+        SurveyUserInput = self.sudo()
+        eval_rec = participation.evaluation_id
+        domain = [
+            ('partner_id', '=', participation.student_id.id),
+            ('survey_id', '=', survey.id),
+        ]
+        if eval_rec and eval_rec.date_start:
+            domain.append(('create_date', '>=', eval_rec.date_start))
+        if eval_rec and eval_rec.date_end:
+            domain.append(('create_date', '<=', eval_rec.date_end))
+        user_input = SurveyUserInput.search(domain, order='create_date desc', limit=1)
+
+        if not user_input:
+            user_input = SurveyUserInput.create({
+                'survey_id': survey.id,
+                'partner_id': participation.student_id.id,
+                'state': 'in_progress',
+                'deadline': eval_rec.date_end,
+            })
+        elif user_input.state == 'new':
+            user_input.write({'state': 'in_progress'})
+
+        return user_input
+
+    def save_answers_from_post(self, survey, post):
+        """Procesa y guarda respuestas del formulario POST en este user_input."""
+        self.ensure_one()
+        SurveyLine = self.env['survey.user_input.line'].sudo()
+
+        # Borrar respuestas previas (permite re-edición antes de completar)
+        self.user_input_line_ids.unlink()
+
+        for question in survey.question_ids:
+            if question.is_page:
+                continue
+            if question.question_type == 'matrix':
+                self._save_matrix_answer(question, SurveyLine, post)
+            elif question.question_type in ('text_box', 'char_box'):
+                self._save_text_answer(question, SurveyLine, post)
+            elif question.question_type == 'simple_choice':
+                self._save_simple_choice_answer(question, SurveyLine, post)
+            elif question.question_type == 'multiple_choice':
+                self._save_multiple_choice_answer(question, SurveyLine, post)
+            elif question.question_type == 'numerical_box':
+                self._save_numerical_answer(question, SurveyLine, post)
+            elif question.question_type in ('date', 'datetime'):
+                self._save_date_answer(question, SurveyLine, post)
+
+    def _save_text_answer(self, question, SurveyLine, post):
+        answer_value = post.get(f'question_{question.id}', '').strip()
+        if answer_value:
+            data = {
+                'user_input_id': self.id,
+                'question_id': question.id,
+                'answer_type': question.question_type,
+            }
+            if question.question_type == 'text_box':
+                data['value_text_box'] = answer_value
+            else:
+                data['value_char_box'] = answer_value
+            SurveyLine.create(data)
+
+    def _save_simple_choice_answer(self, question, SurveyLine, post):
+        answer_value = post.get(f'question_{question.id}')
+        if answer_value:
+            try:
+                SurveyLine.create({
+                    'user_input_id': self.id,
+                    'question_id': question.id,
+                    'answer_type': 'suggestion',
+                    'suggested_answer_id': int(answer_value),
+                })
+            except (ValueError, TypeError):
+                pass
+
+    def _save_multiple_choice_answer(self, question, SurveyLine, post):
+        prefix = f'question_{question.id}_answer_'
+        for key, value in post.items():
+            if key.startswith(prefix):
+                try:
+                    SurveyLine.create({
+                        'user_input_id': self.id,
+                        'question_id': question.id,
+                        'answer_type': 'suggestion',
+                        'suggested_answer_id': int(value),
+                    })
+                except (ValueError, TypeError):
+                    pass
+
+    def _save_numerical_answer(self, question, SurveyLine, post):
+        answer_value = post.get(f'question_{question.id}')
+        if answer_value:
+            try:
+                SurveyLine.create({
+                    'user_input_id': self.id,
+                    'question_id': question.id,
+                    'answer_type': 'numerical_box',
+                    'value_numerical_box': float(answer_value),
+                })
+            except (ValueError, TypeError):
+                pass
+
+    def _save_date_answer(self, question, SurveyLine, post):
+        answer_value = post.get(f'question_{question.id}')
+        if answer_value:
+            data = {
+                'user_input_id': self.id,
+                'question_id': question.id,
+                'answer_type': question.question_type,
+            }
+            if question.question_type == 'date':
+                data['value_date'] = answer_value
+            else:
+                data['value_datetime'] = answer_value
+            SurveyLine.create(data)
+
+    def _save_matrix_answer(self, question, SurveyLine, post):
+        for row in question.matrix_row_ids:
+            answer_value = post.get(f'question_{question.id}_row_{row.id}')
+            if answer_value:
+                try:
+                    SurveyLine.create({
+                        'user_input_id': self.id,
+                        'question_id': question.id,
+                        'answer_type': 'suggestion',
+                        'matrix_row_id': row.id,
+                        'suggested_answer_id': int(answer_value),
+                    })
+                except (ValueError, TypeError):
+                    pass
+
     def _save_multiplechoice_responses(self):
         """Extrae y guarda respuestas de opción múltiple como métricas JSON."""
         self.ensure_one()

@@ -2,21 +2,13 @@
 from odoo import http
 from odoo.http import request
 
-from odoo.addons.aula_metrics.utils import dashboard_styles, role_service
-from odoo.addons.aula_metrics.utils.constants import (
-    ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR,
-)
+from odoo.addons.aula_metrics.utils import dashboard_styles
+from odoo.addons.aula_metrics.utils.constants import ROLE_LABELS
+from .base import AulaMetricsBaseController
 from .dashboard_controller import _render
 
-_ROLE_LABELS = {
-    ROLE_ADMIN: 'Vista completa del centro — Acceso total',
-    ROLE_COUNSELOR: 'Vista completa del centro — Acceso total',
-    ROLE_TUTOR: 'Vista de tu grupo',
-    ROLE_MANAGEMENT: 'Vista agregada del centro — Por nivel educativo',
-}
 
-
-class SegmentationDashboardController(http.Controller):
+class SegmentationDashboardController(AulaMetricsBaseController):
 
     @http.route('/aulametrics/segmentation/dashboard', type='http', auth='user')
     def segmentation_dashboard(self, evaluation_ids=None, embedded=None, **kwargs):
@@ -34,7 +26,7 @@ class SegmentationDashboardController(http.Controller):
             'role': role_info['role'],
             'role_info': role_info,
             'active_section': 'segmentation',
-            'role_desc': _ROLE_LABELS.get(role_info['role'], ''),
+            'role_desc': ROLE_LABELS.get(role_info['role'], ''),
             'evaluations': model.get_available_evaluations(role_info),
             'selected_evals': selected_eval_ids,
             'segmentation_variables': model.get_segmentation_variables(
@@ -50,6 +42,3 @@ class SegmentationDashboardController(http.Controller):
         )
         return _render(template, context)
 
-    def _detect_user_role(self):
-        """Detecta el rol del usuario actual con sus grupos académicos permitidos."""
-        return role_service.get_role_info(request.env, request.env.user)

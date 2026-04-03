@@ -272,3 +272,58 @@ class Participation(models.Model):
         for participation in self:
             if participation.state == 'pending':
                 participation.write({'state': 'expired'})
+
+    @api.model
+    def get_by_token(self, token):
+        """Busca participación activa por token."""
+        return self.sudo().search([
+            ('evaluation_token', '=', token),
+            ('state', '!=', 'expired'),
+        ], limit=1)
+
+    def get_surveys_status(self):
+        """Retorna estado de todas las encuestas de la evaluación de esta participación."""
+        self.ensure_one()
+        surveys = self.evaluation_id.sudo().survey_ids
+        eval_rec = self.evaluation_id
+        result = []
+
+        for survey in surveys:
+            done_domain = [
+                ('partner_id', '=', self.student_id.id),
+                ('survey_id', '=', survey.id),
+                ('state', '=', 'done'),
+            ]
+            if eval_rec and eval_rec.date_start:
+                done_domain.append(('create_date', '>=', eval_rec.date_start))
+            if eval_rec and eval_rec.date_end:
+                done_domain.append(('create_date', '<=', eval_rec.date_end))
+            done_ui = self.env['survey.user_input'].sudo().search(
+                done_domain, order='create_date desc', limit=1
+            )
+
+            if done_ui:
+                is_completed = True
+                ui_for_return = done_ui
+            else:
+                fallback_domain = [
+                    ('partner_id', '=', self.student_id.id),
+                    ('survey_id', '=', survey.id),
+                ]
+                if eval_rec and eval_rec.date_start:
+                    fallback_domain.append(('create_date', '>=', eval_rec.date_start))
+                if eval_rec and eval_rec.date_end:
+                    fallback_domain.append(('create_date', '<=', eval_rec.date_end))
+                ui_for_return = self.env['survey.user_input'].sudo().search(
+                    fallback_domain, order='create_date desc', limit=1
+                )
+                is_completed = False
+
+            result.append({
+                'survey': survey.sudo(),
+                'completed': is_completed,
+                'user_input': ui_for_return,
+                'url': f'/evaluacion/{self.evaluation_token}/encuesta/{survey.id}',
+            })
+
+        return result

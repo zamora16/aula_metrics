@@ -6,9 +6,9 @@ import re
 from odoo import http
 from odoo.http import request
 from markupsafe import Markup
-# Importar utilidades compartidas
 from odoo.addons.aula_metrics.utils import role_service
 from odoo.addons.aula_metrics.utils.constants import ROLE_MANAGEMENT
+from .base import AulaMetricsBaseController
 
 _logger = logging.getLogger(__name__)
 
@@ -36,15 +36,8 @@ def _render(template, values):
     return request.make_response(html, headers=_HTML_HEADERS)
 
 
-class DashboardChartsController(http.Controller):
+class DashboardChartsController(AulaMetricsBaseController):
     """Controlador para dashboard interactivo con filtros de rol."""
-
-    def _detect_user_role(self):
-        """
-        Detecta el rol del usuario actual con sus grupos académicos permitidos.
-        Jerarquía: admin > counselor > management > tutor
-        """
-        return role_service.get_role_info(request.env, request.env.user)
 
     @http.route('/aulametrics/dashboard', type='http', auth='user')
     def dashboard_view(self, **kwargs):
@@ -177,47 +170,14 @@ class DashboardChartsController(http.Controller):
             })
 
         try:
-            env = request.env
+            report_data = request.env['aula_metrics.survey_result'].build_composite_report_data(
+                student_id=student_id,
+                result_ids=result_ids,
+                eval_ids=evaluation_ids,
+                survey_ids=survey_ids,
+            )
 
-            if result_ids:
-                results_ordered = env['aula_metrics.survey_result'].search([
-                    ('id',             'in', result_ids),
-                    ('student_id',     '=', student_id),
-                    ('is_aulametrics', '=', True),
-                ], order='evaluation_id, survey_id, completed_at asc')
-            else:
-                results_ordered = env['aula_metrics.survey_result'].search([
-                    ('student_id',     '=', student_id),
-                    ('is_aulametrics', '=', True),
-                    ('evaluation_id',  'in', evaluation_ids),
-                    ('survey_id',      'in', survey_ids),
-                ], order='evaluation_id, survey_id, completed_at asc')
-
-            pages              = []
-            eval_names_seen    = []
-            survey_titles_seen = []
-
-            for r in results_ordered:
-                ev_name    = r.evaluation_id.name if r.evaluation_id else 'Sin evaluación'
-                survey_ttl = r.survey_id.title or ''
-                if ev_name not in eval_names_seen:
-                    eval_names_seen.append(ev_name)
-                if survey_ttl not in survey_titles_seen:
-                    survey_titles_seen.append(survey_ttl)
-                page_data = r.get_report_data()
-                page_data['evaluation_name'] = ev_name
-                pages.append(page_data)
-
-            report_data = {
-                'student_name':    student.name or '',
-                'student_group':   student.academic_group_id.name if student.academic_group_id else '',
-                'generated_date':  _date.today().strftime('%d/%m/%Y'),
-                'evaluation_names': eval_names_seen,
-                'survey_titles':   survey_titles_seen,
-                'pages':           pages,
-            }
-
-            pdf_bytes, _ = env['ir.actions.report'].sudo()._render_qweb_pdf(
+            pdf_bytes, _ = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
                 'aula_metrics.report_student_composite',
                 [student_id],
                 data=report_data,

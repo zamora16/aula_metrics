@@ -181,6 +181,43 @@ class SurveyExtension(models.Model):
             'context': {'default_survey_ids': [(6, 0, [self.id])]},
         }
     
+    def get_questions_data(self, user_input=None):
+        """Prepara lista de datos de preguntas para el template del portal."""
+        self.ensure_one()
+        existing_lines = {}
+        if user_input:
+            existing_lines = {
+                line.question_id.id: line
+                for line in user_input.user_input_line_ids
+            }
+
+        questions = []
+        for question in self.question_ids:
+            if question.is_page:
+                questions.append({
+                    'type': 'page',
+                    'id': question.id,
+                    'title': question.title,
+                    'description': question.description,
+                })
+            else:
+                q_data = {
+                    'type': 'question',
+                    'id': question.id,
+                    'title': question.title,
+                    'description': question.description,
+                    'question_type': question.question_type,
+                    'constr_mandatory': question.constr_mandatory,
+                    'suggested_answer_ids': question.suggested_answer_ids,
+                    'previous_answer': existing_lines.get(question.id),
+                }
+                if question.question_type == 'matrix':
+                    q_data['matrix_subtype'] = question.matrix_subtype
+                    q_data['matrix_row_ids'] = question.matrix_row_ids
+                questions.append(q_data)
+
+        return questions
+
     def action_test_survey(self):
         """Override para vista previa: usa portal personalizado si es AulaMetrics."""
         self.ensure_one()

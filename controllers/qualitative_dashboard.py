@@ -4,16 +4,24 @@ from odoo.http import request
 import json
 from markupsafe import Markup
 
-# Importar utilidades compartidas
-from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_helpers, palette, role_service
+from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_helpers, palette
 from odoo.addons.aula_metrics.utils.constants import (
-    QUERY_LIMIT_QUALITATIVE, EVAL_STATES_ACTIVE,
     ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR,
 )
+from .base import AulaMetricsBaseController
 from .dashboard_controller import _render
 
+# Labels específicos de esta sección: describen el tipo de dato visible
+# (anonimización, estadísticas) además del alcance por rol.
+_ROLE_LABELS = {
+    ROLE_ADMIN:      'Vista completa identificada — Acceso total',
+    ROLE_COUNSELOR:  'Vista completa identificada — Acceso total',
+    ROLE_TUTOR:      'Vista de tu grupo — Respuestas anónimas',
+    ROLE_MANAGEMENT: 'Vista agregada del centro — Solo estadísticas',
+}
 
-class QualitativeDashboardController(http.Controller):
+
+class QualitativeDashboardController(AulaMetricsBaseController):
     
     @http.route('/aulametrics/qualitative/dashboard', type='http', auth='user')
     def qualitative_dashboard(self, evaluation_ids=None, embedded=None, **kwargs):
@@ -32,8 +40,7 @@ class QualitativeDashboardController(http.Controller):
             return request.redirect('/aulametrics/dashboard?section=qualitative')
 
         # Detectar rol del usuario (incluye allowed_group_ids para tutores)
-        user = request.env.user
-        role_info = self._detect_user_role(user)
+        role_info = self._detect_user_role()
         role = role_info['role']
 
         # ── Parsear IDs de evaluación (multi-select, mismo formato que cuantitativo) ──
@@ -44,22 +51,13 @@ class QualitativeDashboardController(http.Controller):
             except (ValueError, AttributeError):
                 pass
 
-        # ── Dominio: filtro por evaluaciones seleccionadas ────────────────────
-        domain = []
-        if selected_eval_ids:
-            domain.append(('evaluation_id', 'in', selected_eval_ids))
+        responses = request.env['aula_metrics.qualitative_response'].get_for_dashboard(
+            role_info, eval_ids=selected_eval_ids or None
+        )
 
-        filtered_domain = role_service.apply_group_filter(domain, role_info, field='academic_group_id')
-        if filtered_domain is None:
-            responses = request.env['aula_metrics.qualitative_response']
-        else:
-            responses = request.env['aula_metrics.qualitative_response'].search(
-                filtered_domain,
-                order='response_date desc',
-                limit=QUERY_LIMIT_QUALITATIVE,
-            )
-
-        evaluations = self._get_available_evaluations(role_info)
+        evaluations = request.env['aula_metrics.evaluation'].get_with_qualitative_questions(
+            role_info
+        )
 
         # Contexto base
         context = {
@@ -76,14 +74,7 @@ class QualitativeDashboardController(http.Controller):
         else:  # management
             context.update(self._get_management_data(responses))
         
-        # Añadir valores de renderizado para QWeb
-        role_labels = {
-            ROLE_ADMIN: 'Vista completa identificada - Acceso total',
-            ROLE_COUNSELOR: 'Vista completa identificada - Acceso total',
-            ROLE_TUTOR: 'Vista de tu grupo - Respuestas anónimas',
-            ROLE_MANAGEMENT: 'Vista agregada del centro - Solo estadísticas',
-        }
-        context['role_desc'] = role_labels.get(role, '')
+        context['role_desc'] = _ROLE_LABELS.get(role, '')
         context['role_info'] = role_info
         context['active_section'] = 'qualitative'
         context['css_styles'] = dashboard_styles.get_common_styles()
@@ -123,46 +114,6 @@ class QualitativeDashboardController(http.Controller):
                 ]))
 
         return _render('aula_metrics.qualitative_dashboard_embedded', context)
-    
-    def _detect_user_role(self, user):
-        """Detecta el rol del usuario con sus grupos académicos permitidos."""
-        return role_service.get_role_info(request.env, user)
-    
-    def _get_available_evaluations(self, role_info):
-        """Obtiene evaluaciones disponibles según rol - solo las que tienen preguntas abiertas."""
-        domain = role_service.apply_group_filter(
-            [('state', 'in', EVAL_STATES_ACTIVE)],
-            role_info,
-            field='academic_group_ids',
-        )
-        if domain is None:
-            return []
-        
-        all_evaluations = request.env['aula_metrics.evaluation'].search(
-            domain,
-            order='date_start desc'
-        )
-        
-        # Filtrar solo evaluaciones con preguntas de texto libre
-        evaluations_with_text_questions = request.env['aula_metrics.evaluation']
-        for evaluation in all_evaluations:
-            # Verificar si alguna encuesta tiene preguntas de texto libre
-            has_text_questions = False
-            for survey in evaluation.survey_ids:
-                # Buscar preguntas de tipo texto en la encuesta
-                text_questions = request.env['survey.question'].sudo().search([
-                    ('survey_id', '=', survey.id),
-                    ('question_type', 'in', ['text_box', 'char_box'])
-                ], limit=1)
-                
-                if text_questions:
-                    has_text_questions = True
-                    break
-            
-            if has_text_questions:
-                evaluations_with_text_questions |= evaluation
-        
-        return evaluations_with_text_questions
     
     def _get_available_questions(self, responses):
         """Obtiene preguntas que tienen respuestas."""

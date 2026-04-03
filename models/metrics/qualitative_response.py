@@ -3,7 +3,12 @@
 from odoo import api, fields, models
 import re
 import unicodedata
-from odoo.addons.aula_metrics.utils.constants import GROUP_COUNSELOR, COURSE_LEVEL_MAP as _COURSE_LEVEL_MAP
+from odoo.addons.aula_metrics.utils import role_service
+from odoo.addons.aula_metrics.utils.constants import (
+    GROUP_COUNSELOR,
+    COURSE_LEVEL_MAP as _COURSE_LEVEL_MAP,
+    QUERY_LIMIT_QUALITATIVE,
+)
 
 class QualitativeResponse(models.Model):
     _name = 'aula_metrics.qualitative_response'
@@ -68,6 +73,37 @@ class QualitativeResponse(models.Model):
             record.has_alert_keywords = bool(found)
             record.detected_keyword_ids = [(6, 0, found.ids)] if found else [(5, 0, 0)]
     
+    @api.model
+    def get_for_dashboard(self, role_info, eval_ids=None):
+        """
+        Respuestas cualitativas filtradas por rol y evaluaciones seleccionadas.
+
+        Centraliza el filtrado de datos cualitativos para el dashboard,
+        sacando esta lógica del controlador HTTP.
+
+        Args:
+            role_info (dict): resultado de role_service.get_role_info().
+            eval_ids (list[int] | None): evaluaciones a filtrar; None = todas.
+
+        Returns:
+            recordset de aula_metrics.qualitative_response (vacío si sin acceso).
+        """
+        domain = []
+        if eval_ids:
+            domain.append(('evaluation_id', 'in', eval_ids))
+
+        filtered_domain = role_service.apply_group_filter(
+            domain, role_info, field='academic_group_id'
+        )
+        if filtered_domain is None:
+            return self.browse()
+
+        return self.search(
+            filtered_domain,
+            order='response_date desc',
+            limit=QUERY_LIMIT_QUALITATIVE,
+        )
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)

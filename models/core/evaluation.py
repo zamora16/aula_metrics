@@ -485,6 +485,53 @@ class Evaluation(models.Model):
             'context': {'default_evaluation_id': self.id},
         }
     
+    @api.model
+    def get_with_qualitative_questions(self, role_info):
+        """
+        Evaluaciones accesibles por el rol que contienen al menos una pregunta
+        de texto libre (text_box o char_box).
+
+        Sustituye el bucle N×M del controlador por 2 queries:
+          1. Evaluaciones filtradas por rol.
+          2. Cuestionarios con preguntas de texto libre.
+
+        Args:
+            role_info (dict): resultado de role_service.get_role_info().
+
+        Returns:
+            recordset de aula_metrics.evaluation (vacío si sin acceso).
+        """
+        from odoo.addons.aula_metrics.utils import role_service
+        from odoo.addons.aula_metrics.utils.constants import EVAL_STATES_ACTIVE
+
+        domain = role_service.apply_group_filter(
+            [('state', 'in', EVAL_STATES_ACTIVE)],
+            role_info,
+            field='academic_group_ids',
+        )
+        if domain is None:
+            return self.browse()
+
+        all_evals = self.search(domain, order='date_start desc')
+        if not all_evals:
+            return self.browse()
+
+        # Cuestionarios de todas las evaluaciones con preguntas de texto libre (1 query)
+        all_survey_ids = all_evals.survey_ids.ids
+        if not all_survey_ids:
+            return self.browse()
+
+        surveys_with_text = set(
+            self.env['survey.question'].sudo().search([
+                ('survey_id', 'in', all_survey_ids),
+                ('question_type', 'in', ['text_box', 'char_box']),
+            ]).mapped('survey_id').ids
+        )
+
+        return all_evals.filtered(
+            lambda ev: bool(set(ev.survey_ids.ids) & surveys_with_text)
+        )
+
     # Método automático para actualizar estados basado en fechas
     @api.model
     def auto_update_evaluation_states(self):

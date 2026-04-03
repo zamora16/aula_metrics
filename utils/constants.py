@@ -85,3 +85,16 @@ COURSE_LEVEL_MAP = {
     'bach1': '1º Bachillerato',
     'bach2': '2º Bachillerato',
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Labels de rol para la UI del dashboard (descripción del alcance de visión)
+# Cada sección puede definir sus propios labels si necesita precisar el tipo
+# de dato visible (p.ej. "Respuestas anónimas" en cualitativo). Estos son los
+# genéricos utilizados cuando no hay label específico de sección.
+# ─────────────────────────────────────────────────────────────────────────────
+ROLE_LABELS = {
+    ROLE_ADMIN:      'Vista completa del centro — Acceso total',
+    ROLE_COUNSELOR:  'Vista completa del centro — Acceso total',
+    ROLE_TUTOR:      'Vista de tu grupo',
+    ROLE_MANAGEMENT: 'Vista agregada del centro — Por nivel educativo',
+}
