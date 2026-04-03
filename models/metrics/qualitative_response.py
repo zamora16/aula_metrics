@@ -3,7 +3,7 @@
 from odoo import api, fields, models
 import re
 import unicodedata
-from ...utils.constants import GROUP_COUNSELOR
+from odoo.addons.aula_metrics.utils.constants import GROUP_COUNSELOR, COURSE_LEVEL_MAP as _COURSE_LEVEL_MAP
 
 class QualitativeResponse(models.Model):
     _name = 'aula_metrics.qualitative_response'
@@ -91,15 +91,15 @@ class QualitativeResponse(models.Model):
             else:
                 record.display_name = "Estudiante Anónimo"
     
-    @api.depends('academic_group_id')
+    @api.depends('academic_group_id.course_level')
     def _compute_course_level(self):
-        """Extrae nivel de curso sin identificar grupo específico."""
+        """Extrae nivel educativo legible desde el campo de selección del grupo."""
         for record in self:
-            if record.academic_group_id:
-                # "2º A" → "2º ESO"
-                name = record.academic_group_id.name
-                match = re.match(r'(\d+)º', name)
-                record.course_level = f"{match.group(1)}º ESO" if match else "Curso no especificado"
+            if record.academic_group_id and record.academic_group_id.course_level:
+                record.course_level = _COURSE_LEVEL_MAP.get(
+                    record.academic_group_id.course_level,
+                    record.academic_group_id.course_level
+                )
             else:
                 record.course_level = False
 

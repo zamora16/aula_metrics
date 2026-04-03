@@ -40,6 +40,13 @@ CALLBACKS_SCORE_LABEL = (
     'label: function(ctx) { return ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) + " pts"; }'
 )
 
+# Para gráficos de barras horizontales (indexAxis: 'y'): el valor está en ctx.parsed.x
+# y el nombre de la categoría está en ctx.label (no en ctx.dataset.label).
+CALLBACKS_SCORE_LABEL_HORIZONTAL = (
+    'title: function(ctx) { return ctx[0].label; },'
+    'label: function(ctx) { return ctx.parsed.x.toFixed(1) + " pts"; }'
+)
+
 CALLBACKS_SCORE_LABEL_WITH_GROUP_MEAN = (
     'title: function(ctx) { return ctx[0].label; },'
     'label: function(ctx) {'

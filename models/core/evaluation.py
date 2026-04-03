@@ -2,7 +2,7 @@
 import logging
 from markupsafe import escape
 from odoo import models, fields, api, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, AccessError
 
 _logger = logging.getLogger(__name__)
 
@@ -405,21 +405,26 @@ class Evaluation(models.Model):
     
     def _create_participations(self):
         """Crea registros de participación para cada alumno de los grupos asignados"""
+        self.ensure_one()
         Participation = self.env['aula_metrics.participation']
-        
-        for group in self.academic_group_ids:
-            for student in group.student_ids:
-                existing = Participation.search([
-                    ('evaluation_id', '=', self.id),
-                    ('student_id', '=', student.id)
-                ])
-                
-                if not existing:
-                    Participation.create({
-                        'evaluation_id': self.id,
-                        'student_id': student.id,
-                        'state': 'pending',
-                    })
+
+        # Todos los alumnos de todos los grupos (sin duplicados) — 2 queries en total
+        all_students = self.academic_group_ids.student_ids
+        if not all_students:
+            return
+
+        existing_student_ids = set(Participation.search([
+            ('evaluation_id', '=', self.id),
+            ('student_id', 'in', all_students.ids),
+        ]).mapped('student_id').ids)
+
+        vals_list = [
+            {'evaluation_id': self.id, 'student_id': student.id, 'state': 'pending'}
+            for student in all_students
+            if student.id not in existing_student_ids
+        ]
+        if vals_list:
+            Participation.create(vals_list)
     
     def action_recalculate_metrics(self):
         """
@@ -428,6 +433,8 @@ class Evaluation(models.Model):
         Útil para regenerar datos cuando se repararon bugs de scoring.
         """
         self.ensure_one()
+        if not self.env.user.has_group('aula_metrics.group_aulametrics_admin'):
+            raise AccessError(_("Solo los administradores pueden recalcular métricas."))
         SurveyUserInput = self.env['survey.user_input']
 
         for participation in self.participation_ids:

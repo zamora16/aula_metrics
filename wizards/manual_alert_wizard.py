@@ -28,15 +28,27 @@ class ManualAlertWizard(models.TransientModel):
     def default_get(self, fields_list):
         """Bloquear acceso a orientadores y admins en el momento de abrir el wizard."""
         self._check_only_tutor_access()
-        return super().default_get(fields_list)
+        res = super().default_get(fields_list)
+        user = self.env.user
+        if user.has_group(GROUP_TUTOR) and not (
+            user.has_group(GROUP_COUNSELOR) or user.has_group(GROUP_ADMIN)
+        ):
+            groups = self.env['aula_metrics.academic_group'].search(
+                [('tutor_id', '=', user.id)]
+            )
+            student_ids = groups.student_ids.ids
+            res['student_domain'] = str([('id', 'in', student_ids), ('is_student', '=', True)])
+        else:
+            res['student_domain'] = str([('is_student', '=', True)])
+        return res
 
     student_id = fields.Many2one(
         'res.partner',
         string='Alumno',
         required=True,
-        domain="[('is_student', '=', True)]",
         help='Selecciona el alumno sobre el que quieres notificar al orientador',
     )
+    student_domain = fields.Char()
     academic_group_id = fields.Many2one(
         'aula_metrics.academic_group',
         string='Grupo',

@@ -60,8 +60,8 @@ QUERY_LIMIT_STUDENTS     = 1000
 # ─────────────────────────────────────────────────────────────────────────────
 # Estados de evaluación
 # ─────────────────────────────────────────────────────────────────────────────
-# Todos los estados visibles en dashboards (excluye sólo 'cancelled')
-EVAL_STATES_ACTIVE = ['draft', 'scheduled', 'active', 'closed']
+# Todos los estados visibles en dashboards (excluye solo 'cancelled')
+EVAL_STATES_ACTIVE = ['draft', 'scheduled', 'active', 'closed', 'done']
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Colores semáforo para KPIs (umbral de valor 0-100)
@@ -73,3 +73,15 @@ SEMAPHORE_RED    = '#ef4444'
 SEMAPHORE_THRESHOLD_HIGH   = 80
 SEMAPHORE_THRESHOLD_MEDIUM = 60
 SEMAPHORE_THRESHOLD_LOW    = 40
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Niveles educativos: clave de selección → etiqueta legible
+# ─────────────────────────────────────────────────────────────────────────────
+COURSE_LEVEL_MAP = {
+    'eso1': '1º ESO',
+    'eso2': '2º ESO',
+    'eso3': '3º ESO',
+    'eso4': '4º ESO',
+    'bach1': '1º Bachillerato',
+    'bach2': '2º Bachillerato',
+}

@@ -343,95 +343,151 @@
         <div class="kpi-container">
             <div class="kpi-card">
                 <div class="kpi-label">Total Respuestas</div>
-                <div class="kpi-value"><t t-out="stats.get('total_responses', 0)"/></div>
+                <div class="kpi-value"><t t-out="total_responses"/></div>
                 <div class="kpi-description">De tu grupo</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Longitud Media</div>
-                <div class="kpi-value"><t t-out="stats.get('avg_length', 0)"/></div>
-                <div class="kpi-description">Palabras promedio</div>
-            </div>
-            <div class="kpi-card">
                 <div class="kpi-label">Con Alertas</div>
-                <div class="kpi-value"><t t-out="stats.get('responses_with_alerts', 0)"/></div>
+                <div class="kpi-value"><t t-out="responses_with_alerts"/></div>
                 <div class="kpi-description">Requieren atención</div>
             </div>
         </div>
 
-        <div class="row">
-            <!-- Top words -->
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Palabras Frecuentes</h5>
-                    </div>
-                    <div class="card-body">
-                        <ol>
-                            <t t-foreach="stats.get('top_words', [])[:5]" t-as="w">
-                                <li>
-                                    <strong><t t-out="w[0]"/></strong>
-                                    (<t t-out="w[1]"/> veces)
-                                </li>
-                            </t>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Wordcloud -->
-            <div class="col-md-8 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Nube de Palabras</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="wordcloud" style="width:100%; height:350px;"/>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Anonymous responses -->
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Respuestas Anónimas</h5>
-                    </div>
-                    <div class="card-body">
-                        <t t-if="not anonymous_responses">
-                            <p class="text-center text-muted py-4">
-                                No hay respuestas cualitativas.
-                            </p>
-                        </t>
-                        <t t-foreach="anonymous_responses" t-as="resp">
-                            <div t-attf-class="mb-3 p-3 bg-light rounded border #{'border-warning' if resp['has_alerts'] else ''}">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <small class="text-muted">
-                                        <t t-out="resp['date']"/> | <t t-out="resp['word_count']"/> palabras
-                                    </small>
-                                    <t t-if="resp['has_alerts']">
-                                        <span class="badge bg-warning">Alerta</span>
-                                    </t>
+        <!-- Nubes de palabras: una por binomio Evaluación+Pregunta -->
+        <t t-if="wordclouds">
+            <div t-att-class="'row justify-content-center' if len(wordclouds) == 1 else 'row'">
+                <t t-foreach="wordclouds" t-as="wc">
+                    <div t-att-class="'col-xl-8 col-lg-10 col-12 mb-4' if len(wordclouds) == 1 else 'col-md-6 col-12 mb-4'">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <h5 class="card-title mb-0" style="font-size:13px;">
+                                        <i class="fa-solid fa-wind me-2" style="color:var(--am-muted);font-size:11px;"/>
+                                        <t t-out="wc['question_title']"/>
+                                    </h5>
+                                    <div style="font-size:11px;color:var(--am-muted);margin-top:3px;">
+                                        <i class="fa-regular fa-calendar me-1"/>
+                                        <t t-out="wc['eval_name']"/>
+                                        <span style="margin-left:8px;color:var(--am-subtle);">
+                                            · <t t-out="wc['count']"/> respuestas
+                                        </span>
+                                    </div>
                                 </div>
-                                <p class="mb-0"><t t-out="resp['response']"/></p>
                             </div>
-                        </t>
+                            <div class="card-body">
+                                <div t-att-id="wc['id']" style="width:100%;"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+
+        <!-- Tablas de respuestas anónimas por evaluación -->
+        <t t-foreach="responses_by_eval.items()" t-as="eval_block">
+            <t t-set="eval_name" t-value="eval_block[0]"/>
+            <t t-set="eval_responses" t-value="eval_block[1]"/>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div style="border:1px solid var(--am-border);border-radius:10px;
+                                background:var(--am-surface);overflow:hidden;">
+                        <div style="padding:12px 18px;border-bottom:1px solid var(--am-border);
+                                    display:flex;align-items:center;justify-content:space-between;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <i class="fa-solid fa-align-left" style="color:var(--am-muted);font-size:12px;"/>
+                                <span style="font-size:13px;font-weight:600;color:var(--am-text);">
+                                    Respuestas — <t t-out="eval_name"/>
+                                </span>
+                            </div>
+                            <span style="font-size:12px;color:var(--am-muted);">
+                                <t t-out="len(eval_responses)"/> respuestas
+                            </span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;">
+                                <thead>
+                                    <tr style="background:var(--am-light);">
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);text-align:left;
+                                                   border-bottom:1px solid var(--am-border);">Fecha</th>
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);text-align:left;
+                                                   border-bottom:1px solid var(--am-border);">Respuesta</th>
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);text-align:center;
+                                                   border-bottom:1px solid var(--am-border);">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="eval_responses" t-as="resp">
+                                        <tr t-att-style="'border-left:3px solid #f87171;border-bottom:1px solid var(--am-border);' if resp['has_alerts'] else 'border-left:3px solid transparent;border-bottom:1px solid var(--am-border);'"
+                                            onmouseover="this.style.background='var(--am-light)'"
+                                            onmouseout="this.style.background=''">
+                                            <td style="padding:12px 16px;vertical-align:middle;
+                                                       font-size:12px;color:var(--am-muted);white-space:nowrap;">
+                                                <t t-out="resp['date']"/>
+                                            </td>
+                                            <td style="padding:12px 16px;vertical-align:middle;
+                                                       font-size:13px;color:var(--am-text);
+                                                       line-height:1.55;max-width:500px;">
+                                                <t t-if="len(resp['response'] or '') &gt; 150">
+                                                    <t t-out="resp['response'][:150]"/>...
+                                                    <a href="#"
+                                                       style="font-size:12px;color:var(--am-muted);
+                                                              text-decoration:none;font-weight:600;margin-left:4px;"
+                                                       t-attf-onclick="alert('#{resp['response'][:300].replace(&quot;'&quot;, &quot;\\'&quot;)}...'); return false;">
+                                                        Ver más
+                                                    </a>
+                                                </t>
+                                                <t t-else="">
+                                                    <t t-out="resp['response']"/>
+                                                </t>
+                                            </td>
+                                            <td style="padding:12px 16px;vertical-align:middle;text-align:center;">
+                                                <t t-if="resp['has_alerts']">
+                                                    <span style="display:inline-block;padding:3px 10px;
+                                                                 border-radius:20px;font-size:11px;font-weight:700;
+                                                                 background:#fef2f2;border:1px solid #fecaca;
+                                                                 color:#dc2626;white-space:nowrap;">
+                                                        Alerta
+                                                    </span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span style="display:inline-block;padding:3px 10px;
+                                                                 border-radius:20px;font-size:11px;font-weight:700;
+                                                                 background:#f0fdf4;border:1px solid #bbf7d0;
+                                                                 color:#16a34a;white-space:nowrap;">
+                                                        OK
+                                                    </span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </t>
 
         <script>
             (function() {
-                var _wc_data   = <t t-out="wordcloud_json"/>;
-                var _wc_colors = <t t-out="palette_json"/>;
-                function initWordcloudTutor() {
-                    window.amWordcloud.init('wordcloud', _wc_data, _wc_colors, 350);
+                var _wc_palette = <t t-out="palette_json"/>;
+                var _wc_list    = <t t-out="wordclouds_json"/>;
+                function initAllWordcloudsTutor() {
+                    _wc_list.forEach(function(wc) {
+                        window.amWordcloud.init(wc.id, wc.data, _wc_palette);
+                    });
                 }
-                window.initWordcloudTutor = initWordcloudTutor;
+                window.initWordcloudTutor = initAllWordcloudsTutor;
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initWordcloudTutor);
+                    document.addEventListener('DOMContentLoaded', initAllWordcloudsTutor);
                 } else {
-                    setTimeout(initWordcloudTutor, 100);
+                    setTimeout(initAllWordcloudsTutor, 100);
                 }
             })();
         </script>
@@ -440,67 +496,197 @@
 
     <!-- =====================================================================
          MANAGEMENT VIEW
-         Extra values: total_responses, stats_by_course (dict of dicts)
+         Extra values: total_responses, responses_with_alerts,
+                       wordclouds (list of dicts with courses/data_by_course),
+                       responses_by_eval (OrderedDict eval_name → [resp_dict]),
+                       wordclouds_json, palette_json
          ===================================================================== -->
     <template id="qualitative_management_view" name="AulaMetrics - Vista Management">
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="alert alert-info">
-                    <h5 class="alert-heading">Vista Agregada de Privacidad</h5>
-                    <p class="mb-0">
-                        Solo se muestran estadísticas agregadas por curso
-                        para proteger la privacidad de los estudiantes.
-                    </p>
-                </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-label">Total Respuestas</div>
+                <div class="kpi-value"><t t-out="total_responses"/></div>
+                <div class="kpi-description">Respuestas recibidas</div>
             </div>
-
-            <div class="col-12 mb-4">
-                <div class="kpi-card">
-                    <div class="kpi-label">Total de Respuestas en el Centro</div>
-                    <div class="kpi-value"><t t-out="total_responses"/></div>
-                    <div class="kpi-description">Respuestas cualitativas recibidas</div>
-                </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Con Alertas</div>
+                <div class="kpi-value"><t t-out="responses_with_alerts"/></div>
+                <div class="kpi-description">Requieren atención</div>
             </div>
+        </div>
 
-            <t t-if="not stats_by_course">
-                <div class="col-12">
-                    <p class="text-center text-muted py-5">
-                        No hay respuestas disponibles.
-                    </p>
-                </div>
-            </t>
-
-            <t t-foreach="stats_by_course.items()" t-as="course_item">
-                <t t-set="course_name" t-value="course_item[0]"/>
-                <t t-set="course_stats" t-value="course_item[1]"/>
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0"><t t-out="course_name"/></h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="kpi-value"><t t-out="course_stats.get('total_responses', 0)"/></div>
-                            <div class="kpi-label mb-3">Respuestas totales</div>
-                            <p class="mb-2">
-                                <strong>Longitud media:</strong>
-                                <t t-out="course_stats.get('avg_length', 0)"/> palabras
-                            </p>
-                            <p class="mb-3">
-                                <strong>Con alertas:</strong>
-                                <t t-out="course_stats.get('responses_with_alerts', 0)"/>
-                            </p>
-                            <hr/>
-                            <h6>Palabras frecuentes:</h6>
-                            <ol class="small">
-                                <t t-foreach="course_stats.get('top_words', [])[:5]" t-as="w">
-                                    <li><strong><t t-out="w[0]"/></strong> (<t t-out="w[1]"/>)</li>
+        <!-- Nubes de palabras: una por binomio Evaluación+Pregunta -->
+        <t t-if="wordclouds">
+            <div t-att-class="'row justify-content-center' if len(wordclouds) == 1 else 'row'">
+                <t t-foreach="wordclouds" t-as="wc">
+                    <div t-att-class="'col-xl-8 col-lg-10 col-12 mb-4' if len(wordclouds) == 1 else 'col-md-6 col-12 mb-4'">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <h5 class="card-title mb-0" style="font-size:13px;">
+                                        <i class="fa-solid fa-wind me-2" style="color:var(--am-muted);font-size:11px;"/>
+                                        <t t-out="wc['question_title']"/>
+                                    </h5>
+                                    <div style="font-size:11px;color:var(--am-muted);margin-top:3px;">
+                                        <i class="fa-regular fa-calendar me-1"/>
+                                        <t t-out="wc['eval_name']"/>
+                                        <span style="margin-left:8px;color:var(--am-subtle);">
+                                            · <t t-out="wc['count']"/> respuestas
+                                        </span>
+                                    </div>
+                                </div>
+                                <t t-if="len(wc['courses']) > 1">
+                                    <select t-att-class="'form-select form-select-sm am-wc-course-select'"
+                                            t-att-data-wc-id="wc['id']"
+                                            style="width:auto;min-width:160px;font-size:12px;flex-shrink:0;">
+                                        <option value="">Todos los niveles</option>
+                                        <t t-foreach="wc['courses']" t-as="cl">
+                                            <option t-att-value="cl['id']"><t t-out="cl['name']"/></option>
+                                        </t>
+                                    </select>
                                 </t>
-                            </ol>
+                            </div>
+                            <div class="card-body">
+                                <div t-att-id="wc['id']" style="width:100%;"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+
+        <!-- Tablas de respuestas anónimas por evaluación -->
+        <t t-foreach="responses_by_eval.items()" t-as="eval_block">
+            <t t-set="eval_name" t-value="eval_block[0]"/>
+            <t t-set="eval_responses" t-value="eval_block[1]"/>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div style="border:1px solid var(--am-border);border-radius:10px;
+                                background:var(--am-surface);overflow:hidden;">
+                        <div style="padding:12px 18px;border-bottom:1px solid var(--am-border);
+                                    display:flex;align-items:center;justify-content:space-between;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <i class="fa-solid fa-align-left" style="color:var(--am-muted);font-size:12px;"/>
+                                <span style="font-size:13px;font-weight:600;color:var(--am-text);">
+                                    Respuestas — <t t-out="eval_name"/>
+                                </span>
+                            </div>
+                            <span style="font-size:12px;color:var(--am-muted);">
+                                <t t-out="len(eval_responses)"/> respuestas
+                            </span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;">
+                                <thead>
+                                    <tr style="background:var(--am-light);">
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);text-align:left;
+                                                   border-bottom:1px solid var(--am-border);">Nivel Educativo</th>
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);white-space:nowrap;text-align:left;
+                                                   border-bottom:1px solid var(--am-border);">Fecha</th>
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);text-align:left;
+                                                   border-bottom:1px solid var(--am-border);">Respuesta</th>
+                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                   text-transform:uppercase;letter-spacing:0.07em;
+                                                   color:var(--am-muted);text-align:center;
+                                                   border-bottom:1px solid var(--am-border);">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="eval_responses" t-as="resp">
+                                        <tr t-att-style="'border-left:3px solid #f87171;border-bottom:1px solid var(--am-border);' if resp['has_alerts'] else 'border-left:3px solid transparent;border-bottom:1px solid var(--am-border);'"
+                                            onmouseover="this.style.background='var(--am-light)'"
+                                            onmouseout="this.style.background=''">
+                                            <td style="padding:12px 16px;vertical-align:middle;">
+                                                <span style="display:inline-block;padding:2px 8px;
+                                                             border-radius:12px;font-size:11px;font-weight:600;
+                                                             background:var(--am-light);border:1px solid var(--am-border);
+                                                             color:var(--am-muted);white-space:nowrap;">
+                                                    <t t-out="resp['course_level']"/>
+                                                </span>
+                                            </td>
+                                            <td style="padding:12px 16px;vertical-align:middle;
+                                                       font-size:12px;color:var(--am-muted);white-space:nowrap;">
+                                                <t t-out="resp['date']"/>
+                                            </td>
+                                            <td style="padding:12px 16px;vertical-align:middle;
+                                                       font-size:13px;color:var(--am-text);
+                                                       line-height:1.55;max-width:400px;">
+                                                <t t-if="len(resp['response'] or '') &gt; 150">
+                                                    <t t-out="resp['response'][:150]"/>...
+                                                    <a href="#"
+                                                       style="font-size:12px;color:var(--am-muted);
+                                                              text-decoration:none;font-weight:600;margin-left:4px;"
+                                                       t-attf-onclick="alert('#{resp['response'][:300].replace(&quot;'&quot;, &quot;\\'&quot;)}...'); return false;">
+                                                        Ver más
+                                                    </a>
+                                                </t>
+                                                <t t-else="">
+                                                    <t t-out="resp['response']"/>
+                                                </t>
+                                            </td>
+                                            <td style="padding:12px 16px;vertical-align:middle;text-align:center;">
+                                                <t t-if="resp['has_alerts']">
+                                                    <span style="display:inline-block;padding:3px 10px;
+                                                                 border-radius:20px;font-size:11px;font-weight:700;
+                                                                 background:#fef2f2;border:1px solid #fecaca;
+                                                                 color:#dc2626;white-space:nowrap;">
+                                                        Alerta
+                                                    </span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span style="display:inline-block;padding:3px 10px;
+                                                                 border-radius:20px;font-size:11px;font-weight:700;
+                                                                 background:#f0fdf4;border:1px solid #bbf7d0;
+                                                                 color:#16a34a;white-space:nowrap;">
+                                                        OK
+                                                    </span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-            </t>
-        </div>
+            </div>
+        </t>
+
+        <script>
+            (function() {
+                var _wc_palette = <t t-out="palette_json"/>;
+                var _wc_list    = <t t-out="wordclouds_json"/>;
+                function initAllWordcloudsMgmt() {
+                    _wc_list.forEach(function(wc) {
+                        window.amWordcloud.init(wc.id, wc.data, _wc_palette);
+                    });
+                    document.querySelectorAll('.am-wc-course-select').forEach(function(sel) {
+                        sel.addEventListener('change', function() {
+                            var wcId   = this.dataset.wcId;
+                            var course = this.value;
+                            var wc     = _wc_list.find(function(w) { return w.id === wcId; });
+                            if (!wc) return;
+                            var data = course ? (wc.data_by_course[course] || []) : wc.data;
+                            window.amWordcloud.init(wcId, data, _wc_palette);
+                        });
+                    });
+                }
+                window.initWordcloudMgmt = initAllWordcloudsMgmt;
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initAllWordcloudsMgmt);
+                } else {
+                    setTimeout(initAllWordcloudsMgmt, 100);
+                }
+            })();
+        </script>
     </template>
 
 </odoo>

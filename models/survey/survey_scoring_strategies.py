@@ -3,6 +3,9 @@
 Estrategia UNIVERSAL de cálculo de scoring para surveys (v1.9.0)
 1 Cuestionario = 1 Métrica: todas las matrices se promedian juntas.
 """
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class UniversalMatrixScoring:
@@ -66,6 +69,7 @@ class UniversalMatrixScoring:
                             score = (value - min_val) / (max_val - min_val) * 100
                             all_scores.append(score)
             except Exception:
+                _logger.warning('Error calculando score para pregunta en survey %s', getattr(self, 'survey', None), exc_info=True)
                 continue
 
         # Si tenemos scores, crear la métrica única
@@ -116,7 +120,7 @@ class UniversalMatrixScoring:
                 if sequences:
                     return (min(sequences), max(sequences))
         except Exception:
-            pass
+            _logger.debug('_get_score_range: error leyendo respuestas de pregunta %s', getattr(question, 'id', None), exc_info=True)
         return (None, None)
 
     def _get_max_score(self, question):
@@ -134,7 +138,7 @@ class UniversalMatrixScoring:
                 if sequences:
                     return max(sequences)
         except Exception:
-            pass
+            _logger.debug('_get_max_sequence: error leyendo sequences de pregunta %s', getattr(question, 'id', None), exc_info=True)
         return None
     
     def _process_non_matrix_questions(self, user_input):
@@ -203,7 +207,7 @@ class UniversalMatrixScoring:
             # creating duplicate metric_value records.
 
         except Exception:
-            pass
+            _logger.error('Error procesando preguntas no-matriz en survey %s', getattr(self.survey, 'id', None), exc_info=True)
 
         return metrics
 

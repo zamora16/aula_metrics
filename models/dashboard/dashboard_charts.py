@@ -301,8 +301,8 @@ class DashboardCharts(models.TransientModel):
                 by_html  = self._chart_numeric_by_course(df_scale, label, segmentation_vars, y_max, y_min)
                 evo_html = self._chart_numeric_evolution_by_course(df_scale, label, y_max, y_min) if has_evolution else ''
             elif role == ROLE_TUTOR:
-                by_html  = self._chart_numeric_distribution(df_scale, label, segmentation_vars, y_max, y_min)
-                evo_html = ''
+                by_html  = self._chart_numeric_by_tutor_group(df_scale, label, segmentation_vars, y_max, y_min)
+                evo_html = self._chart_numeric_evolution_by_tutor_group(df_scale, label, segmentation_vars, y_max, y_min) if has_evolution else ''
             else:  # counselor/admin
                 by_html  = self._chart_numeric_by_groups(df_scale, label, segmentation_vars, y_max, y_min)
                 evo_html = self._chart_numeric_evolution_by_groups(df_scale, label, y_max, y_min) if has_evolution else ''
@@ -454,9 +454,13 @@ class DashboardCharts(models.TransientModel):
                 charts_html += by_courses_html or evo_html
 
         elif role == ROLE_TUTOR:
-            charts_html += self._chart_numeric_distribution(df, label, segmentation_vars, y_max, y_min)
-            if has_evolution:
-                charts_html += self._chart_numeric_evolution_distribution(df, label, y_max, y_min)
+            by_tutor_html = self._chart_numeric_by_tutor_group(df, label, segmentation_vars, y_max, y_min)
+            evo_html = self._chart_numeric_evolution_by_tutor_group(df, label, segmentation_vars, y_max, y_min) if has_evolution else ''
+
+            if by_tutor_html and evo_html:
+                charts_html += self._chart_numeric_with_toggle(by_tutor_html, evo_html, label, 'grupo')
+            else:
+                charts_html += by_tutor_html or evo_html
         else:  # counselor/admin
             by_groups_html = self._chart_numeric_by_groups(df, label, segmentation_vars, y_max, y_min)
             evo_html = self._chart_numeric_evolution_by_groups(df, label, y_max, y_min) if has_evolution else ''

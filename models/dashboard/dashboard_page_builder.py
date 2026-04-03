@@ -5,9 +5,12 @@ Dashboard Page Builder - Compila el contexto de datos para los templates QWeb.
 Las plantillas se encuentran en views/dashboard_main_templates.xml.
 Este módulo NO genera HTML — sólo prepara los dicts de datos que QWeb consume.
 """
+import logging
 from markupsafe import Markup
 from odoo import models, fields
 from ...utils import dashboard_styles, dashboard_helpers, role_service
+
+_logger = logging.getLogger(__name__)
 
 
 class DashboardChartsBuilder(models.TransientModel):
@@ -125,6 +128,7 @@ class DashboardChartsBuilder(models.TransientModel):
                 'home_kpi_alerts':    total_alerts,
             }
         except Exception:
+            _logger.error('Error construyendo datos del dashboard de inicio', exc_info=True)
             return {
                 'home_evaluations':    [],
                 'home_kpi_active':     0,

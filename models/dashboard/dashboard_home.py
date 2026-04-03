@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+import logging
 from odoo import models, fields, api
+
+_logger = logging.getLogger(__name__)
 
 
 class DashboardHome(models.Model):
@@ -43,5 +46,6 @@ class DashboardHome(models.Model):
             return action_dict
             
         except Exception as e:
+            _logger.warning('action_open_menu: error abriendo acción %s: %s', self.action_id.id, e)
             return {'type': 'ir.actions.act_window_close'}
 

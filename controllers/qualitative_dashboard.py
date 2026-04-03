@@ -91,17 +91,36 @@ class QualitativeDashboardController(http.Controller):
 
         # Serializar wordclouds como un único JSON array para el template
         if 'wordclouds' in context:
-            context['wordclouds_json'] = Markup(json.dumps([
-                {
-                    'id': wc['id'],
-                    'data': wc['data'],
-                    'data_by_group': wc['data_by_group'],
-                }
-                for wc in context['wordclouds']
-            ]))
-        else:
-            # tutor / management: único wordcloud_json
-            context['wordcloud_json'] = Markup(json.dumps(context.get('wordcloud_data', [])))
+            view_type = context.get('view_type')
+            if view_type == 'management':
+                # Management: wordclouds con data_by_course
+                context['wordclouds_json'] = Markup(json.dumps([
+                    {
+                        'id': wc['id'],
+                        'data': wc['data'],
+                        'data_by_course': wc['data_by_course'],
+                    }
+                    for wc in context['wordclouds']
+                ]))
+            elif view_type == 'tutor':
+                # Tutor: wordclouds simples (un grupo, sin desglose)
+                context['wordclouds_json'] = Markup(json.dumps([
+                    {
+                        'id': wc['id'],
+                        'data': wc['data'],
+                    }
+                    for wc in context['wordclouds']
+                ]))
+            else:
+                # Counselor/admin: wordclouds con data_by_group
+                context['wordclouds_json'] = Markup(json.dumps([
+                    {
+                        'id': wc['id'],
+                        'data': wc['data'],
+                        'data_by_group': wc['data_by_group'],
+                    }
+                    for wc in context['wordclouds']
+                ]))
 
         return _render('aula_metrics.qualitative_dashboard_embedded', context)
     
@@ -233,69 +252,140 @@ class QualitativeDashboardController(http.Controller):
     
     def _get_tutor_data(self, responses):
         """
-        Vista anónima para tutor con wordcloud y estadísticas.
+        Vista anónima para tutor: un wordcloud por binomio (evaluación, pregunta) +
+        tabla anónima de respuestas por evaluación.
+        Estructura paralela a _get_management_data, sin nivel educativo (el tutor
+        solo ve su grupo) y sin filtro de curso.
         """
-        
-        # Wordcloud
-        wordcloud_data = self._generate_wordcloud(responses)
-        
-        # Estadísticas
-        total = len(responses)
-        avg_length = sum(r.word_count for r in responses) / total if total > 0 else 0
-        top_words = wordcloud_data[:10] if wordcloud_data else []
-        
-        # Respuestas anónimas
-        anonymous_responses = []
+        from collections import OrderedDict
+
+        # Agrupar por binomio (evaluación, pregunta) preservando orden cronológico
+        groups = OrderedDict()
         for r in responses:
-            anonymous_responses.append({
-                'date': r.response_date.strftime('%d/%m/%Y'),
+            key = (r.evaluation_id.id, r.question_id.id)
+            if key not in groups:
+                groups[key] = {
+                    'eval_name': r.evaluation_id.name or '',
+                    'question_title': r.question_id.title or '',
+                    'responses': [],
+                }
+            groups[key]['responses'].append(r)
+
+        # Generar un wordcloud por binomio (sin desglose: el tutor tiene un solo grupo)
+        wordclouds = []
+        for idx, (key, grp) in enumerate(groups.items()):
+            wc_data = self._generate_wordcloud(grp['responses'])
+            if not wc_data:
+                continue
+            wordclouds.append({
+                'id': 'wordcloud_tutor_%d' % idx,
+                'eval_name': grp['eval_name'],
+                'question_title': grp['question_title'],
+                'data': wc_data,
+                'count': len(grp['responses']),
+            })
+
+        # Tabla de respuestas anónimas agrupada por evaluación
+        responses_by_eval = OrderedDict()
+        for r in responses:
+            ename = r.evaluation_id.name or 'Sin evaluación'
+            if ename not in responses_by_eval:
+                responses_by_eval[ename] = []
+            responses_by_eval[ename].append({
+                'date': r.response_date.strftime('%d/%m/%Y %H:%M'),
                 'response': r.response_text,
                 'has_alerts': r.has_alert_keywords,
-                'word_count': r.word_count
+                'word_count': r.word_count,
             })
-        
+
+        total = len(responses)
+        alerts_count = len([r for r in responses if r.has_alert_keywords])
+
         return {
             'view_type': 'tutor',
-            'wordcloud_data': wordcloud_data,  # No hacer json.dumps aquí
-            'anonymous_responses': anonymous_responses,
-            'stats': {
-                'total_responses': total,
-                'avg_length': round(avg_length, 1),
-                'top_words': top_words,
-                'responses_with_alerts': len([r for r in responses if r.has_alert_keywords])
-            }
+            'wordclouds': wordclouds,
+            'responses_by_eval': responses_by_eval,
+            'total_responses': total,
+            'responses_with_alerts': alerts_count,
         }
-    
+
     def _get_management_data(self, responses):
         """
-        Vista agregada para management (solo estadísticas por curso).
+        Vista management: un wordcloud por binomio (evaluación, pregunta) con filtro
+        por nivel educativo, + tabla de respuestas anónimas por evaluación.
+        Estructura paralela a _get_counselor_data pero sin nombres de alumno ni grupo.
         """
-        
-        # Agrupar por curso
-        by_course = {}
+        from collections import OrderedDict
+
+        # Agrupar por binomio (evaluación, pregunta) preservando orden cronológico
+        groups = OrderedDict()
         for r in responses:
-            course = r.course_level or 'Sin clasificar'
-            if course not in by_course:
-                by_course[course] = []
-            by_course[course].append(r)
-        
-        # Calcular estadísticas por curso
-        stats_by_course = {}
-        for course, course_responses in by_course.items():
-            # Palabras más frecuentes del curso
-            wordcloud_data = self._generate_wordcloud(course_responses)
-            
-            stats_by_course[course] = {
-                'total_responses': len(course_responses),
-                'avg_length': round(sum(r.word_count for r in course_responses) / len(course_responses), 1) if course_responses else 0,
-                'top_words': wordcloud_data[:10],
-                'responses_with_alerts': len([r for r in course_responses if r.has_alert_keywords])
-            }
-        
+            key = (r.evaluation_id.id, r.question_id.id)
+            if key not in groups:
+                groups[key] = {
+                    'eval_id': r.evaluation_id.id,
+                    'eval_name': r.evaluation_id.name or '',
+                    'question_title': r.question_id.title or '',
+                    'responses': [],
+                }
+            groups[key]['responses'].append(r)
+
+        # Generar un wordcloud por binomio con desglose por nivel educativo
+        wordclouds = []
+        for idx, (key, grp) in enumerate(groups.items()):
+            wc_data = self._generate_wordcloud(grp['responses'])
+            if not wc_data:
+                continue
+
+            # Desglose por nivel educativo dentro del binomio
+            course_map = {}
+            for r in grp['responses']:
+                course = r.course_level or 'Sin clasificar'
+                course_map.setdefault(course, []).append(r)
+
+            courses_list = [{'id': c, 'name': c} for c in sorted(course_map.keys())]
+            data_by_course = {}
+            for course, rlist in course_map.items():
+                wc = self._generate_wordcloud(rlist)
+                if wc:
+                    data_by_course[course] = wc
+
+            wordclouds.append({
+                'id': 'wordcloud_mgmt_%d' % idx,
+                'eval_name': grp['eval_name'],
+                'question_title': grp['question_title'],
+                'data': wc_data,
+                'count': len(grp['responses']),
+                'courses': courses_list,
+                'data_by_course': data_by_course,
+            })
+
+        # Tabla de respuestas anónimas agrupada por evaluación
+        # { eval_name: [response_dict, ...] }
+        evals_order = []
+        responses_by_eval = OrderedDict()
+        for r in responses:
+            ename = r.evaluation_id.name or 'Sin evaluación'
+            if ename not in responses_by_eval:
+                evals_order.append(ename)
+                responses_by_eval[ename] = []
+            responses_by_eval[ename].append({
+                'date': r.response_date.strftime('%d/%m/%Y %H:%M'),
+                'course_level': r.course_level or 'Sin clasificar',
+                'response': r.response_text,
+                'has_alerts': r.has_alert_keywords,
+                'word_count': r.word_count,
+            })
+
+        total = len(responses)
+        alerts_count = len([r for r in responses if r.has_alert_keywords])
+
         return {
             'view_type': 'management',
-            'stats_by_course': stats_by_course,
-            'total_responses': len(responses)
+            'wordclouds': wordclouds,
+            'responses_by_eval': responses_by_eval,
+            'total_responses': total,
+            'responses_with_alerts': alerts_count,
         }
     
     def _generate_wordcloud(self, responses):

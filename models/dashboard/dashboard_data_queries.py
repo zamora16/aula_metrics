@@ -124,9 +124,9 @@ class DashboardDataQueries(models.Model):
             if role_info.get('role') == ROLE_TUTOR:
                 allowed_groups = role_info.get('allowed_group_ids', [])
                 if allowed_groups:
-                    # Solo evaluaciones que incluyen grupos del tutor
+                    # Solo evaluaciones que tienen participaciones de los grupos del tutor
                     evaluations_with_groups = Evaluation.search([
-                        ('survey_ids.participation_ids.academic_group_id', 'in', allowed_groups)
+                        ('participation_ids.academic_group_id', 'in', allowed_groups)
                     ])
                     domain.append(('id', 'in', evaluations_with_groups.ids))
                 else:

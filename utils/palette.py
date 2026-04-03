@@ -3,6 +3,7 @@
 Paleta centralizada para los dashboards de métricas.
 Usar estas constantes desde charts, controllers y helpers para facilitar pruebas y cambios de estilo.
 """
+from .constants import COURSE_LEVEL_MAP as COURSE_LEVEL_LABELS  # única fuente de verdad
 
 # Paleta principal para gráficos de métricas (estilo educativo)
 METRICS_PALETTE = [
@@ -17,6 +18,29 @@ METRICS_PALETTE = [
     '#f43f5e',  # Red/Rose
     '#14b8a6',  # Teal
 ]
+
+# ── Niveles educativos ────────────────────────────────────────────────────────
+# COURSE_LEVEL_LABELS se importa desde constants (ver arriba)
+
+# Colores fijos y diferenciados por nivel — sin colisiones de hash
+COURSE_LEVEL_COLORS = {
+    'eso1':  '#0f4c81',  # Academic Navy
+    'eso2':  '#2f855a',  # Chalkboard Green
+    'eso3':  '#f97316',  # Orange
+    'eso4':  '#8b5cf6',  # Purple
+    'bach1': '#ec4899',  # Pink/Rose
+    'bach2': '#06b6d4',  # Cyan/Teal
+}
+
+
+def get_label_for_course(key):
+    """Devuelve la etiqueta legible para una clave de nivel educativo."""
+    return COURSE_LEVEL_LABELS.get(str(key), str(key))
+
+
+def get_color_for_course(key):
+    """Devuelve un color fijo y diferenciado para una clave de nivel educativo."""
+    return COURSE_LEVEL_COLORS.get(str(key), get_color_for_label(key))
 
 # Colores específicos para segmentaciones (masculino/femenino/otro/nd)
 SEGMENT_COLORS = {

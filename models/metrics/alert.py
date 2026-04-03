@@ -91,6 +91,7 @@ class Alert(models.Model):
         store=False
     )
     
+    @api.depends()
     def _compute_case_id(self):
         """Busca el caso de orientación vinculado a esta alerta (si existe)."""
         for alert in self:

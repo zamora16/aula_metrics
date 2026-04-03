@@ -21,6 +21,7 @@
                     <button name="action_recalculate_metrics" type="object"
                             string="Recalcular métricas"
                             invisible="state not in ('scheduled', 'active', 'closed')"
+                            groups="aula_metrics.group_aulametrics_admin"
                             confirm="¿Regenerar todas las métricas y respuestas cualitativas de esta evaluación a partir de los cuestionarios ya completados?"
                             icon="fa-refresh"/>
                     
@@ -30,26 +31,6 @@
                 </header>
                 
                 <sheet>
-                    <!-- Métricas superiores -->
-                    <div class="oe_button_box" name="button_box">
-                        <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-users">
-                            <field name="total_students" widget="statinfo" string="Alumnos"/>
-                        </button>
-                        
-                        <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-check-circle">
-                            <div class="o_field_widget o_stat_info">
-                                <span class="o_stat_value">
-                                    <field name="completed_students"/> / <field name="total_students"/>
-                                </span>
-                                <span class="o_stat_text">Completadas</span>
-                            </div>
-                        </button>
-                        
-                        <button type="object" name="action_view_participations" class="oe_stat_button" icon="fa-percent">
-                            <field name="participation_rate" widget="statinfo" string="Participación"/>
-                        </button>
-                    </div>
-                    
                     <!-- Información básica -->
                     <div class="oe_title">
                         <label for="name"/>
@@ -98,7 +79,8 @@
                             </field>
                         </page>
                         
-                        <page string="Participaciones" name="participations">
+                        <page string="Participaciones" name="participations"
+                              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor">
                             <field name="participation_ids" readonly="1">
                                 <tree decoration-success="state == 'completed'" 
                                       decoration-warning="state == 'pending'"

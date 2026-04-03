@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
 from odoo import models, fields, api
 
 from .survey_scoring_strategies import SCORING_STRATEGIES
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 class SurveyExtension(models.Model):
     """Extensión del modelo survey de Odoo para AulaMetrics"""
@@ -223,6 +226,11 @@ class SurveyExtension(models.Model):
             return scoring_class(self).calculate(user_input)
         
         except Exception:
+            _logger.error(
+                'Error calculando scores para cuestionario %s (id=%s), user_input id=%s',
+                self.survey_code or self.title, self.id, user_input.id,
+                exc_info=True,
+            )
             return []
 
 

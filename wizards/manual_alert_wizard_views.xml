@@ -30,7 +30,8 @@
                         usar el wizard. La restricción de que tutores solo puedan seleccionar
                         alumnos de sus grupos se valida en el servidor (constraint del modelo).
                     -->
-                    <field name="student_id" domain="[('is_student', '=', True)]"/>
+                    <field name="student_domain" invisible="1"/>
+                    <field name="student_id" domain="student_domain"/>
                     <field name="academic_group_id" readonly="1"/>
                     <field name="severity" widget="radio"/>
                 </group>
