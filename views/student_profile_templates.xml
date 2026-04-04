@@ -1,0 +1,894 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        STUDENT PROFILE SECTION TEMPLATES
+        All HTML that was previously generated as Python f-strings lives here.
+        Python methods prepare enriched data dicts; templates handle presentation.
+    -->
+
+    <!-- ===========================================================
+         1. ACTIVE ALERTS SECTION
+         Values: alert_items (list of dicts), ui_success (str)
+         =========================================================== -->
+    <template id="student_alerts_active_section" name="Student: Active Alerts">
+        <t t-if="not alert_items">
+            <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;
+                        background:var(--am-light);border:1px solid var(--am-border);
+                        border-radius:8px;font-size:13px;color:var(--am-muted);">
+                <i class="fa-solid fa-check-circle" t-att-style="'color:' + ui_success + ';font-size:16px;'"/>
+                No hay alertas activas para este estudiante
+            </div>
+        </t>
+        <t t-else="">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <t t-foreach="alert_items" t-as="item">
+                    <div t-att-style="item['card_style']">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:14px;font-weight:600;color:var(--am-text);margin-bottom:4px;">
+                                    <t t-esc="item['name']"/>
+                                </div>
+                                <div style="font-size:13px;color:var(--am-text);opacity:0.85;margin-bottom:6px;">
+                                    <t t-esc="item['message']"/>
+                                </div>
+                                <div style="font-size:11px;color:var(--am-muted);">
+                                    <i class="fa-regular fa-clock me-1"/>
+                                    Creada: <t t-esc="item['date_str']"/>
+                                </div>
+                            </div>
+                            <span t-att-style="item['badge_style']">
+                                <t t-esc="item['sev_label']"/>
+                            </span>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         2. ALERT HISTORY SECTION
+         Values: alert_items (list of dicts with sev + status styles)
+         =========================================================== -->
+    <template id="student_alerts_history_section" name="Student: Alert History">
+        <t t-if="not alert_items">
+            <div style="padding:14px 16px;background:var(--am-light);
+                        border:1px solid var(--am-border);border-radius:8px;
+                        font-size:13px;color:var(--am-muted);">
+                No hay historial de alertas
+            </div>
+        </t>
+        <t t-else="">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <t t-foreach="alert_items" t-as="item">
+                    <div t-att-style="item['card_style']">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:600;color:var(--am-text);margin-bottom:3px;">
+                                    <t t-esc="item['name']"/>
+                                </div>
+                                <div style="font-size:12px;color:var(--am-muted);margin-bottom:4px;">
+                                    <t t-esc="item['message']"/>
+                                </div>
+                                <div style="font-size:11px;color:var(--am-muted);">
+                                    <i class="fa-regular fa-clock me-1"/>
+                                    Creada: <t t-esc="item['created_str']"/>
+                                </div>
+                                <t t-if="item.get('resolved_str')">
+                                    <div style="font-size:11px;color:var(--am-muted);margin-top:4px;">
+                                        <i class="fa-solid fa-square-check me-1"/>
+                                        Resuelta: <t t-esc="item['resolved_str']"/>
+                                    </div>
+                                </t>
+                                <t t-if="item.get('action_str')">
+                                    <div style="font-size:11px;color:var(--am-muted);margin-top:2px;">
+                                        <i class="fa-solid fa-bolt me-1"/>
+                                        <strong>Acción:</strong>
+                                        <t t-esc="item['action_str']"/>
+                                    </div>
+                                </t>
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+                                <span t-att-style="item['sev_badge_style']">
+                                    <t t-esc="item['sev_label']"/>
+                                </span>
+                                <span t-att-style="item['status_badge_style']">
+                                    <t t-esc="item['status_label']"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         3. PARTICIPATIONS TABLE
+         Values: rows (list of dicts)
+         =========================================================== -->
+    <template id="student_participations_section" name="Student: Participations">
+        <t t-if="not rows">
+            <p class="text-muted">No hay participaciones registradas</p>
+        </t>
+        <t t-else="">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Evaluación</th>
+                            <th>Encuesta</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="rows" t-as="row">
+                            <tr>
+                                <td><t t-esc="row['date_str']"/></td>
+                                <td><t t-esc="row['eval_name']"/></td>
+                                <td><t t-esc="row['survey_names']"/></td>
+                                <td>
+                                    <span t-att-class="'badge ' + row['badge_class']">
+                                        <t t-esc="row['badge_label']"/>
+                                    </span>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         4. QUALITATIVE RESPONSES SECTION
+         Values: response_items (list of dicts with pre-computed styles)
+         =========================================================== -->
+    <template id="student_qualitative_section" name="Student: Qualitative Responses">
+        <t t-if="not response_items">
+            <div style="padding:14px 16px;background:var(--am-light);
+                        border:1px solid var(--am-border);border-radius:8px;
+                        font-size:13px;color:var(--am-muted);">
+                No hay respuestas cualitativas registradas
+            </div>
+        </t>
+        <t t-else="">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <t t-foreach="response_items" t-as="item">
+                    <div t-att-style="item['card_style']">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                                    gap:12px;padding:12px 16px 10px;border-bottom:1px solid var(--am-border);">
+                            <div style="min-width:0;flex:1;">
+                                <div style="font-size:13px;font-weight:600;color:var(--am-text);">
+                                    <t t-esc="item['question_title']"/>
+                                </div>
+                                <div style="font-size:11px;color:var(--am-muted);margin-top:3px;">
+                                    <i class="fa-solid fa-graduation-cap me-1"/>
+                                    <t t-esc="item['evaluation_name']"/>
+                                    <span style="margin:0 5px;">·</span>
+                                    <i class="fa-regular fa-calendar me-1"/>
+                                    <t t-esc="item['date_str']"/>
+                                    <span style="margin:0 5px;">·</span>
+                                    <t t-esc="str(item['word_count'])"/> palabras
+                                </div>
+                            </div>
+                            <span t-att-style="item['alert_badge_style']">
+                                <t t-out="item['alert_badge_html']"/>
+                            </span>
+                        </div>
+                        <div style="padding:12px 16px;font-size:13px;color:var(--am-text);line-height:1.6;">
+                            <t t-esc="item['response_text']"/>
+                            <t t-if="item.get('keywords_html')">
+                                <t t-out="item['keywords_html']"/>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         5. KPI STRIP
+         Values: kpis (list of {label, value, value_cls, description})
+         =========================================================== -->
+    <template id="student_kpis_strip" name="Student: KPI Strip">
+        <t t-foreach="kpis" t-as="kpi">
+            <div class="kpi-card">
+                <div class="kpi-label"><t t-esc="kpi['label']"/></div>
+                <div t-att-class="kpi['value_cls']"><t t-esc="str(kpi['value'])"/></div>
+                <div class="kpi-description"><t t-esc="kpi['description']"/></div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         6. METRICS SUMMARY (horizontal bars with group/center markers)
+         Values: metric_rows (list of dicts), ui_primary, ui_success
+         =========================================================== -->
+    <template id="student_metrics_summary_section" name="Student: Metrics Summary">
+        <t t-if="not metric_rows">
+            <!-- empty state handled by caller -->
+        </t>
+        <t t-else="">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Resumen de Métricas</h5>
+                            <p class="card-subtitle">Posición del alumno en cada variable respecto al grupo y al centro</p>
+                        </div>
+                        <div class="card-body" style="padding-top:4px;padding-bottom:4px;">
+                            <t t-foreach="metric_rows" t-as="row">
+                                <div class="d-flex align-items-center gap-3 py-2"
+                                     style="border-bottom:1px solid var(--am-border);">
+                                    <div style="width:180px;min-width:140px;flex-shrink:0;">
+                                        <div style="font-size:13px;font-weight:500;color:var(--am-text);
+                                                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                                             t-att-title="row['label']">
+                                            <t t-esc="row['label']"/>
+                                        </div>
+                                        <div style="font-size:11px;color:var(--am-muted);">
+                                            <t t-esc="row['last_date']"/>
+                                            <t t-if="row.get('trend_icon')">
+                                                <t t-out="row['trend_icon']"/>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    <div style="flex:1;position:relative;height:28px;display:flex;align-items:center;">
+                                        <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+                                                    height:8px;background:var(--am-border);border-radius:4px;overflow:visible;">
+                                            <div t-att-style="'width:' + str(row['student_pct']) + '%;height:100%;background:' + ui_primary + ';border-radius:4px;transition:width 0.5s ease;'"/>
+                                        </div>
+                                        <t t-if="row.get('group_marker_style')">
+                                            <div t-att-title="'Media grupo: ' + str(row['group_mean'])"
+                                                 t-att-style="row['group_marker_style']"/>
+                                        </t>
+                                        <t t-if="row.get('center_marker_style')">
+                                            <div t-att-title="'Media centro: ' + str(row['center_mean'])"
+                                                 t-att-style="row['center_marker_style']"/>
+                                        </t>
+                                    </div>
+                                    <div style="width:64px;flex-shrink:0;text-align:right;">
+                                        <span t-att-style="'font-size:18px;font-weight:700;color:' + ui_primary + ';line-height:1;'">
+                                            <t t-esc="row['last_val_str']"/>
+                                        </span>
+                                        <div style="font-size:10px;color:var(--am-muted);">
+                                            / <t t-esc="row['max_val_str']"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                            <!-- Legend -->
+                            <div class="d-flex gap-4 pt-3" style="font-size:11px;color:var(--am-muted);">
+                                <span>
+                                    <span t-att-style="'display:inline-block;width:18px;height:7px;background:' + ui_primary + ';border-radius:3px;vertical-align:middle;'"/>
+                                    Alumno
+                                </span>
+                                <span>
+                                    <span style="display:inline-block;width:3px;height:14px;background:#94a3b8;border-radius:1px;vertical-align:middle;"/>
+                                    Media grupo
+                                </span>
+                                <span>
+                                    <span t-att-style="'display:inline-block;width:3px;height:14px;background:' + ui_success + ';border-radius:1px;vertical-align:middle;'"/>
+                                    Media centro
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         7. EVOLUTION CHARTS (Chart.js bar+line per metric)
+         Values: chart_items (list of {canvas_id, metric_label, change_html: Markup, init_script: Markup})
+         =========================================================== -->
+    <template id="student_evolution_charts_section" name="Student: Evolution Charts">
+        <t t-if="not chart_items">
+            <!-- empty state handled by caller -->
+        </t>
+        <t t-else="">
+            <div class="row">
+                <t t-foreach="chart_items" t-as="item">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="card-title-sm"><t t-esc="item['metric_label']"/></h6>
+                                <p style="font-size:11px;color:var(--am-muted);margin:4px 0 0 0;">
+                                    Evolución con contexto del grupo · Cambio:
+                                    <t t-out="item['change_html']"/>
+                                </p>
+                            </div>
+                            <div class="card-body">
+                                <canvas t-att-id="item['canvas_id']" height="180"/>
+                            </div>
+                        </div>
+                    </div>
+                    <t t-out="item['init_script']"/>
+                </t>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ===========================================================
+         8. STUDENTS LIST PAGE CONTENT
+         Values: student_list (list of dicts), groups (list of (id, name)), total_count (int)
+         =========================================================== -->
+    <template id="students_list_content" name="Students: List Content">
+        <div class="container-fluid">
+            <div class="filters-bar">
+                <div class="flex-grow-1">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre..."/>
+                </div>
+                <div style="min-width:250px;">
+                    <select id="groupFilter" class="form-select">
+                        <option value="">Todos los grupos</option>
+                        <t t-foreach="groups" t-as="grp">
+                            <option t-att-value="grp[0]"><t t-esc="grp[1]"/></option>
+                        </t>
+                    </select>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fa-solid fa-list me-2"/>
+                        Estudiantes (<span id="am-student-count"><t t-esc="str(total_count)"/></span>)
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table" id="studentsTable" style="border-collapse:collapse;width:100%;">
+                            <thead>
+                                <tr style="background:var(--am-light);">
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;
+                                               letter-spacing:0.07em;color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               white-space:nowrap;">Estudiante</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;
+                                               letter-spacing:0.07em;color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               white-space:nowrap;">Grupo</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;
+                                               letter-spacing:0.07em;color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               text-align:center;white-space:nowrap;">Evaluaciones</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;
+                                               letter-spacing:0.07em;color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               white-space:nowrap;">Alertas</th>
+                                    <th style="padding:10px 16px;font-size:10px;font-weight:800;text-transform:uppercase;
+                                               letter-spacing:0.07em;color:var(--am-muted);border-bottom:1px solid var(--am-border);
+                                               text-align:right;white-space:nowrap;"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="not student_list">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-5">
+                                            <i class="fa-solid fa-user-slash fa-3x mb-3 d-block"/>
+                                            No hay estudiantes disponibles
+                                        </td>
+                                    </tr>
+                                </t>
+                                <t t-foreach="student_list" t-as="st">
+                                    <tr t-att-data-group-id="st['group_id']"
+                                        style="transition:background 0.12s;"
+                                        onmouseover="this.style.background='var(--am-light)'"
+                                        onmouseout="this.style.background=''">
+                                        <td style="padding:12px 16px;">
+                                            <div style="display:flex;align-items:center;gap:12px;">
+                                                <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                                                            background:var(--am-primary-light,#eff6ff);
+                                                            border:1px solid var(--am-border);
+                                                            display:flex;align-items:center;justify-content:center;
+                                                            font-size:12px;font-weight:700;color:var(--am-primary);">
+                                                    <t t-esc="st['initials']"/>
+                                                </div>
+                                                <div style="min-width:0;">
+                                                    <div style="font-size:14px;font-weight:600;color:var(--am-text);
+                                                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                                        <t t-esc="st['name']"/>
+                                                    </div>
+                                                    <div style="font-size:11px;color:var(--am-muted);margin-top:1px;">
+                                                        <t t-esc="st['email']"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding:12px 16px;">
+                                            <span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+                                                         background:var(--am-light);border:1px solid var(--am-border);
+                                                         color:var(--am-text);white-space:nowrap;">
+                                                <t t-esc="st['group_name']"/>
+                                            </span>
+                                        </td>
+                                        <td style="padding:12px 16px;text-align:center;">
+                                            <span style="font-size:20px;font-weight:800;color:var(--am-text);line-height:1;">
+                                                <t t-esc="str(st['evals_done'])"/>
+                                            </span>
+                                        </td>
+                                        <td style="padding:12px 16px;">
+                                            <span t-att-style="st['alerts_badge_style']">
+                                                <t t-esc="st['alerts_badge_text']"/>
+                                            </span>
+                                        </td>
+                                        <td style="padding:12px 16px;text-align:right;">
+                                            <a t-att-href="'/aulametrics/student/' + str(st['id'])"
+                                               style="display:inline-flex;align-items:center;gap:6px;
+                                                      padding:5px 14px;border-radius:7px;font-size:12px;font-weight:600;
+                                                      border:1px solid var(--am-primary);color:var(--am-primary);
+                                                      text-decoration:none;background:var(--am-primary-light,#eff6ff);
+                                                      transition:all 0.15s;"
+                                               onmouseover="this.style.background='var(--am-primary)';this.style.color='#fff';"
+                                               onmouseout="this.style.background='var(--am-primary-light,#eff6ff)';this.style.color='var(--am-primary)';">
+                                                <i class="fa-solid fa-chart-line" style="font-size:11px;"/>Ver perfil
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            (function() {
+                var totalCount = <t t-esc="str(total_count)"/>;
+                function applyFilters() {
+                    var searchTerm    = document.getElementById('searchInput').value.toLowerCase();
+                    var selectedGroup = document.getElementById('groupFilter').value;
+                    var rows = document.querySelectorAll('#studentsTable tbody tr');
+                    var visibleCount  = 0;
+                    rows.forEach(function(row) {
+                        var text    = row.textContent.toLowerCase();
+                        var groupId = row.getAttribute('data-group-id');
+                        var ok = (!searchTerm || text.includes(searchTerm))
+                              &amp;&amp; (!selectedGroup || groupId === selectedGroup);
+                        row.style.display = ok ? '' : 'none';
+                        if (ok) visibleCount++;
+                    });
+                    var countEl = document.getElementById('am-student-count');
+                    if (countEl) {
+                        countEl.textContent = visibleCount === totalCount
+                            ? totalCount
+                            : visibleCount + ' de ' + totalCount;
+                    }
+                }
+                document.getElementById('searchInput').addEventListener('keyup', applyFilters);
+                document.getElementById('groupFilter').addEventListener('change', applyFilters);
+            })();
+        </script>
+    </template>
+
+
+    <!-- ===========================================================
+         9. EMPTY PROFILE CONTENT
+         Values: group_name, alerts_html (Markup), alerts_history_html (Markup)
+         =========================================================== -->
+    <template id="student_empty_profile_content" name="Student: Empty Profile">
+        <div class="container-fluid">
+            <div class="card" style="text-align:center;padding:60px 40px;">
+                <i class="fa-solid fa-chart-line" style="font-size:80px;color:var(--am-light);margin-bottom:24px;"/>
+                <h3 style="color:var(--am-muted);margin-bottom:12px;">Sin datos de métricas disponibles</h3>
+                <p style="color:var(--am-muted);font-size:15px;">Complete una evaluación para comenzar a ver datos.</p>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header"><h5 class="card-title">Alertas Activas</h5></div>
+                        <div class="card-body">
+                            <t t-out="alerts_html"/>
+                            <div class="mt-3">
+                                <button class="btn btn-outline-secondary btn-sm w-100" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#alertsHistoryEmpty">
+                                    <i class="fa-solid fa-clock-rotate-left me-2"/>Ver Historial de Alertas
+                                </button>
+                                <div class="collapse mt-3" id="alertsHistoryEmpty">
+                                    <hr/>
+                                    <h6 class="text-muted mb-3">Historial de Alertas Resueltas/Descartadas</h6>
+                                    <t t-out="alerts_history_html"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- ===========================================================
+         10. FULL STUDENT PROFILE CONTENT (tabs, KPIs, drawer, float bar, JS)
+         Values:
+           student_name (str), student_id (int), group_name (str), today_str (str)
+           kpis_html (Markup), timeline_html (Markup), has_surveys (bool)
+           participations_html (Markup), radar_html (Markup)
+           evol_ofic_html (Markup), evolution_charts_html (Markup)
+           qualitative_html (Markup), alerts_html (Markup), alerts_history_html (Markup)
+         =========================================================== -->
+    <template id="student_profile_content" name="Student: Full Profile Content">
+
+        <!-- ═══ CAPA 1: Encabezado del alumno ════════════════════════════ -->
+        <div class="am-sticky-l1">
+            <div class="d-flex align-items-center gap-3">
+                <div class="am-avatar-circle">
+                    <i class="fa-solid fa-user"/>
+                </div>
+                <div style="min-width:0;flex:1;display:flex;align-items:center;gap:16px;">
+                    <div class="am-student-name" style="flex-shrink:1;min-width:0;">
+                        <t t-esc="student_name"/>
+                    </div>
+                    <div class="am-student-meta" style="flex-shrink:0;white-space:nowrap;">
+                        <i class="fa-solid fa-users me-1"/>
+                        <t t-esc="group_name"/>
+                        <span class="am-meta-sep">·</span>
+                        <i class="fa-solid fa-calendar me-1"/>
+                        <t t-esc="today_str"/>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"/>Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ CAPA 2: Banda de KPIs ════════════════════════════════════ -->
+        <div class="am-sticky-l2">
+            <div class="am-kpi-strip">
+                <t t-out="kpis_html"/>
+            </div>
+        </div>
+
+        <!-- ═══ CAPA 3: Barra de pestañas principales ════════════════════ -->
+        <div class="am-sticky-l3">
+            <div class="am-main-tab-bar">
+                <button class="am-main-tab active" data-tab="cuant" onclick="amTab('cuant',this)">
+                    <i class="fa-solid fa-chart-column me-1"/>Datos cuantitativos
+                </button>
+                <button class="am-main-tab" data-tab="cual" onclick="amTab('cual',this)">
+                    <i class="fa-solid fa-quote-left me-1"/>Datos cualitativos
+                </button>
+                <button class="am-main-tab" data-tab="evol" onclick="amTab('evol',this)">
+                    <i class="fa-solid fa-chart-line me-1"/>Evolución global
+                </button>
+                <button class="am-main-tab" data-tab="alertas" onclick="amTab('alertas',this)">
+                    <i class="fa-solid fa-bell me-1"/>Alertas
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ CONTENIDO DE PESTAÑAS ════════════════════════════════════ -->
+        <div class="am-tabs-body">
+
+            <!-- ── Tab: Datos cuantitativos ────────────────────────────── -->
+            <div id="am-pane-cuant" class="am-tab-pane am-show">
+                <div class="am-subtab-bar">
+                    <button class="am-subtab active" data-group="cuant" data-sub="ofic"
+                            onclick="amSubtab('cuant','ofic',this)">
+                        <i class="fa-solid fa-clipboard-check me-1"/>Cuestionarios Oficiales
+                    </button>
+                    <button class="am-subtab" data-group="cuant" data-sub="centro"
+                            onclick="amSubtab('cuant','centro',this)">
+                        <i class="fa-solid fa-school me-1"/>Cuestionarios del Centro
+                    </button>
+                </div>
+                <div id="am-cuant-ofic" class="am-subpane am-show" data-group="cuant">
+                    <t t-if="has_surveys">
+                        <t t-out="timeline_html"/>
+                    </t>
+                    <t t-else="">
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-clipboard-list fa-3x mb-3" style="color:var(--am-border);"/>
+                            <p class="text-muted mb-0">Este alumno aún no tiene resultados de cuestionarios oficiales.</p>
+                        </div>
+                    </t>
+                    <div class="mt-4">
+                        <div class="am-section-card">
+                            <div class="am-section-card__header">
+                                <span class="am-section-card__title">Histórico de Participación</span>
+                                <span class="am-section-card__sub">Encuestas completadas</span>
+                            </div>
+                            <div class="am-section-card__body">
+                                <t t-out="participations_html"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="am-cuant-centro" class="am-subpane" data-group="cuant">
+                    <t t-if="radar_html">
+                        <t t-out="radar_html"/>
+                    </t>
+                    <t t-else="">
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"/>
+                            <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Tab: Datos cualitativos ─────────────────────────────── -->
+            <div id="am-pane-cual" class="am-tab-pane">
+                <div class="am-section-card">
+                    <div class="am-section-card__header">
+                        <span class="am-section-card__title">Respuestas Cualitativas</span>
+                        <span class="am-section-card__sub">Textos y comentarios abiertos</span>
+                    </div>
+                    <div class="am-section-card__body">
+                        <t t-if="qualitative_html">
+                            <t t-out="qualitative_html"/>
+                        </t>
+                        <t t-else="">
+                            <div class="text-center py-5">
+                                <i class="fa-solid fa-message fa-3x mb-3" style="color:var(--am-border);"/>
+                                <p class="text-muted mb-0">No hay respuestas cualitativas registradas.</p>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Tab: Evolución global ───────────────────────────────── -->
+            <div id="am-pane-evol" class="am-tab-pane">
+                <div class="am-subtab-bar">
+                    <button class="am-subtab active" data-group="evol" data-sub="ofic"
+                            onclick="amSubtab('evol','ofic',this)">
+                        <i class="fa-solid fa-clipboard-check me-1"/>Cuestionarios Oficiales
+                    </button>
+                    <button class="am-subtab" data-group="evol" data-sub="centro"
+                            onclick="amSubtab('evol','centro',this)">
+                        <i class="fa-solid fa-school me-1"/>Cuestionarios del Centro
+                    </button>
+                </div>
+                <div id="am-evol-ofic" class="am-subpane am-show" data-group="evol">
+                    <t t-if="evol_ofic_html">
+                        <t t-out="evol_ofic_html"/>
+                    </t>
+                    <t t-else="">
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-chart-line fa-3x mb-3" style="color:var(--am-border);"/>
+                            <p class="text-muted mb-0">Se necesitan al menos dos evaluaciones para mostrar la evolución.</p>
+                        </div>
+                    </t>
+                </div>
+                <div id="am-evol-centro" class="am-subpane" data-group="evol">
+                    <t t-if="evolution_charts_html">
+                        <t t-out="evolution_charts_html"/>
+                    </t>
+                    <t t-else="">
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"/>
+                            <p class="text-muted mb-0">No hay datos de evolución de métricas del centro disponibles.</p>
+                        </div>
+                    </t>
+                </div>
+            </div>
+
+            <!-- ── Tab: Alertas ────────────────────────────────────────── -->
+            <div id="am-pane-alertas" class="am-tab-pane">
+                <t t-out="alerts_html"/>
+                <div class="mt-3">
+                    <button class="btn btn-outline-secondary btn-sm w-100" type="button"
+                            data-bs-toggle="collapse"
+                            t-att-data-bs-target="'#am-alerts-hist-' + str(student_id)">
+                        <i class="fa-solid fa-clock-rotate-left me-2"/>Ver Historial de Alertas
+                    </button>
+                    <div class="collapse mt-3" t-att-id="'am-alerts-hist-' + str(student_id)">
+                        <hr/>
+                        <h6 class="text-muted mb-3">Alertas Resueltas / Descartadas</h6>
+                        <t t-out="alerts_history_html"/>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.am-tabs-body -->
+
+        <!-- ═══ BARRA FLOTANTE (solo Cuantitativo > Oficiales) ═══════════ -->
+        <div id="am-float-bar" class="am-float-bar">
+            <span id="am-float-count" class="am-float-count"/>
+            <div id="am-float-tags" class="am-float-tags"/>
+            <div class="am-float-actions">
+                <button type="button" class="am-btn-ghost" onclick="amClear()">
+                    <i class="fa-solid fa-xmark me-1"/>Limpiar
+                </button>
+                <button type="button" class="am-btn-primary-inv"
+                        t-att-onclick="'amGenerarInforme(' + str(student_id) + ')'">
+                    <i class="fa-solid fa-file-pdf me-1"/>Generar informe
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ DRAWER LATERAL ══════════════════════════════════════════ -->
+        <div id="am-drawer" class="am-drawer">
+            <div class="am-drawer__overlay" onclick="amCloseDrawer()"/>
+            <div class="am-drawer__panel">
+                <div class="am-drawer__header">
+                    <h6 id="am-drawer-title" class="am-drawer__title">Detalle</h6>
+                    <button type="button" class="am-drawer__close" onclick="amCloseDrawer()">
+                        <i class="fa-solid fa-xmark"/>
+                    </button>
+                </div>
+                <div class="am-drawer__body" id="am-drawer-body"/>
+                <div class="am-drawer__footer" id="am-drawer-footer"/>
+            </div>
+        </div>
+
+        <script>
+        // ── Pestañas principales ──────────────────────────────────────
+        function amTab(tab, btn) {
+            document.querySelectorAll('.am-tab-pane').forEach(function(p) { p.classList.remove('am-show'); });
+            document.querySelectorAll('.am-main-tab').forEach(function(b) { b.classList.remove('active'); });
+            var pane = document.getElementById('am-pane-' + tab);
+            if (pane) pane.classList.add('am-show');
+            if (btn)  btn.classList.add('active');
+            amRefreshFloatBar();
+        }
+
+        // ── Sub-pestañas ──────────────────────────────────────────────
+        function amSubtab(group, sub, btn) {
+            document.querySelectorAll('[data-group="' + group + '"].am-subpane').forEach(function(p) { p.classList.remove('am-show'); });
+            var bar = btn ? btn.closest('.am-subtab-bar') : null;
+            if (bar) bar.querySelectorAll('.am-subtab').forEach(function(b) { b.classList.remove('active'); });
+            var el = document.getElementById('am-' + group + '-' + sub);
+            if (el) el.classList.add('am-show');
+            if (btn) btn.classList.add('active');
+            amRefreshFloatBar();
+        }
+
+        // ── Selección de filas ────────────────────────────────────────
+        var _amSel = new Map();
+
+        function amOnCheck(cb) {
+            var rid = cb.dataset.rid, title = cb.dataset.title;
+            if (cb.checked) _amSel.set(rid, title);
+            else            _amSel.delete(rid);
+            _amSyncEvalCheckbox(cb);
+            _amRenderTags();
+            amRefreshFloatBar();
+        }
+
+        function amOnEvalCheck(evalCb) {
+            var cardId = evalCb.dataset.evalCard;
+            var card   = document.getElementById(cardId);
+            if (!card) return;
+            card.querySelectorAll('.am-row-check').forEach(function(cb) {
+                cb.checked = evalCb.checked;
+                var rid = cb.dataset.rid, title = cb.dataset.title;
+                if (evalCb.checked) _amSel.set(rid, title);
+                else                _amSel.delete(rid);
+            });
+            _amRenderTags();
+            amRefreshFloatBar();
+        }
+
+        function _amSyncEvalCheckbox(rowCb) {
+            var card = rowCb.closest('.am-eval-card');
+            if (!card) return;
+            var rows    = card.querySelectorAll('.am-row-check');
+            var total   = rows.length;
+            var checked = 0;
+            rows.forEach(function(r) { if (r.checked) checked++; });
+            var evalCb = card.querySelector('.am-eval-check');
+            if (!evalCb) return;
+            if (checked === 0) {
+                evalCb.checked = false; evalCb.indeterminate = false;
+            } else if (checked === total) {
+                evalCb.checked = true;  evalCb.indeterminate = false;
+            } else {
+                evalCb.checked = false; evalCb.indeterminate = true;
+            }
+        }
+
+        function amClear() {
+            document.querySelectorAll('.am-row-check:checked').forEach(function(cb) { cb.checked = false; });
+            document.querySelectorAll('.am-eval-check').forEach(function(cb) { cb.checked = false; cb.indeterminate = false; });
+            _amSel.clear();
+            _amRenderTags();
+            amRefreshFloatBar();
+        }
+
+        function amRemove(rid) {
+            var cb = document.querySelector('.am-row-check[data-rid="' + rid + '"]');
+            if (cb) { cb.checked = false; _amSyncEvalCheckbox(cb); }
+            _amSel.delete(String(rid));
+            _amRenderTags();
+            amRefreshFloatBar();
+        }
+
+        function _amRenderTags() {
+            var n = _amSel.size;
+            var countEl = document.getElementById('am-float-count');
+            if (countEl) countEl.textContent = n + ' seleccionad' + (n === 1 ? 'o' : 'os');
+            var tags = document.getElementById('am-float-tags');
+            if (!tags) return;
+            tags.innerHTML = '';
+            _amSel.forEach(function(title, rid) {
+                var t = document.createElement('span');
+                t.className = 'am-float-tag';
+                t.innerHTML = '<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;display:inline-block;">' + title + '</span>'
+                            + '<button type="button" onclick="amRemove(' + rid + ')" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;">×</button>';
+                tags.appendChild(t);
+            });
+        }
+
+        function amRefreshFloatBar() {
+            var bar     = document.getElementById('am-float-bar');
+            if (!bar) return;
+            var cuant   = document.getElementById('am-pane-cuant');
+            var subOfic = document.getElementById('am-cuant-ofic');
+            var tabActive = cuant   &amp;&amp; cuant.classList.contains('am-show');
+            var subActive = subOfic &amp;&amp; subOfic.classList.contains('am-show');
+            if (tabActive &amp;&amp; subActive &amp;&amp; _amSel.size > 0) {
+                bar.classList.add('am-float-bar--on');
+            } else {
+                bar.classList.remove('am-float-bar--on');
+            }
+        }
+
+        // ── Drawer ────────────────────────────────────────────────────
+        function amOpenDrawer(rid) {
+            var body   = document.getElementById('am-drawer-content-' + rid);
+            var footer = document.getElementById('am-drawer-footer-'  + rid);
+            if (!body) return;
+            var row = document.querySelector('.am-row-check[data-rid="' + rid + '"]');
+            var title = row ? row.dataset.title : 'Detalle';
+            document.getElementById('am-drawer-title').textContent = title;
+            var drawerBody   = document.getElementById('am-drawer-body');
+            var drawerFooter = document.getElementById('am-drawer-footer');
+            drawerBody.innerHTML   = body.innerHTML;
+            drawerFooter.innerHTML = footer ? footer.innerHTML : '';
+            document.getElementById('am-drawer').classList.add('am-drawer--open');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(function() {
+                var cfgEl  = drawerBody.querySelector('script.am-chart-cfg');
+                var canvas = drawerBody.querySelector('canvas.am-chart-canvas');
+                if (cfgEl &amp;&amp; canvas &amp;&amp; typeof Chart !== 'undefined') {
+                    try {
+                        var cfg = JSON.parse(cfgEl.textContent);
+                        if (cfg.options &amp;&amp; cfg.options.plugins &amp;&amp; cfg.options.plugins.tooltip) {
+                            cfg.options.plugins.tooltip.callbacks = {
+                                label: function(ctx) {
+                                    var v = typeof ctx.raw === 'object' ? ctx.raw.x : ctx.raw;
+                                    if (v === null || v === undefined) return null;
+                                    return ' ' + ctx.dataset.label + ': ' + parseFloat(v).toFixed(1);
+                                }
+                            };
+                        }
+                        new Chart(canvas.getContext('2d'), cfg);
+                    } catch(e) {
+                        console.warn('[amDrawer] chart init error:', e);
+                    }
+                }
+            });
+        }
+
+        function amCloseDrawer() {
+            document.getElementById('am-drawer').classList.remove('am-drawer--open');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') amCloseDrawer(); });
+
+        // ── Generar informe ───────────────────────────────────────────
+        function amGenerarInforme(studentId) {
+            if (_amSel.size === 0) return;
+            var url = '/aulametrics/student/' + studentId + '/informe_compuesto?';
+            var params = [];
+            _amSel.forEach(function(title, rid) { params.push('result_ids=' + encodeURIComponent(rid)); });
+            window.open(url + params.join('&amp;'), '_blank');
+        }
+        </script>
+
+    </template>
+
+</odoo>

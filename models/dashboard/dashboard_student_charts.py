@@ -2,10 +2,20 @@
 """
 Gráficos del perfil de alumno: evolución longitudinal de métricas del centro
 y resumen comparativo (barras horizontales con marcadores de grupo/centro).
+
+Métodos de datos puros + delegación de presentación a QWeb.
 """
-from odoo import models, api
+from odoo import models
 import json
+from markupsafe import Markup
 from ...utils import palette
+
+
+def _qweb(env, template_id, values):
+    result = env['ir.qweb']._render(template_id, values)
+    if isinstance(result, bytes):
+        return Markup(result.decode('utf-8'))
+    return Markup(result)
 
 
 class DashboardStudentCharts(models.TransientModel):
@@ -21,7 +31,7 @@ class DashboardStudentCharts(models.TransientModel):
             return ''
 
         group_data  = self._get_group_context_data(student, df_numeric)
-        charts_html = ''
+        chart_items = []
 
         for idx, metric in enumerate(df_numeric['metric_label'].unique()[:4]):
             df_metric   = df_numeric[df_numeric['metric_label'] == metric].sort_values('timestamp')
@@ -38,7 +48,10 @@ class DashboardStudentCharts(models.TransientModel):
             change_icon  = '↑' if pct_change > 0 else ('↓' if pct_change < 0 else '→')
             change_color = (palette.UI_SUCCESS if pct_change > 0
                             else (palette.UI_DANGER if pct_change < 0 else palette.UI_MUTED))
-            change_text  = f"<span style='color:{change_color};font-weight:600;'>{change_icon} {abs(pct_change):.1f}%</span>"
+            change_html  = Markup(
+                f"<span style='color:{change_color};font-weight:600;'>"
+                f"{change_icon} {abs(pct_change):.1f}%</span>"
+            )
 
             # Media de grupo alineada a los timestamps del alumno (±7 días)
             group_means = []
@@ -48,19 +61,19 @@ class DashboardStudentCharts(models.TransientModel):
                     matching = [v for t, v in group_vals if abs((t - timestamp).days) <= 7]
                     group_means.append(sum(matching) / len(matching) if matching else None)
 
-            chart_id = f'evolution_{student.id}_{idx}'
+            canvas_id = f'evolution_{student.id}_{idx}'
 
             all_vals        = values + [v for v in group_means if v is not None]
             y_suggested_max = round(max(all_vals) * 1.20, 1) if all_vals else 100
 
             datasets = [{
-                'label':            student.name,
-                'data':             values,
-                'backgroundColor':  palette.UI_PRIMARY,
-                'borderColor':      palette.UI_PRIMARY,
-                'borderRadius':     6,
-                'borderSkipped':    False,
-                'order':            2,
+                'label':           student.name,
+                'data':            values,
+                'backgroundColor': palette.UI_PRIMARY,
+                'borderColor':     palette.UI_PRIMARY,
+                'borderRadius':    6,
+                'borderSkipped':   False,
+                'order':           2,
             }]
             if group_means and any(v is not None for v in group_means):
                 datasets.append({
@@ -79,72 +92,64 @@ class DashboardStudentCharts(models.TransientModel):
                     'tension':            0.3,
                 })
 
-            charts_html += f'''
-            <div class="col-lg-6 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="card-title-sm">{metric}</h6>
-                        <p style="font-size:11px;color:var(--am-muted);margin:4px 0 0 0;">
-                            Evolución con contexto del grupo · Cambio: {change_text}
-                        </p>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="{chart_id}" height="180"></canvas>
-                    </div>
-                </div>
-            </div>
-            <script>
-            new Chart(document.getElementById('{chart_id}'), {{
-                type: 'bar',
-                data: {{ labels: {json.dumps(labels)}, datasets: {json.dumps(datasets)} }},
-                options: {{
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {{
-                        legend: {{
-                            display: true, position: 'bottom',
-                            labels: {{ usePointStyle: true, padding: 12, font: {{ size: 11 }} }}
-                        }},
-                        tooltip: {{
-                            padding: 12, cornerRadius: 6,
-                            callbacks: {{
-                                label: function(ctx) {{
-                                    let lbl = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
-                                    if (ctx.parsed.y !== null) lbl += ctx.parsed.y.toFixed(1) + ' pts';
-                                    return lbl;
-                                }}
-                            }}
-                        }}
-                    }},
-                    scales: {{
-                        x: {{ grid: {{ display: false }}, ticks: {{ font: {{ size: 11 }} }} }},
-                        y: {{
-                            beginAtZero: true,
-                            suggestedMax: {y_suggested_max},
-                            grid: {{ drawBorder: false }},
-                            ticks: {{ font: {{ size: 11 }} }}
-                        }}
-                    }},
-                    animation: {{ duration: 600, easing: 'easeInOutCubic' }}
-                }}
-            }});
-            </script>'''
+            config = {
+                'type': 'bar',
+                'data': {'labels': labels, 'datasets': datasets},
+                'options': {
+                    'responsive':          True,
+                    'maintainAspectRatio': True,
+                    'plugins': {
+                        'legend': {
+                            'display': True, 'position': 'bottom',
+                            'labels': {'usePointStyle': True, 'padding': 12, 'font': {'size': 11}},
+                        },
+                        'tooltip': {
+                            'padding': 12, 'cornerRadius': 6,
+                        },
+                    },
+                    'scales': {
+                        'x': {'grid': {'display': False}, 'ticks': {'font': {'size': 11}}},
+                        'y': {
+                            'beginAtZero':  True,
+                            'suggestedMax': y_suggested_max,
+                            'grid':  {'drawBorder': False},
+                            'ticks': {'font': {'size': 11}},
+                        },
+                    },
+                    'animation': {'duration': 600, 'easing': 'easeInOutCubic'},
+                },
+            }
 
-        return f'<div class="row">{charts_html}</div>' if charts_html else ''
+            # Pre-build the <script> as Markup — avoids XML escaping issues in the template
+            init_script = Markup(
+                f'<script>new Chart(document.getElementById("{canvas_id}"), '
+                f'{json.dumps(config)});</script>'
+            )
+
+            chart_items.append({
+                'canvas_id':    canvas_id,
+                'metric_label': metric,
+                'change_html':  change_html,
+                'init_script':  init_script,
+            })
+
+        return _qweb(self.env, 'aula_metrics.student_evolution_charts_section', {
+            'chart_items': chart_items,
+        })
 
     def _get_group_context_data(self, student, df_student):
         """Obtiene datos del grupo para contextualizar el perfil individual."""
         if not student.academic_group_id:
             return {}
 
-        group_id   = student.academic_group_id.id
-        group_data = {}
+        group_id    = student.academic_group_id.id
+        group_data  = {}
         MetricValue = self.env['aula_metrics.metric_value']
 
         for metric_name in df_student['metric_name'].unique():
             group_metrics = MetricValue.search([
-                ('metric_name',        '=', metric_name),
-                ('academic_group_id',  '=', group_id),
+                ('metric_name',       '=', metric_name),
+                ('academic_group_id', '=', group_id),
             ])
             if group_metrics:
                 values_with_ts = [
@@ -173,8 +178,8 @@ class DashboardStudentCharts(models.TransientModel):
 
     def _generate_radar_chart(self, df, student):
         """
-        Resumen de Métricas: barra horizontal por métrica numérica con marcadores
-        de media de grupo (gris) y centro (verde).
+        Resumen de Métricas: barra horizontal por métrica con marcadores
+        de media de grupo/centro — renderizado via QWeb.
         """
         if df.empty:
             return ''
@@ -187,7 +192,7 @@ class DashboardStudentCharts(models.TransientModel):
         center_data = self._get_center_context_data(student, df_numeric)
         MetricValue = self.env['aula_metrics.metric_value']
 
-        rows_html = []
+        metric_rows = []
         for metric_name in df_numeric['metric_name'].unique():
             df_m = df_numeric[df_numeric['metric_name'] == metric_name].sort_values('timestamp')
             if df_m.empty:
@@ -197,29 +202,24 @@ class DashboardStudentCharts(models.TransientModel):
             last_val  = float(df_m.iloc[-1]['value'])
             last_date = df_m.iloc[-1]['timestamp'].strftime('%d/%m/%Y')
 
-            # Tendencia
+            # Trend icon
+            trend_icon = ''
             if len(df_m) >= 2:
                 prev_val = float(df_m.iloc[-2]['value'])
-                diff = last_val - prev_val
+                diff     = last_val - prev_val
                 if abs(diff) < 0.5:
-                    trend_icon  = '<i class="fa-solid fa-minus" style="color:var(--am-muted);font-size:10px;"></i>'
-                    trend_color = 'var(--am-muted)'
+                    trend_icon = Markup('<i class="fa-solid fa-minus" style="color:var(--am-muted);font-size:10px;"></i>')
                 elif diff > 0:
-                    trend_icon  = '<i class="fa-solid fa-arrow-up" style="color:var(--am-primary);font-size:10px;"></i>'
-                    trend_color = palette.UI_PRIMARY
+                    trend_icon = Markup('<i class="fa-solid fa-arrow-up" style="color:var(--am-primary);font-size:10px;"></i>')
                 else:
-                    trend_icon  = '<i class="fa-solid fa-arrow-down" style="color:var(--am-danger, #ef4444);font-size:10px;"></i>'
-                    trend_color = palette.UI_DANGER
-            else:
-                trend_icon  = ''
-                trend_color = 'var(--am-muted)'
+                    trend_icon = Markup('<i class="fa-solid fa-arrow-down" style="color:var(--am-danger,#ef4444);font-size:10px;"></i>')
 
-            # Rango de normalización
-            all_vals = MetricValue.search_read(
+            # Normalisation range
+            all_vals_raw = MetricValue.search_read(
                 [('metric_name', '=', metric_name), ('value_float', '!=', None)],
                 ['value_float'],
             )
-            all_floats   = [r['value_float'] for r in all_vals if r['value_float'] is not None]
+            all_floats   = [r['value_float'] for r in all_vals_raw if r['value_float'] is not None]
             observed_max = max(all_floats) if all_floats else max(last_val, 1)
             if observed_max <= 0:
                 observed_max = 1
@@ -227,73 +227,40 @@ class DashboardStudentCharts(models.TransientModel):
             def to_pct(v, mx=observed_max):
                 return min(int(v / mx * 100), 100)
 
-            student_pct = to_pct(last_val)
-            bar_color   = palette.UI_PRIMARY
+            row = {
+                'label':        label,
+                'last_date':    last_date,
+                'trend_icon':   trend_icon,
+                'student_pct':  to_pct(last_val),
+                'last_val_str': f'{last_val:.0f}',
+                'max_val_str':  f'{observed_max:.0f}',
+            }
 
-            # Marcadores grupo / centro
-            group_marker_html  = ''
-            center_marker_html = ''
             if metric_name in group_data:
                 gm = group_data[metric_name]['mean']
                 gp = to_pct(gm)
-                group_marker_html = (
-                    f'<div title="Media grupo: {gm:.1f}" '
-                    f'style="position:absolute;left:{gp}%;top:50%;transform:translate(-50%,-50%);'
-                    f'width:3px;height:20px;background:#94a3b8;border-radius:2px;z-index:2;"></div>'
+                row['group_mean']         = f'{gm:.1f}'
+                row['group_marker_style'] = (
+                    f'position:absolute;left:{gp}%;top:50%;transform:translate(-50%,-50%);'
+                    f'width:3px;height:20px;background:#94a3b8;border-radius:2px;z-index:2;'
                 )
+
             if metric_name in center_data:
                 cm = center_data[metric_name]['mean']
                 cp = to_pct(cm)
-                center_marker_html = (
-                    f'<div title="Media centro: {cm:.1f}" '
-                    f'style="position:absolute;left:{cp}%;top:50%;transform:translate(-50%,-50%);'
-                    f'width:3px;height:20px;background:{palette.UI_SUCCESS};border-radius:2px;z-index:2;"></div>'
+                row['center_mean']         = f'{cm:.1f}'
+                row['center_marker_style'] = (
+                    f'position:absolute;left:{cp}%;top:50%;transform:translate(-50%,-50%);'
+                    f'width:3px;height:20px;background:{palette.UI_SUCCESS};border-radius:2px;z-index:2;'
                 )
 
-            rows_html.append(f"""
-            <div class="d-flex align-items-center gap-3 py-2"
-                 style="border-bottom:1px solid var(--am-border);">
-                <div style="width:180px;min-width:140px;flex-shrink:0;">
-                    <div style="font-size:13px;font-weight:500;color:var(--am-text);
-                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                         title="{label}">{label}</div>
-                    <div style="font-size:11px;color:var(--am-muted);">{last_date} {trend_icon}</div>
-                </div>
-                <div style="flex:1;position:relative;height:28px;display:flex;align-items:center;">
-                    <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
-                                height:8px;background:var(--am-border);border-radius:4px;overflow:visible;">
-                        <div style="width:{student_pct}%;height:100%;background:{bar_color};
-                                    border-radius:4px;transition:width 0.5s ease;"></div>
-                    </div>
-                    {group_marker_html}
-                    {center_marker_html}
-                </div>
-                <div style="width:64px;flex-shrink:0;text-align:right;">
-                    <span style="font-size:18px;font-weight:700;color:{bar_color};line-height:1;">{last_val:.0f}</span>
-                    <div style="font-size:10px;color:var(--am-muted);">/ {observed_max:.0f}</div>
-                </div>
-            </div>""")
+            metric_rows.append(row)
 
-        if not rows_html:
+        if not metric_rows:
             return ''
 
-        rows_joined = '\n'.join(rows_html)
-        return f"""
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">Resumen de Métricas</h5>
-                        <p class="card-subtitle">Posición del alumno en cada variable respecto al grupo y al centro</p>
-                    </div>
-                    <div class="card-body" style="padding-top:4px;padding-bottom:4px;">
-                        {rows_joined}
-                        <div class="d-flex gap-4 pt-3" style="font-size:11px;color:var(--am-muted);">
-                            <span><span style="display:inline-block;width:18px;height:7px;background:var(--am-primary);border-radius:3px;vertical-align:middle;"></span> Alumno</span>
-                            <span><span style="display:inline-block;width:3px;height:14px;background:#94a3b8;border-radius:1px;vertical-align:middle;"></span> Media grupo</span>
-                            <span><span style="display:inline-block;width:3px;height:14px;background:{palette.UI_SUCCESS};border-radius:1px;vertical-align:middle;"></span> Media centro</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>"""
+        return _qweb(self.env, 'aula_metrics.student_metrics_summary_section', {
+            'metric_rows': metric_rows,
+            'ui_primary':  palette.UI_PRIMARY,
+            'ui_success':  palette.UI_SUCCESS,
+        })

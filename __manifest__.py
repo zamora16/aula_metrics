@@ -42,6 +42,7 @@
         'views/segmentation_dashboard_templates.xml',
         'views/dashboard_page_templates.xml',
         'views/dashboard_main_templates.xml',
+        'views/student_profile_templates.xml',
         'views/reports/survey_result_report.xml',
         'views/reports/report_student_composite.xml',
         # 4. Datos de Dashboard
