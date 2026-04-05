@@ -867,7 +867,7 @@ class DashboardChartsStatic(models.TransientModel):
                     responses.extend(parsed)
                 elif isinstance(parsed, str):
                     responses.append(parsed)
-            except:
+            except (json.JSONDecodeError, TypeError, ValueError):
                 continue
         
         if not responses:

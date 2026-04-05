@@ -137,10 +137,11 @@ class MetricValue(models.Model):
         return result
 
     @api.model
-    def get_metric_history(self, student_id, metric_name, limit=None):
+    def get_metric_history(self, student_id, metric_name, limit=200):
         """
         Obtiene el historial de una métrica específica para un estudiante.
         Útil para gráficos de evolución temporal.
+        El límite por defecto (200) evita cargar historiales ilimitados en memoria.
         """
         domain = [
             ('student_id', '=', student_id),
@@ -153,22 +154,28 @@ class MetricValue(models.Model):
         """
         Obtiene estadísticas resumidas de una métrica para una evaluación.
         Retorna dict con count, avg, min, max.
+        Usa read_group para calcular los agregados en SQL (sin cargar registros).
         """
-        records = self.search([
-            ('evaluation_id', '=', evaluation_id),
-            ('metric_name', '=', metric_name),
-            ('value_float', '!=', None)
-        ])
-        
-        if not records:
+        rows = self.read_group(
+            [
+                ('evaluation_id', '=', evaluation_id),
+                ('metric_name', '=', metric_name),
+                ('value_float', '!=', False),
+            ],
+            ['value_float:sum', 'value_float:min', 'value_float:max', '__count'],
+            [],
+        )
+        if not rows or not rows[0].get('__count'):
             return {'count': 0, 'avg': 0, 'min': 0, 'max': 0}
-        
-        values = records.mapped('value_float')
+
+        row = rows[0]
+        count = row['__count']
+        total = row.get('value_float:sum') or 0.0
         return {
-            'count': len(values),
-            'avg': sum(values) / len(values),
-            'min': min(values),
-            'max': max(values)
+            'count': count,
+            'avg':   total / count if count else 0,
+            'min':   row.get('value_float:min') or 0,
+            'max':   row.get('value_float:max') or 0,
         }
     
     @api.model

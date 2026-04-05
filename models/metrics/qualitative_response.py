@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models
+import logging
 import re
 import unicodedata
 from odoo.addons.aula_metrics.utils import role_service
+
+_logger = logging.getLogger(__name__)
 from odoo.addons.aula_metrics.utils.constants import (
     GROUP_COUNSELOR,
     COURSE_LEVEL_MAP as _COURSE_LEVEL_MAP,
@@ -53,13 +56,9 @@ class QualitativeResponse(models.Model):
     
     @api.depends('response_text')
     def _compute_alert_keywords(self):
+        alert_keywords = self.env['aula_metrics.alert_keyword'].search([('active', '=', True)])
         for record in self:
-            if not record.response_text:
-                record.has_alert_keywords = False
-                record.detected_keyword_ids = [(5, 0, 0)]
-                continue
-            alert_keywords = self.env['aula_metrics.alert_keyword'].search([('active', '=', True)])
-            if not alert_keywords:
+            if not record.response_text or not alert_keywords:
                 record.has_alert_keywords = False
                 record.detected_keyword_ids = [(5, 0, 0)]
                 continue
@@ -168,16 +167,14 @@ class AlertKeyword(models.Model):
         ('keyword_unique', 'unique(keyword)', 'Esta palabra clave ya existe en el sistema.')
     ]
     
-    @api.model
-    def create(self, vals):
-        """Al crear una palabra, generar variantes automáticamente."""
-        record = super().create(vals)
-        
-        # Solo generar variantes si no es una variante en sí misma
-        if not record.is_variant and not record.is_system_default:
-            record._generate_variants()
-        
-        return record
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Al crear palabras clave, generar variantes automáticamente."""
+        records = super().create(vals_list)
+        for record in records:
+            if not record.is_variant and not record.is_system_default:
+                record._generate_variants()
+        return records
     
     def write(self, vals):
         """Al actualizar keyword, regenerar variantes."""
@@ -234,9 +231,12 @@ class AlertKeyword(models.Model):
                         'active': self.active,
                         'sequence': self.sequence + 1
                     })
-                except Exception:
+                except Exception as e:
                     # Si falla (ej: duplicado por constraint), continuar
-                    pass
+                    _logger.debug(
+                        '_generate_variants: no se pudo crear variante "%s" para keyword %s: %s',
+                        variant, self.id, e,
+                    )
     
     def _generate_accent_variants(self, word):
         """Genera variantes con/sin tildes."""
@@ -266,9 +266,7 @@ class AlertKeyword(models.Model):
         return variants
     
     def _generate_grammatical_variants(self, word):
-        """
-        Genera variantes gramaticales simples (plurales).
-        """
+        """Genera el plural simple de la palabra (añade 's' o 'es')."""
         variants = set()
         # Plurales simples (agregar 's' o 'es')
         if not word.endswith('s'):

@@ -180,126 +180,131 @@
             </div>
         </t>
 
-            <!-- Responses table -->
+        <!-- Responses tables: una tabla por binomio Evaluación+Pregunta -->
+        <t t-if="not response_tables">
             <div class="row">
-            <div class="col-12">
-                <div style="border:1px solid var(--am-border);border-radius:10px;
-                            background:var(--am-surface);overflow:hidden;">
-                    <div style="padding:12px 18px;border-bottom:1px solid var(--am-border);
-                                display:flex;align-items:center;justify-content:space-between;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <i class="fa-solid fa-align-left" style="color:var(--am-muted);font-size:12px;"/>
-                            <span style="font-size:13px;font-weight:600;color:var(--am-text);">Respuestas</span>
-                        </div>
-                        <span style="font-size:12px;color:var(--am-muted);">
-                            <t t-out="total_responses"/>
-                            <t t-if="total_responses == 1"> respuesta</t>
-                            <t t-else=""> respuestas</t>
-                        </span>
+                <div class="col-12">
+                    <div style="padding:32px;text-align:center;font-size:13px;color:var(--am-muted);
+                                border:1px solid var(--am-border);border-radius:10px;background:var(--am-surface);">
+                        No hay respuestas con los filtros actuales.
                     </div>
-                    <t t-if="not responses">
-                        <div style="padding:32px;text-align:center;font-size:13px;color:var(--am-muted);">
-                            No hay respuestas con los filtros actuales.
-                        </div>
-                    </t>
-                    <t t-else="">
-                        <div style="overflow-x:auto;">
-                            <table style="width:100%;border-collapse:collapse;">
-                                <thead>
-                                    <tr style="background:var(--am-light);">
-                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
-                                                   text-transform:uppercase;letter-spacing:0.07em;
-                                                   color:var(--am-muted);text-align:left;
-                                                   border-bottom:1px solid var(--am-border);">Alumno</th>
-                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
-                                                   text-transform:uppercase;letter-spacing:0.07em;
-                                                   color:var(--am-muted);text-align:left;
-                                                   border-bottom:1px solid var(--am-border);">Grupo</th>
-                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
-                                                   text-transform:uppercase;letter-spacing:0.07em;
-                                                   color:var(--am-muted);white-space:nowrap;text-align:left;
-                                                   border-bottom:1px solid var(--am-border);">Fecha</th>
-                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
-                                                   text-transform:uppercase;letter-spacing:0.07em;
-                                                   color:var(--am-muted);text-align:left;
-                                                   border-bottom:1px solid var(--am-border);">Respuesta</th>
-
-                                        <th style="padding:10px 16px;font-size:11px;font-weight:700;
-                                                   text-transform:uppercase;letter-spacing:0.07em;
-                                                   color:var(--am-muted);text-align:center;
-                                                   border-bottom:1px solid var(--am-border);">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <t t-foreach="responses" t-as="resp">
-                                        <tr t-att-style="'border-left:3px solid #f87171;border-bottom:1px solid var(--am-border);' if resp['has_alerts'] else 'border-left:3px solid transparent;border-bottom:1px solid var(--am-border);'"
-                                            onmouseover="this.style.background='var(--am-light)'"
-                                            onmouseout="this.style.background=''">
-                                            <td style="padding:12px 16px;vertical-align:middle;">
-                                                <a t-attf-href="/aulametrics/student/#{resp['student_id']}"
-                                                   style="font-size:13px;font-weight:600;
-                                                          color:var(--am-primary);text-decoration:none;"
-                                                   onmouseover="this.style.textDecoration='underline'"
-                                                   onmouseout="this.style.textDecoration='none'">
-                                                    <t t-out="resp['student_name']"/>
-                                                </a>
-                                            </td>
-                                            <td style="padding:12px 16px;vertical-align:middle;">
-                                                <span style="display:inline-block;padding:2px 8px;
-                                                             border-radius:12px;font-size:11px;font-weight:600;
-                                                             background:var(--am-light);border:1px solid var(--am-border);
-                                                             color:var(--am-muted);white-space:nowrap;">
-                                                    <t t-out="resp['group_name']"/>
-                                                </span>
-                                            </td>
-                                            <td style="padding:12px 16px;vertical-align:middle;
-                                                       font-size:12px;color:var(--am-muted);white-space:nowrap;">
-                                                <t t-out="resp['date']"/>
-                                            </td>
-                                            <td style="padding:12px 16px;vertical-align:middle;
-                                                       font-size:13px;color:var(--am-text);
-                                                       line-height:1.55;max-width:400px;">
-                                                <t t-if="len(resp['response'] or '') &gt; 150">
-                                                    <t t-out="resp['response'][:150]"/>...
-                                                    <a href="#"
-                                                       style="font-size:12px;color:var(--am-muted);
-                                                              text-decoration:none;font-weight:600;margin-left:4px;"
-                                                       t-attf-onclick="alert('#{resp['response'][:300].replace(&quot;'&quot;, &quot;\\'&quot;)}...'); return false;">
-                                                        Ver más
-                                                    </a>
-                                                </t>
-                                                <t t-else="">
-                                                    <t t-out="resp['response']"/>
-                                                </t>
-                                            </td>
-
-                                            <td style="padding:12px 16px;vertical-align:middle;text-align:center;">
-                                                <t t-if="resp['has_alerts']">
-                                                    <span style="display:inline-block;padding:3px 10px;
-                                                                 border-radius:20px;font-size:11px;font-weight:700;
-                                                                 background:#fef2f2;border:1px solid #fecaca;
-                                                                 color:#dc2626;white-space:nowrap;">
-                                                        Alerta
-                                                    </span>
-                                                </t>
-                                                <t t-else="">
-                                                    <span style="display:inline-block;padding:3px 10px;
-                                                                 border-radius:20px;font-size:11px;font-weight:700;
-                                                                 background:#f0fdf4;border:1px solid #bbf7d0;
-                                                                 color:#16a34a;white-space:nowrap;">
-                                                        OK
-                                                    </span>
-                                                </t>
-                                            </td>
-                                        </tr>
-                                    </t>
-                                </tbody>
-                            </table>
-                        </div>
-                    </t>
                 </div>
             </div>
-            </div>
+        </t>
+        <t t-else="">
+            <t t-foreach="response_tables" t-as="tbl">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div style="border:1px solid var(--am-border);border-radius:10px;
+                                    background:var(--am-surface);overflow:hidden;">
+                            <div style="padding:12px 18px;border-bottom:1px solid var(--am-border);
+                                        display:flex;align-items:center;justify-content:space-between;">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <i class="fa-solid fa-align-left" style="color:var(--am-muted);font-size:12px;"/>
+                                    <span style="font-size:13px;font-weight:600;color:var(--am-text);">
+                                        Respuestas — <t t-out="tbl['eval_name']"/> — <t t-out="tbl['question_title']"/>
+                                    </span>
+                                </div>
+                                <span style="font-size:12px;color:var(--am-muted);">
+                                    <t t-out="tbl['count']"/> respuestas
+                                </span>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%;border-collapse:collapse;">
+                                    <thead>
+                                        <tr style="background:var(--am-light);">
+                                            <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                       text-transform:uppercase;letter-spacing:0.07em;
+                                                       color:var(--am-muted);text-align:left;
+                                                       border-bottom:1px solid var(--am-border);">Alumno</th>
+                                            <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                       text-transform:uppercase;letter-spacing:0.07em;
+                                                       color:var(--am-muted);text-align:left;
+                                                       border-bottom:1px solid var(--am-border);">Grupo</th>
+                                            <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                       text-transform:uppercase;letter-spacing:0.07em;
+                                                       color:var(--am-muted);white-space:nowrap;text-align:left;
+                                                       border-bottom:1px solid var(--am-border);">Fecha</th>
+                                            <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                       text-transform:uppercase;letter-spacing:0.07em;
+                                                       color:var(--am-muted);text-align:left;
+                                                       border-bottom:1px solid var(--am-border);">Respuesta</th>
+                                            <th style="padding:10px 16px;font-size:11px;font-weight:700;
+                                                       text-transform:uppercase;letter-spacing:0.07em;
+                                                       color:var(--am-muted);text-align:center;
+                                                       border-bottom:1px solid var(--am-border);">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="tbl['responses']" t-as="resp">
+                                            <tr t-att-style="'border-left:3px solid #f87171;border-bottom:1px solid var(--am-border);' if resp['has_alerts'] else 'border-left:3px solid transparent;border-bottom:1px solid var(--am-border);'"
+                                                onmouseover="this.style.background='var(--am-light)'"
+                                                onmouseout="this.style.background=''">
+                                                <td style="padding:12px 16px;vertical-align:middle;">
+                                                    <a t-attf-href="/aulametrics/student/#{resp['student_id']}"
+                                                       style="font-size:13px;font-weight:600;
+                                                              color:var(--am-primary);text-decoration:none;"
+                                                       onmouseover="this.style.textDecoration='underline'"
+                                                       onmouseout="this.style.textDecoration='none'">
+                                                        <t t-out="resp['student_name']"/>
+                                                    </a>
+                                                </td>
+                                                <td style="padding:12px 16px;vertical-align:middle;">
+                                                    <span style="display:inline-block;padding:2px 8px;
+                                                                 border-radius:12px;font-size:11px;font-weight:600;
+                                                                 background:var(--am-light);border:1px solid var(--am-border);
+                                                                 color:var(--am-muted);white-space:nowrap;">
+                                                        <t t-out="resp['group_name']"/>
+                                                    </span>
+                                                </td>
+                                                <td style="padding:12px 16px;vertical-align:middle;
+                                                           font-size:12px;color:var(--am-muted);white-space:nowrap;">
+                                                    <t t-out="resp['date']"/>
+                                                </td>
+                                                <td style="padding:12px 16px;vertical-align:middle;
+                                                           font-size:13px;color:var(--am-text);
+                                                           line-height:1.55;max-width:400px;">
+                                                    <t t-if="len(resp['response'] or '') &gt; 150">
+                                                        <t t-out="resp['response'][:150]"/>...
+                                                        <a href="#"
+                                                           style="font-size:12px;color:var(--am-muted);
+                                                                  text-decoration:none;font-weight:600;margin-left:4px;"
+                                                           t-attf-onclick="alert('#{resp['response'][:300].replace(&quot;'&quot;, &quot;\\'&quot;)}...'); return false;">
+                                                            Ver más
+                                                        </a>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <t t-out="resp['response']"/>
+                                                    </t>
+                                                </td>
+                                                <td style="padding:12px 16px;vertical-align:middle;text-align:center;">
+                                                    <t t-if="resp['has_alerts']">
+                                                        <span style="display:inline-block;padding:3px 10px;
+                                                                     border-radius:20px;font-size:11px;font-weight:700;
+                                                                     background:#fef2f2;border:1px solid #fecaca;
+                                                                     color:#dc2626;white-space:nowrap;">
+                                                            Alerta
+                                                        </span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span style="display:inline-block;padding:3px 10px;
+                                                                     border-radius:20px;font-size:11px;font-weight:700;
+                                                                     background:#f0fdf4;border:1px solid #bbf7d0;
+                                                                     color:#16a34a;white-space:nowrap;">
+                                                            OK
+                                                        </span>
+                                                    </t>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
 
         <script>
             (function() {
@@ -383,10 +388,8 @@
             </div>
         </t>
 
-        <!-- Tablas de respuestas anónimas por evaluación -->
-        <t t-foreach="responses_by_eval.items()" t-as="eval_block">
-            <t t-set="eval_name" t-value="eval_block[0]"/>
-            <t t-set="eval_responses" t-value="eval_block[1]"/>
+        <!-- Tablas de respuestas anónimas por binomio Evaluación+Pregunta -->
+        <t t-foreach="response_tables" t-as="tbl">
             <div class="row mb-4">
                 <div class="col-12">
                     <div style="border:1px solid var(--am-border);border-radius:10px;
@@ -396,11 +399,11 @@
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <i class="fa-solid fa-align-left" style="color:var(--am-muted);font-size:12px;"/>
                                 <span style="font-size:13px;font-weight:600;color:var(--am-text);">
-                                    Respuestas — <t t-out="eval_name"/>
+                                    Respuestas — <t t-out="tbl['eval_name']"/> — <t t-out="tbl['question_title']"/>
                                 </span>
                             </div>
                             <span style="font-size:12px;color:var(--am-muted);">
-                                <t t-out="len(eval_responses)"/> respuestas
+                                <t t-out="tbl['count']"/> respuestas
                             </span>
                         </div>
                         <div style="overflow-x:auto;">
@@ -422,7 +425,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <t t-foreach="eval_responses" t-as="resp">
+                                    <t t-foreach="tbl['responses']" t-as="resp">
                                         <tr t-att-style="'border-left:3px solid #f87171;border-bottom:1px solid var(--am-border);' if resp['has_alerts'] else 'border-left:3px solid transparent;border-bottom:1px solid var(--am-border);'"
                                             onmouseover="this.style.background='var(--am-light)'"
                                             onmouseout="this.style.background=''">
@@ -557,10 +560,8 @@
             </div>
         </t>
 
-        <!-- Tablas de respuestas anónimas por evaluación -->
-        <t t-foreach="responses_by_eval.items()" t-as="eval_block">
-            <t t-set="eval_name" t-value="eval_block[0]"/>
-            <t t-set="eval_responses" t-value="eval_block[1]"/>
+        <!-- Tablas de respuestas anónimas por binomio Evaluación+Pregunta -->
+        <t t-foreach="response_tables" t-as="tbl">
             <div class="row mb-4">
                 <div class="col-12">
                     <div style="border:1px solid var(--am-border);border-radius:10px;
@@ -570,11 +571,11 @@
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <i class="fa-solid fa-align-left" style="color:var(--am-muted);font-size:12px;"/>
                                 <span style="font-size:13px;font-weight:600;color:var(--am-text);">
-                                    Respuestas — <t t-out="eval_name"/>
+                                    Respuestas — <t t-out="tbl['eval_name']"/> — <t t-out="tbl['question_title']"/>
                                 </span>
                             </div>
                             <span style="font-size:12px;color:var(--am-muted);">
-                                <t t-out="len(eval_responses)"/> respuestas
+                                <t t-out="tbl['count']"/> respuestas
                             </span>
                         </div>
                         <div style="overflow-x:auto;">
@@ -600,7 +601,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <t t-foreach="eval_responses" t-as="resp">
+                                    <t t-foreach="tbl['responses']" t-as="resp">
                                         <tr t-att-style="'border-left:3px solid #f87171;border-bottom:1px solid var(--am-border);' if resp['has_alerts'] else 'border-left:3px solid transparent;border-bottom:1px solid var(--am-border);'"
                                             onmouseover="this.style.background='var(--am-light)'"
                                             onmouseout="this.style.background=''">

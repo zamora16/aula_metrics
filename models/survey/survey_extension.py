@@ -122,7 +122,7 @@ class SurveyExtension(models.Model):
                 # Para preguntas matrix, contar las filas (answers con matrix_question_id)
                 matrix_answers = self.env['survey.question.answer'].search([
                     ('matrix_question_id', 'in', matrix_questions.ids)
-                ])
+                ], limit=500)
                 item_count += len(matrix_answers)
             
             # Para preguntas no matrix, contar como 1 ítem cada una

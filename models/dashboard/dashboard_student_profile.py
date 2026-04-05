@@ -14,6 +14,7 @@ import pandas as pd
 
 from markupsafe import Markup
 from ...utils import dashboard_styles, dashboard_profile_styles, dashboard_helpers, role_service
+from ...utils.constants import QUERY_LIMIT_STUDENTS
 
 
 def _qweb(env, template_id, values):
@@ -93,7 +94,7 @@ class DashboardStudentProfile(models.TransientModel):
         if filtered is None:
             students = Partner.browse([])
         else:
-            students = Partner.search(filtered, order='name')
+            students = Partner.search(filtered, order='name', limit=QUERY_LIMIT_STUDENTS)
 
         return self._build_students_list_html(students, role_info)
 
@@ -106,19 +107,19 @@ class DashboardStudentProfile(models.TransientModel):
         return role_service.can_access_student(role_info, student)
 
     def _get_student_metrics(self, student_id):
-        """Obtiene todas las métricas del estudiante ordenadas por fecha."""
+        """Obtiene las métricas más recientes del estudiante (máx. 500 registros)."""
         return self.env['aula_metrics.metric_value'].search([
             ('student_id', '=', student_id)
-        ], order='timestamp desc')
+        ], order='timestamp desc', limit=500)
 
     def _get_centro_metrics(self, student_id):
-        """Métricas de encuestas del centro (excluye oficiales AulaMetrics no-adhoc)."""
+        """Métricas de encuestas del centro (excluye oficiales AulaMetrics no-adhoc). Máx. 500."""
         return self.env['aula_metrics.metric_value'].search([
             ('student_id', '=', student_id),
             '|',
             ('survey_id.is_aulametrics', '=', False),
             ('survey_id.is_adhoc', '=', True),
-        ], order='timestamp desc')
+        ], order='timestamp desc', limit=500)
 
     def _prepare_metrics_dataframe(self, metrics):
         """Construye el DataFrame de métricas del alumno para análisis longitudinal."""

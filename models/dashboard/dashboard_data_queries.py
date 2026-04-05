@@ -6,7 +6,7 @@ import logging
 from odoo import models, api
 import pandas as pd
 from ...utils import role_service, dashboard_helpers
-from ...utils.constants import ROLE_TUTOR, EVAL_STATES_ACTIVE
+from ...utils.constants import ROLE_TUTOR, EVAL_STATES_ACTIVE, QUERY_LIMIT_METRIC_VALUES
 
 _logger = logging.getLogger(__name__)
 
@@ -82,16 +82,19 @@ class DashboardDataQueries(models.Model):
 
             # Filtrar por evaluaciones si se especifica
             if filters.get('evaluation_ids'):
-                # Solo grupos que tienen evaluaciones con métricas
-                groups_with_data = self.env['aula_metrics.metric_value'].search([
-                    ('evaluation_id', 'in', filters['evaluation_ids'])
-                ]).mapped('academic_group_id')
-                # Filtrar grupos válidos (no None)
-                valid_group_ids = [g.id for g in groups_with_data if g]
+                # Obtener IDs de grupos con métricas usando read_group (sin cargar registros)
+                rows = self.env['aula_metrics.metric_value'].read_group(
+                    [
+                        ('evaluation_id', 'in', filters['evaluation_ids']),
+                        ('academic_group_id', '!=', False),
+                    ],
+                    ['academic_group_id'],
+                    ['academic_group_id'],
+                )
+                valid_group_ids = [r['academic_group_id'][0] for r in rows if r.get('academic_group_id')]
                 if valid_group_ids:
                     domain.append(('id', 'in', valid_group_ids))
                 else:
-                    # Si no hay grupos válidos, retornar lista vacía
                     return []
             elif filters.get('academic_year_id'):
                 domain.append(('academic_year_id', '=', filters['academic_year_id']))
@@ -159,7 +162,7 @@ class DashboardDataQueries(models.Model):
         elif filters.get('academic_year_id'):
             domain.append(('academic_year_id', '=', filters['academic_year_id']))
         
-        return MetricValue.search(domain)
+        return MetricValue.search(domain, limit=QUERY_LIMIT_METRIC_VALUES)
 
     @api.model
     def prepare_dataframe(self, metric_values, role_info):

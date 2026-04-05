@@ -91,6 +91,10 @@ class Alert(models.Model):
         store=False
     )
     
+    # Empty @api.depends() is intentional: case_id is computed via a reverse
+    # search (aula_metrics.case → alert_id) so there is no direct field
+    # dependency to declare. The field is store=False and recomputed on every
+    # read, which is the correct behaviour for this inverse relationship.
     @api.depends()
     def _compute_case_id(self):
         """Busca el caso de orientación vinculado a esta alerta (si existe)."""
@@ -151,7 +155,7 @@ class Alert(models.Model):
                         alert.severity = max_severity
                     else:
                         alert.severity = 'moderate'
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     alert.severity = 'moderate'
             elif alert.threshold_id:
                 # Alerta cuantitativa: usar severidad del threshold
@@ -173,7 +177,7 @@ class Alert(models.Model):
                         alert.qualitative_response_id.detected_keyword_ids.mapped('keyword')
                     )
                     alert.message = f"Se detectaron palabras de alerta en una respuesta cualitativa: {keywords_str}"
-                except Exception:
+                except (AttributeError, TypeError):
                     alert.message = "Se detectaron palabras de alerta en una respuesta cualitativa"
             elif alert.threshold_id:
                 # Alerta cuantitativa: mensaje del threshold
@@ -184,10 +188,10 @@ class Alert(models.Model):
     @api.depends('alert_type', 'alert_level', 'threshold_id.name', 'academic_group_id.name', 'student_id.name', 'course_level_general')
     def _compute_name(self):
         """Computa el nombre de la alerta según permisos del usuario."""
+        user = self.env.user
+        is_counselor_or_admin = user.has_group(GROUP_ADMIN) or user.has_group(GROUP_COUNSELOR)
+        is_management = user.has_group(GROUP_MANAGEMENT)
         for alert in self:
-            user = self.env.user
-            is_counselor_or_admin = user.has_group(GROUP_ADMIN) or user.has_group(GROUP_COUNSELOR)
-            is_management = user.has_group(GROUP_MANAGEMENT)
             
             # Nombre base según tipo de alerta
             if alert.alert_type == 'qualitative':
@@ -336,7 +340,7 @@ class Alert(models.Model):
         else:
             domain.append(('academic_group_id', '=', participation.student_id.academic_group_id.id))
         
-        existing = self.search(domain)
+        existing = self.search(domain, limit=1)
         if not existing:
             vals = {
                 'threshold_id': threshold.id,

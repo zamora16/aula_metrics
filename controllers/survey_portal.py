@@ -2,8 +2,11 @@
 """
 Portal público de encuestas para alumnos usando tokens de participación.
 """
+import logging
 from odoo import http, fields
 from odoo.http import request
+
+_logger = logging.getLogger(__name__)
 
 
 class AulaMetricsSurveyPortal(http.Controller):
@@ -152,6 +155,10 @@ class AulaMetricsSurveyPortal(http.Controller):
             return request.redirect(f'/evaluacion/{token}?msg=guardado')
 
         except Exception:
+            _logger.exception(
+                'submit_survey: error guardando respuestas para token=%s survey_id=%s',
+                token, survey_id,
+            )
             return request.render('aula_metrics.portal_error', {
                 'error_title': 'Error al guardar',
                 'error_message': 'Hubo un problema al guardar tus respuestas. Por favor, inténtalo de nuevo.'

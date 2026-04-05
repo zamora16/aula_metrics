@@ -103,13 +103,7 @@ class ManualAlertWizard(models.TransientModel):
         Solo para uso de tutores; orientadores y admins crean casos directamente.
         """
         self.ensure_one()
-        if (self.env.user.has_group(GROUP_COUNSELOR)
-                or self.env.user.has_group(GROUP_ADMIN)):
-            raise UserError(
-                'Esta función está pensada para tutores.\n\n'
-                'Como orientador o administrador puedes crear casos de orientación '
-                'directamente desde el menú Orientación → Casos de Orientación.'
-            )
+        self._check_only_tutor_access()
 
         # Crear la alerta con sudo para que el tutor no necesite permisos directos
         alert = self.env['aula_metrics.alert'].sudo().create({

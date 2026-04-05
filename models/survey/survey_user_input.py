@@ -97,7 +97,7 @@ class SurveyUserInput(models.Model):
                         _logger.error('_mark_done: error verificando completitud para participación %s: %s', participation.id, e, exc_info=True)
 
             except Exception as e:
-                _logger.error('_mark_done: error procesando user_input %s: %s', self.id, e, exc_info=True)
+                _logger.error('_mark_done: error procesando user_input %s: %s', user_input.id, e, exc_info=True)
                 continue
 
         return res

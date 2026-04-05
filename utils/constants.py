@@ -56,6 +56,8 @@ SEVERITY_HIGH     = 'high'
 QUERY_LIMIT_QUALITATIVE  = 500
 QUERY_LIMIT_ALERTS       = 200
 QUERY_LIMIT_STUDENTS     = 1000
+# Techo de metric_value cargados en memoria para el DataFrame del dashboard
+QUERY_LIMIT_METRIC_VALUES = 50_000
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Estados de evaluación

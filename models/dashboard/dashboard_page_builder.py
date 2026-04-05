@@ -63,81 +63,69 @@ class DashboardChartsBuilder(models.TransientModel):
             home_kpi_scheduled, home_kpi_closed, home_kpi_avg_all,
             home_kpi_avg_active, home_kpi_alerts
         """
-        try:
-            all_evals = self._get_all_evaluations(role_info)
+        all_evals = self._get_all_evaluations(role_info)
 
-            # ── Conteos por estado ────────────────────────────────────────
-            counts = {'active': 0, 'scheduled': 0, 'closed': 0, 'draft': 0}
-            for ev in all_evals:
-                state = ev['state']
-                if state in counts:
-                    counts[state] += 1
+        # ── Conteos por estado ────────────────────────────────────────
+        counts = {'active': 0, 'scheduled': 0, 'closed': 0, 'draft': 0}
+        for ev in all_evals:
+            state = ev['state']
+            if state in counts:
+                counts[state] += 1
 
-            # ── Participación media (excluye borradores y canceladas) ─────
-            measurable = [e for e in all_evals if e['state'] in ('active', 'closed') and e['total_students'] > 0]
-            active_only = [e for e in all_evals if e['state'] == 'active' and e['total_students'] > 0]
+        # ── Participación media (excluye borradores y canceladas) ─────
+        measurable = [e for e in all_evals if e['state'] in ('active', 'closed') and e['total_students'] > 0]
+        active_only = [e for e in all_evals if e['state'] == 'active' and e['total_students'] > 0]
 
-            avg_all = (
-                sum(e['participation_rate'] for e in measurable) / len(measurable)
-                if measurable else None
-            )
-            avg_active = (
-                sum(e['participation_rate'] for e in active_only) / len(active_only)
-                if active_only else None
-            )
+        avg_all = (
+            sum(e['participation_rate'] for e in measurable) / len(measurable)
+            if measurable else None
+        )
+        avg_active = (
+            sum(e['participation_rate'] for e in active_only) / len(active_only)
+            if active_only else None
+        )
 
-            # ── Alertas activas (todos los roles, sin datos individuales) ─
-            total_alerts = self.env['aula_metrics.alert'].search_count(
-                [('status', '=', 'active')]
-            )
+        # ── Alertas activas (todos los roles, sin datos individuales) ─
+        total_alerts = self.env['aula_metrics.alert'].search_count(
+            [('status', '=', 'active')]
+        )
 
-            # ── Formatear cards de evaluaciones ──────────────────────────
-            state_meta = self._EVAL_STATE_META
-            state_order = {s: i for i, s in enumerate(self._EVAL_STATE_ORDER)}
-            sorted_evals = sorted(all_evals, key=lambda e: (state_order.get(e['state'], 99), -(e['date_start'].timestamp() if e['date_start'] else 0)))
+        # ── Formatear cards de evaluaciones ──────────────────────────
+        state_meta = self._EVAL_STATE_META
+        state_order = {s: i for i, s in enumerate(self._EVAL_STATE_ORDER)}
+        sorted_evals = sorted(all_evals, key=lambda e: (state_order.get(e['state'], 99), -(e['date_start'].timestamp() if e['date_start'] else 0)))
 
-            formatted = []
-            for ev in sorted_evals:
-                rate = ev['participation_rate']
-                pct  = round(rate)
-                meta = state_meta.get(ev['state'], {'label': ev['state'], 'css': 'state-draft'})
-                formatted.append({
-                    'id':                   ev['id'],
-                    'name':                 ev['name'],
-                    'state':                ev['state'],
-                    'state_label':          meta['label'],
-                    'state_css':            meta['css'],
-                    'date_range':           dashboard_helpers.format_date_range(
-                                                ev['date_start'], ev['date_end']
-                                            ),
-                    'groups':               ev['groups'],
-                    'surveys':              ev['surveys'],
-                    'completed_students':   ev['completed_students'],
-                    'total_students':       ev['total_students'],
-                    'participation_pct':    pct,
-                    'participation_class':  'high' if rate >= 80 else ('medium' if rate >= 50 else 'low'),
-                })
+        formatted = []
+        for ev in sorted_evals:
+            rate = ev['participation_rate']
+            pct  = round(rate)
+            meta = state_meta.get(ev['state'], {'label': ev['state'], 'css': 'state-draft'})
+            formatted.append({
+                'id':                   ev['id'],
+                'name':                 ev['name'],
+                'state':                ev['state'],
+                'state_label':          meta['label'],
+                'state_css':            meta['css'],
+                'date_range':           dashboard_helpers.format_date_range(
+                                            ev['date_start'], ev['date_end']
+                                        ),
+                'groups':               ev['groups'],
+                'surveys':              ev['surveys'],
+                'completed_students':   ev['completed_students'],
+                'total_students':       ev['total_students'],
+                'participation_pct':    pct,
+                'participation_class':  'high' if rate >= 80 else ('medium' if rate >= 50 else 'low'),
+            })
 
-            return {
-                'home_evaluations':   formatted,
-                'home_kpi_active':    counts['active'],
-                'home_kpi_scheduled': counts['scheduled'],
-                'home_kpi_closed':    counts['closed'],
-                'home_kpi_avg_all':   dashboard_helpers.format_participation_rate(avg_all) if avg_all is not None else None,
-                'home_kpi_avg_active': dashboard_helpers.format_participation_rate(avg_active) if avg_active is not None else None,
-                'home_kpi_alerts':    total_alerts,
-            }
-        except Exception:
-            _logger.error('Error construyendo datos del dashboard de inicio', exc_info=True)
-            return {
-                'home_evaluations':    [],
-                'home_kpi_active':     0,
-                'home_kpi_scheduled':  0,
-                'home_kpi_closed':     0,
-                'home_kpi_avg_all':    None,
-                'home_kpi_avg_active': None,
-                'home_kpi_alerts':     0,
-            }
+        return {
+            'home_evaluations':    formatted,
+            'home_kpi_active':     counts['active'],
+            'home_kpi_scheduled':  counts['scheduled'],
+            'home_kpi_closed':     counts['closed'],
+            'home_kpi_avg_all':    dashboard_helpers.format_participation_rate(avg_all) if avg_all is not None else None,
+            'home_kpi_avg_active': dashboard_helpers.format_participation_rate(avg_active) if avg_active is not None else None,
+            'home_kpi_alerts':     total_alerts,
+        }
 
     def _get_all_evaluations(self, role_info):
         """Todas las evaluaciones (excl. canceladas) filtradas por rol."""

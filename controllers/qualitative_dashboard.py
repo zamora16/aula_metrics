@@ -3,6 +3,7 @@ from odoo import http
 from odoo.http import request
 import json
 from markupsafe import Markup
+from collections import OrderedDict
 
 from odoo.addons.aula_metrics.utils import dashboard_styles, dashboard_helpers, palette
 from odoo.addons.aula_metrics.utils.constants import (
@@ -22,6 +23,46 @@ _ROLE_LABELS = {
 
 
 class QualitativeDashboardController(AulaMetricsBaseController):
+
+    def _build_response_tables(self, responses, include_student=False, include_group=False, include_course_level=False):
+        """Agrupa respuestas por binomio (evaluación, pregunta) para renderizar tablas."""
+        groups = OrderedDict()
+        for r in responses:
+            key = (r.evaluation_id.id, r.question_id.id)
+            if key not in groups:
+                groups[key] = {
+                    'eval_name': r.evaluation_id.name or 'Sin evaluación',
+                    'question_title': r.question_id.title or 'Pregunta sin título',
+                    'responses': [],
+                }
+
+            row = {
+                'date': r.response_date.strftime('%d/%m/%Y %H:%M'),
+                'response': r.response_text,
+                'has_alerts': r.has_alert_keywords,
+                'word_count': r.word_count,
+            }
+            if include_student:
+                row.update({
+                    'student_id': r.student_id.id,
+                    'student_name': r.student_id.name,
+                })
+            if include_group:
+                row['group_name'] = r.academic_group_id.name if r.academic_group_id else 'N/A'
+            if include_course_level:
+                row['course_level'] = r.course_level or 'Sin clasificar'
+
+            groups[key]['responses'].append(row)
+
+        return [
+            {
+                'eval_name': grp['eval_name'],
+                'question_title': grp['question_title'],
+                'responses': grp['responses'],
+                'count': len(grp['responses']),
+            }
+            for grp in groups.values()
+        ]
     
     @http.route('/aulametrics/qualitative/dashboard', type='http', auth='user')
     def qualitative_dashboard(self, evaluation_ids=None, embedded=None, **kwargs):
@@ -126,24 +167,13 @@ class QualitativeDashboardController(AulaMetricsBaseController):
         Incluye tabla de respuestas + un wordcloud por binomio (evaluación, pregunta).
         """
         
-        # Preparar datos de tabla
-        table_data = []
-        for r in responses:
-            table_data.append({
-                'id': r.id,
-                'student_id': r.student_id.id,
-                'student_name': r.student_id.name,
-                'group_name': r.academic_group_id.name if r.academic_group_id else 'N/A',
-                'date': r.response_date.strftime('%d/%m/%Y %H:%M'),
-                'response': r.response_text,
-                'word_count': r.word_count,
-                'has_alerts': r.has_alert_keywords,
-                'keywords': [k.keyword for k in r.detected_keyword_ids] if r.detected_keyword_ids else [],
-                'question': r.question_id.title
-            })
+        response_tables = self._build_response_tables(
+            responses,
+            include_student=True,
+            include_group=True,
+        )
 
         # Agrupar por binomio (evaluación, pregunta) preservando orden
-        from collections import OrderedDict
         groups = OrderedDict()
         for r in responses:
             key = (r.evaluation_id.id, r.question_id.id)
@@ -195,7 +225,7 @@ class QualitativeDashboardController(AulaMetricsBaseController):
 
         return {
             'view_type': 'counselor',
-            'responses': table_data,
+            'response_tables': response_tables,
             'wordclouds': wordclouds,
             'total_responses': len(responses),
             'responses_with_alerts': len([r for r in responses if r.has_alert_keywords])
@@ -208,8 +238,6 @@ class QualitativeDashboardController(AulaMetricsBaseController):
         Estructura paralela a _get_management_data, sin nivel educativo (el tutor
         solo ve su grupo) y sin filtro de curso.
         """
-        from collections import OrderedDict
-
         # Agrupar por binomio (evaluación, pregunta) preservando orden cronológico
         groups = OrderedDict()
         for r in responses:
@@ -236,18 +264,7 @@ class QualitativeDashboardController(AulaMetricsBaseController):
                 'count': len(grp['responses']),
             })
 
-        # Tabla de respuestas anónimas agrupada por evaluación
-        responses_by_eval = OrderedDict()
-        for r in responses:
-            ename = r.evaluation_id.name or 'Sin evaluación'
-            if ename not in responses_by_eval:
-                responses_by_eval[ename] = []
-            responses_by_eval[ename].append({
-                'date': r.response_date.strftime('%d/%m/%Y %H:%M'),
-                'response': r.response_text,
-                'has_alerts': r.has_alert_keywords,
-                'word_count': r.word_count,
-            })
+        response_tables = self._build_response_tables(responses)
 
         total = len(responses)
         alerts_count = len([r for r in responses if r.has_alert_keywords])
@@ -255,7 +272,7 @@ class QualitativeDashboardController(AulaMetricsBaseController):
         return {
             'view_type': 'tutor',
             'wordclouds': wordclouds,
-            'responses_by_eval': responses_by_eval,
+            'response_tables': response_tables,
             'total_responses': total,
             'responses_with_alerts': alerts_count,
         }
@@ -266,8 +283,6 @@ class QualitativeDashboardController(AulaMetricsBaseController):
         por nivel educativo, + tabla de respuestas anónimas por evaluación.
         Estructura paralela a _get_counselor_data pero sin nombres de alumno ni grupo.
         """
-        from collections import OrderedDict
-
         # Agrupar por binomio (evaluación, pregunta) preservando orden cronológico
         groups = OrderedDict()
         for r in responses:
@@ -311,22 +326,10 @@ class QualitativeDashboardController(AulaMetricsBaseController):
                 'data_by_course': data_by_course,
             })
 
-        # Tabla de respuestas anónimas agrupada por evaluación
-        # { eval_name: [response_dict, ...] }
-        evals_order = []
-        responses_by_eval = OrderedDict()
-        for r in responses:
-            ename = r.evaluation_id.name or 'Sin evaluación'
-            if ename not in responses_by_eval:
-                evals_order.append(ename)
-                responses_by_eval[ename] = []
-            responses_by_eval[ename].append({
-                'date': r.response_date.strftime('%d/%m/%Y %H:%M'),
-                'course_level': r.course_level or 'Sin clasificar',
-                'response': r.response_text,
-                'has_alerts': r.has_alert_keywords,
-                'word_count': r.word_count,
-            })
+        response_tables = self._build_response_tables(
+            responses,
+            include_course_level=True,
+        )
 
         total = len(responses)
         alerts_count = len([r for r in responses if r.has_alert_keywords])
@@ -334,7 +337,7 @@ class QualitativeDashboardController(AulaMetricsBaseController):
         return {
             'view_type': 'management',
             'wordclouds': wordclouds,
-            'responses_by_eval': responses_by_eval,
+            'response_tables': response_tables,
             'total_responses': total,
             'responses_with_alerts': alerts_count,
         }

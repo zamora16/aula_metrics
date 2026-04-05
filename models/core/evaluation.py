@@ -377,8 +377,16 @@ class Evaluation(models.Model):
 """
     
     def _get_email_from(self, evaluation):
-        """Obtiene el email remitente (del usuario o por defecto)"""
-        return evaluation.user_id.email or 'noreply@aulametrics.com'
+        """Obtiene el email remitente: del usuario responsable o del parámetro de sistema.
+        Configurable en Ajustes técnicos → Parámetros → aula_metrics.default_from_email
+        """
+        return (
+            evaluation.user_id.email
+            or self.env['ir.config_parameter'].sudo().get_param(
+                'aula_metrics.default_from_email',
+                'noreply@example.com',
+            )
+        )
     
     def _send_mail(self, mail_values, recipient_email):
         """Envía un email y maneja errores silenciosamente"""
