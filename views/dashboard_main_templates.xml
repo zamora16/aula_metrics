@@ -246,14 +246,23 @@
                         <t t-foreach="home_evaluations" t-as="ev">
                             <div t-att-class="'evaluation-card eval-state-' + ev['state']">
 
-                                <!-- Cabecera: estado + nombre -->
+                                <!-- Cabecera: estado + nombre + acceso rápido al informe -->
                                 <div class="evaluation-card-header">
-                                    <span t-att-class="'eval-state-badge ' + ev['state_css']">
-                                        <t t-out="ev['state_label']"/>
-                                    </span>
-                                    <h4 class="evaluation-card-title">
-                                        <t t-out="ev['name']"/>
-                                    </h4>
+                                    <div class="evaluation-card-header-left">
+                                        <span t-att-class="'eval-state-badge ' + ev['state_css']">
+                                            <t t-out="ev['state_label']"/>
+                                        </span>
+                                        <h4 class="evaluation-card-title">
+                                            <t t-out="ev['name']"/>
+                                        </h4>
+                                    </div>
+                                    <t t-if="ev.get('report_url')">
+                                        <a t-att-href="ev['report_url']"
+                                           class="eval-report-btn"
+                                           title="Ver informe de resultados">
+                                            <i class="fa-solid fa-chart-bar" aria-hidden="true"/> Informe
+                                        </a>
+                                    </t>
                                 </div>
 
                                 <!-- Cuerpo: fechas, grupos, cuestionarios -->
@@ -287,13 +296,6 @@
                                         <div t-att-class="'eval-progress-fill ' + ev.get('participation_class', 'low')"
                                              t-att-style="'width:' + str(ev['participation_pct']) + '%'"/>
                                     </div>
-                                    <t t-if="ev.get('report_url')">
-                                        <a t-att-href="ev['report_url']"
-                                           class="eval-report-link mt-2"
-                                           title="Ver informe de resultados">
-                                            <i class="fa-solid fa-chart-bar me-1"/>Ver informe
-                                        </a>
-                                    </t>
                                 </div>
 
                             </div>

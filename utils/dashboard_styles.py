@@ -894,11 +894,46 @@ def get_common_styles():
         /* ── Estado en cards de evaluación ── */
         .evaluation-card-header {
             background: var(--am-light);
-            padding: 14px 20px 16px;
+            padding: 14px 16px 16px 20px;
             border-bottom: 1px solid var(--am-border);
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .evaluation-card-header-left {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .eval-report-btn {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            border-radius: 8px;
+            background: var(--am-primary);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, transform 0.15s;
+            margin-top: 2px;
+        }
+
+        .eval-report-btn:hover {
+            background: var(--am-primary-dark, #134940);
+            color: #fff;
+            transform: scale(1.07);
+            text-decoration: none;
         }
 
         .eval-state-badge {
