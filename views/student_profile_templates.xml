@@ -115,7 +115,7 @@
         </t>
         <t t-else="">
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>Fecha</th>
@@ -798,9 +798,10 @@
         }
 
         function amRemove(rid) {
-            var cb = document.querySelector('.am-row-check[data-rid="' + rid + '"]');
+            var key = String(rid);
+            var cb = document.querySelector('.am-row-check[data-rid="' + key + '"]');
             if (cb) { cb.checked = false; _amSyncEvalCheckbox(cb); }
-            _amSel.delete(String(rid));
+            _amSel.delete(key);
             _amRenderTags();
             amRefreshFloatBar();
         }
@@ -815,8 +816,21 @@
             _amSel.forEach(function(title, rid) {
                 var t = document.createElement('span');
                 t.className = 'am-float-tag';
-                t.innerHTML = '<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;display:inline-block;">' + title + '</span>'
-                            + '<button type="button" onclick="amRemove(' + rid + ')" style="background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;">×</button>';
+
+                var titleSpan = document.createElement('span');
+                titleSpan.style.cssText = 'max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;display:inline-block;';
+                titleSpan.textContent = title;
+
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = '\u00d7';
+                btn.style.cssText = 'background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1;';
+                btn.addEventListener('click', (function(r) {
+                    return function() { amRemove(r); };
+                })(rid));
+
+                t.appendChild(titleSpan);
+                t.appendChild(btn);
                 tags.appendChild(t);
             });
         }

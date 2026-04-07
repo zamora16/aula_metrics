@@ -1,13 +1,21 @@
-// Variables
-$am-card-radius: 16px;
-$am-card-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
-$am-card-hover-shadow: 0 20px 60px -12px rgba(0,0,0,0.12);
-$am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+// Variables — Warm Teal Scholarly palette (logo #42bda5 / #f39e35 / #ec712f)
+$am-bg:              #F5EEE6;
+$am-surface:         #FEFCF8;
+$am-text:            #1A1714;
+$am-primary:         #1A5C52;
+$am-primary-light:   #EBF6F4;
+$am-accent:          #D4621A;
+$am-border:          #E0D8CF;
+$am-muted:           #7A6D65;
+$am-card-radius:     14px;
+$am-card-shadow:     0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.07);
+$am-card-hover-shadow: 0 8px 28px rgba(0,0,0,0.11);
+$am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
 
 // Main Container Reset
 .o_kanban_view.am_dashboard_view {
-    padding: 2rem !important;
-    background-color: #f8f9fc !important;
+    padding: 2rem 3rem !important;
+    background-color: $am-bg !important;
     
     // Hide Control Panel
     .o_control_panel {
@@ -20,7 +28,7 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         gap: 2rem;
         justify-content: flex-start; 
         align-items: stretch;
-        padding: 0 !important;
+        padding: 0 1rem !important;
         margin: 0 !important;
         width: 100%;
         
@@ -66,8 +74,9 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         
         h1 {
             font-size: 2.5rem;
-            font-weight: 800;
-            color: #1e293b;
+            font-weight: 700;
+            font-family: 'Playfair Display', Georgia, serif;
+            color: $am-text;
             margin-bottom: 0.75rem;
             line-height: 1.2;
             letter-spacing: -0.02em;
@@ -78,8 +87,8 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
         
         p {
-            font-size: 1.2rem;
-            color: #64748b;
+            font-size: 1.15rem;
+            color: $am-muted;
             line-height: 1.6;
             font-weight: 400;
             margin: 0;
@@ -88,11 +97,11 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
 }
 
-// --- CARD STYLE ---
+// --- CARD STYLE (Kanban hub cards) ---
 .am_dashboard_card {
     // Button Reset
     width: 100%;
-    border: none;
+    border: 1px solid $am-border;
     outline: none;
     padding: 0;
     margin: 0;
@@ -102,8 +111,8 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     -webkit-appearance: none;
     
     height: 100%;
-    min-height: 280px;
-    background: white;
+    min-height: 260px;
+    background: $am-surface;
     border-radius: $am-card-radius;
     box-shadow: $am-card-shadow;
     transition: $am-transition;
@@ -114,26 +123,26 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     cursor: pointer;
     
     &:hover {
-        transform: translateY(-8px);
+        transform: translateY(-6px);
         box-shadow: $am-card-hover-shadow;
         
         .am_card_header i {
-            transform: scale(1.1) rotate(5deg);
+            transform: scale(1.08) rotate(4deg);
         }
     }
 
     .am_card_header {
-        padding: 2.5rem 1.5rem;
+        padding: 2.25rem 1.5rem;
         display: flex;
         justify-content: center;
         align-items: center;
         position: relative;
         
         i {
-            font-size: 3.5rem;
+            font-size: 3rem;
             color: white;
             transition: $am-transition;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.12));
         }
         
         // Curved separator
@@ -144,7 +153,7 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
             left: 0;
             width: 100%;
             height: 20px;
-            background: white;
+            background: $am-surface;
             border-radius: 50% 50% 0 0 / 100% 100% 0 0;
             transform: translateY(50%);
         }
@@ -160,16 +169,18 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         padding-top: 1rem;
         
         .am_card_title {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            color: #2d3748;
+            font-family: 'Playfair Display', Georgia, serif;
+            color: $am-text;
             margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
         }
         
         .am_card_desc {
             font-size: 0.95rem;
-            color: #718096;
-            line-height: 1.5;
+            color: $am-muted;
+            line-height: 1.55;
             flex: 1;
             display: -webkit-box;
             -webkit-line-clamp: 4;
@@ -179,9 +190,9 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         
         .am_card_action {
             margin-top: 1.5rem;
-            color: #4a5568;
+            color: $am-muted;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             opacity: 0;
             transform: translateY(10px);
             transition: $am-transition;
@@ -193,7 +204,7 @@ $am-transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     &:hover .am_card_action {
         opacity: 1;
         transform: translateY(0);
-        color: #4a00e0; 
+        color: $am-accent;
     }
 }
 

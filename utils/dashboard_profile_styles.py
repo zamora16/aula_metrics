@@ -85,10 +85,11 @@ def get_profile_styles():
                 width: 100%;
             }
             .kpi-card {
-                background: white;
-                border-left: 3px solid var(--am-border);
+                background: var(--am-surface);
+                border: 1px solid var(--am-border);
+                border-top: 3px solid var(--am-primary);
                 border-radius: 12px;
-                box-shadow: 0 1px 4px rgba(15, 30, 54, 0.06);
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
                 padding: 10px 20px;
                 flex: 1;
                 display: flex; flex-direction: column; justify-content: center;
@@ -96,7 +97,7 @@ def get_profile_styles():
                 transition: box-shadow 0.15s, transform 0.15s;
             }
             .kpi-card:hover {
-                box-shadow: 0 4px 16px rgba(15, 30, 54, 0.10);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
                 transform: translateY(-1px);
             }
             .kpi-label {
@@ -104,8 +105,8 @@ def get_profile_styles():
                 text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 4px;
             }
             .kpi-value {
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 28px; font-weight: 700;
+                font-family: var(--font-mono);
+                font-size: 28px; font-weight: 600;
                 letter-spacing: -0.02em; line-height: 1;
                 color: var(--am-text); margin: 2px 0;
             }
@@ -184,7 +185,7 @@ def get_profile_styles():
                 padding: 16px 20px; border-bottom: 1px solid var(--am-border);
                 background: var(--am-surface);
             }
-            .card-title        { font-size: 15px; font-weight: 600; color: var(--am-text); margin: 0; }
+            .card-title        { font-size: 15px; font-weight: 600; font-family: var(--font-display); color: var(--am-text); margin: 0; }
             .card-title-sm     { font-size: 14px; font-weight: 600; color: var(--am-text); margin: 0; }
             .card-subtitle     { font-size: 12px; color: var(--am-muted); margin: 3px 0 0; font-weight: 400; }
             .card-body         { padding: 20px; }
@@ -223,7 +224,7 @@ def get_profile_styles():
                 flex: 1; font-size: 13px; font-weight: 700; color: var(--am-text);
                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
             }
-            .am-row-score { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+            .am-row-score { font-family: var(--font-mono); font-size: 15px; font-weight: 700; flex-shrink: 0; }
             .am-row-max   { font-size: 10px; font-weight: 400; color: var(--am-muted); }
             .am-row-badge { font-size: 10px; padding: 3px 8px; border-radius: 4px;
                             white-space: nowrap; flex-shrink: 0; }
@@ -246,7 +247,7 @@ def get_profile_styles():
                            color: var(--am-muted); font-size: 10px; text-transform: uppercase;
                            letter-spacing: 0.08em; }
             td           { padding: 10px 14px; border-bottom: 1px solid var(--am-border); color: var(--am-text); font-size: 12px; }
-            td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--am-muted); }
+            td:first-child { font-family: var(--font-mono); font-size: 11px; color: var(--am-muted); }
             tr:last-child td { border-bottom: none; }
             tbody tr:hover   { background: var(--am-row-hover); }
 
@@ -343,7 +344,7 @@ def get_profile_styles():
             }
             /* ── Contenido del drawer ─────────────────────────────────── */
             .am-drawer__date {
-                font-size: 11px; font-family: 'JetBrains Mono', monospace;
+                font-size: 11px; font-family: var(--font-mono);
                 color: var(--am-muted); border-bottom: 1px solid var(--am-border);
                 padding-bottom: 16px; margin-bottom: 20px;
             }

@@ -70,67 +70,67 @@ DEFAULT_PALETTE = METRICS_PALETTE
 
 # ==================== UI / THEME TOKENS ====================
 # Valores usados por `dashboard_styles.get_common_styles()` (colores del UI)
-# Tema: Professional Educational — neutral warm, deep navy, sky accent
-UI_BG           = '#f4f5f7'   # neutral warm background (menos tinte azul)
-UI_SURFACE      = '#ffffff'
-UI_TEXT         = '#0f1e36'   # deep navy text
-UI_PRIMARY      = '#0f4c81'   # primary: academic navy
-UI_PRIMARY_DARK = '#0b3a66'
-UI_PRIMARY_DARKER = '#06263f'
-UI_PRIMARY_LIGHT  = '#eff6ff'
-UI_PRIMARY_200    = '#bfdbfe'
+# Tema: Warm Teal Scholarly — harmonises with logo #42bda5 / #f39e35 / #ec712f
+UI_BG           = '#F5EEE6'   # warm parchment — signature background
+UI_SURFACE      = '#FEFCF8'   # creamy warm-white surface
+UI_TEXT         = '#1A1714'   # warm near-black (not cold)
+UI_PRIMARY      = '#1A5C52'   # deep professional teal (dark version of logo #42bda5)
+UI_PRIMARY_DARK = '#134940'   # deeper teal
+UI_PRIMARY_DARKER = '#0C3329'
+UI_PRIMARY_LIGHT  = '#EBF6F4'  # light teal tint
+UI_PRIMARY_200    = '#B8DED9'  # mid teal
 # RGB tuple as string for rgba() usage in CSS
-UI_PRIMARY_RGB    = '15, 76, 129'
-UI_SUCCESS      = '#059669'   # emerald-600 — más profundo, más confianza
-UI_SUCCESS_DARK = '#047857'   # emerald-700
+UI_PRIMARY_RGB    = '26, 92, 82'
+UI_SUCCESS      = '#1A7A5E'   # teal-green success
+UI_SUCCESS_DARK = '#115C47'   # deeper teal-green
 
-# Acento secundario — interactivo, sky-500/600 (separa de amber semántico)
-UI_ACCENT       = '#0ea5e9'   # sky-500
-UI_ACCENT_DARK  = '#0284c7'   # sky-600
-UI_MUTED            = '#64748b'   # texto/leyendas atenuadas
-UI_TEXT_SECONDARY   = '#475569'   # texto secundario — slate-600
-UI_SUBTLE           = '#94a3b8'   # texto muy atenuado / chart ticks — slate-400
-UI_SUBTLE_BORDER    = '#cbd5e1'   # bordes sutiles — slate-300
-UI_CHALKBOARD_GREEN = '#2f855a'   # verde pizarra — referencia de media del centro
-UI_BORDER       = '#e4eaf3'   # cooler, bluer border
-UI_LIGHT        = '#f8fafc'   # light surface
-UI_WARNING      = '#f59e0b'   # amber accent
-UI_WARNING_DARK = '#d97706'   # amber-600 — texto sobre fondo claro
-UI_DANGER        = '#e53e3e'   # red más cálido (menos alarma, más profesional)
-UI_DANGER_DARK   = '#c53030'   # red-700 — texto sobre fondo claro
-UI_DANGER_DARKER = '#9b2c2c'   # red-800 — texto en badges de alta severidad
-UI_SIDEBAR_START = '#0f1e36'  # deep sidebar
-UI_SIDEBAR_END   = '#0d1b30'   # sutil gradiente inferior
+# Acento — warm burnt orange (matured from logo #ec712f)
+UI_ACCENT       = '#D4621A'   # warm burnt orange
+UI_ACCENT_DARK  = '#B0511A'   # deeper burnt orange
+UI_MUTED            = '#7A6D65'   # warm sand-gray muted text
+UI_TEXT_SECONDARY   = '#5A4E48'   # warm secondary text
+UI_SUBTLE           = '#9E918A'   # warm subtle text / chart ticks
+UI_SUBTLE_BORDER    = '#CEC7BE'   # warm sand subtle border
+UI_CHALKBOARD_GREEN = '#1A7A5E'   # teal-green — referencia de media del centro
+UI_BORDER       = '#E0D8CF'   # warm sand border
+UI_LIGHT        = '#FAF6F0'   # warm light surface
+UI_WARNING      = '#C07E10'   # amber-brown, readable on light bg
+UI_WARNING_DARK = '#9A6408'   # deep amber
+UI_DANGER        = '#9B2335'   # deep wine red
+UI_DANGER_DARK   = '#7A1A28'   # darker wine
+UI_DANGER_DARKER = '#5E1320'   # deepest wine for high-severity badges
+UI_SIDEBAR_START = '#12332F'  # deep teal sidebar start (harmonises with logo)
+UI_SIDEBAR_END   = '#0C211E'  # very deep teal end
 
 # ==================== ROLE / INLINE COLOR TOKENS ====================
 # Colores de badges de roles en el sidebar (antes inline en CSS)
-UI_ROLE_ADMIN      = '#fca5a5'   # red-300
-UI_ROLE_COUNSELOR  = '#93c5fd'   # blue-300
-UI_ROLE_MANAGEMENT = '#fde68a'   # amber-200
-UI_ROLE_TUTOR      = '#86efac'   # green-300
+UI_ROLE_ADMIN      = '#fca5a5'   # warm red
+UI_ROLE_COUNSELOR  = '#93c5fd'   # soft blue
+UI_ROLE_MANAGEMENT = '#fde68a'   # warm amber
+UI_ROLE_TUTOR      = '#86efac'   # soft green
 
 # Superficie inversa (float bar, tooltip bg, contextos oscuros)
-UI_SURFACE_INVERSE = '#1e293b'   # slate-800
+UI_SURFACE_INVERSE = '#12332F'   # deep teal — warm dark surface
 
 # Texto semántico de advertencia sobre fondo claro (antes inline #78350f)
 UI_WARNING_TEXT    = '#78350f'   # amber-900 — texto en bloques de interpretación
 
-# Hover de filas de tabla (antes inline #fbfcfe)
-UI_ROW_HOVER       = '#f7f8fa'
+# Hover de filas de tabla
+UI_ROW_HOVER       = '#F0EBE3'   # warm parchment hover
 
 # Gradiente del panel de segmentación global (barra de filtro superior en dashboard de métricas)
-UI_SEGMENTATION_BAR_GRADIENT = 'linear-gradient(135deg, #1e4a8a 0%, #0f4c81 100%)'
+UI_SEGMENTATION_BAR_GRADIENT = 'linear-gradient(135deg, #1A5C52 0%, #134940 100%)'
 
 # Tokens compartidos para gráficos Chart.js (interpolados en f-strings)
-UI_TOOLTIP_BG      = '#1e293b'   # fondo de tooltip — slate-800
-UI_CHART_EMPHASIS  = '#1e293b'   # línea de énfasis (media grupal) — slate-800
-UI_GRID_LINE       = '#f1f5f9'   # color de gridlines — slate-100
+UI_TOOLTIP_BG      = '#12332F'   # deep teal tooltip background
+UI_CHART_EMPHASIS  = '#12332F'   # teal emphasis line — media grupal
+UI_GRID_LINE       = '#EDE5DC'   # warm parchment gridlines
 
 # ==================== CHART TYPOGRAPHY ====================
 # Fuente y color de etiquetas/ticks usados en TODOS los gráficos Chart.js.
 # Cambiar aquí actualiza todos los gráficos automáticamente.
-CHART_FONT       = "'Plus Jakarta Sans', sans-serif"
-CHART_TICK_COLOR = UI_MUTED        # #64748b — ejes, ticks y leyendas de gráficos
+CHART_FONT       = "'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif"
+CHART_TICK_COLOR = UI_MUTED        # warm sand-gray — ejes, ticks y leyendas de gráficos
 
 # ==================== ALERT SEVERITY TOKENS ====================
 # Colores semánticos para las 3 severidades de alertas manuales.
