@@ -106,24 +106,46 @@ class SurveyBaremoRange(models.Model):
         """
         Busca el baremo que corresponde a una puntuación para un cuestionario y sub-escala dados.
 
+        Cuando la puntuación cae exactamente dentro de un rango, devuelve ese baremo.
+        Cuando no cae exactamente en ningún rango (p.ej. medias decimales entre rangos enteros
+        como 3.7 entre [0-3] y [4-4]), devuelve el baremo cuyo extremo más cercano minimice la
+        distancia — esto garantiza que las medias grupales siempre tengan interpretación.
+
         Args:
             survey_id (int): ID del cuestionario.
             score (float): Puntuación a interpretar.
             scale_name (str|None): Sub-escala (None para cuestionario global).
 
         Returns:
-            recordset: El primer baremo que aplique, o vacío.
+            recordset: El baremo que aplique (exacto o más cercano), o vacío si no hay baremos.
         """
-        domain = [
-            ('survey_id', '=', survey_id),
+        base_domain = [('survey_id', '=', survey_id)]
+        if scale_name:
+            base_domain.append(('scale_name', '=', scale_name))
+        else:
+            base_domain.append(('scale_name', 'in', [False, '']))
+
+        # Búsqueda exacta primero
+        exact = self.search(base_domain + [
             ('score_min', '<=', score),
             ('score_max', '>=', score),
-        ]
-        if scale_name:
-            domain.append(('scale_name', '=', scale_name))
-        else:
-            domain.append(('scale_name', 'in', [False, '']))
-        return self.search(domain, limit=1)
+        ], limit=1)
+        if exact:
+            return exact
+
+        # Fallback: baremo más cercano (distancia al extremo más próximo del rango)
+        all_baremos = self.search(base_domain)
+        if not all_baremos:
+            return self.browse()
+
+        def _distance(b):
+            if score < b.score_min:
+                return b.score_min - score
+            if score > b.score_max:
+                return score - b.score_max
+            return 0.0
+
+        return min(all_baremos, key=_distance)
 
     @api.model
     def get_severity_mapping(self, survey_id):

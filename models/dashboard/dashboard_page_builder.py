@@ -115,6 +115,7 @@ class DashboardChartsBuilder(models.TransientModel):
                 'total_students':       ev['total_students'],
                 'participation_pct':    pct,
                 'participation_class':  'high' if rate >= 80 else ('medium' if rate >= 50 else 'low'),
+                'report_url':           f'/aulametrics/evaluacion/{ev["id"]}/informe',
             })
 
         return {

@@ -278,6 +278,13 @@
                                         <div t-att-class="'eval-progress-fill ' + ev.get('participation_class', 'low')"
                                              t-att-style="'width:' + str(ev['participation_pct']) + '%'"/>
                                     </div>
+                                    <t t-if="ev.get('report_url')">
+                                        <a t-att-href="ev['report_url']"
+                                           class="eval-report-link mt-2"
+                                           title="Ver informe de resultados">
+                                            <i class="fa-solid fa-chart-bar me-1"/>Ver informe
+                                        </a>
+                                    </t>
                                 </div>
 
                             </div>

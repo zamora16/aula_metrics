@@ -14,3 +14,5 @@ from . import dashboard_student_charts
 from . import dashboard_home
 from . import alerts_dashboard
 from . import dashboard_segmentation
+from . import dashboard_evaluation_report
+from . import dashboard_evaluation_report_sections

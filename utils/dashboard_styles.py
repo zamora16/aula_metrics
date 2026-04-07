@@ -868,6 +868,17 @@ def get_common_styles():
         .eval-progress-fill.medium { background: #f59e0b; }
         .eval-progress-fill.low    { background: #ef4444; }
 
+        .eval-report-link {
+            display: inline-flex;
+            align-items: center;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--am-primary);
+            text-decoration: none;
+            gap: .25rem;
+        }
+        .eval-report-link:hover { text-decoration: underline; }
+
         /* ==================== CHARTS ==================== */
         .charts-container {
             display: grid;

@@ -205,6 +205,34 @@ class DashboardChartsController(AulaMetricsBaseController):
                 'error_message': 'No se pudo generar el informe. Contacta con el administrador.',
             })
 
+    @http.route('/aulametrics/evaluacion/<int:eval_id>/informe', type='http', auth='user')
+    def evaluation_report_view(self, eval_id, **kwargs):
+        """
+        Informe de resultados de una evaluación concreta.
+
+        Muestra resultados agregados por grupo / nivel / centro según el rol:
+          - Admin / Counselor → todos los grupos, datos identificados
+          - Tutor             → solo sus grupos en esta evaluación
+          - Management        → solo por nivel educativo y centro
+
+        Args:
+            eval_id (int): ID de la evaluación a visualizar.
+        """
+        role_info = self._detect_user_role()
+
+        try:
+            values = request.env['aula_metrics.dashboard.evaluation_report'].generate_evaluation_report(
+                eval_id=eval_id,
+                role_info=role_info,
+            )
+            return _render('aula_metrics.dashboard_page_base', values)
+        except Exception:
+            _logger.exception('Error al generar informe de evaluación %s', eval_id)
+            return _render('aula_metrics.dashboard_error_page', {
+                'error_title':   'Error al generar el informe',
+                'error_message': 'No se pudo generar el informe de evaluación. Contacta con el administrador.',
+            })
+
     def _parse_hub_filters(self, kwargs):
         """Parsea los parámetros GET a un dict de filtros."""
         filters = {
