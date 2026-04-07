@@ -422,7 +422,7 @@ class DashboardEvaluationReportSections(models.TransientModel):
             ref_lines.append({
                 'value': ldata['mean_score'],
                 'label': f'Media {ldata["label"]}',
-                'color': 'var(--am-primary, #2563eb)',
+                'color': 'var(--am-primary, #1A5C52)',
                 'dash': [3, 3],
             })
 
@@ -470,8 +470,8 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 if ldata.get('baremo_label') else '—'
             )
             rows += (
-                f'<tr style="background:rgba(37,99,235,.06);">'
-                f'<td class="fw-semibold" style="color:var(--am-primary,#2563eb);">'
+                f'<tr style="background:rgba(26,92,82,.06);">'
+                f'<td class="fw-semibold" style="color:var(--am-primary,#1A5C52);">'
                 f'<i class="fa-solid fa-graduation-cap me-1 small"></i>'
                 f'Media {ldata["label"]}</td>'
                 f'<td></td>'
@@ -896,10 +896,10 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 mx  = col_maxes[col['key']]
                 if cnt > 0:
                     intensity = round(0.07 + 0.43 * cnt / mx, 2)
-                    style     = f'background:rgba(37,99,235,{intensity});'
+                    style     = f'background:rgba(26,92,82,{intensity});'
                     cells    += (f'<td class="text-center small" style="{style}">{cnt}</td>')
                 else:
-                    cells += '<td class="text-center small text-muted" style="color:#cbd5e1">—</td>'
+                    cells += '<td class="text-center small text-muted" style="color:#CEC7BE">—</td>'
             rows_html += f'<tr>{cells}</tr>'
 
         table_html = f"""<div class="table-responsive">
@@ -1034,7 +1034,7 @@ class DashboardEvaluationReportSections(models.TransientModel):
             datasets.append({
                 'type': 'line', 'label': f'Media {ldata["label"]}',
                 'data': [ldata['avg']] * len(labels),
-                'borderColor': '#2563eb', 'borderDash': [3, 3],
+                'borderColor': '#1A5C52', 'borderDash': [3, 3],
                 'borderWidth': 2, 'pointRadius': 0, 'fill': False,
             })
         has_refs = center_avg is not None or bool(tutor_level_ref)
@@ -1116,8 +1116,8 @@ class DashboardEvaluationReportSections(models.TransientModel):
 }
 .report-section .card-header {
     padding: 16px 24px;
-    border-bottom: 2px solid var(--am-border,#e5e7eb);
-    background: linear-gradient(to bottom, #edf2fb, var(--am-light,#f8fafc));
+    border-bottom: 1px solid var(--am-border,#E0D8CF);
+    background: var(--am-light,#FAF6F0);
     font-size: .9rem;
 }
 .report-section .card-body { padding: 20px 24px; }
@@ -1127,8 +1127,8 @@ class DashboardEvaluationReportSections(models.TransientModel):
 .report-table th {
     font-size: .72rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: .05em;
-    background: var(--am-subtle,#f8fafc);
-    color: var(--am-muted,#6b7280);
+    background: var(--am-light,#FAF6F0);
+    color: var(--am-muted,#7A6D65);
     padding: .5rem .75rem; vertical-align: middle;
 }
 .report-table td           { padding: .45rem .75rem; vertical-align: middle; }
@@ -1141,13 +1141,13 @@ class DashboardEvaluationReportSections(models.TransientModel):
     font-size: .8rem; padding: .3rem .9rem;
     border-radius: 20px; border: 1.5px solid var(--am-border,#e5e7eb);
     color: var(--am-muted,#6b7280);
-    background: var(--am-bg,#f1f5f9);
+    background: var(--am-bg,#F5EEE6);
     transition: all .15s;
 }
 .view-pills .nav-link.active,
 .view-pills .nav-link:hover {
-    background: var(--am-primary,#2563eb);
-    border-color: var(--am-primary,#2563eb);
+    background: var(--am-primary,#1A5C52);
+    border-color: var(--am-primary,#1A5C52);
     color: #fff;
 }
 
@@ -1167,15 +1167,15 @@ class DashboardEvaluationReportSections(models.TransientModel):
 }
 .center-kpi-score {
     font-size: 3.5rem; font-weight: 700; line-height: 1;
-    color: var(--am-text,#1e293b);
+    color: var(--am-text,#1C1814);
 }
 .center-pie-col { width: 300px; flex-shrink: 0; }
 .center-summary-band {
     display: inline-flex; align-items: center; gap: .3rem;
-    background: rgba(37,99,235,.07); border-radius: 8px;
+    background: rgba(26,92,82,.07); border-radius: 8px;
     padding: .3rem .65rem; font-size: .875rem;
-    border: 1px solid rgba(37,99,235,.18);
-    color: var(--am-primary,#2563eb);
+    border: 1px solid rgba(26,92,82,.18);
+    color: var(--am-primary,#1A5C52);
 }
 
 /* ── Bloques de métrica ad-hoc ──────────────────────────────────── */
@@ -1186,7 +1186,7 @@ class DashboardEvaluationReportSections(models.TransientModel):
 /* ── Enlace de informe en cards de home ─────────────────────────── */
 .eval-report-link {
     display: inline-flex; align-items: center; font-size: .78rem;
-    font-weight: 600; color: var(--am-primary,#2563eb);
+    font-weight: 600; color: var(--am-primary,#1A5C52);
     text-decoration: none; gap: .25rem;
 }
 .eval-report-link:hover { text-decoration: underline; }
