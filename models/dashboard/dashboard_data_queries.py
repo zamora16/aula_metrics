@@ -136,13 +136,23 @@ class DashboardDataQueries(models.Model):
                     return []
 
             evaluations = Evaluation.search(domain, order='date_start desc')
-            return [{
-                'id': e.id,
-                'name': e.name,
-                'date_start': e.date_start,
-                'date_end': e.date_end,
-                'state': e.state,
-            } for e in evaluations]
+
+            result = []
+            for e in evaluations:
+                # Exclude evaluations whose surveys contain ONLY segmentation questions.
+                # Such evaluations are used purely as segmentation sources and should
+                # not appear as quantitative filter options.
+                all_questions = e.survey_ids.mapped('question_ids')
+                if all_questions and all(q.is_segmentation for q in all_questions):
+                    continue
+                result.append({
+                    'id': e.id,
+                    'name': e.name,
+                    'date_start': e.date_start,
+                    'date_end': e.date_end,
+                    'state': e.state,
+                })
+            return result
         except Exception as e:
             _logger.error("Error in get_available_evaluations: %s", e)
             return []
@@ -211,8 +221,9 @@ class DashboardDataQueries(models.Model):
                 if domain is None:
                     continue
 
-                if filters.get('evaluation_ids'):
-                    domain.append(('evaluation_id', 'in', filters['evaluation_ids']))
+                # Do NOT filter by evaluation_ids here: segmentation data lives in
+                # segmentation-only evaluations (excluded from the quantitative filter)
+                # and must remain available regardless of which evaluations are selected.
 
                 if not self.env['aula_metrics.metric_value'].search_count(domain):
                     continue
