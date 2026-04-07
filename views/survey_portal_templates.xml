@@ -11,6 +11,7 @@
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                 <meta name="robots" content="noindex,nofollow"/>
                 <title>Evaluación - AulaMetrics</title>
+                <link rel="icon" type="image/png" href="/aula_metrics/static/src/img/favicon.png"/>
                 <style>
                     :root {
                         --primary: #0f1e36;
@@ -185,6 +186,7 @@
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                 <meta name="robots" content="noindex,nofollow"/>
                 <title><t t-out="survey.title"/> - AulaMetrics</title>
+                <link rel="icon" type="image/png" href="/aula_metrics/static/src/img/favicon.png"/>
                 <style>
                     :root {
                         --primary: #0f1e36;
@@ -490,6 +492,7 @@
                 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                 <meta name="robots" content="noindex,nofollow"/>
                 <title>Error - AulaMetrics</title>
+                <link rel="icon" type="image/png" href="/aula_metrics/static/src/img/favicon.png"/>
                 <style>
                     body {
                         background: #f5f7fa;
