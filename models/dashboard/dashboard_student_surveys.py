@@ -133,7 +133,7 @@ class DashboardStudentSurveys(models.TransientModel):
                     <span style="font-size:13px;font-weight:600;color:var(--am-text);">{ev_name}{ev_date_sp}</span>
                 </label>
             </div>
-            <div>{''.join(rows_html)}</div>
+            <div class="am-survey-grid">{''.join(rows_html)}</div>
         </div>""")
 
         timeline_html = drawer_hidden_divs + '\n'.join(sections_html)

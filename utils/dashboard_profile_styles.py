@@ -208,6 +208,17 @@ def get_profile_styles():
             }
             .am-eval-check { flex-shrink: 0; cursor: pointer; }
 
+            /* ── Grid 2-columnas para filas de cuestionario ───────────────── */
+            .am-survey-grid {
+                display: grid; grid-template-columns: 1fr 1fr;
+            }
+            .am-survey-grid .am-survey-row:nth-child(2n+1) {
+                border-right: 1px solid var(--am-border);
+            }
+            .am-survey-grid .am-survey-row:last-child { border-bottom: none; }
+            .am-survey-grid .am-survey-row:nth-last-child(2):nth-child(2n+1) { border-bottom: none; }
+            .am-survey-grid .am-survey-row:only-child { grid-column: 1 / -1; border-right: none; }
+
             /* ── Filas de cuestionario ───────────────────────────────────── */
             .am-survey-row {
                 display: flex; align-items: center; gap: 10px;
