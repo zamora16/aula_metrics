@@ -75,8 +75,13 @@ class Case(models.Model):
 
     # ── Contenido ────────────────────────────────────────────────────────────
     description = fields.Html(
-        string='Descripción / Motivo',
+        string='Motivo de Apertura',
         help='Contexto inicial del caso y motivo de apertura',
+        sanitize=True,
+    )
+    intervention_plan = fields.Html(
+        string='Plan de Intervención',
+        help='Pasos planificados de intervención por el orientador',
         sanitize=True,
     )
 

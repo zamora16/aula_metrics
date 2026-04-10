@@ -240,5 +240,46 @@
             <field name="domain_force">[(1, '=', 1)]</field>
             <field name="groups" eval="[(4, ref('group_aulametrics_admin'))]"/>
         </record>
+
+        <!-- ============================================================ -->
+        <!-- CASOS DE ORIENTACIÓN: Reglas de acceso por rol               -->
+        <!-- ============================================================ -->
+
+        <!-- Casos: Tutores solo ven casos de sus alumnos -->
+        <record id="case_tutor_rule" model="ir.rule">
+            <field name="name">Casos: Tutores solo sus grupos</field>
+            <field name="model_id" ref="model_aula_metrics_case"/>
+            <!--
+                El campo academic_group_id se congela en el momento de abrir el caso
+                (ORM override en case.py), así que este filtro refleja el grupo
+                histórico correcto aunque el alumno cambie de grupo posteriormente.
+            -->
+            <field name="domain_force">[('academic_group_id.tutor_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_tutor'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Casos: Orientadores y Admins ven todos -->
+        <record id="case_counselor_admin_rule" model="ir.rule">
+            <field name="name">Casos: Orientadores/Admins todos</field>
+            <field name="model_id" ref="model_aula_metrics_case"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_counselor')), (4, ref('group_aulametrics_admin'))]"/>
+        </record>
+
+        <!-- Casos: Management ve todos en lectura -->
+        <record id="case_management_rule" model="ir.rule">
+            <field name="name">Casos: Management todos (lectura)</field>
+            <field name="model_id" ref="model_aula_metrics_case"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_aulametrics_management'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
     </data>
 </odoo>

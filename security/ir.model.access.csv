@@ -87,7 +87,7 @@ access_case_stage_tutor,access.case.stage.tutor,model_aula_metrics_case_stage,gr
 access_case_stage_management,access.case.stage.management,model_aula_metrics_case_stage,group_aulametrics_management,1,0,0,0
 access_case_admin,access.case.admin,model_aula_metrics_case,group_aulametrics_admin,1,1,1,1
 access_case_counselor,access.case.counselor,model_aula_metrics_case,group_aulametrics_counselor,1,1,1,1
-access_case_tutor,access.case.tutor,model_aula_metrics_case,group_aulametrics_tutor,1,0,0,0
+access_case_tutor,access.case.tutor,model_aula_metrics_case,group_aulametrics_tutor,1,0,1,0
 access_case_management,access.case.management,model_aula_metrics_case,group_aulametrics_management,1,0,0,0
 access_message_thread_admin,access.message.thread.admin,model_aula_metrics_message_thread,group_aulametrics_admin,1,1,1,1
 access_message_thread_counselor,access.message.thread.counselor,model_aula_metrics_message_thread,group_aulametrics_counselor,1,1,1,1
