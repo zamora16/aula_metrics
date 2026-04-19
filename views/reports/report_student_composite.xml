@@ -16,6 +16,7 @@
         <div class="article">
             <style>
                 /* ── Configuración de impresión ── */
+                @page { size: A4 portrait; margin: 0; }
                 * {
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
@@ -26,17 +27,27 @@
                     padding: 0 !important;
                     min-height: 0 !important;
                     height: auto !important;
+                    width: 100% !important;
+                    max-width: none !important;
+                    box-sizing: border-box !important;
                 }
 
                 /* ── Tipografía base ── */
                 .am-report {
                     font-family: Arial, sans-serif;
-                    font-size: 9pt;
+                    font-size: 11pt;
                     color: #1e293b;
                     width: 100%;
-                    display: block;
+                    display: -webkit-box;
+                    display: -webkit-flex;
+                    display: flex;
+                    -webkit-box-orient: vertical;
+                    -webkit-flex-direction: column;
+                    flex-direction: column;
+                    height: 297mm;
+                    box-sizing: border-box;
                 }
-                .am-report p { margin: 0 0 5pt 0; }
+                .am-report p { margin: 0 0 6pt 0; }
 
                 /* ── Anti-corte en saltos de página ── */
                 .am-header { page-break-inside: avoid; }
@@ -46,139 +57,167 @@
 
                 /* ── CABECERA ── */
                 .am-header {
-                    background: #1e3a5f !important;
-                    padding: 14pt 20pt 10pt;
+                    background: #1A5C52 !important;
+                    padding: 20pt 24pt 16pt;
+                    border-bottom: 3pt solid #D4621A !important;
                     -webkit-print-color-adjust: exact !important;
                 }
                 .am-header .tag {
-                    font-size: 6.5pt; letter-spacing: 0.1em;
-                    text-transform: uppercase; color: #93b4d0 !important; margin-bottom: 4pt;
+                    font-size: 8pt; letter-spacing: 0.1em;
+                    text-transform: uppercase; color: rgba(168, 216, 208, 1) !important; margin-bottom: 6pt;
                 }
                 .am-header h1 {
-                    font-size: 15pt; font-weight: bold;
-                    margin: 0 0 10pt; line-height: 1.2; color: #ffffff !important;
+                    font-size: 18pt; font-weight: bold;
+                    margin: 0 0 14pt; line-height: 1.2; color: #ffffff !important;
                 }
                 .am-header .meta-table {
-                    width: 100%; border-collapse: collapse; border: none !important;
+                    width: 100%; border-collapse: separate; border-spacing: 0; border: none !important;
                 }
                 .am-header .meta-table td {
-                    padding: 0 20pt 0 0; vertical-align: top;
-                    color: #ffffff !important; font-size: 8.5pt; border: none !important;
+                    padding: 0 24pt 0 0; vertical-align: top;
+                    color: #ffffff !important; font-size: 10.5pt; border: none !important;
                 }
                 .am-header .meta-label {
-                    font-size: 6.5pt; font-weight: bold; text-transform: uppercase;
-                    letter-spacing: 0.08em; color: #93b4d0 !important; margin-bottom: 2pt;
+                    font-size: 8pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: rgba(168, 216, 208, 1) !important; margin-bottom: 3pt;
+                }
+
+                /* ── Suprimir bordes de tablas en cabecera ── */
+                .am-header table,
+                .am-header tr,
+                .am-header td {
+                    border: none !important;
+                    outline: none !important;
                 }
 
                 /* ── CUERPO ── */
-                .am-body { padding: 16pt 20pt 20pt; }
+                .am-body {
+                    padding: 20pt 24pt 24pt;
+                    -webkit-box-flex: 1;
+                    -webkit-flex: 1;
+                    flex: 1;
+                }
 
                 /* ── AVISO LEGAL ── */
                 .am-disclaimer {
-                    border-left: 3pt solid #94a3b8 !important;
-                    background: #f8fafc !important; padding: 9pt 12pt; margin-bottom: 14pt;
-                    font-size: 7.5pt; color: #475569; line-height: 1.6;
+                    border-left: 3pt solid #1A5C52 !important;
+                    background: #f8fafc !important; padding: 12pt 16pt; margin-bottom: 18pt;
+                    font-size: 9.5pt; color: #475569; line-height: 1.6;
                     -webkit-print-color-adjust: exact !important;
                 }
                 .am-disclaimer .disc-title {
-                    font-weight: bold; font-size: 7.5pt; color: #334155;
-                    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5pt;
+                    font-weight: bold; font-size: 9.5pt; color: #334155;
+                    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6pt;
                 }
-                .am-disclaimer ul { margin: 5pt 0 0 12pt; padding: 0; }
-                .am-disclaimer ul li { margin-bottom: 3pt; }
+                .am-disclaimer ul { margin: 6pt 0 0 14pt; padding: 0; }
+                .am-disclaimer ul li { margin-bottom: 5pt; }
 
                 /* ── PORTADA ── */
-                .am-cover-body { padding: 30pt 20pt; }
-                .am-cover-title {
-                    font-size: 22pt; font-weight: bold;
-                    color: #1e293b; margin-bottom: 6pt;
+                .am-cover-body {
+                    padding: 50pt 24pt 40pt;
+                    -webkit-box-flex: 1;
+                    -webkit-flex: 1;
+                    flex: 1;
                 }
-                .am-cover-subtitle { font-size: 12pt; color: #64748b; margin-bottom: 24pt; }
+                .am-cover-title {
+                    font-size: 26pt; font-weight: bold;
+                    color: #1e293b; margin-bottom: 8pt;
+                }
+                .am-cover-subtitle { font-size: 14pt; color: #64748b; margin-bottom: 30pt; }
                 .am-cover-meta td {
-                    padding: 5pt 20pt 5pt 0; font-size: 9pt;
+                    padding: 6pt 24pt 6pt 0; font-size: 11pt;
                     vertical-align: top; border: none !important;
                 }
                 .am-cover-meta .lbl {
-                    font-size: 7pt; font-weight: bold; text-transform: uppercase;
-                    letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 2pt;
+                    font-size: 8.5pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 3pt;
                 }
                 .am-cover-meta .val { font-weight: 600; color: #1e293b; }
-                .am-cover-list { margin-top: 20pt; }
+                .am-cover-list { margin-top: 30pt; }
                 .am-cover-list h3 {
-                    font-size: 8pt; font-weight: bold; text-transform: uppercase;
-                    letter-spacing: 0.08em; color: #64748b;
-                    border-bottom: 1pt solid #e2e8f0 !important; padding-bottom: 4pt; margin-bottom: 8pt;
+                    font-size: 10pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: #1A5C52;
+                    border-bottom: 1.5pt solid #B8DED9 !important; padding-bottom: 6pt; margin-bottom: 12pt;
                 }
-                .am-cover-list li { font-size: 9pt; color: #1e293b; margin-bottom: 4pt; }
+                .am-cover-list li { font-size: 11pt; color: #1e293b; margin-bottom: 6pt; }
 
                 /* ── SECCIÓN DE ESCALAS ── */
                 .am-section-title {
-                    font-size: 7pt; font-weight: bold; text-transform: uppercase;
-                    letter-spacing: 0.1em; color: #64748b;
-                    border-bottom: 1pt solid #e2e8f0 !important;
-                    padding-bottom: 3pt; margin: 14pt 0 10pt;
+                    font-size: 9pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.1em; color: #1A5C52;
+                    border-bottom: 1.5pt solid #B8DED9 !important;
+                    padding-bottom: 4pt; margin: 18pt 0 12pt;
                 }
 
                 /* ── RESULTADO GLOBAL ── */
                 .am-global {
-                    padding: 12pt 14pt; border-radius: 4pt; margin-bottom: 2pt;
+                    padding: 16pt 18pt; border-radius: 4pt; margin-bottom: 4pt;
                     -webkit-print-color-adjust: exact !important;
                 }
-                .am-global .score-big { font-size: 28pt; font-weight: bold; line-height: 1; }
+                .am-global .score-big { font-size: 36pt; font-weight: bold; line-height: 1; }
                 .am-global .sev-badge {
-                    display: inline-block; padding: 3pt 10pt; border-radius: 3pt;
-                    font-size: 8.5pt; font-weight: bold; color: #ffffff !important;
-                    margin-left: 8pt; -webkit-print-color-adjust: exact !important;
+                    display: inline-block; padding: 4pt 12pt; border-radius: 3pt;
+                    font-size: 10.5pt; font-weight: bold; color: #ffffff !important;
+                    margin-left: 10pt; -webkit-print-color-adjust: exact !important;
                 }
-                .am-global .interp { font-size: 8pt; color: #475569; margin-top: 6pt; line-height: 1.5; }
+                .am-global .interp { font-size: 10pt; color: #475569; margin-top: 8pt; line-height: 1.5; }
 
                 /* ── TABLA DE ESCALAS ── */
                 .am-scales { width: 100%; border-collapse: collapse; }
-                .am-scales td { vertical-align: middle; padding: 5pt 4pt; border: none !important; }
+                .am-scales td { vertical-align: middle; padding: 8pt 6pt; border: none !important; }
                 .am-scales tr { border: none !important; }
                 .am-scales tr.scale-row { border-top: 1pt solid #f1f5f9 !important; }
                 .am-scales tr.scale-row:first-child { border-top: none !important; }
-                .am-scales .td-lbl { width: 30%; font-weight: bold; font-size: 8.5pt; color: #1e293b; padding-right: 10pt; }
-                .am-scales .td-bar { width: 40%; padding-right: 10pt; }
-                .am-scales .td-score { width: 10%; text-align: right; font-weight: bold; font-size: 8.5pt; padding-right: 6pt; white-space: nowrap; }
+                .am-scales .td-lbl { width: 30%; font-weight: bold; font-size: 10.5pt; color: #1e293b; padding-right: 12pt; }
+                .am-scales .td-bar { width: 40%; padding-right: 12pt; }
+                .am-scales .td-score { width: 10%; text-align: right; font-weight: bold; font-size: 10.5pt; padding-right: 8pt; white-space: nowrap; }
                 .am-scales .td-score .max { font-weight: 400; color: #94a3b8; }
                 .am-scales .td-sev { width: 20%; text-align: center; }
                 .am-scales .sev-pill {
-                    display: inline-block; padding: 2pt 8pt; border-radius: 3pt;
-                    font-size: 7pt; font-weight: bold; color: #ffffff !important; white-space: nowrap;
+                    display: inline-block; padding: 3pt 10pt; border-radius: 3pt;
+                    font-size: 9pt; font-weight: bold; color: #ffffff !important; white-space: nowrap;
                     -webkit-print-color-adjust: exact !important;
                 }
-                .am-scales .bar-track { height: 6pt; background: #e9eef4 !important; border-radius: 3pt; overflow: hidden; -webkit-print-color-adjust: exact !important; }
-                .am-scales .bar-fill  { height: 6pt; border-radius: 3pt; -webkit-print-color-adjust: exact !important; }
-                .am-scales .td-desc   { font-size: 7.5pt; color: #64748b; line-height: 1.5; padding: 0 4pt 7pt; vertical-align: top; border: none !important; }
-                .am-scales tr.total-sep td { border-top: 1.5pt solid #cbd5e1 !important; padding-top: 8pt; }
+                .am-scales .bar-track { height: 8pt; background: #e9eef4 !important; border-radius: 4pt; overflow: hidden; -webkit-print-color-adjust: exact !important; }
+                .am-scales .bar-fill  { height: 8pt; border-radius: 4pt; -webkit-print-color-adjust: exact !important; }
+                .am-scales .td-desc   { font-size: 9.5pt; color: #64748b; line-height: 1.5; padding: 0 6pt 10pt; vertical-align: top; border: none !important; }
+                .am-scales tr.total-sep td { border-top: 1.5pt solid #cbd5e1 !important; padding-top: 10pt; }
 
                 /* ── PIE ── */
                 .am-footer {
-                    margin-top: 18pt; padding-top: 6pt;
-                    border-top: 1pt solid #e2e8f0 !important;
-                    font-size: 6.5pt; color: #94a3b8; text-align: center;
+                    padding: 8pt 24pt;
+                    border-top: 2pt solid #D4621A !important;
+                    font-size: 8pt; color: #5A4E48; text-align: center;
+                    -webkit-flex-shrink: 0;
+                    flex-shrink: 0;
+                    -webkit-print-color-adjust: exact !important;
                 }
             </style>
 
             <!-- ══════════ PORTADA ══════════ -->
             <main class="am-report">
                 <div class="am-header">
-                    <div class="tag">AulaMetrics &#183; Informe de Resultados</div>
-                    <h1>Informe compuesto de evaluaci&#243;n</h1>
-                    <table class="meta-table">
+                    <table border="0" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:separate;border-spacing:0;border:none;">
                         <tr>
-                            <td>
-                                <div class="meta-label">Alumno/a</div>
-                                <t t-out="student_name or (docs and docs[0].name) or ''"/>
-                            </td>
-                            <td>
-                                <div class="meta-label">Grupo</div>
-                                <t t-out="student_group or ''"/>
-                            </td>
-                            <td>
-                                <div class="meta-label">Generado el</div>
-                                <t t-out="generated_date or ''"/>
+                            <td style="vertical-align:top;border:none;padding:0;">
+                                <div class="tag">Evaluaci&#243;n Psicosocial</div>
+                                <h1>Informe compuesto de evaluaci&#243;n</h1>
+                                <table border="0" cellspacing="0" cellpadding="0" class="meta-table">
+                                    <tr>
+                                        <td>
+                                            <div class="meta-label">Alumno/a</div>
+                                            <t t-out="student_name or (docs and docs[0].name) or ''"/>
+                                        </td>
+                                        <td>
+                                            <div class="meta-label">Grupo</div>
+                                            <t t-out="student_group or ''"/>
+                                        </td>
+                                        <td>
+                                            <div class="meta-label">Generado el</div>
+                                            <t t-out="generated_date or ''"/>
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
                         </tr>
                     </table>
@@ -232,24 +271,30 @@
             <t t-foreach="pages or []" t-as="d">
                     <main class="am-report" style="page-break-before: always; break-before: page;">
                         <div class="am-header">
-                            <div class="tag">AulaMetrics &#183; <t t-out="d.get('evaluation_name', '')"/></div>
-                            <h1><t t-out="d.get('survey_title', '')"/></h1>
-                            <table class="meta-table">
+                            <table border="0" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:separate;border-spacing:0;border:none;">
                                 <tr>
-                                    <td>
-                                        <div class="meta-label">Alumno/a</div>
-                                        <t t-out="d.get('student_name', '')"/>
-                                        <t t-if="d.get('student_age')">
-                                            &#160;(<t t-out="d['student_age']"/> a&#241;os)
-                                        </t>
-                                    </td>
-                                    <td>
-                                        <div class="meta-label">Fecha de respuesta</div>
-                                        <t t-out="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
-                                    </td>
-                                    <td>
-                                        <div class="meta-label">Evaluaci&#243;n</div>
-                                        <t t-out="d.get('evaluation_name', '')"/>
+                                    <td style="vertical-align:top;border:none;padding:0;">
+                                        <div class="tag"><t t-out="d.get('evaluation_name', '')"/></div>
+                                        <h1><t t-out="d.get('survey_title', '')"/></h1>
+                                        <table border="0" cellspacing="0" cellpadding="0" class="meta-table">
+                                            <tr>
+                                                <td>
+                                                    <div class="meta-label">Alumno/a</div>
+                                                    <t t-out="d.get('student_name', '')"/>
+                                                    <t t-if="d.get('student_age')">
+                                                        &#160;(<t t-out="d['student_age']"/> a&#241;os)
+                                                    </t>
+                                                </td>
+                                                <td>
+                                                    <div class="meta-label">Fecha de respuesta</div>
+                                                    <t t-out="d['completed_at'].strftime('%d/%m/%Y') if d.get('completed_at') else ''"/>
+                                                </td>
+                                                <td>
+                                                    <div class="meta-label">Evaluaci&#243;n</div>
+                                                    <t t-out="d.get('evaluation_name', '')"/>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
                             </table>
