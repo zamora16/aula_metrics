@@ -146,10 +146,10 @@
 
     <!-- ===========================================================
          4. QUALITATIVE RESPONSES SECTION
-         Values: response_items (list of dicts with pre-computed styles)
+         Values: evaluation_groups (list of {eval_name, eval_date, responses:[]})
          =========================================================== -->
     <template id="student_qualitative_section" name="Student: Qualitative Responses">
-        <t t-if="not response_items">
+        <t t-if="not evaluation_groups">
             <div style="padding:14px 16px;background:var(--am-light);
                         border:1px solid var(--am-border);border-radius:8px;
                         font-size:13px;color:var(--am-muted);">
@@ -157,38 +157,59 @@
             </div>
         </t>
         <t t-else="">
-            <div style="display:flex;flex-direction:column;gap:10px;">
-                <t t-foreach="response_items" t-as="item">
-                    <div t-att-style="item['card_style']">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;
-                                    gap:12px;padding:12px 16px 10px;border-bottom:1px solid var(--am-border);">
-                            <div style="min-width:0;flex:1;">
-                                <div style="font-size:13px;font-weight:600;color:var(--am-text);">
-                                    <t t-esc="item['question_title']"/>
+            <t t-foreach="evaluation_groups" t-as="ev">
+                <div class="am-eval-card">
+                    <!-- Cabecera de evaluación -->
+                    <div class="am-eval-card__header">
+                        <i class="fa-solid fa-calendar-check"
+                           style="color:var(--am-primary);font-size:12px;"/>
+                        <span style="font-size:13px;font-weight:600;color:var(--am-text);">
+                            <t t-esc="ev['eval_name']"/>
+                            <t t-if="ev['eval_date']">
+                                <span style="font-size:11px;color:var(--am-muted);
+                                            font-weight:400;margin-left:8px;">
+                                    · <t t-esc="ev['eval_date']"/>
+                                </span>
+                            </t>
+                        </span>
+                    </div>
+                    <!-- Respuestas de esta evaluación -->
+                    <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+                        <t t-foreach="ev['responses']" t-as="item">
+                            <div t-att-style="item['card_style']">
+                                <div style="display:flex;justify-content:space-between;
+                                            align-items:flex-start;gap:12px;
+                                            padding:10px 14px 9px;
+                                            border-bottom:1px solid var(--am-border);">
+                                    <div style="min-width:0;flex:1;">
+                                        <div style="font-size:13px;font-weight:600;
+                                                    color:var(--am-text);">
+                                            <t t-esc="item['question_title']"/>
+                                        </div>
+                                        <t t-if="item['date_str']">
+                                            <div style="font-size:11px;color:var(--am-muted);
+                                                        margin-top:3px;">
+                                                <i class="fa-regular fa-calendar me-1"/>
+                                                <t t-esc="item['date_str']"/>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <span t-att-style="item['alert_badge_style']">
+                                        <t t-out="item['alert_badge_html']"/>
+                                    </span>
                                 </div>
-                                <div style="font-size:11px;color:var(--am-muted);margin-top:3px;">
-                                    <i class="fa-solid fa-graduation-cap me-1"/>
-                                    <t t-esc="item['evaluation_name']"/>
-                                    <span style="margin:0 5px;">·</span>
-                                    <i class="fa-regular fa-calendar me-1"/>
-                                    <t t-esc="item['date_str']"/>
-                                    <span style="margin:0 5px;">·</span>
-                                    <t t-esc="str(item['word_count'])"/> palabras
+                                <div style="padding:10px 14px;font-size:13px;
+                                            color:var(--am-text);line-height:1.6;">
+                                    <t t-esc="item['response_text']"/>
+                                    <t t-if="item.get('keywords_html')">
+                                        <t t-out="item['keywords_html']"/>
+                                    </t>
                                 </div>
                             </div>
-                            <span t-att-style="item['alert_badge_style']">
-                                <t t-out="item['alert_badge_html']"/>
-                            </span>
-                        </div>
-                        <div style="padding:12px 16px;font-size:13px;color:var(--am-text);line-height:1.6;">
-                            <t t-esc="item['response_text']"/>
-                            <t t-if="item.get('keywords_html')">
-                                <t t-out="item['keywords_html']"/>
-                            </t>
-                        </div>
+                        </t>
                     </div>
-                </t>
-            </div>
+                </div>
+            </t>
         </t>
     </template>
 
@@ -605,8 +626,8 @@
                     </div>
                 </div>
                 <div id="am-cuant-centro" class="am-subpane" data-group="cuant">
-                    <t t-if="radar_html">
-                        <t t-out="radar_html"/>
+                    <t t-if="centro_surveys_html">
+                        <t t-out="centro_surveys_html"/>
                     </t>
                     <t t-else="">
                         <div class="text-center py-5">

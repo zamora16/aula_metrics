@@ -202,16 +202,30 @@ class Participation(models.Model):
                     ('state', '=', 'done'),
                 ]
 
-                # Si la evaluación está activa, aceptar respuestas hasta date_end (<=)
-                # Si no está activa, requerir que la respuesta sea posterior a date_start (>=)
+                # Estrategia de búsqueda por estado de evaluación:
+                # - Activa: aceptar respuestas hasta date_end (<=)
+                # - Cerrada/done: intentar primero con rango completo (date_start..date_end),
+                #   y si no hay resultados buscar sin restricción de fecha para cubrir
+                #   datos históricos generados fuera del período de la evaluación.
                 if self.evaluation_id and self.evaluation_id.state == 'active':
                     if self.evaluation_id.date_end:
                         domain.append(('create_date', '<=', self.evaluation_id.date_end))
+                    user_input = self.env['survey.user_input'].search(domain, limit=1)
                 else:
+                    # Para evaluaciones cerradas: buscar dentro del período si las fechas existen
+                    bounded_domain = list(domain)
                     if self.evaluation_id and self.evaluation_id.date_start:
-                        domain.append(('create_date', '>=', self.evaluation_id.date_start))
-
-                user_input = self.env['survey.user_input'].search(domain, limit=1)
+                        bounded_domain.append(('create_date', '>=', self.evaluation_id.date_start))
+                    if self.evaluation_id and self.evaluation_id.date_end:
+                        bounded_domain.append(('create_date', '<=', self.evaluation_id.date_end))
+                    user_input = self.env['survey.user_input'].search(
+                        bounded_domain, limit=1, order='create_date desc'
+                    )
+                    # Fallback: cualquier respuesta completada, incluso fuera del período
+                    if not user_input:
+                        user_input = self.env['survey.user_input'].search(
+                            domain, limit=1, order='create_date asc'
+                        )
                 
                 if not user_input:
                     continue

@@ -1412,6 +1412,12 @@ def get_common_styles():
             border-radius: 0;
             margin: 0;
         }
+        /* Remove the scroll container from inner cards so Chart.js can measure width correctly */
+        .survey-unified-card .am-tab-pane > .am-tab-comparativa > .card > .card-body,
+        .survey-unified-card .am-tab-pane > .am-tab-evo > .card > .card-body {
+            max-height: none !important;
+            overflow: visible !important;
+        }
         .survey-unified-card .am-tab-pane > .am-tab-comparativa > .card > .card-header,
         .survey-unified-card .am-tab-pane > .am-tab-evo > .card > .card-header {
             background: var(--am-bg);

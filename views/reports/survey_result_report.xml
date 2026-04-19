@@ -14,7 +14,7 @@
         <field name="margin_right">0</field>
         <field name="header_line" eval="False"/>
         <field name="header_spacing">0</field>
-        <field name="dpi">90</field>
+        <field name="dpi">96</field>
     </record>
 
     <record id="action_report_survey_result" model="ir.actions.report">
@@ -40,6 +40,7 @@
             <div class="article">
                     <style>
                         /* ── Configuración de impresión ── */
+                        @page { size: A4 portrait; margin: 0; }
                         * {
                             -webkit-print-color-adjust: exact !important;
                             print-color-adjust: exact !important;
@@ -52,34 +53,46 @@
                             padding: 0 !important;
                             min-height: 0 !important;
                             height: auto !important;
+                            width: 100% !important;
+                            max-width: none !important;
+                            box-sizing: border-box !important;
                         }
 
                         /* ── Tipografía base ── */
                         .am-report {
                             font-family: Arial, sans-serif;
-                            font-size: 9pt;
+                            font-size: 11pt;
                             color: #1e293b;
                             width: 100%;
+                            display: -webkit-box;
+                            display: -webkit-flex;
+                            display: flex;
+                            -webkit-box-orient: vertical;
+                            -webkit-flex-direction: column;
+                            flex-direction: column;
+                            height: 297mm;
+                            box-sizing: border-box;
                         }
-                        .am-report p { margin: 0 0 5pt 0; }
+                        .am-report p { margin: 0 0 6pt 0; }
 
                         /* ── CABECERA ── */
                         .am-header {
-                            background: #1e3a5f !important;
-                            padding: 14pt 20pt 10pt;
+                            background: #1A5C52 !important;
+                            padding: 20pt 24pt 16pt;
+                            border-bottom: 3pt solid #D4621A !important;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-header .tag {
-                            font-size: 6.5pt;
+                            font-size: 8pt;
                             letter-spacing: 0.1em;
                             text-transform: uppercase;
-                            color: #93b4d0 !important;
-                            margin-bottom: 4pt;
+                            color: rgba(168, 216, 208, 1) !important;
+                            margin-bottom: 6pt;
                         }
                         .am-header h1 {
-                            font-size: 15pt;
+                            font-size: 18pt;
                             font-weight: bold;
-                            margin: 0 0 10pt;
+                            margin: 0 0 14pt;
                             line-height: 1.2;
                             color: #ffffff !important;
                         }
@@ -89,91 +102,102 @@
                             border: none !important;
                         }
                         .am-header .meta-table td {
-                            padding: 0 20pt 0 0;
+                            padding: 0 24pt 0 0;
                             vertical-align: top;
                             color: #ffffff !important;
-                            font-size: 8.5pt;
+                            font-size: 10.5pt;
                             border: none !important;
                         }
                         .am-header .meta-label {
-                            font-size: 6.5pt;
+                            font-size: 8pt;
                             font-weight: bold;
                             text-transform: uppercase;
                             letter-spacing: 0.08em;
-                            color: #93b4d0 !important;
-                            margin-bottom: 2pt;
+                            color: rgba(168, 216, 208, 1) !important;
+                            margin-bottom: 3pt;
+                        }
+
+                        /* ── Suprimir bordes de tablas en cabecera ── */
+                        .am-header table,
+                        .am-header tr,
+                        .am-header td {
+                            border: none !important;
+                            outline: none !important;
                         }
 
                         /* ── CUERPO ── */
                         .am-body {
-                            padding: 16pt 20pt 20pt;
+                            padding: 20pt 24pt 24pt;
+                            -webkit-box-flex: 1;
+                            -webkit-flex: 1;
+                            flex: 1;
                         }
 
                         /* ── AVISO LEGAL ── */
                         .am-disclaimer {
-                            border-left: 3pt solid #94a3b8 !important;
+                            border-left: 3pt solid #1A5C52 !important;
                             background: #f8fafc !important;
-                            padding: 9pt 12pt;
-                            margin-bottom: 14pt;
-                            font-size: 7.5pt;
+                            padding: 12pt 16pt;
+                            margin-bottom: 18pt;
+                            font-size: 9.5pt;
                             color: #475569;
                             line-height: 1.6;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-disclaimer .disc-title {
                             font-weight: bold;
-                            font-size: 7.5pt;
+                            font-size: 9.5pt;
                             color: #334155;
                             text-transform: uppercase;
                             letter-spacing: 0.06em;
-                            margin-bottom: 5pt;
+                            margin-bottom: 6pt;
                         }
                         .am-disclaimer ul {
-                            margin: 5pt 0 0 12pt;
+                            margin: 6pt 0 0 14pt;
                             padding: 0;
                         }
-                        .am-disclaimer ul li { margin-bottom: 3pt; }
+                        .am-disclaimer ul li { margin-bottom: 5pt; }
 
                         /* ── TÍTULOS DE SECCIÓN ── */
                         .am-section-title {
-                            font-size: 7pt;
+                            font-size: 9pt;
                             font-weight: bold;
                             text-transform: uppercase;
                             letter-spacing: 0.1em;
-                            color: #64748b;
-                            border-bottom: 1pt solid #e2e8f0 !important;
-                            padding-bottom: 3pt;
-                            margin: 14pt 0 10pt;
+                            color: #1A5C52;
+                            border-bottom: 1.5pt solid #B8DED9 !important;
+                            padding-bottom: 4pt;
+                            margin: 18pt 0 12pt;
                         }
 
                         /* ── RESULTADO GLOBAL ── */
                         .am-global {
-                            padding: 12pt 14pt;
+                            padding: 16pt 18pt;
                             border-radius: 4pt;
-                            margin-bottom: 2pt;
+                            margin-bottom: 4pt;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-global .score-big {
-                            font-size: 28pt;
+                            font-size: 36pt;
                             font-weight: bold;
                             line-height: 1;
                             vertical-align: middle;
                         }
                         .am-global .sev-badge {
                             display: inline-block;
-                            padding: 3pt 10pt;
+                            padding: 4pt 12pt;
                             border-radius: 3pt;
-                            font-size: 8.5pt;
+                            font-size: 10.5pt;
                             font-weight: bold;
                             color: #ffffff !important;
-                            margin-left: 8pt;
+                            margin-left: 10pt;
                             vertical-align: middle;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-global .interp {
-                            font-size: 8pt;
+                            font-size: 10pt;
                             color: #475569;
-                            margin-top: 6pt;
+                            margin-top: 8pt;
                             line-height: 1.5;
                         }
 
@@ -184,7 +208,7 @@
                         }
                         .am-scales td {
                             vertical-align: middle;
-                            padding: 5pt 4pt;
+                            padding: 8pt 6pt;
                             border: none !important;
                         }
                         .am-scales tr {
@@ -200,20 +224,20 @@
                         .am-scales .td-lbl {
                             width: 30%;
                             font-weight: bold;
-                            font-size: 8.5pt;
+                            font-size: 10.5pt;
                             color: #1e293b;
-                            padding-right: 10pt;
+                            padding-right: 12pt;
                         }
                         .am-scales .td-bar {
                             width: 40%;
-                            padding-right: 10pt;
+                            padding-right: 12pt;
                         }
                         .am-scales .td-score {
                             width: 10%;
                             text-align: right;
                             font-weight: bold;
-                            font-size: 8.5pt;
-                            padding-right: 6pt;
+                            font-size: 10.5pt;
+                            padding-right: 8pt;
                             white-space: nowrap;
                         }
                         .am-scales .td-score .max {
@@ -226,48 +250,50 @@
                         }
                         .am-scales .sev-pill {
                             display: inline-block;
-                            padding: 2pt 8pt;
+                            padding: 3pt 10pt;
                             border-radius: 3pt;
-                            font-size: 7pt;
+                            font-size: 9pt;
                             font-weight: bold;
                             color: #ffffff !important;
                             white-space: nowrap;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-scales .bar-track {
-                            height: 6pt;
+                            height: 8pt;
                             background: #e9eef4 !important;
-                            border-radius: 3pt;
+                            border-radius: 4pt;
                             overflow: hidden;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-scales .bar-fill {
-                            height: 6pt;
-                            border-radius: 3pt;
+                            height: 8pt;
+                            border-radius: 4pt;
                             -webkit-print-color-adjust: exact !important;
                         }
                         .am-scales .td-desc {
-                            font-size: 7.5pt;
+                            font-size: 9.5pt;
                             color: #64748b;
                             line-height: 1.5;
-                            padding: 0 4pt 7pt;
+                            padding: 0 6pt 10pt;
                             vertical-align: top;
                             border: none !important;
                         }
                         /* Separador visual antes del Total */
                         .am-scales tr.total-sep td {
                             border-top: 1.5pt solid #cbd5e1 !important;
-                            padding-top: 8pt;
+                            padding-top: 10pt;
                         }
 
                         /* ── PIE ── */
                         .am-footer {
-                            margin-top: 18pt;
-                            padding-top: 6pt;
-                            border-top: 1pt solid #e2e8f0 !important;
-                            font-size: 6.5pt;
-                            color: #94a3b8;
+                            padding: 8pt 24pt;
+                            border-top: 2pt solid #D4621A !important;
+                            font-size: 8pt;
+                            color: #5A4E48;
                             text-align: center;
+                            -webkit-flex-shrink: 0;
+                            flex-shrink: 0;
+                            -webkit-print-color-adjust: exact !important;
                         }
                     </style>
 
@@ -276,20 +302,26 @@
 
                         <!-- CABECERA -->
                         <div class="am-header">
-                            <div class="tag">AulaMetrics &#183; Informe de Resultados</div>
-                            <h1><t t-out="d['survey_title']"/></h1>
-                            <table class="meta-table">
+                            <table border="0" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:separate;border-spacing:0;border:none;">
                                 <tr>
-                                    <td>
-                                        <div class="meta-label">Alumno/a</div>
-                                        <t t-out="d['student_name']"/>
-                                        <t t-if="d['student_age']">
-                                            &#160;(<t t-out="d['student_age']"/> a&#241;os)
-                                        </t>
-                                    </td>
-                                    <td>
-                                        <div class="meta-label">Fecha de respuesta</div>
-                                        <t t-out="d['completed_at'].strftime('%d/%m/%Y')"/>
+                                    <td style="vertical-align:top;border:none;padding:0;">
+                                        <div class="tag">Informe de Resultados</div>
+                                        <h1><t t-out="d['survey_title']"/></h1>
+                                        <table border="0" cellspacing="0" cellpadding="0" class="meta-table">
+                                            <tr>
+                                                <td>
+                                                    <div class="meta-label">Alumno/a</div>
+                                                    <t t-out="d['student_name']"/>
+                                                    <t t-if="d['student_age']">
+                                                        &#160;(<t t-out="d['student_age']"/> a&#241;os)
+                                                    </t>
+                                                </td>
+                                                <td>
+                                                    <div class="meta-label">Fecha de respuesta</div>
+                                                    <t t-out="d['completed_at'].strftime('%d/%m/%Y')"/>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
                             </table>
@@ -378,16 +410,16 @@
                                 </table>
                             </t>
 
-                            <!-- PIE -->
-                            <div class="am-footer">
-                                Informe generado por AulaMetrics &#183;
-                                <t t-out="d['student_name']"/> &#183;
-                                <t t-out="d['survey_title']"/> &#183;
-                                <t t-out="d['completed_at'].strftime('%d/%m/%Y')"/> &#183;
-                                Este informe es de car&#225;cter exclusivamente informativo y no constituye diagn&#243;stico.
-                            </div>
-
                         </div><!-- /am-body -->
+
+                        <div class="am-footer">
+                            AulaMetrics &#183;
+                            <t t-out="d['student_name']"/> &#183;
+                            <t t-out="d['survey_title']"/> &#183;
+                            <t t-out="d['completed_at'].strftime('%d/%m/%Y')"/> &#183;
+                            Exclusivamente informativo, no constituye diagn&#243;stico.
+                        </div>
+
                     </div><!-- /am-report -->
                     </main>
                 </div><!-- /article -->

@@ -444,129 +444,116 @@ class DashboardCharts(models.TransientModel):
         has_evolution = len(evaluations) >= 2
 
         # Gráfico principal según rol
+        # Always go through _chart_numeric_with_toggle so all cards use the same
+        # survey-unified-card shell. When evo_html is empty, the function returns
+        # the comparativa wrapped in the unified card (no toggle buttons shown).
         if role == ROLE_MANAGEMENT:
-            by_courses_html = self._chart_numeric_by_course(df, label, segmentation_vars, y_max, y_min)
+            by_html  = self._chart_numeric_by_course(df, label, segmentation_vars, y_max, y_min)
             evo_html = self._chart_numeric_evolution_by_course(df, label, y_max, y_min) if has_evolution else ''
-
-            if by_courses_html and evo_html:
-                charts_html += self._chart_numeric_with_toggle(by_courses_html, evo_html, label, 'curso')
-            else:
-                charts_html += by_courses_html or evo_html
+            charts_html += self._chart_numeric_with_toggle(by_html, evo_html, label, 'curso')
 
         elif role == ROLE_TUTOR:
-            by_tutor_html = self._chart_numeric_by_tutor_group(df, label, segmentation_vars, y_max, y_min)
+            by_html  = self._chart_numeric_by_tutor_group(df, label, segmentation_vars, y_max, y_min)
             evo_html = self._chart_numeric_evolution_by_tutor_group(df, label, segmentation_vars, y_max, y_min) if has_evolution else ''
+            charts_html += self._chart_numeric_with_toggle(by_html, evo_html, label, 'grupo')
 
-            if by_tutor_html and evo_html:
-                charts_html += self._chart_numeric_with_toggle(by_tutor_html, evo_html, label, 'grupo')
-            else:
-                charts_html += by_tutor_html or evo_html
         else:  # counselor/admin
-            by_groups_html = self._chart_numeric_by_groups(df, label, segmentation_vars, y_max, y_min)
+            by_html  = self._chart_numeric_by_groups(df, label, segmentation_vars, y_max, y_min)
             evo_html = self._chart_numeric_evolution_by_groups(df, label, y_max, y_min) if has_evolution else ''
-
-            if by_groups_html and evo_html:
-                charts_html += self._chart_numeric_with_toggle(by_groups_html, evo_html, label, 'grupo')
-            else:
-                charts_html += by_groups_html or evo_html
+            charts_html += self._chart_numeric_with_toggle(by_html, evo_html, label, 'grupo')
 
         return charts_html
 
     def _chart_numeric_with_toggle(self, by_groups_html, evo_html, label, tipo='grupo'):
-        """Combina la card de comparativa por grupo/curso y la de evolución en una sola card con un switch.
+        """Combina comparativa y evolución usando el mismo patrón survey-unified-card.
 
-        - Preserva IDs de canvas/controls ya generados por las funciones hijas.
-        - Oculta los headers internos (solo se muestra el header combinado).
-        - Fuerza resize/update de Chart.js al alternar vistas.
-        
+        Usa la misma estructura visual que _chart_multi_scale_survey (sin pestañas de
+        sub-escala) para que las cards con y sin sub-escalas queden normalizadas.
+        Resuelve el problema de ancho incorrecto al primer render: al no envolver el
+        canvas en un card-body con overflow:auto, Chart.js puede medir el ancho real
+        del contenedor correctamente.
+
         Args:
-            tipo: 'grupo' para counselor o 'curso' para management
+            by_groups_html: HTML de la card comparativa (de _chart_numeric_by_groups, etc.)
+            evo_html:       HTML de la card de evolución (de _chart_numeric_evolution_*)
+            label:          Título de la métrica
+            tipo:           'grupo' o 'curso' (solo informativo)
         """
         if not by_groups_html and not evo_html:
             return ''
-        if not by_groups_html:
-            return evo_html
-        if not evo_html:
-            return by_groups_html
+        # Always wrap in survey-unified-card—even when evo is absent—so the canvas
+        # has no overflow:auto ancestor and Chart.js can measure its width correctly.
+        has_toggle = bool(by_groups_html and evo_html)
 
-        safe_id = dashboard_helpers.sanitize_id(label)
-        wrapper_by = f'view_by_{safe_id}'
-        wrapper_evo = f'view_evo_{safe_id}'
+        safe_id   = dashboard_helpers.sanitize_id(label)
+        card_id   = f'metric-card-{safe_id}'
         toggle_id = f'toggle_{safe_id}'
-        
-        # Subtítulo dinámico según el tipo
-        subtitle = f"Comparativa por {tipo} · Evolución temporal"
-        comparativa_title = f"Comparativa por {tipo}"
 
-        html = '''
-        <div class="card">
-            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                <div>
-                    <h5 class="card-title">__LABEL__</h5>
-                </div>
-                <div class="am-view-toggle" role="group" aria-label="Tipo de vista">
-                    <button id="__TOGGLE_ID___bars" class="am-vtoggle-btn am-vtoggle-btn--active">
-                        <i class="fa-solid fa-chart-bar"></i>
-                        <span>Comparativa</span>
-                    </button>
-                    <button id="__TOGGLE_ID___lines" class="am-vtoggle-btn">
-                        <i class="fa-solid fa-chart-line"></i>
-                        <span>Evolución</span>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body" style="padding:0;">
-                <div id="__WRAP_BY__">__BY_HTML__</div>
-                <div id="__WRAP_EVO__" style="display:none;">__EVO_HTML__</div>
+        # Propagate card--wide from the inner chart to the outer wrapper
+        inner_html = by_groups_html or evo_html
+        wide_class = ' card--wide' if 'card--wide' in inner_html else ''
+
+        toggle_html = ''
+        if has_toggle:
+            toggle_html = f'''<div class="am-view-toggle" role="group" aria-label="Tipo de vista">
+                <button id="{toggle_id}_bars" class="am-vtoggle-btn am-vtoggle-btn--active">
+                    <i class="fa-solid fa-chart-bar"></i><span>Comparativa</span>
+                </button>
+                <button id="{toggle_id}_lines" class="am-vtoggle-btn">
+                    <i class="fa-solid fa-chart-line"></i><span>Evolución</span>
+                </button>
+            </div>'''
+
+        comparativa_section = f'<div class="am-tab-comparativa">{by_groups_html}</div>' if by_groups_html else ''
+        evo_div = f'<div class="am-tab-evo" style="display:none;">{evo_html}</div>' if evo_html else ''
+
+        toggle_script = ''
+        if has_toggle:
+            toggle_script = f'''
+    <script>
+    (function() {{
+        const card = document.getElementById('{card_id}');
+        if (!card) return;
+        const btnBars  = document.getElementById('{toggle_id}_bars');
+        const btnLines = document.getElementById('{toggle_id}_lines');
+        if (!btnBars || !btnLines) return;
+        function setSurveyView(showEvo) {{
+            btnBars.classList.toggle('am-vtoggle-btn--active', !showEvo);
+            btnLines.classList.toggle('am-vtoggle-btn--active', showEvo);
+            card.querySelectorAll('.am-tab-comparativa').forEach(function(d) {{
+                d.style.display = showEvo ? 'none' : '';
+            }});
+            card.querySelectorAll('.am-tab-evo').forEach(function(d) {{
+                d.style.display = showEvo ? '' : 'none';
+            }});
+            card.querySelectorAll('canvas').forEach(function(c) {{
+                const ch = typeof Chart !== 'undefined' && Chart.getChart ? Chart.getChart(c.id) : null;
+                if (ch) {{ ch.resize(); ch.update(); }}
+            }});
+        }}
+        btnBars.addEventListener('click', function() {{ setSurveyView(false); }});
+        btnLines.addEventListener('click', function() {{ setSurveyView(true); }});
+    }})();
+    </script>'''
+
+        return f"""
+    <div class="card survey-unified-card{wide_class}" id="{card_id}">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding-bottom:16px;">
+            <h5 class="card-title" style="margin:0;">{label}</h5>
+            {toggle_html}
+        </div>
+        <div class="am-tab-content">
+            <div class="am-tab-pane">
+                {comparativa_section}
+                {evo_div}
             </div>
         </div>
-
-        <style>
-        /* Ocultar solo título/subtítulo de las cards embebidas — los controles permanecen visibles */
-        #__WRAP_EVO__ .card-header, #__WRAP_BY__ .card-header { border-bottom: none; padding: 8px 20px; }
-        #__WRAP_EVO__ .card-header .am-card-header__info, #__WRAP_BY__ .card-header .am-card-header__info { display: none; }
-        /* Centrar controles en su espacio — al quedar solos, alinear a la derecha */
-        #__WRAP_EVO__ .am-card-header--controls, #__WRAP_BY__ .am-card-header--controls { justify-content: flex-end; align-items: center; }
-        /* Quitar borde/sombra de las cards anidadas para que se vean como contenido plano */
-        #__WRAP_BY__ > .card, #__WRAP_EVO__ > .card { border: none; border-radius: 0; box-shadow: none; }
-        #__WRAP_BY__ .card-body, #__WRAP_EVO__ .card-body { padding: 16px; }
-        </style>
-
-        <script>
-        (function() {
-            const btnBars = document.getElementById('__TOGGLE_ID___bars');
-            const btnLines = document.getElementById('__TOGGLE_ID___lines');
-            const viewBy = document.getElementById('__WRAP_BY__');
-            const viewEvo = document.getElementById('__WRAP_EVO__');
-
-            function setView(showEvo) {
-                viewBy.style.display = showEvo ? 'none' : 'block';
-                viewEvo.style.display = showEvo ? 'block' : 'none';
-                btnBars.classList.toggle('am-vtoggle-btn--active', !showEvo);
-                btnLines.classList.toggle('am-vtoggle-btn--active', showEvo);
-
-                // Forzar resize/update de Chart.js para asegurar render correcto
-                try {
-                    const byCanvas = viewBy.querySelector('canvas');
-                    const evoCanvas = viewEvo.querySelector('canvas');
-                    if (byCanvas) {
-                        const ch = Chart.getChart(byCanvas.id);
-                        if (ch) { ch.resize(); ch.update(); }
-                    }
-                    if (evoCanvas) {
-                        const ch2 = Chart.getChart(evoCanvas.id);
-                        if (ch2) { ch2.resize(); ch2.update(); }
-                    }
-                } catch (err) { console.warn('chart toggle resize error', err); }
-            }
-
-            btnBars.addEventListener('click', function() { setView(false); });
-            btnLines.addEventListener('click', function() { setView(true); });
-            setView(false);
-        })();
-        </script>
-        '''
-        return html.replace('__TOGGLE_ID__', toggle_id).replace('__WRAP_BY__', wrapper_by).replace('__WRAP_EVO__', wrapper_evo).replace('__LABEL__', label).replace('__SUBTITLE__', subtitle).replace('__BY_HTML__', by_groups_html).replace('__EVO_HTML__', evo_html)
+    </div>
+    <style>
+    #{card_id} .am-card-header__info {{ display: none; }}
+    #{card_id} .am-card-header--controls {{ justify-content: flex-end; align-items: center; }}
+    </style>
+    {toggle_script}"""
 
     def _get_thresholds_for_metric(self, metric_name):
         """Obtiene umbrales activos configurados para una métrica.

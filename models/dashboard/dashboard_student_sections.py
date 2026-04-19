@@ -137,15 +137,28 @@ class DashboardStudentSections(models.TransientModel):
     # ── Qualitative responses ────────────────────────────────────────────
 
     def _get_qualitative_responses_html(self, student_id):
-        """Renderiza las respuestas cualitativas via QWeb."""
+        """Renderiza las respuestas cualitativas agrupadas por evaluación via QWeb."""
         responses = self.env['aula_metrics.qualitative_response'].search([
             ('student_id', '=', student_id),
-        ], order='response_date desc', limit=20)
+        ], order='response_date desc', limit=50)
 
-        response_items = []
+        # Agrupar por evaluación (orden de primera aparición → más reciente primero)
+        eval_groups = {}
         for resp in responses:
-            has_alert      = resp.has_alert_keywords
-            accent_color   = palette.UI_DANGER if has_alert else palette.UI_SUCCESS
+            ev    = resp.evaluation_id
+            ev_id = ev.id if ev else 0
+            if ev_id not in eval_groups:
+                ev_date = ''
+                if ev and ev.date_start:
+                    ev_date = ev.date_start.strftime('%d/%m/%Y')
+                eval_groups[ev_id] = {
+                    'eval_name': ev.name if ev else 'Sin evaluación',
+                    'eval_date': ev_date,
+                    'responses': [],
+                }
+
+            has_alert    = resp.has_alert_keywords
+            accent_color = palette.UI_DANGER if has_alert else palette.UI_SUCCESS
 
             if has_alert:
                 alert_badge_html = Markup(
@@ -184,15 +197,14 @@ class DashboardStudentSections(models.TransientModel):
                     f'{pills}</div>'
                 )
 
-            response_items.append({
-                'question_title':   resp.question_id.title if resp.question_id else 'Pregunta sin título',
-                'evaluation_name':  resp.evaluation_id.name if resp.evaluation_id else 'Sin evaluación',
-                'date_str':         resp.response_date.strftime('%d/%m/%Y') if resp.response_date else 'Sin fecha',
-                'word_count':       resp.word_count,
-                'response_text':    resp.response_text,
+            date_str = resp.response_date.strftime('%d/%m/%Y') if resp.response_date else ''
+            eval_groups[ev_id]['responses'].append({
+                'question_title':    resp.question_id.title if resp.question_id else 'Pregunta sin título',
+                'date_str':          date_str,
+                'response_text':     resp.response_text,
                 'alert_badge_html':  alert_badge_html,
                 'alert_badge_style': alert_badge_style,
-                'keywords_html':    keywords_html,
+                'keywords_html':     keywords_html,
                 'card_style': (
                     f"border:1px solid var(--am-border);"
                     f"border-left:4px solid {accent_color};"
@@ -201,7 +213,7 @@ class DashboardStudentSections(models.TransientModel):
             })
 
         return _qweb(self.env, 'aula_metrics.student_qualitative_section', {
-            'response_items': response_items,
+            'evaluation_groups': list(eval_groups.values()),
         })
 
     # ── Students list ────────────────────────────────────────────────────

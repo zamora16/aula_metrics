@@ -116,6 +116,97 @@
         <t t-else="">
             <t t-call="aula_metrics.qualitative_management_view"/>
         </t>
+
+        <script>
+            /* ── Paginación de tablas de respuestas cualitativas ── */
+            (function () {
+                var PAGE_SIZE = 10;
+
+                function amInitResponsePagination() {
+                    document.querySelectorAll('table.am-paginable').forEach(function (table) {
+                        if (table.dataset.pgInit) return;   // evitar doble inicialización
+                        table.dataset.pgInit = '1';
+
+                        var tbody = table.querySelector('tbody');
+                        if (!tbody) return;
+                        var rows = Array.from(tbody.querySelectorAll('tr'));
+                        if (rows.length &lt;= PAGE_SIZE) return;
+
+                        var totalPages = Math.ceil(rows.length / PAGE_SIZE);
+                        var current = 1;
+
+                        /* Botón reutilizable */
+                        function makeBtn(label, cls) {
+                            var btn = document.createElement('button');
+                            btn.className = cls;
+                            btn.innerHTML = label;
+                            btn.style.cssText = [
+                                'padding:4px 14px',
+                                'border:1px solid var(--am-border)',
+                                'border-radius:6px',
+                                'background:var(--am-surface)',
+                                'color:var(--am-text)',
+                                'font-size:12px',
+                                'cursor:pointer',
+                                'transition:opacity 0.15s'
+                            ].join(';');
+                            return btn;
+                        }
+
+                        /* Barra paginadora */
+                        var pager = document.createElement('div');
+                        pager.style.cssText = [
+                            'display:flex',
+                            'align-items:center',
+                            'justify-content:space-between',
+                            'padding:10px 18px',
+                            'border-top:1px solid var(--am-border)',
+                            'background:var(--am-light)'
+                        ].join(';');
+
+                        var prevBtn = makeBtn('&#8249; Anterior', 'am-pg-prev');
+                        var nextBtn = makeBtn('Siguiente &#8250;', 'am-pg-next');
+                        var info    = document.createElement('span');
+                        info.style.cssText = 'font-size:12px;color:var(--am-muted);';
+
+                        pager.appendChild(prevBtn);
+                        pager.appendChild(info);
+                        pager.appendChild(nextBtn);
+
+                        /* Insertar barra debajo del wrapper overflow-x */
+                        var overflowDiv = table.parentElement;
+                        overflowDiv.parentElement.insertBefore(pager, overflowDiv.nextSibling);
+
+                        function goTo(page) {
+                            current = page;
+                            var start = (page - 1) * PAGE_SIZE;
+                            rows.forEach(function (row, idx) {
+                                row.style.display = (idx >= start &amp;&amp; idx &lt; start + PAGE_SIZE) ? '' : 'none';
+                            });
+                            info.textContent = 'Página ' + page + ' de ' + totalPages + '  ·  ' + rows.length + ' respuestas';
+                            prevBtn.disabled = page &lt;= 1;
+                            nextBtn.disabled = page >= totalPages;
+                            prevBtn.style.opacity = page &lt;= 1 ? '0.4' : '1';
+                            nextBtn.style.opacity = page >= totalPages ? '0.4' : '1';
+                        }
+
+                        prevBtn.addEventListener('click', function () { if (current > 1) goTo(current - 1); });
+                        nextBtn.addEventListener('click', function () { if (current &lt; totalPages) goTo(current + 1); });
+
+                        goTo(1);
+                    });
+                }
+
+                /* Esperar a que los scripts de wordcloud también hayan corrido */
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        setTimeout(amInitResponsePagination, 200);
+                    });
+                } else {
+                    setTimeout(amInitResponsePagination, 200);
+                }
+            })();
+        </script>
     </template>
 
 
@@ -211,7 +302,7 @@
                                 </span>
                             </div>
                             <div style="overflow-x:auto;">
-                                <table style="width:100%;border-collapse:collapse;">
+                                <table class="am-paginable" style="width:100%;border-collapse:collapse;">
                                     <thead>
                                         <tr style="background:var(--am-light);">
                                             <th style="padding:10px 16px;font-size:11px;font-weight:700;
@@ -408,7 +499,7 @@
                             </span>
                         </div>
                         <div style="overflow-x:auto;">
-                            <table style="width:100%;border-collapse:collapse;">
+                            <table class="am-paginable" style="width:100%;border-collapse:collapse;">
                                 <thead>
                                     <tr style="background:var(--am-light);">
                                         <th style="padding:10px 16px;font-size:11px;font-weight:700;
@@ -580,7 +671,7 @@
                             </span>
                         </div>
                         <div style="overflow-x:auto;">
-                            <table style="width:100%;border-collapse:collapse;">
+                            <table class="am-paginable" style="width:100%;border-collapse:collapse;">
                                 <thead>
                                     <tr style="background:var(--am-light);">
                                         <th style="padding:10px 16px;font-size:11px;font-weight:700;

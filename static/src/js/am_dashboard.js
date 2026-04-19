@@ -153,6 +153,17 @@ function navigateTo(section, skipPush) {
     if (!skipPush) history.pushState({ section: section }, '', '?section=' + section);
     if (section === 'qualitative' && !window.qualitativeLoaded) loadQualitativeContent();
     if (section === 'segmentation' && !window.segmentationLoaded) loadSegmentationContent();
+
+    // Resize all Chart.js charts in the newly visible section so they fill their
+    // containers correctly (charts initialised while section was display:none have 0 width).
+    if (sectionEl && typeof Chart !== 'undefined' && Chart.getChart) {
+        requestAnimationFrame(function() {
+            sectionEl.querySelectorAll('canvas').forEach(function(c) {
+                const ch = Chart.getChart(c.id);
+                if (ch) { ch.resize(); ch.update(); }
+            });
+        });
+    }
 }
 
 window.addEventListener('popstate', function(e) {

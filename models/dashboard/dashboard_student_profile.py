@@ -68,6 +68,7 @@ class DashboardStudentProfile(models.TransientModel):
         participations_html   = self._get_participations_html(student_id)
         qualitative_html      = self._get_qualitative_responses_html(student_id)
         official_surveys_data = self._get_official_surveys_html(student_id)
+        centro_surveys_html   = self._get_centro_surveys_html(student_id, student)
 
         return self._build_profile_html_chartjs(
             student, role_info, kpis_html,
@@ -75,6 +76,7 @@ class DashboardStudentProfile(models.TransientModel):
             alerts_html, alerts_history_html,
             participations_html, qualitative_html,
             official_surveys_data=official_surveys_data,
+            centro_surveys_html=centro_surveys_html,
         )
 
     @api.model
@@ -120,6 +122,185 @@ class DashboardStudentProfile(models.TransientModel):
             ('survey_id.is_aulametrics', '=', False),
             ('survey_id.is_adhoc', '=', True),
         ], order='timestamp desc', limit=500)
+
+    def _get_centro_surveys_html(self, student_id, student):
+        """
+        Sección de cuestionarios del centro organizada por evaluación (más reciente primero).
+        Muestra el valor del alumno comparado con la media de grupo y centro, por evaluación.
+        Sin baremos — vista simplificada de comparativa.
+        """
+        MetricValue = self.env['aula_metrics.metric_value']
+
+        records = MetricValue.search([
+            ('student_id', '=', student_id),
+            '|',
+            ('survey_id.is_aulametrics', '=', False),
+            ('survey_id.is_adhoc', '=', True),
+        ], order='timestamp desc', limit=500)
+        records = records.filtered(
+            lambda r: (not r.value_text
+                       and r.value_float is not None
+                       and not (r.question_id and r.question_id.is_segmentation))
+        )
+
+        if not records:
+            return ''
+
+        group_id = student.academic_group_id.id if student.academic_group_id else None
+
+        # Agrupar: {ev_id: {survey_id: {metric_name: mdata}}}
+        evals_dict = {}
+        for r in records:
+            ev    = r.evaluation_id
+            ev_id = ev.id if ev else 0
+            if ev_id not in evals_dict:
+                evals_dict[ev_id] = {
+                    'id':      ev_id,
+                    'name':    ev.name if ev else 'Sin evaluación',
+                    'date':    ev.date_start if ev and ev.date_start else r.timestamp,
+                    'surveys': {},
+                }
+            sid   = r.survey_id.id
+            sdata = evals_dict[ev_id]['surveys']
+            if sid not in sdata:
+                sdata[sid] = {
+                    'title':   r.survey_id.title or r.survey_id.survey_code or '',
+                    'metrics': {},
+                }
+            mname = r.metric_name
+            if mname not in sdata[sid]['metrics']:
+                sdata[sid]['metrics'][mname] = {
+                    'label': r.metric_label or mname.replace('_', ' ').capitalize(),
+                    'value': r.value_float,
+                }
+
+        if not evals_dict:
+            return ''
+
+        ordered_evals = sorted(evals_dict.values(), key=lambda e: e['date'] or '', reverse=True)
+
+        # Máximo observable por métrica para la barra de referencia
+        all_metric_names = list({r.metric_name for r in records})
+        max_by_metric = {}
+        for mname in all_metric_names:
+            recs = MetricValue.search([('metric_name', '=', mname)], limit=500)
+            vals = [r2.value_float for r2 in recs if r2.value_float is not None]
+            max_by_metric[mname] = max(vals) if vals else 1.0
+
+        _P  = 'var(--am-primary)'
+        _MU = 'var(--am-muted)'
+        _BO = 'var(--am-border)'
+        _SU = 'var(--am-surface)'
+
+        sections = []
+        for ev_data in ordered_evals:
+            ev_name = ev_data['name']
+            ev_id   = ev_data['id']
+            ev_date_str = ev_data['date'].strftime('%d/%m/%Y') if ev_data['date'] else ''
+            ev_date_sp  = (
+                f' <span style="color:{_MU};font-weight:400;font-size:11px;">· {ev_date_str}</span>'
+                if ev_date_str else ''
+            )
+
+            survey_blocks = []
+            for sid, sinfo in ev_data['surveys'].items():
+                metrics = sinfo['metrics']
+                if not metrics:
+                    continue
+
+                rows_html = []
+                for mname, mdata in metrics.items():
+                    val   = mdata['value']
+                    label = mdata['label']
+                    max_v = max(max_by_metric.get(mname, 1.0), abs(val) if val else 0.001)
+
+                    # Media grupo (misma evaluación, mismo grupo)
+                    gm = None
+                    if group_id and ev_id:
+                        gm_recs = MetricValue.search([
+                            ('metric_name',       '=', mname),
+                            ('evaluation_id',     '=', ev_id),
+                            ('academic_group_id', '=', group_id),
+                        ], limit=200)
+                        gm_vals = [r2.value_float for r2 in gm_recs if r2.value_float is not None]
+                        gm = sum(gm_vals) / len(gm_vals) if gm_vals else None
+
+                    # Media centro (misma evaluación, todos los alumnos)
+                    cm = None
+                    if ev_id:
+                        cm_recs = MetricValue.search([
+                            ('metric_name',   '=', mname),
+                            ('evaluation_id', '=', ev_id),
+                        ], limit=500)
+                        cm_vals = [r2.value_float for r2 in cm_recs if r2.value_float is not None]
+                        cm = sum(cm_vals) / len(cm_vals) if cm_vals else None
+
+                    pct = min(int(val / max_v * 100), 100) if max_v > 0 else 0
+                    bar = (
+                        f'<div style="display:flex;align-items:center;gap:8px;min-width:120px;">'
+                        f'<div style="flex:1;height:6px;background:{_BO};border-radius:3px;">'
+                        f'<div style="width:{pct}%;height:100%;background:{_P};border-radius:3px;"></div>'
+                        f'</div>'
+                        f'<span style="font-size:13px;font-weight:700;color:{_P};white-space:nowrap;">'
+                        f'{val:.1f}</span>'
+                        f'</div>'
+                    )
+                    gm_td = (
+                        f'<td class="am-td" style="font-size:12px;">{gm:.1f}</td>'
+                        if gm is not None else f'<td class="am-td" style="color:{_MU};">—</td>'
+                    )
+                    cm_td = (
+                        f'<td class="am-td" style="font-size:12px;">{cm:.1f}</td>'
+                        if cm is not None else f'<td class="am-td" style="color:{_MU};">—</td>'
+                    )
+                    rows_html.append(
+                        f'<tr>'
+                        f'<td class="am-td-label">{label}</td>'
+                        f'<td class="am-td" style="min-width:160px;">{bar}</td>'
+                        f'{gm_td}{cm_td}'
+                        f'</tr>'
+                    )
+
+                survey_blocks.append(
+                    f'<div style="margin-bottom:12px;">'
+                    f'<div style="font-size:12px;font-weight:600;color:{_P};text-transform:uppercase;'
+                    f'letter-spacing:0.04em;margin-bottom:8px;padding-bottom:4px;'
+                    f'border-bottom:1px solid {_BO};">{sinfo["title"]}</div>'
+                    f'<div style="overflow-x:auto;">'
+                    f'<table style="width:100%;border-collapse:collapse;background:{_SU};">'
+                    f'<thead><tr style="border-bottom:2px solid {_BO};">'
+                    f'<th class="am-th-label">Métrica</th>'
+                    f'<th class="am-th-cell">Alumno</th>'
+                    f'<th class="am-th-cell am-group-col">Grupo (media)</th>'
+                    f'<th class="am-th-cell am-center-col">Centro (media)</th>'
+                    f'</tr></thead>'
+                    f'<tbody>{"".join(rows_html)}</tbody>'
+                    f'</table></div></div>'
+                )
+
+            if not survey_blocks:
+                continue
+
+            # 1 cuestionario → ancho completo sin grid; >1 → grid 2 columnas
+            if len(survey_blocks) == 1:
+                inner_html  = survey_blocks[0]
+                grid_class  = ''
+            else:
+                inner_html = ''.join(survey_blocks)
+                grid_class  = 'am-survey-grid'
+
+            sections.append(
+                f'<div class="am-eval-card">'
+                f'<div class="am-eval-card__header">'
+                f'<i class="fa-solid fa-calendar-check" style="color:{_P};font-size:12px;"></i>'
+                f'<span style="font-size:13px;font-weight:600;color:var(--am-text);">'
+                f'{ev_name}{ev_date_sp}</span>'
+                f'</div>'
+                f'<div class="{grid_class}" style="padding:16px;">{inner_html}</div>'
+                f'</div>'
+            )
+
+        return Markup('\n'.join(sections))
 
     def _prepare_metrics_dataframe(self, metrics):
         """Construye el DataFrame de métricas del alumno para análisis longitudinal."""
@@ -190,7 +371,8 @@ class DashboardStudentProfile(models.TransientModel):
 
     def _build_profile_html_chartjs(self, student, role_info, kpis_html, evolution, radar,
                                      alerts, alerts_history, participations,
-                                     qualitative='', official_surveys_data=None):
+                                     qualitative='', official_surveys_data=None,
+                                     centro_surveys_html=''):
         """
         Contexto completo para el perfil — layout y JS via QWeb template.
         """
@@ -222,6 +404,7 @@ class DashboardStudentProfile(models.TransientModel):
             'radar_html':            Markup(radar) if radar else Markup(''),
             'evol_ofic_html':        Markup(evol_ofic_html) if evol_ofic_html else Markup(''),
             'evolution_charts_html': Markup(evolution) if evolution else Markup(''),
+            'centro_surveys_html':   Markup(centro_surveys_html) if centro_surveys_html else Markup(''),
             'qualitative_html':      Markup(qualitative) if qualitative else Markup(''),
             'alerts_html':           Markup(alerts) if alerts else Markup(''),
             'alerts_history_html':   Markup(alerts_history) if alerts_history else Markup(''),
