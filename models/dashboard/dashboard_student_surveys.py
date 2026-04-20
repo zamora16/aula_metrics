@@ -68,8 +68,12 @@ class DashboardStudentSurveys(models.TransientModel):
                 dname = ev.name
                 ddate = r.completed_at
             else:
-                key   = 0
-                dname = 'Sin evaluación'
+                # Evaluación borrada: usar snapshot del nombre para no mostrar NULL.
+                # La clave es el propio snapshot para que distintas evaluaciones borradas
+                # no se fusionen en un único grupo "Sin evaluación".
+                snap  = r.evaluation_name_snapshot or ''
+                key   = ('_deleted_', snap)
+                dname = snap or 'Sin evaluación'
                 ddate = r.completed_at
 
             if key not in evals_data:

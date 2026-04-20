@@ -32,7 +32,8 @@
                                        decoration-info="status == 'en_gestion'"/>
                                 <field name="threshold_id"/>
                                 <field name="student_id" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
-                                <field name="academic_group_id"/>
+                                <field name="academic_group_id" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
+                                <field name="education_level" groups="aula_metrics.group_aulametrics_management"/>
                                 <field name="score_value"/>
                                 <!-- case_id: campo auxiliar para condicionar botones; oculto en columna -->
                                 <field name="case_id" column_invisible="1"/>
@@ -139,7 +140,8 @@
                                 <field name="status"/>
                                 <field name="alert_level"/>
                                 <field name="threshold_id"/>
-                                <field name="academic_group_id"/>
+                                <field name="academic_group_id" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
+                                <field name="education_level" groups="aula_metrics.group_aulametrics_management"/>
                             </tree>
                             <form string="Alerta">
                                 <group>

@@ -104,6 +104,14 @@ class SurveyResult(models.Model):
     # ──────────────────────────────────────────────
     # Snapshot histórico
     # ──────────────────────────────────────────────
+    evaluation_name_snapshot = fields.Char(
+        string='Nombre de evaluación',
+        store=True,
+        readonly=True,
+        help='Nombre de la evaluación en el momento de completar el cuestionario. '
+             'Se conserva aunque la evaluación sea eliminada posteriormente.',
+    )
+
     academic_group_id = fields.Many2one(
         'aula_metrics.academic_group',
         string='Grupo Académico',
@@ -263,6 +271,9 @@ class SurveyResult(models.Model):
             if 'academic_group_id' not in vals and vals.get('student_id'):
                 student = self.env['res.partner'].browse(vals['student_id'])
                 vals['academic_group_id'] = student.academic_group_id.id or False
+            if 'evaluation_name_snapshot' not in vals and vals.get('evaluation_id'):
+                evaluation = self.env['aula_metrics.evaluation'].browse(vals['evaluation_id'])
+                vals['evaluation_name_snapshot'] = evaluation.name or ''
         return super().create(vals_list)
 
     @api.model
@@ -305,7 +316,7 @@ class SurveyResult(models.Model):
         survey_titles_seen = []
 
         for r in results:
-            ev_name    = r.evaluation_id.name if r.evaluation_id else 'Sin evaluación'
+            ev_name    = r.evaluation_name_snapshot or (r.evaluation_id.name if r.evaluation_id else 'Sin evaluación')
             survey_ttl = r.survey_id.title or ''
             if ev_name not in eval_names_seen:
                 eval_names_seen.append(ev_name)

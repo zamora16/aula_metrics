@@ -90,6 +90,12 @@ class Alert(models.Model):
         compute='_compute_course_level_general',
         store=False
     )
+
+    education_level = fields.Selection(
+        related='academic_group_id.course_level',
+        string='Nivel Educativo',
+        store=False,
+    )
     
     # Empty @api.depends() is intentional: case_id is computed via a reverse
     # search (aula_metrics.case → alert_id) so there is no direct field
