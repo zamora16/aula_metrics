@@ -397,13 +397,13 @@ class DashboardEvaluationReportSections(models.TransientModel):
     @api.model
     def _build_tutor_scale_view(self, survey_id, scale, severity_meta):
         """
-        Muestra los grupos del tutor con líneas de referencia:
-          – Media del centro (gris punteado)
-          – Media del nivel educativo del grupo (azul punteado)
+        Muestra barras agrupadas: grupo(s) del tutor + nivel educativo + centro.
         """
         groups        = scale['groups']
         center_mean   = scale.get('center_mean')
+        center_n      = scale.get('center_n')
         center_bar    = scale.get('center_baremo')
+        center_sev    = scale.get('center_sev_dist') or {}
         tutor_levels  = scale.get('tutor_level_ref') or {}
         sn            = scale['scale_name']
         canvas_id     = f'amrep-tutor-{survey_id}-{sn}'
@@ -411,33 +411,67 @@ class DashboardEvaluationReportSections(models.TransientModel):
         if not groups:
             return '<p class="text-muted small">Sin datos de grupos para tu rol.</p>'
 
-        # Construir lista de líneas de referencia para el gráfico
-        ref_lines = []
-        if center_mean is not None:
-            ref_lines.append({
-                'value': center_mean, 'label': 'Media del centro',
-                'color': '#6c757d',   'dash': [6, 4],
+        # ── Gráfico de barras agrupadas ───────────────────────────────────
+        bar_items = []
+        for g in groups:
+            bar_items.append({
+                'name':  g['group_name'],
+                'value': g['mean_score'],
+                'color': g.get('baremo_color') or _GROUP_COLORS[0],
             })
-        for lvl, ldata in tutor_levels.items():
-            ref_lines.append({
+        for ldata in tutor_levels.values():
+            bar_items.append({
+                'name':  ldata['label'],
                 'value': ldata['mean_score'],
-                'label': f'Media {ldata["label"]}',
-                'color': 'var(--am-primary, #1A5C52)',
-                'dash': [3, 3],
+                'color': ldata.get('baremo_color') or '#6c757d',
+            })
+        if center_mean is not None:
+            bar_items.append({
+                'name':  'Centro',
+                'value': center_mean,
+                'color': center_bar['color'] if center_bar else '#6c757d',
             })
 
-        chart_html = self._bar_chart_with_references(
-            canvas_id, groups, name_key='group_name',
-            y_min=scale['score_min'], y_max=scale['score_max'],
-            ref_lines=ref_lines,
-        )
+        labels = [it['name'] for it in bar_items]
+        values = [it['value'] for it in bar_items]
+        colors = [it['color'] for it in bar_items]
+        cfg = {
+            'type': 'bar',
+            'data': {'labels': labels, 'datasets': [{
+                'data': values, 'backgroundColor': colors,
+                'borderColor': colors, 'borderWidth': 1, 'borderRadius': 4,
+            }]},
+            'options': {
+                'responsive': True, 'maintainAspectRatio': True,
+                'plugins': {'legend': {'display': False}},
+                'scales': {
+                    'y': {
+                        'min': float(scale['score_min']),
+                        'suggestedMax': float(scale['score_max']),
+                        'title': {'display': True, 'text': 'Puntuación media'},
+                    },
+                    'x': {'ticks': {'maxRotation': 45}},
+                },
+            },
+        }
+        chart_html = f'<div class="chart-wrapper-sm">{self._canvas_with_script(canvas_id, cfg)}</div>'
 
-        # Tabla comparativa — grupos del tutor
+        # ── Tabla ─────────────────────────────────────────────────────────
         bm = scale.get('baremo_meta') or {}
         sev_headers = ''.join(
             f'<th class="text-center small">{label}</th>'
             for label in bm.keys()
         ) if bm else ''
+
+        def _sev_cells(sev_dist, n):
+            if not bm:
+                return ''
+            n = n or 1
+            return ''.join(
+                f'<td class="text-center small" style="color:{meta.get("color","#6c757d")};">'
+                f'{round(sev_dist.get(label, 0) / n * 100)}%</td>'
+                for label, meta in bm.items()
+            )
 
         rows = ''
         for g in groups:
@@ -446,24 +480,14 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 f'{g["baremo_label"]}</span>'
                 if g.get('baremo_label') else '—'
             )
-            sev_cells = ''
-            if bm:
-                n = g['n'] or 1
-                for label, meta in bm.items():
-                    cnt = g.get('sev_dist', {}).get(label, 0)
-                    sev_cells += (
-                        f'<td class="text-center small" style="color:{meta.get("color","#6c757d")};">'
-                        f'{round(cnt / n * 100)}%</td>'
-                    )
             rows += (
                 f'<tr><td class="fw-medium">{g["group_name"]}</td>'
                 f'<td class="text-center">{g["n"]}</td>'
                 f'<td class="text-center fw-semibold">{g["mean_score"]}</td>'
-                f'<td>{badge}</td>{sev_cells}</tr>'
+                f'<td>{badge}</td>{_sev_cells(g.get("sev_dist", {}), g["n"])}</tr>'
             )
 
-        # Filas de referencia de nivel educativo
-        for lvl, ldata in tutor_levels.items():
+        for ldata in tutor_levels.values():
             lb_badge = (
                 f'<span class="badge" style="background:{ldata.get("baremo_color","#6c757d")};">'
                 f'{ldata["baremo_label"]}</span>'
@@ -473,14 +497,13 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 f'<tr style="background:rgba(26,92,82,.06);">'
                 f'<td class="fw-semibold" style="color:var(--am-primary,#1A5C52);">'
                 f'<i class="fa-solid fa-graduation-cap me-1 small"></i>'
-                f'Media {ldata["label"]}</td>'
-                f'<td></td>'
+                f'{ldata["label"]}</td>'
+                f'<td class="text-center">{ldata.get("n", "—")}</td>'
                 f'<td class="text-center fw-semibold">{ldata["mean_score"]}</td>'
                 f'<td>{lb_badge}</td>'
-                f'{"<td></td>" * len(bm)}</tr>'
+                f'{_sev_cells(ldata.get("sev_dist", {}), ldata.get("n", 0))}</tr>'
             )
 
-        # Fila de media del centro
         if center_mean is not None:
             cb_badge = (
                 f'<span class="badge" style="background:{center_bar["color"]};">'
@@ -490,11 +513,11 @@ class DashboardEvaluationReportSections(models.TransientModel):
             rows += (
                 f'<tr style="background:var(--am-subtle,#f8fafc);">'
                 f'<td class="fw-semibold text-muted">'
-                f'<i class="fa-solid fa-school me-1 small"></i>Media del centro</td>'
-                f'<td></td>'
+                f'<i class="fa-solid fa-school me-1 small"></i>Centro</td>'
+                f'<td class="text-center">{center_n if center_n is not None else "—"}</td>'
                 f'<td class="text-center fw-semibold">{center_mean}</td>'
                 f'<td>{cb_badge}</td>'
-                f'{"<td></td>" * len(bm)}</tr>'
+                f'{_sev_cells(center_sev, center_n or 0)}</tr>'
             )
 
         table = f"""
@@ -706,6 +729,7 @@ class DashboardEvaluationReportSections(models.TransientModel):
             'type': 'bar', 'label': 'Tu grupo',
             'data': values, 'backgroundColor': colors,
             'borderColor': colors, 'borderWidth': 1, 'borderRadius': 4,
+            'order': 1,
         }]
         has_refs = bool(ref_lines)
         for rl in (ref_lines or []):
@@ -713,8 +737,10 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 'type': 'line', 'label': rl['label'],
                 'data': [rl['value']] * len(labels),
                 'borderColor': rl.get('color', '#6c757d'),
+                'backgroundColor': 'transparent',
                 'borderDash': rl.get('dash', [6, 4]),
-                'borderWidth': 2, 'pointRadius': 0, 'fill': False,
+                'borderWidth': 2, 'pointRadius': 4, 'pointHoverRadius': 5,
+                'tension': 0, 'fill': False, 'order': 0,
             })
         cfg = {
             'type': 'bar',
@@ -1009,44 +1035,38 @@ class DashboardEvaluationReportSections(models.TransientModel):
 
     @api.model
     def _adhoc_tutor_view(self, survey_id, sn, metric):
-        """Tutor: sus grupos + líneas de referencia de nivel y centro."""
+        """Tutor: barras agrupadas — grupo(s) + nivel educativo + centro."""
         canvas_id        = f'amrep-adhoc-tutor-{survey_id}-{sn}'
         groups           = metric['groups']
         center_avg       = metric.get('center_avg')
+        center_min       = metric.get('center_min')
+        center_max       = metric.get('center_max')
+        center_n         = metric.get('center_n')
         tutor_level_ref  = metric.get('tutor_level_ref') or {}
 
-        labels = [g['group_name'] for g in groups]
-        values = [g['avg'] for g in groups]
-        colors = [_GROUP_COLORS[i % len(_GROUP_COLORS)] for i in range(len(groups))]
-        datasets = [{
-            'type': 'bar', 'label': 'Tu grupo',
-            'data': values, 'backgroundColor': colors,
-            'borderRadius': 4, 'borderWidth': 1, 'borderColor': colors,
-        }]
-        if center_avg is not None:
-            datasets.append({
-                'type': 'line', 'label': 'Media del centro',
-                'data': [center_avg] * len(labels),
-                'borderColor': '#6c757d', 'borderDash': [6, 4],
-                'borderWidth': 2, 'pointRadius': 0, 'fill': False,
-            })
+        bar_items = []
+        for g in groups:
+            bar_items.append({'name': g['group_name'], 'value': g['avg'],
+                              'color': _GROUP_COLORS[0]})
         for ldata in tutor_level_ref.values():
-            datasets.append({
-                'type': 'line', 'label': f'Media {ldata["label"]}',
-                'data': [ldata['avg']] * len(labels),
-                'borderColor': '#1A5C52', 'borderDash': [3, 3],
-                'borderWidth': 2, 'pointRadius': 0, 'fill': False,
-            })
-        has_refs = center_avg is not None or bool(tutor_level_ref)
+            bar_items.append({'name': ldata['label'], 'value': ldata['avg'],
+                              'color': _GROUP_COLORS[1 % len(_GROUP_COLORS)]})
+        if center_avg is not None:
+            bar_items.append({'name': 'Centro', 'value': center_avg,
+                              'color': _GROUP_COLORS[2 % len(_GROUP_COLORS)]})
+
+        labels = [it['name'] for it in bar_items]
+        values = [it['value'] for it in bar_items]
+        colors = [it['color'] for it in bar_items]
         cfg = {
             'type': 'bar',
-            'data': {'labels': labels, 'datasets': datasets},
+            'data': {'labels': labels, 'datasets': [{
+                'data': values, 'backgroundColor': colors,
+                'borderColor': colors, 'borderRadius': 4, 'borderWidth': 1,
+            }]},
             'options': {
                 'responsive': True, 'maintainAspectRatio': True,
-                'plugins': {'legend': {
-                    'display': has_refs, 'position': 'bottom',
-                    'labels': {'boxWidth': 12, 'font': {'size': 11}},
-                }},
+                'plugins': {'legend': {'display': False}},
                 'scales': {
                     'y': {'min': 0, 'suggestedMax': 100,
                           'title': {'display': True, 'text': 'Puntuación (0-100)'}},
@@ -1054,7 +1074,47 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 },
             },
         }
-        return self._canvas_with_script(canvas_id, cfg)
+        chart = f'<div class="chart-wrapper-sm">{self._canvas_with_script(canvas_id, cfg)}</div>'
+
+        rows = ''.join(
+            f'<tr><td class="fw-medium small">{g["group_name"]}</td>'
+            f'<td class="text-center small">{g.get("n","")}</td>'
+            f'<td class="text-center small fw-semibold">{g.get("avg","")}</td>'
+            f'<td class="text-center small text-muted">{g.get("min","—")}</td>'
+            f'<td class="text-center small text-muted">{g.get("max","—")}</td>'
+            f'</tr>'
+            for g in groups
+        )
+        for ldata in tutor_level_ref.values():
+            rows += (
+                f'<tr style="background:rgba(26,92,82,.06);">'
+                f'<td class="fw-semibold small" style="color:var(--am-primary,#1A5C52);">'
+                f'<i class="fa-solid fa-graduation-cap me-1"></i>{ldata["label"]}</td>'
+                f'<td class="text-center small">{ldata.get("n","—")}</td>'
+                f'<td class="text-center small fw-semibold">{ldata.get("avg","")}</td>'
+                f'<td class="text-center small text-muted">{ldata.get("min","—")}</td>'
+                f'<td class="text-center small text-muted">{ldata.get("max","—")}</td>'
+                f'</tr>'
+            )
+        if center_avg is not None:
+            rows += (
+                f'<tr style="background:var(--am-subtle,#f8fafc);">'
+                f'<td class="fw-semibold small text-muted">'
+                f'<i class="fa-solid fa-school me-1"></i>Centro</td>'
+                f'<td class="text-center small">{center_n if center_n is not None else "—"}</td>'
+                f'<td class="text-center small fw-semibold">{center_avg}</td>'
+                f'<td class="text-center small text-muted">{center_min if center_min is not None else "—"}</td>'
+                f'<td class="text-center small text-muted">{center_max if center_max is not None else "—"}</td>'
+                f'</tr>'
+            )
+        table = f"""
+<table class="table table-sm report-table mb-0">
+  <thead><tr><th>Grupo / Referencia</th><th class="text-center">N</th>
+  <th class="text-center">Media</th><th class="text-center">Mín</th>
+  <th class="text-center">Máx</th></tr></thead>
+  <tbody>{rows}</tbody>
+</table>"""
+        return f'<div class="row g-3"><div class="col-lg-7">{chart}</div><div class="col-lg-5">{table}</div></div>'
 
     @api.model
     def _adhoc_panel_html(self, uid, items, name_key, center):

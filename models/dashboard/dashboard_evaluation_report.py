@@ -333,7 +333,7 @@ class DashboardEvaluationReport(models.TransientModel):
 
         # Para tutores: cargar TODOS los resultados para center_mean/level_means reales
         if is_tutor:
-            center_results = self.env['aula_metrics.survey_result'].search(
+            center_results = self.env['aula_metrics.survey_result'].sudo().search(
                 base_domain, limit=_RESULT_LIMIT
             )
         else:
@@ -378,13 +378,14 @@ class DashboardEvaluationReport(models.TransientModel):
         severity_meta = BaremoRange.get_severity_mapping(survey.id)
 
         # ── Helper: mapa alumno_id → academic_group record ────────────────
-        def _student_group_map(rset):
+        def _student_group_map(rset, use_sudo=False):
             pids     = list({r.student_id.id for r in rset if r.student_id})
-            partners = self.env['res.partner'].browse(pids)
+            env      = self.env['res.partner'].sudo() if use_sudo else self.env['res.partner']
+            partners = env.browse(pids)
             return {p.id: p.academic_group_id for p in partners if p.academic_group_id}
 
         student_grp_map        = _student_group_map(results)
-        center_student_grp_map = _student_group_map(center_results) if is_tutor else student_grp_map
+        center_student_grp_map = _student_group_map(center_results, use_sudo=True) if is_tutor else student_grp_map
 
         # ── Helper: acumular puntuaciones por grupo × escala ──────────────
         def _accumulate(rset, smap):
@@ -503,6 +504,8 @@ class DashboardEvaluationReport(models.TransientModel):
                         'label':        lv['label'],
                         'baremo_label': lv.get('baremo_label', ''),
                         'baremo_color': lv.get('baremo_color', '#6c757d'),
+                        'n':            lv['n'],
+                        'sev_dist':     lv.get('sev_dist', {}),
                     }
                     for lv in by_level_out if lv['level'] in tutor_levels
                 }
@@ -515,6 +518,7 @@ class DashboardEvaluationReport(models.TransientModel):
                 'groups':          groups_out,
                 'by_level':        by_level_out,
                 'center_mean':     center_mean,
+                'center_n':        len(all_scores),
                 'center_baremo':   (
                     {
                         'label': center_baremo.label,
@@ -585,20 +589,21 @@ class DashboardEvaluationReport(models.TransientModel):
 
         # Para tutores: también cargar todos los registros para center_avg/level_avg reales
         if is_tutor:
-            center_records = self.env['aula_metrics.metric_value'].search(
+            center_records = self.env['aula_metrics.metric_value'].sudo().search(
                 base_domain, limit=_RESULT_LIMIT
             )
         else:
             center_records = records
 
         # Pre-resolver alumno → grupo como fallback cuando academic_group_id es null
-        def _build_smap(rset):
+        def _build_smap(rset, use_sudo=False):
             pids     = list({r.student_id.id for r in rset if r.student_id})
-            partners = self.env['res.partner'].browse(pids)
+            env      = self.env['res.partner'].sudo() if use_sudo else self.env['res.partner']
+            partners = env.browse(pids)
             return {p.id: p.academic_group_id for p in partners if p.academic_group_id}
 
         student_grp_map    = _build_smap(records)
-        center_student_map = _build_smap(center_records) if is_tutor else student_grp_map
+        center_student_map = _build_smap(center_records, use_sudo=True) if is_tutor else student_grp_map
 
         # Cache de course_level por group record
         _lvl_cache = {}
@@ -694,13 +699,21 @@ class DashboardEvaluationReport(models.TransientModel):
                 round(sum(all_center_vals) / len(all_center_vals), 2)
                 if all_center_vals else None
             )
+            center_min = round(min(all_center_vals), 2) if all_center_vals else None
+            center_max = round(max(all_center_vals), 2) if all_center_vals else None
 
             # Para tutores: referencia de nivel de sus grupos
             tutor_level_ref = None
             if is_tutor and groups_out:
                 tutor_levels = {grp_data[g['group_id']]['level'] for g in groups_out}
                 tutor_level_ref = {
-                    lv['level']: {'avg': lv['avg'], 'label': lv['label'], 'min': lv.get('min'), 'max': lv.get('max')}
+                    lv['level']: {
+                        'avg':   lv['avg'],
+                        'label': lv['label'],
+                        'n':     lv['n'],
+                        'min':   lv.get('min'),
+                        'max':   lv.get('max'),
+                    }
                     for lv in by_level if lv['level'] in tutor_levels
                 }
 
@@ -710,6 +723,9 @@ class DashboardEvaluationReport(models.TransientModel):
                 'groups':          groups_out,
                 'by_level':        by_level,
                 'center_avg':      center_avg,
+                'center_min':      center_min,
+                'center_max':      center_max,
+                'center_n':        len(all_center_vals),
                 'tutor_level_ref': tutor_level_ref,
             })
 
@@ -734,20 +750,30 @@ class DashboardEvaluationReport(models.TransientModel):
         is_tutor = role == ROLE_TUTOR
         allowed  = role_info.get('allowed_group_ids', [])
 
-        domain = [
+        base_domain = [
             ('survey_id',     '=', survey.id),
             ('evaluation_id', '=', evaluation.id),
         ]
         if is_tutor:
             if not allowed:
                 return None
-            domain += [('academic_group_id', 'in', allowed)]
+            domain = base_domain + [('academic_group_id', 'in', allowed)]
+        else:
+            domain = base_domain
 
         responses = self.env['aula_metrics.qualitative_response'].search(
             domain, order='course_level, academic_group_id', limit=500
         )
         if not responses:
             return None
+
+        # Para tutores: cargar todas las respuestas del centro para centro/nivel reales
+        if is_tutor:
+            center_responses = self.env['aula_metrics.qualitative_response'].sudo().search(
+                base_domain, order='course_level, academic_group_id', limit=500
+            )
+        else:
+            center_responses = responses
 
         show_groups = role in (ROLE_ADMIN, ROLE_COUNSELOR, ROLE_TUTOR)
 
@@ -757,11 +783,23 @@ class DashboardEvaluationReport(models.TransientModel):
         group_order = []   # preserves first-seen insertion order
         seen_groups = set()
 
-        for r in responses:
+        # Niveles que corresponden a los grupos del tutor (para filtrar columnas de nivel)
+        tutor_levels_set = set()
+        if is_tutor:
+            for r in responses:
+                if r.course_level:
+                    tutor_levels_set.add(r.course_level)
+
+        for r in center_responses:
             txt = r.response_text or ''
             all_texts.append(txt)
             lvl = r.course_level or 'sin_nivel'
-            level_texts[lvl].append(txt)
+            # Para tutores: solo acumular el nivel propio, no todos los del centro
+            if not is_tutor or lvl in tutor_levels_set:
+                level_texts[lvl].append(txt)
+
+        for r in responses:
+            txt = r.response_text or ''
             if show_groups:
                 gname = r.academic_group_id.name if r.academic_group_id else '—'
                 if gname not in seen_groups:
