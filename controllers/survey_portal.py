@@ -91,19 +91,14 @@ class AulaMetricsSurveyPortal(http.Controller):
                 'error_message': 'La encuesta solicitada no está disponible.'
             })
 
-        # Redirigir si ya existe una respuesta completada en la ventana de evaluación
-        eval_rec = participation.evaluation_id
-        done_domain = [
+        # Redirigir si el alumno ya completó esta encuesta en esta evaluación
+        already_done = request.env['survey.user_input'].sudo().search_count([
             ('partner_id', '=', participation.student_id.id),
             ('survey_id', '=', survey.id),
             ('state', '=', 'done'),
-        ]
-        if eval_rec and eval_rec.date_start:
-            done_domain.append(('create_date', '>=', eval_rec.date_start))
-        if eval_rec and eval_rec.date_end:
-            done_domain.append(('create_date', '<=', eval_rec.date_end))
-
-        if request.env['survey.user_input'].sudo().search_count(done_domain):
+            ('aulametrics_evaluation_id', '=', participation.evaluation_id.id),
+        ])
+        if already_done:
             return request.redirect(f'/evaluacion/{token}?msg=completada')
 
         user_input = request.env['survey.user_input'].get_or_create_for_participation(

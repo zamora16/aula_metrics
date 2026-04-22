@@ -199,16 +199,6 @@ class Evaluation(models.Model):
                     _('La fecha de fin debe ser posterior a la fecha de inicio.')
                 )
     
-    def _check_start_date_not_past(self):
-        """Valida que la fecha de inicio no sea en el pasado al activar/programar"""
-        now = fields.Datetime.now()
-        for evaluation in self:
-            if evaluation.date_start < now:
-                raise ValidationError(
-                    _('No se puede activar una evaluación con fecha de inicio en el pasado. '
-                      'La fecha de inicio debe ser mayor o igual a la fecha actual.')
-                )
-    
     # Acciones de estado
     def action_schedule(self):
         """Programar evaluación (draft -> scheduled)"""
@@ -218,19 +208,19 @@ class Evaluation(models.Model):
         if not self.academic_group_ids:
             raise ValidationError(_('Debe asignar al menos un grupo académico.'))
         
-        # Validar que la fecha de inicio no sea en el pasado
-        self._check_start_date_not_past()
-        
         self.state = 'scheduled'
         self._create_participations()
     
     def action_activate(self):
         """Activar evaluación (scheduled -> active) y enviar emails de notificación"""
         self.ensure_one()
-        # Validar que la fecha de inicio no sea en el pasado
-        self._check_start_date_not_past()
-        
-        self.write({'state': 'active'})
+        now = fields.Datetime.now()
+        # Si se activa antes de la fecha de inicio programada, adelantar date_start
+        # a ahora para que los filtros temporales sean siempre consistentes.
+        vals = {'state': 'active'}
+        if self.date_start > now:
+            vals['date_start'] = now
+        self.write(vals)
         self._send_activation_emails()
     
     def _create_survey_accesses(self):
@@ -549,9 +539,6 @@ class Evaluation(models.Model):
 
         # 1. Activar evaluaciones programadas cuya fecha de inicio ya llegó
         #    y cuya fecha de fin todavía no ha pasado.
-        #    Se activa directamente sin pasar por _check_start_date_not_past(),
-        #    ya que esa validación solo aplica a activaciones manuales: el cron
-        #    activa precisamente evaluaciones con date_start en el pasado.
         scheduled_evaluations = self.search([
             ('state', '=', 'scheduled'),
             ('date_start', '<=', now),

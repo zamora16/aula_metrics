@@ -11,6 +11,14 @@ class SurveyUserInput(models.Model):
     """Hook para capturar cuando un alumno completa una encuesta de AulaMetrics"""
     _inherit = 'survey.user_input'
 
+    aulametrics_evaluation_id = fields.Many2one(
+        'aula_metrics.evaluation',
+        string='Evaluación AulaMetrics',
+        index=True,
+        ondelete='set null',
+        help='Evaluación AulaMetrics a la que pertenece esta respuesta',
+    )
+
     def _mark_done(self):
         """
         Override del método que marca una encuesta como completada.
@@ -74,23 +82,12 @@ class SurveyUserInput(models.Model):
                     # Verificar si completó todos los cuestionarios
                     try:
                         all_surveys = evaluation.survey_ids
-                        domain = [
+                        completed_surveys = self.env['survey.user_input'].search_count([
                             ('partner_id', '=', user_input.partner_id.id),
                             ('survey_id', 'in', all_surveys.ids),
                             ('state', '=', 'done'),
-                        ]
-                        # Siempre acotar por AMBOS extremos de la ventana temporal de
-                        # la evaluación, independientemente del estado.  Sin el filtro
-                        # date_start, las respuestas de evaluaciones anteriores (que
-                        # reutilizan los mismos cuestionarios) se cuentan de más y la
-                        # comprobación `== len(all_surveys)` nunca se cumple.
-                        if evaluation.date_start:
-                            domain.append(('create_date', '>=', evaluation.date_start))
-                        if evaluation.date_end:
-                            domain.append(('create_date', '<=', evaluation.date_end))
-
-                        completed_surveys = self.env['survey.user_input'].search_count(domain)
-
+                            ('aulametrics_evaluation_id', '=', evaluation.id),
+                        ])
                         if completed_surveys == len(all_surveys):
                             participation.action_complete()
                     except Exception as e:
@@ -271,15 +268,12 @@ class SurveyUserInput(models.Model):
         """Obtiene o crea un user_input para la participación dada."""
         SurveyUserInput = self.sudo()
         eval_rec = participation.evaluation_id
-        domain = [
+
+        user_input = SurveyUserInput.search([
             ('partner_id', '=', participation.student_id.id),
             ('survey_id', '=', survey.id),
-        ]
-        if eval_rec and eval_rec.date_start:
-            domain.append(('create_date', '>=', eval_rec.date_start))
-        if eval_rec and eval_rec.date_end:
-            domain.append(('create_date', '<=', eval_rec.date_end))
-        user_input = SurveyUserInput.search(domain, order='create_date desc', limit=1)
+            ('aulametrics_evaluation_id', '=', eval_rec.id),
+        ], order='create_date desc', limit=1)
 
         if not user_input:
             user_input = SurveyUserInput.create({
@@ -287,6 +281,7 @@ class SurveyUserInput(models.Model):
                 'partner_id': participation.student_id.id,
                 'state': 'in_progress',
                 'deadline': eval_rec.date_end,
+                'aulametrics_evaluation_id': eval_rec.id,
             })
         elif user_input.state == 'new':
             user_input.write({'state': 'in_progress'})

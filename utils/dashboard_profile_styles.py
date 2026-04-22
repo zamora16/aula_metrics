@@ -17,7 +17,7 @@ def get_profile_styles():
     return """
         <style>
             /* ── Reset wrapper y ocultación de topbar estándar ─────────────── */
-            .content-wrapper { padding: 0 !important; }
+            .content-wrapper { padding: 0 !important; overflow-x: hidden !important; }
             /* El perfil tiene su propio encabezado sticky; la topbar estándar sobra */
             .main-content > .topbar { display: none !important; }
 
@@ -91,7 +91,7 @@ def get_profile_styles():
                 border-radius: 12px;
                 box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
                 padding: 10px 20px;
-                flex: 1;
+                flex: 1; min-width: 0;
                 display: flex; flex-direction: column; justify-content: center;
                 align-items: center; text-align: center; gap: 2px;
                 transition: box-shadow 0.15s, transform 0.15s;
@@ -210,7 +210,7 @@ def get_profile_styles():
 
             /* ── Grid 2-columnas para filas de cuestionario ───────────────── */
             .am-survey-grid {
-                display: grid; grid-template-columns: 1fr 1fr;
+                display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             }
             .am-survey-grid .am-survey-row:nth-child(2n+1) {
                 border-right: 1px solid var(--am-border);

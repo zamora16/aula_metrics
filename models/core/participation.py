@@ -299,44 +299,26 @@ class Participation(models.Model):
         """Retorna estado de todas las encuestas de la evaluación de esta participación."""
         self.ensure_one()
         surveys = self.evaluation_id.sudo().survey_ids
-        eval_rec = self.evaluation_id
         result = []
 
         for survey in surveys:
-            done_domain = [
+            done_ui = self.env['survey.user_input'].sudo().search([
                 ('partner_id', '=', self.student_id.id),
                 ('survey_id', '=', survey.id),
                 ('state', '=', 'done'),
-            ]
-            if eval_rec and eval_rec.date_start:
-                done_domain.append(('create_date', '>=', eval_rec.date_start))
-            if eval_rec and eval_rec.date_end:
-                done_domain.append(('create_date', '<=', eval_rec.date_end))
-            done_ui = self.env['survey.user_input'].sudo().search(
-                done_domain, order='create_date desc', limit=1
-            )
+                ('aulametrics_evaluation_id', '=', self.evaluation_id.id),
+            ], order='create_date desc', limit=1)
 
-            if done_ui:
-                is_completed = True
-                ui_for_return = done_ui
-            else:
-                fallback_domain = [
-                    ('partner_id', '=', self.student_id.id),
-                    ('survey_id', '=', survey.id),
-                ]
-                if eval_rec and eval_rec.date_start:
-                    fallback_domain.append(('create_date', '>=', eval_rec.date_start))
-                if eval_rec and eval_rec.date_end:
-                    fallback_domain.append(('create_date', '<=', eval_rec.date_end))
-                ui_for_return = self.env['survey.user_input'].sudo().search(
-                    fallback_domain, order='create_date desc', limit=1
-                )
-                is_completed = False
+            any_ui = done_ui or self.env['survey.user_input'].sudo().search([
+                ('partner_id', '=', self.student_id.id),
+                ('survey_id', '=', survey.id),
+                ('aulametrics_evaluation_id', '=', self.evaluation_id.id),
+            ], order='create_date desc', limit=1)
 
             result.append({
                 'survey': survey.sudo(),
-                'completed': is_completed,
-                'user_input': ui_for_return,
+                'completed': bool(done_ui),
+                'user_input': any_ui,
                 'url': f'/evaluacion/{self.evaluation_token}/encuesta/{survey.id}',
             })
 
