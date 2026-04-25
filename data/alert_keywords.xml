@@ -2,177 +2,178 @@
 <odoo>
     <data noupdate="1">
         <!-- Palabras Clave de Alerta por Defecto (Sistema) -->
-        <!-- Las variantes ortográficas y gramaticales se generan automáticamente -->
-        
+        <!-- El sistema genera el plural automáticamente. Las tildes NO necesitan
+             variantes: _normalize_text las elimina en ambos lados al comparar. -->
+
         <!-- Altas: Suicidio y autolesión -->
         <record id="alert_keyword_suicidio" model="aula_metrics.alert_keyword">
             <field name="keyword">suicidio</field>
-            <field name="description">Mención de ideación o planes suicidas (auto-genera: suicida, suicidar, etc.)</field>
+            <field name="description">Ideación suicida. Las formas verbales (suicidarme, suicidarse) y adjetivales (suicida) se añaden como keywords separadas.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">1</field>
         </record>
-        
+
         <record id="alert_keyword_muerte" model="aula_metrics.alert_keyword">
             <field name="keyword">muerte</field>
-            <field name="description">Referencias a muerte (auto-genera: morir, muerto, muriendo, etc.)</field>
+            <field name="description">Referencias a muerte. La forma verbal "morir" se añade como keyword separada.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">2</field>
         </record>
-        
+
         <record id="alert_keyword_matar" model="aula_metrics.alert_keyword">
             <field name="keyword">matar</field>
-            <field name="description">Expresiones de violencia letal (auto-genera: matarme, matarse, etc.)</field>
+            <field name="description">Expresiones de violencia letal dirigida a otros. La forma reflexiva "matarme" se añade como keyword separada.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">3</field>
         </record>
-        
+
         <record id="alert_keyword_cortar" model="aula_metrics.alert_keyword">
             <field name="keyword">cortar</field>
-            <field name="description">Autolesión no letal (auto-genera: cortarme, cortarse, etc.)</field>
+            <field name="description">Puede indicar autolesión. La forma reflexiva "cortarme" se añade como keyword separada.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">4</field>
         </record>
-        
+
         <!-- Altas: Salud mental -->
         <record id="alert_keyword_depresion" model="aula_metrics.alert_keyword">
             <field name="keyword">depresión</field>
-            <field name="description">Mención de depresión clínica (auto-genera: depresion, depresivo, deprimido, etc.)</field>
+            <field name="description">Mención de depresión clínica. Las formas adjetivales (deprimido, deprimida) y coloquiales (depre) se añaden como keywords separadas.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">10</field>
         </record>
-        
+
         <record id="alert_keyword_ansiedad" model="aula_metrics.alert_keyword">
             <field name="keyword">ansiedad</field>
-            <field name="description">Referencias a ansiedad clínica (auto-genera: ansioso, ansiosa, etc.)</field>
+            <field name="description">Referencias a ansiedad clínica. La forma "angustia" se añade como keyword separada.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">11</field>
         </record>
-        
+
         <record id="alert_keyword_panico" model="aula_metrics.alert_keyword">
             <field name="keyword">pánico</field>
-            <field name="description">Crisis de pánico (auto-genera: panico, pánicos, etc.)</field>
+            <field name="description">Crisis de pánico.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">12</field>
         </record>
-        
+
         <!-- Altas: Acoso y violencia -->
         <record id="alert_keyword_acoso" model="aula_metrics.alert_keyword">
             <field name="keyword">acoso</field>
-            <field name="description">Situaciones de acoso escolar (auto-genera: acosar, acosado, acosador, etc.)</field>
+            <field name="description">Situaciones de acoso escolar. Las formas participiales (acosado, acosada) se añaden como keywords separadas.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">20</field>
         </record>
-        
+
         <record id="alert_keyword_bullying" model="aula_metrics.alert_keyword">
             <field name="keyword">bullying</field>
-            <field name="description">Término inglés para acoso (auto-genera: bully, bullyng)</field>
+            <field name="description">Término inglés para acoso escolar. La variante "ciberbullying" se añade como keyword separada.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">21</field>
         </record>
-        
+
         <record id="alert_keyword_pegar" model="aula_metrics.alert_keyword">
             <field name="keyword">pegar</field>
-            <field name="description">Violencia física (auto-genera: pego, pegado, pegando, etc.)</field>
+            <field name="description">Violencia física directa.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">22</field>
         </record>
-        
+
         <record id="alert_keyword_golpear" model="aula_metrics.alert_keyword">
             <field name="keyword">golpear</field>
-            <field name="description">Violencia física (auto-genera: golpe, golpeado, etc.)</field>
+            <field name="description">Violencia física. La forma nominal "paliza" se añade como keyword separada.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">23</field>
         </record>
-        
+
         <record id="alert_keyword_amenaza" model="aula_metrics.alert_keyword">
             <field name="keyword">amenaza</field>
-            <field name="description">Amenazas o intimidación (auto-genera: amenazar, amenazado, etc.)</field>
+            <field name="description">Amenazas o intimidación. Las formas participiales (amenazado, amenazada) se añaden como keywords separadas.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">24</field>
         </record>
-        
+
         <!-- Moderadas: Aislamiento social y emocional -->
         <record id="alert_keyword_soledad" model="aula_metrics.alert_keyword">
             <field name="keyword">soledad</field>
-            <field name="description">Aislamiento social (auto-genera: solo, sola, solos, etc.)</field>
+            <field name="description">Aislamiento social. Las frases directas (me siento solo, me siento sola) se añaden como keywords separadas.</field>
             <field name="severity">moderate</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">30</field>
         </record>
-        
+
         <record id="alert_keyword_tristeza" model="aula_metrics.alert_keyword">
             <field name="keyword">tristeza</field>
-            <field name="description">Estado emocional negativo (auto-genera: triste, tristes, etc.)</field>
+            <field name="description">Estado emocional negativo. La forma adjetival "triste" se añade como keyword separada.</field>
             <field name="severity">moderate</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">31</field>
         </record>
-        
+
         <record id="alert_keyword_llorar" model="aula_metrics.alert_keyword">
             <field name="keyword">llorar</field>
-            <field name="description">Llanto frecuente (auto-genera: lloro, llorando, etc.)</field>
+            <field name="description">Llanto frecuente. Las formas conjugadas (lloro, llorando) se añaden como keywords separadas.</field>
             <field name="severity">moderate</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">32</field>
         </record>
-        
+
         <record id="alert_keyword_ayuda" model="aula_metrics.alert_keyword">
             <field name="keyword">ayuda</field>
-            <field name="description">Solicitud explícita de ayuda</field>
+            <field name="description">Solicitud explícita de ayuda.</field>
             <field name="severity">moderate</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">33</field>
         </record>
-        
+
         <!-- Altas: Abuso y maltrato -->
         <record id="alert_keyword_maltrato" model="aula_metrics.alert_keyword">
             <field name="keyword">maltrato</field>
-            <field name="description">Maltrato físico o psicológico (auto-genera: maltratar, maltratado, etc.)</field>
+            <field name="description">Maltrato físico o psicológico.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">40</field>
         </record>
-        
+
         <record id="alert_keyword_abuso" model="aula_metrics.alert_keyword">
             <field name="keyword">abuso</field>
-            <field name="description">Abuso de cualquier tipo (auto-genera: abusar, abusado, abusivo, etc.)</field>
+            <field name="description">Abuso de cualquier tipo. Las formas verbales (abusar, abusada) y frases (abuso sexual) se añaden como keywords separadas.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">41</field>
         </record>
-        
+
         <record id="alert_keyword_violacion" model="aula_metrics.alert_keyword">
             <field name="keyword">violación</field>
-            <field name="description">Agresión sexual grave (auto-genera: violacion sin tilde)</field>
+            <field name="description">Agresión sexual grave.</field>
             <field name="severity">high</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">42</field>
         </record>
-        
+
         <!-- Bajas: Sentimientos negativos generales -->
         <record id="alert_keyword_miedo" model="aula_metrics.alert_keyword">
             <field name="keyword">miedo</field>
-            <field name="description">Miedo o temor (auto-genera: miedos, miedoso, temer, etc.)</field>
+            <field name="description">Miedo o temor.</field>
             <field name="severity">low</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">50</field>
         </record>
-        
+
         <record id="alert_keyword_odio" model="aula_metrics.alert_keyword">
             <field name="keyword">odio</field>
-            <field name="description">Sentimientos intensos de odio (auto-genera: odiar, odiado, etc.)</field>
+            <field name="description">Sentimientos intensos de odio.</field>
             <field name="severity">low</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">51</field>
@@ -180,11 +181,352 @@
         
         <record id="alert_keyword_preocupado" model="aula_metrics.alert_keyword">
             <field name="keyword">preocupado</field>
-            <field name="description">Preocupación excesiva</field>
+            <field name="description">Preocupación excesiva (forma masculina)</field>
             <field name="severity">low</field>
             <field name="is_system_default" eval="True"/>
             <field name="sequence">52</field>
         </record>
-        
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             NUEVAS ENTRADAS v1.0.4
+             Cubren formas verbales y participiales que los términos raíz
+             existentes no detectan por el matching con \b word boundary.
+             ═══════════════════════════════════════════════════════════════ -->
+
+        <!-- Altas: Suicidio — formas verbales y frases -->
+        <record id="alert_keyword_suicidarme" model="aula_metrics.alert_keyword">
+            <field name="keyword">suicidarme</field>
+            <field name="description">Ideación suicida en primera persona: "quiero suicidarme"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="alert_keyword_suicidarse" model="aula_metrics.alert_keyword">
+            <field name="keyword">suicidarse</field>
+            <field name="description">Ideación suicida en tercera persona: "quería suicidarse"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="alert_keyword_suicida" model="aula_metrics.alert_keyword">
+            <field name="keyword">suicida</field>
+            <field name="description">Adjetivo o sustantivo: "pensamientos suicidas", "soy suicida"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="alert_keyword_morir" model="aula_metrics.alert_keyword">
+            <field name="keyword">morir</field>
+            <field name="description">Deseo de muerte: "quiero morir", "prefiero morir"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">2</field>
+        </record>
+
+        <record id="alert_keyword_no_quiero_vivir" model="aula_metrics.alert_keyword">
+            <field name="keyword">no quiero vivir</field>
+            <field name="description">Frase de riesgo vital directo</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">2</field>
+        </record>
+
+        <record id="alert_keyword_quitarme_la_vida" model="aula_metrics.alert_keyword">
+            <field name="keyword">quitarme la vida</field>
+            <field name="description">Frase de riesgo vital directo: "pienso en quitarme la vida"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">2</field>
+        </record>
+
+        <record id="alert_keyword_quiero_desaparecer" model="aula_metrics.alert_keyword">
+            <field name="keyword">quiero desaparecer</field>
+            <field name="description">Frase frecuente de ideación suicida indirecta en adolescentes</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">2</field>
+        </record>
+
+        <record id="alert_keyword_matarme" model="aula_metrics.alert_keyword">
+            <field name="keyword">matarme</field>
+            <field name="description">Violencia autodirigida: "quiero matarme". Más específico que "matar"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">3</field>
+        </record>
+
+        <!-- Altas: Autolesión — formas verbales -->
+        <record id="alert_keyword_cortarme" model="aula_metrics.alert_keyword">
+            <field name="keyword">cortarme</field>
+            <field name="description">Autolesión: "me quiero cortar", "me corté". Más específico que "cortar"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">4</field>
+        </record>
+
+        <record id="alert_keyword_autolesion" model="aula_metrics.alert_keyword">
+            <field name="keyword">autolesión</field>
+            <field name="description">Término clínico de autolesión no suicida</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">4</field>
+        </record>
+
+        <record id="alert_keyword_hacerme_dano" model="aula_metrics.alert_keyword">
+            <field name="keyword">hacerme daño</field>
+            <field name="description">Frase de autolesión genérica: "quiero hacerme daño"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">4</field>
+        </record>
+
+        <!-- Altas: Acoso — formas participiales y adjetivales -->
+        <record id="alert_keyword_acosado" model="aula_metrics.alert_keyword">
+            <field name="keyword">acosado</field>
+            <field name="description">Forma participial masculina: "me siento acosado", "fui acosado"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">20</field>
+        </record>
+
+        <record id="alert_keyword_acosada" model="aula_metrics.alert_keyword">
+            <field name="keyword">acosada</field>
+            <field name="description">Forma participial femenina: "me siento acosada", "fui acosada"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">20</field>
+        </record>
+
+        <record id="alert_keyword_insulto" model="aula_metrics.alert_keyword">
+            <field name="keyword">insulto</field>
+            <field name="description">Insultos verbales como forma de acoso. El plural "insultos" se genera automáticamente</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">21</field>
+        </record>
+
+        <record id="alert_keyword_insultar" model="aula_metrics.alert_keyword">
+            <field name="keyword">insultar</field>
+            <field name="description">Verbo de acoso verbal: "me insultan", "me insultaron"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">21</field>
+        </record>
+
+        <record id="alert_keyword_ciberbullying" model="aula_metrics.alert_keyword">
+            <field name="keyword">ciberbullying</field>
+            <field name="description">Acoso digital, variante ortográfica alternativa de cyberbullying</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">21</field>
+        </record>
+
+        <record id="alert_keyword_paliza" model="aula_metrics.alert_keyword">
+            <field name="keyword">paliza</field>
+            <field name="description">Violencia física grave: "me dieron una paliza". Lenguaje adolescente frecuente</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">22</field>
+        </record>
+
+        <record id="alert_keyword_amenazado" model="aula_metrics.alert_keyword">
+            <field name="keyword">amenazado</field>
+            <field name="description">Forma participial masculina: "me han amenazado", "me siento amenazado"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">24</field>
+        </record>
+
+        <record id="alert_keyword_amenazada" model="aula_metrics.alert_keyword">
+            <field name="keyword">amenazada</field>
+            <field name="description">Forma participial femenina: "me han amenazado", "me siento amenazada"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">24</field>
+        </record>
+
+        <!-- Altas: Abuso — formas verbales -->
+        <record id="alert_keyword_abusar" model="aula_metrics.alert_keyword">
+            <field name="keyword">abusar</field>
+            <field name="description">Verbo de abuso: "abusaron de mí", "empezó a abusar"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">41</field>
+        </record>
+
+        <record id="alert_keyword_abusada" model="aula_metrics.alert_keyword">
+            <field name="keyword">abusada</field>
+            <field name="description">Forma participial femenina: "fui abusada", "me siento abusada"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">41</field>
+        </record>
+
+        <record id="alert_keyword_me_tocaron" model="aula_metrics.alert_keyword">
+            <field name="keyword">me tocaron</field>
+            <field name="description">Frase habitual con la que menores reportan abuso sexual</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">42</field>
+        </record>
+
+        <record id="alert_keyword_abuso_sexual" model="aula_metrics.alert_keyword">
+            <field name="keyword">abuso sexual</field>
+            <field name="description">Denominación explícita de abuso sexual</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">42</field>
+        </record>
+
+        <!-- Moderadas: Salud mental — formas adjetivales y coloquiales -->
+        <record id="alert_keyword_deprimida" model="aula_metrics.alert_keyword">
+            <field name="keyword">deprimida</field>
+            <field name="description">Adjetivo femenino: "me siento deprimida", "estoy deprimida"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="alert_keyword_deprimido" model="aula_metrics.alert_keyword">
+            <field name="keyword">deprimido</field>
+            <field name="description">Adjetivo masculino: "me siento deprimido", "estoy deprimido"</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="alert_keyword_depre" model="aula_metrics.alert_keyword">
+            <field name="keyword">depre</field>
+            <field name="description">Forma coloquial de depresión, muy frecuente en lenguaje adolescente</field>
+            <field name="severity">high</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="alert_keyword_angustia" model="aula_metrics.alert_keyword">
+            <field name="keyword">angustia</field>
+            <field name="description">Estado emocional de angustia, distinto y más agudo que ansiedad en uso cotidiano</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">11</field>
+        </record>
+
+        <record id="alert_keyword_crisis" model="aula_metrics.alert_keyword">
+            <field name="keyword">crisis</field>
+            <field name="description">Crisis emocional o de ansiedad: "entro en crisis", "tuve una crisis"</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">12</field>
+        </record>
+
+        <!-- Moderadas: Aislamiento social -->
+        <record id="alert_keyword_excluido" model="aula_metrics.alert_keyword">
+            <field name="keyword">excluido</field>
+            <field name="description">Exclusión social masculina: "me siento excluido", "me dejan excluido"</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">30</field>
+        </record>
+
+        <record id="alert_keyword_excluida" model="aula_metrics.alert_keyword">
+            <field name="keyword">excluida</field>
+            <field name="description">Exclusión social femenina: "me siento excluida", "me dejan excluida"</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">30</field>
+        </record>
+
+        <record id="alert_keyword_me_siento_solo" model="aula_metrics.alert_keyword">
+            <field name="keyword">me siento solo</field>
+            <field name="description">Frase de aislamiento masculina, alta especificidad en contexto escolar</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">30</field>
+        </record>
+
+        <record id="alert_keyword_me_siento_sola" model="aula_metrics.alert_keyword">
+            <field name="keyword">me siento sola</field>
+            <field name="description">Frase de aislamiento femenina, alta especificidad en contexto escolar</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">30</field>
+        </record>
+
+        <!-- Bajas: Sentimientos negativos — formas que los raíces existentes no cubren -->
+        <record id="alert_keyword_triste" model="aula_metrics.alert_keyword">
+            <field name="keyword">triste</field>
+            <field name="description">La forma adjetival más frecuente. "tristeza" (ya existente) no la detecta</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">31</field>
+        </record>
+
+        <record id="alert_keyword_lloro" model="aula_metrics.alert_keyword">
+            <field name="keyword">lloro</field>
+            <field name="description">Primera persona del presente: "lloro todos los días". "llorar" no la detecta</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">32</field>
+        </record>
+
+        <record id="alert_keyword_llorando" model="aula_metrics.alert_keyword">
+            <field name="keyword">llorando</field>
+            <field name="description">Gerundio: "me paso el día llorando". "llorar" no lo detecta</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">32</field>
+        </record>
+
+        <record id="alert_keyword_desesperado" model="aula_metrics.alert_keyword">
+            <field name="keyword">desesperado</field>
+            <field name="description">Desesperanza masculina: "me siento desesperado", "estoy desesperado"</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">53</field>
+        </record>
+
+        <record id="alert_keyword_desesperada" model="aula_metrics.alert_keyword">
+            <field name="keyword">desesperada</field>
+            <field name="description">Desesperanza femenina: "me siento desesperada", "estoy desesperada"</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">53</field>
+        </record>
+
+        <record id="alert_keyword_culpa" model="aula_metrics.alert_keyword">
+            <field name="keyword">culpa</field>
+            <field name="description">Sentimiento de culpa, frecuente en víctimas de acoso y abuso</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">54</field>
+        </record>
+
+        <record id="alert_keyword_verguenza" model="aula_metrics.alert_keyword">
+            <field name="keyword">vergüenza</field>
+            <field name="description">Vergüenza o humillación, frecuente en situaciones de acoso</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">54</field>
+        </record>
+
+        <record id="alert_keyword_preocupada" model="aula_metrics.alert_keyword">
+            <field name="keyword">preocupada</field>
+            <field name="description">Forma femenina de preocupado (ya existente)</field>
+            <field name="severity">low</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">52</field>
+        </record>
+
+        <record id="alert_keyword_no_puedo_mas" model="aula_metrics.alert_keyword">
+            <field name="keyword">no puedo más</field>
+            <field name="description">Frase de agotamiento y desesperanza muy frecuente en crisis emocionales</field>
+            <field name="severity">moderate</field>
+            <field name="is_system_default" eval="True"/>
+            <field name="sequence">53</field>
+        </record>
+
     </data>
 </odoo>

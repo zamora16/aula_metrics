@@ -24,7 +24,12 @@ class QualitativeResponse(models.Model):
             c for c in unicodedata.normalize('NFD', text)
             if unicodedata.category(c) != 'Mn'
         ).lower()
-    
+
+    @api.depends('response_text')
+    def _compute_word_count(self):
+        for record in self:
+            record.word_count = len(record.response_text.split()) if record.response_text else 0
+
     # Relaciones
     student_id = fields.Many2one('res.partner', string='Estudiante', required=True, ondelete='cascade', index=True)
     academic_group_id = fields.Many2one('aula_metrics.academic_group', string='Grupo Académico', required=True, index=True)
@@ -57,20 +62,22 @@ class QualitativeResponse(models.Model):
     @api.depends('response_text')
     def _compute_alert_keywords(self):
         alert_keywords = self.env['aula_metrics.alert_keyword'].search([('active', '=', True)])
+        # Compile all patterns once outside the record loop.
+        # _normalize_text already handles accents on both sides, so keywords
+        # stored with or without tildes all resolve to the same pattern.
+        compiled = [
+            (kw, re.compile(r'\b' + re.escape(self._normalize_text(kw.keyword)) + r'\b'))
+            for kw in alert_keywords
+        ]
         for record in self:
-            if not record.response_text or not alert_keywords:
+            if not record.response_text or not compiled:
                 record.has_alert_keywords = False
                 record.detected_keyword_ids = [(5, 0, 0)]
                 continue
             text_normalized = self._normalize_text(record.response_text)
-            found = alert_keywords.filtered(
-                lambda k: bool(re.search(
-                    r'\b' + re.escape(self._normalize_text(k.keyword)) + r'\b',
-                    text_normalized
-                ))
-            )
-            record.has_alert_keywords = bool(found)
-            record.detected_keyword_ids = [(6, 0, found.ids)] if found else [(5, 0, 0)]
+            matched_ids = [kw.id for kw, pattern in compiled if pattern.search(text_normalized)]
+            record.has_alert_keywords = bool(matched_ids)
+            record.detected_keyword_ids = [(6, 0, matched_ids)] if matched_ids else [(5, 0, 0)]
     
     @api.model
     def get_for_dashboard(self, role_info, eval_ids=None):
@@ -160,6 +167,13 @@ class AlertKeyword(models.Model):
                                        ondelete='cascade', readonly=True,
                                        help='Palabra clave de la que se generó esta variante')
     
+    child_keyword_ids = fields.One2many(
+        'aula_metrics.alert_keyword',
+        'parent_keyword_id',
+        string='Variantes Generadas',
+        readonly=True,
+    )
+
     active = fields.Boolean('Activa', default=True)
     sequence = fields.Integer('Secuencia', default=10)
     
@@ -179,96 +193,64 @@ class AlertKeyword(models.Model):
     def write(self, vals):
         """Al actualizar keyword, regenerar variantes."""
         res = super().write(vals)
-        
         if 'keyword' in vals:
             for record in self:
                 if not record.is_variant and not record.is_system_default:
-                    # Eliminar variantes antiguas
+                    # Compute new variants BEFORE touching the DB so that if
+                    # _collect_variant_words raises, old variants are still intact.
+                    new_variants = record._collect_variant_words()
                     self.env['aula_metrics.alert_keyword'].search([
                         ('parent_keyword_id', '=', record.id)
                     ]).unlink()
-                    # Generar nuevas variantes
-                    record._generate_variants()
-        
+                    record._persist_variants(new_variants)
         return res
-    
-    def _generate_variants(self):
-        """
-        Genera variantes automáticas de la palabra clave:
-        1. Variantes ortográficas (con/sin tildes)
-        2. Variantes gramaticales comunes (verbos, sustantivos)
-        """
+
+    def _collect_variant_words(self):
+        """Pure computation: returns the set of variant strings for this keyword.
+        No DB writes — safe to call before unlinking old variants."""
         self.ensure_one()
-        
-        variants = set()
         keyword_lower = self.keyword.lower()
-        
-        # 1. Variantes ortográficas (tildes)
-        variants.update(self._generate_accent_variants(keyword_lower))
-        
-        # 2. Variantes gramaticales (formas verbales, plural, etc)
-        variants.update(self._generate_grammatical_variants(keyword_lower))
-        
-        # Eliminar la palabra original y variantes vacías
+        # Accent variants are intentionally NOT generated here.
+        # _normalize_text strips diacritics on both the response text and the
+        # keyword at match time, so accent-only variants add no detection value
+        # while polluting the keyword table with orthographically invalid words.
+        variants = set(self._generate_grammatical_variants(keyword_lower))
         variants.discard(keyword_lower)
-        variants = {v for v in variants if v and len(v) > 2}
-        
-        # Crear registros de variantes
+        return {v for v in variants if v and len(v) > 2}
+
+    def _persist_variants(self, variants):
+        """Creates variant records for the given set of keyword strings."""
+        self.ensure_one()
         for variant in variants:
-            # Verificar si ya existe (para evitar duplicados)
-            existing = self.env['aula_metrics.alert_keyword'].search([
-                ('keyword', '=', variant)
-            ], limit=1)
-            
-            if not existing:
-                try:
-                    self.env['aula_metrics.alert_keyword'].create({
-                        'keyword': variant,
-                        'description': f'Variante automática de "{self.keyword}"',
-                        'severity': self.severity,
-                        'is_variant': True,
-                        'parent_keyword_id': self.id,
-                        'active': self.active,
-                        'sequence': self.sequence + 1
-                    })
-                except Exception as e:
-                    # Si falla (ej: duplicado por constraint), continuar
-                    _logger.debug(
-                        '_generate_variants: no se pudo crear variante "%s" para keyword %s: %s',
-                        variant, self.id, e,
-                    )
-    
-    def _generate_accent_variants(self, word):
-        """Genera variantes con/sin tildes."""
-        variants = set()
-        
-        # Mapa de caracteres con tilde → sin tilde
-        accent_map = {
-            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
-            'ü': 'u', 'ñ': 'n'
-        }
-        
-        # Versión sin tildes
-        no_accent = word
-        for accented, plain in accent_map.items():
-            no_accent = no_accent.replace(accented, plain)
-        
-        if no_accent != word:
-            variants.add(no_accent)
-        
-        # Versión con tildes comunes (solo si no tiene)
-        if 'a' in word or 'e' in word or 'i' in word or 'o' in word or 'u' in word:
-            # Para palabras cortas, generar variantes con tildes comunes
-            for vowel, accented in [('a', 'á'), ('e', 'é'), ('i', 'í'), ('o', 'ó'), ('u', 'ú')]:
-                if vowel in word:
-                    variants.add(word.replace(vowel, accented, 1))
-        
-        return variants
-    
+            if self.env['aula_metrics.alert_keyword'].search(
+                [('keyword', '=', variant)], limit=1
+            ):
+                continue
+            try:
+                self.env['aula_metrics.alert_keyword'].create({
+                    'keyword': variant,
+                    'description': f'Variante automática de "{self.keyword}"',
+                    'severity': self.severity,
+                    'is_variant': True,
+                    'parent_keyword_id': self.id,
+                    'active': self.active,
+                    'sequence': self.sequence + 1,
+                })
+            except Exception as e:
+                # Only expected cause: unique constraint race between processes.
+                _logger.warning(
+                    '_persist_variants: no se pudo crear variante "%s" para keyword %s: %s',
+                    variant, self.id, e,
+                )
+
+    def _generate_variants(self):
+        """Genera y persiste variantes automáticas de esta palabra clave."""
+        self.ensure_one()
+        self._persist_variants(self._collect_variant_words())
+
     def _generate_grammatical_variants(self, word):
         """Genera el plural simple de la palabra (añade 's' o 'es')."""
         variants = set()
-        # Plurales simples (agregar 's' o 'es')
         if not word.endswith('s'):
             if word.endswith(('a', 'e', 'i', 'o', 'u')):
                 variants.add(word + 's')

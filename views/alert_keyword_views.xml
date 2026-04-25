@@ -57,17 +57,18 @@
                     <notebook invisible="is_variant">
                         <page string="Variantes Automáticas" name="variants">
                             <div class="alert alert-info" role="alert">
-                                <strong>ℹ️ Generación Automática de Variantes</strong><br/>
-                                Al guardar esta palabra, el sistema genera automáticamente variantes ortográficas (con/sin tildes)
-                                y gramaticales (verbos, plurales, etc.) para mejorar la detección.
+                                <strong>Generación Automática de Variantes</strong><br/>
+                                Al guardar esta palabra, el sistema genera su plural automáticamente
+                                (añade 's' o 'es'). Las tildes no requieren variantes: el motor de
+                                detección normaliza texto y keywords por igual antes de comparar.
                             </div>
-                            <field name="parent_keyword_id" invisible="1"/>
-                            <field name="id" invisible="1"/>
-                            <!-- Mostrar variantes de esta palabra -->
-                            <field name="id" invisible="1"/>
-                            <group>
-                                <field name="id" invisible="1"/>
-                            </group>
+                            <field name="child_keyword_ids" readonly="1">
+                                <tree>
+                                    <field name="keyword"/>
+                                    <field name="severity"/>
+                                    <field name="active" widget="boolean_toggle"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>
