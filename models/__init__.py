@@ -12,3 +12,4 @@ from . import core
 from . import survey
 from . import dashboard
 from . import metrics
+from . import report_weasyprint
