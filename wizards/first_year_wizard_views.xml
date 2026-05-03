@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_first_year_wizard_form" model="ir.ui.view">
+        <field name="name">aula_metrics.first_year_wizard.form</field>
+        <field name="model">aula_metrics.first_year_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Configuración Inicial del Centro">
+                <sheet>
+                    <field name="step" invisible="1"/>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         PASO 1 — Datos del primer curso académico
+                    ══════════════════════════════════════════════════════ -->
+                    <div invisible="step != '1'">
+                        <h3 class="mb-3">Paso 1 de 2 — Datos del primer curso académico</h3>
+                        <div class="alert alert-info mb-3">
+                            <strong>Bienvenido/a a AulaMetrics.</strong>
+                            Este asistente te guiará para crear el primer curso académico
+                            y sus grupos. Al finalizar podrás importar el listado de alumnos
+                            desde un fichero CSV.
+                        </div>
+                        <group string="Identificación del curso">
+                            <field name="year_name" placeholder="Ej: 2025-2026"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         PASO 2 — Grupos y tutores
+                    ══════════════════════════════════════════════════════ -->
+                    <div invisible="step != '2'">
+                        <h3 class="mb-3">Paso 2 de 2 — Grupos y tutores</h3>
+                        <div class="alert alert-info mb-2">
+                            La tabla muestra una estructura típica de instituto.
+                            <ul class="mb-0 mt-1">
+                                <li><strong>Edita o elimina</strong> las filas que no correspondan a tu centro.</li>
+                                <li><strong>Añade filas</strong> para grupos adicionales
+                                    (ej: Diversificación, FP Básica…).</li>
+                                <li>El <strong>tutor/a</strong> es opcional: puedes asignarlo ahora o más tarde.</li>
+                            </ul>
+                        </div>
+                        <field name="group_line_ids" nolabel="1">
+                            <tree editable="bottom" string="Grupos del curso">
+                                <field name="name" string="Nombre del grupo"
+                                       placeholder="Ej: 1º ESO A"/>
+                                <field name="course_level" string="Nivel"/>
+                                <field name="tutor_id" string="Tutor/a"
+                                       options="{'no_create': True, 'no_quick_create': True}"/>
+                            </tree>
+                        </field>
+                    </div>
+                </sheet>
+
+                <footer>
+                    <!-- Paso 1 -->
+                    <button name="action_step1_to_2" type="object"
+                            string="Siguiente → Grupos" class="btn-primary"
+                            invisible="step != '1'"/>
+
+                    <!-- Paso 2 -->
+                    <button name="action_confirm" type="object"
+                            string="Crear curso e importar alumnos" class="btn-primary"
+                            invisible="step != '2'"/>
+                    <button name="action_step2_to_1" type="object"
+                            string="← Anterior" class="btn-secondary"
+                            invisible="step != '2'"/>
+
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_first_year_wizard" model="ir.actions.act_window">
+        <field name="name">Configuración Inicial</field>
+        <field name="res_model">aula_metrics.first_year_wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Acción inteligente: abre el wizard solo si no hay grupos ya configurados -->
+    <record id="action_first_year_wizard_smart" model="ir.actions.server">
+        <field name="name">Configuración Inicial</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="code">
+count = env['aula_metrics.academic_group'].search_count([])
+if count:
+    action = {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+            'title': 'Sistema ya configurado',
+            'message': 'Ya existen grupos académicos en AulaMetrics. Esta utilidad es solo para la puesta en marcha inicial.',
+            'type': 'warning',
+            'sticky': True,
+        }
+    }
+else:
+    action = env.ref('aula_metrics.action_first_year_wizard').read()[0]
+        </field>
+    </record>
+</odoo>

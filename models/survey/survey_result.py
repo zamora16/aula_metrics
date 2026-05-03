@@ -122,6 +122,15 @@ class SurveyResult(models.Model):
              'no cambia al cambiar de curso o grupo).'
     )
 
+    academic_year_id = fields.Many2one(
+        'aula_metrics.academic_year',
+        string='Curso Académico',
+        store=True,
+        readonly=True,
+        ondelete='set null',
+        help='Curso académico en el momento de completar el cuestionario (dato histórico).'
+    )
+
     # ──────────────────────────────────────────────
     # Computed
     # ──────────────────────────────────────────────
@@ -271,9 +280,12 @@ class SurveyResult(models.Model):
             if 'academic_group_id' not in vals and vals.get('student_id'):
                 student = self.env['res.partner'].browse(vals['student_id'])
                 vals['academic_group_id'] = student.academic_group_id.id or False
-            if 'evaluation_name_snapshot' not in vals and vals.get('evaluation_id'):
+            if vals.get('evaluation_id'):
                 evaluation = self.env['aula_metrics.evaluation'].browse(vals['evaluation_id'])
-                vals['evaluation_name_snapshot'] = evaluation.name or ''
+                if 'evaluation_name_snapshot' not in vals:
+                    vals['evaluation_name_snapshot'] = evaluation.name or ''
+                if 'academic_year_id' not in vals:
+                    vals['academic_year_id'] = evaluation.academic_year_id.id or False
         return super().create(vals_list)
 
     @api.model
@@ -326,9 +338,14 @@ class SurveyResult(models.Model):
             page_data['evaluation_name'] = ev_name
             pages.append(page_data)
 
+        # El grupo se extrae del primer resultado (dato histórico congelado), no del
+        # alumno en curso, para que informes de años pasados muestren el grupo correcto.
+        first_group = results[0].academic_group_id.name if results else None
+        student_group = first_group or (student.academic_group_id.name if student.academic_group_id else '')
+
         return {
             'student_name':    student.name or '',
-            'student_group':   student.academic_group_id.name if student.academic_group_id else '',
+            'student_group':   student_group,
             'generated_date':  _date.today().strftime('%d/%m/%Y'),
             'evaluation_names': eval_names_seen,
             'survey_titles':   survey_titles_seen,

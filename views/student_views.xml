@@ -8,16 +8,16 @@
             <tree string="Alumnos"
                   editable="top"
                   decoration-muted="not academic_group_id">
-                <field name="name" string="Nombre"/>
+                <field name="student_firstname" string="Nombre"/>
+                <field name="student_lastname" string="Apellidos"/>
+                <field name="name" invisible="1"/>
+                <field name="gender" string="Género"/>
                 <field name="academic_group_id"
                        string="Grupo"
                        options="{'no_create': True}"
                        domain="[('active', '=', True)]"/>
-                <field name="gender" string="Género"/>
-                <field name="age" string="Edad" readonly="1"/>
-                <field name="student_code" string="Código" optional="show" readonly="1"/>
-                <field name="email" optional="show"/>
-                <field name="phone" optional="hide"/>
+                <field name="email" string="Email"/>
+                <field name="birthdate" string="F. Nacimiento"/>
             </tree>
         </field>
     </record>
@@ -32,15 +32,18 @@
                     <field name="image_1920" widget="image"
                            class="oe_avatar" options="{'preview_image': 'image_128'}"/>
                     <div class="oe_title">
-                        <label for="name"/>
+                        <label for="student_lastname" string="Apellidos"/>
                         <h1>
-                            <field name="name" placeholder="Nombre completo del alumno"/>
+                            <field name="student_lastname"
+                                   placeholder="Apellidos del alumno"/>
                         </h1>
-                        <div>
-                            <field name="student_code" readonly="1"
-                                   class="o_field_char"
-                                   invisible="not student_code"/>
-                        </div>
+                        <label for="student_firstname" string="Nombre"/>
+                        <h2 class="mt-0">
+                            <field name="student_firstname"
+                                   placeholder="Nombre del alumno"/>
+                        </h2>
+                        <!-- name se construye automáticamente vía onchange -->
+                        <field name="name" invisible="1"/>
                     </div>
                     <group>
                         <group string="Datos Académicos">
@@ -52,13 +55,12 @@
                         <group string="Datos Personales">
                             <field name="gender"/>
                             <field name="birthdate"/>
-                            <field name="age" string="Edad actual"/>
+                            <field name="age" string="Edad actual" readonly="1" invisible="not birthdate"/>
                         </group>
                     </group>
                     <group>
                         <group string="Contacto">
                             <field name="email" widget="email"/>
-                            <field name="phone" widget="phone"/>
                         </group>
                     </group>
                 </sheet>
@@ -104,8 +106,12 @@
         <field name="name">Alumnos</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_student_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_student_form')})]"/>
+        <field name="search_view_id" ref="view_student_search"/>
         <field name="domain">[('is_student', '=', True)]</field>
-        <field name="context">{'default_customer_rank': 0, 'default_supplier_rank': 0, 'search_default_active_students': 1}</field>
+        <field name="context">{'search_default_active_students': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Añadir el primer alumno
@@ -113,6 +119,76 @@
             <p>
                 Los alumnos se identifican de forma permanente con su código único (ALU-XXXXX),
                 que no cambia aunque pasen de grupo o de curso académico.
+            </p>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         Vista especial: alumnos sin grupo activo (pendientes de reasignar)
+    ══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Lista simplificada: nombre, grupo anterior (archivado), asignar nuevo grupo -->
+    <record id="view_student_no_group_tree" model="ir.ui.view">
+        <field name="name">aula_metrics.student.no_group.tree</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <tree string="Alumnos sin grupo activo"
+                  editable="top"
+                  decoration-warning="active and not academic_group_id"
+                  decoration-muted="not active">
+                <field name="active" string="Activo"
+                       help="Desmarcado = alumno archivado (p.ej. graduado). Actívalo aquí si repite curso y asígnale el nuevo grupo."/>
+                <field name="name" string="Alumno" readonly="1"/>
+                <field name="student_code" string="Código" readonly="1"/>
+                <field name="academic_group_id"
+                       string="Nuevo grupo"
+                       options="{'no_create': True}"
+                       domain="[('active', '=', True)]"
+                       context="{'active_test': True}"
+                       help="Selecciona el grupo del nuevo curso para reasignar al alumno."/>
+                <field name="gender" string="Género" readonly="1" optional="hide"/>
+                <field name="age" string="Edad" readonly="1" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Búsqueda para la vista de sin grupo -->
+    <record id="view_student_no_group_search" model="ir.ui.view">
+        <field name="name">aula_metrics.student.no_group.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search string="Buscar alumnos sin grupo activo">
+                <field name="name" string="Nombre"/>
+                <field name="student_code" string="Código"/>
+                <field name="academic_group_id" string="Grupo anterior"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción persistente: alumnos cuyo grupo está archivado o sin grupo -->
+    <record id="action_student_no_group" model="ir.actions.act_window">
+        <field name="name">Alumnos sin grupo activo</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_student_no_group_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_student_form')})]"/>
+        <field name="search_view_id" ref="view_student_no_group_search"/>
+        <field name="domain">[
+            ('student_code', '!=', False),
+            '|',
+                ('academic_group_id', '=', False),
+                ('academic_group_id.active', '=', False)
+        ]</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay alumnos pendientes de reasignación
+            </p>
+            <p>
+                Aquí aparecen dos tipos de alumnos:<br/>
+                <strong>En naranja</strong>: alumnos activos cuyo grupo fue archivado y aún no tienen grupo nuevo asignado. Selecciona su nuevo grupo en la columna <em>Nuevo grupo</em>.<br/>
+                <strong>En gris</strong>: alumnos archivados (graduados de nivel terminal como Bach2, CFGM2, etc.). Si uno de ellos repite curso, márcalo como <em>Activo</em> y asígnale el nuevo grupo.
             </p>
         </field>
     </record>

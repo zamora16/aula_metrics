@@ -165,7 +165,7 @@ class DashboardChartsBuilder(models.TransientModel):
     # Page context builders  →  used by generate_dashboard()
     # ------------------------------------------------------------------
 
-    def _build_html_empty(self, evaluations, filters, role_info):
+    def _build_html_empty(self, evaluations, filters, role_info, available_years=None):
         """Contexto para dashboard_main cuando no hay datos de métricas."""
         date_str = dashboard_helpers.format_date(fields.Date.today())
         return {
@@ -181,6 +181,8 @@ class DashboardChartsBuilder(models.TransientModel):
             'topbar_extra_actions': Markup(''),
             'available_evaluations': evaluations,
             'selected_evals':       filters.get('evaluation_ids', []),
+            'available_years':      available_years or [],
+            'selected_year_id':     filters.get('academic_year_id'),
             'kpi_students':         None,
             'kpi_groups':           None,
             'kpi_evals':            None,
@@ -189,7 +191,7 @@ class DashboardChartsBuilder(models.TransientModel):
             **self._get_home_data(role_info),
         }
 
-    def _build_html(self, evaluations, filters, role_info, kpi_values, charts):
+    def _build_html(self, evaluations, filters, role_info, kpi_values, charts, available_years=None):
         """Contexto para dashboard_main con datos completos."""
         date_str = dashboard_helpers.format_date(fields.Date.today())
         chart_libs = Markup(
@@ -209,6 +211,8 @@ class DashboardChartsBuilder(models.TransientModel):
             'topbar_extra_actions': Markup(''),
             'available_evaluations': evaluations,
             'selected_evals':       filters.get('evaluation_ids', []),
+            'available_years':      available_years or [],
+            'selected_year_id':     filters.get('academic_year_id'),
             **kpi_values,
             'charts':               [Markup(c) for c in charts if c],
             **self._get_home_data(role_info),

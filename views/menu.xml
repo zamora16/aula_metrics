@@ -79,20 +79,54 @@
               groups="group_aulametrics_admin,group_aulametrics_counselor"
               sequence="30"/>
 
-    <!-- Configuración -->
+    <!-- Configuración del Centro -->
     <menuitem id="menu_aulametrics_config"
-              name="Configuración"
+              name="Configuración del Centro"
               parent="menu_aulametrics_root"
               groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_management"
-              sequence="100"/>
+              sequence="80"/>
 
-    <!-- Punto de entrada principal: Cursos Académicos -->
+    <!-- Cursos Académicos -->
     <menuitem id="menu_academic_years"
               name="Cursos Académicos"
               parent="menu_aulametrics_config"
               action="action_academic_year_list"
               groups="group_aulametrics_admin,group_aulametrics_counselor,group_aulametrics_management"
               sequence="10"/>
+
+    <!-- Grupos Educativos -->
+    <menuitem id="menu_academic_groups"
+              name="Grupos Educativos"
+              parent="menu_aulametrics_config"
+              action="action_academic_group"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_management"
+              sequence="20"/>
+
+    <!-- Alumnos -->
+    <menuitem id="menu_students_config"
+              name="Alumnos"
+              parent="menu_aulametrics_config"
+              action="aula_metrics.action_student_list"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"
+              sequence="30"/>
+
+    <!-- Herramientas de primer año (uso único) -->
+    <menuitem id="menu_first_year_setup"
+              name="Configuración Inicial"
+              parent="menu_aulametrics_config"
+              action="aula_metrics.action_first_year_wizard_smart"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"
+              sequence="50"/>
+
+    <!-- Importación masiva de alumnos (solo primer año) -->
+    <menuitem id="menu_student_import"
+              name="Importar Alumnos"
+              parent="menu_aulametrics_config"
+              action="aula_metrics.action_student_import_wizard_smart"
+              groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"
+              sequence="60"/>
+
+    <!-- Paso de Curso: oculto hasta activación manual (acción disponible pero sin entrada de menú) -->
 
     <!-- Comunicaciones Internas -->
     <menuitem id="menu_aulametrics_comms_root"

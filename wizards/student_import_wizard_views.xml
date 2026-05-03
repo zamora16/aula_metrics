@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_student_import_wizard_form" model="ir.ui.view">
+        <field name="name">aula_metrics.student_import_wizard.form</field>
+        <field name="model">aula_metrics.student_import_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar Alumnos desde Excel">
+                <sheet>
+                    <field name="state" invisible="1"/>
+
+                    <!-- Aviso permanente: solo para primer año -->
+                    <div class="alert alert-warning" role="alert">
+                        <strong>&#x26A0; Solo para el primer año de uso</strong><br/>
+                        Este asistente crea alumnos <strong>nuevos</strong> asignando un código permanente
+                        (ALU-XXXXX) a cada uno. Si ya existen alumnos en el sistema y vuelves a importar,
+                        se generarán registros duplicados con códigos distintos y se perderá el historial
+                        de evaluaciones previas. <strong>Úsalo únicamente en la puesta en marcha inicial.</strong>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════
+                         PASO 1: Cargar fichero
+                    ══════════════════════════════════════════ -->
+                    <div invisible="state != 'upload'">
+                        <h3>Paso 1 — Cargar fichero CSV</h3>
+                        <group>
+                            <field name="csv_file" widget="binary"
+                                   filename="csv_filename" string="Fichero CSV"/>
+                            <field name="csv_filename" invisible="1"/>
+                        </group>
+                        <div class="alert alert-info mt-2">
+                            <strong>Formato del fichero</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Sube el <strong>fichero Excel (.xlsx)</strong> descargado con la plantilla, o un <strong>CSV</strong> clásico</li>
+                                <li>En el Excel: <strong>una pestaña por grupo</strong> — el nombre de la pestaña es el grupo</li>
+                                <li>Columnas <strong>obligatorias</strong>: <code>nombre</code>, <code>apellidos</code></li>
+                                <li>Columnas <strong>opcionales</strong>: <code>email</code>, <code>genero</code> (M/F/Otro), <code>fecha_nacimiento</code> (DD/MM/AAAA)</li>
+                                <li>En CSV clásico también se necesita la columna <code>grupo</code></li>
+                            </ul>
+                            <div class="mt-2">
+                                <button name="action_download_template"
+                                        type="object"
+                                        class="btn btn-sm btn-secondary"
+                                        icon="fa-download">
+                                    Descargar plantilla Excel con los grupos actuales
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════
+                         PASO 2: Vista previa y validación
+                    ══════════════════════════════════════════ -->
+                    <div invisible="state != 'preview'">
+                        <h3>Paso 2 — Vista previa y validación</h3>
+                        <div class="d-flex gap-3 mb-3">
+                            <span class="badge rounded-pill bg-success fs-6 px-3">
+                                <field name="valid_count" nolabel="1" readonly="1" class="d-inline"/> OK
+                            </span>
+                            <span class="badge rounded-pill bg-warning text-dark fs-6 px-3">
+                                <field name="warn_count" nolabel="1" readonly="1" class="d-inline"/> Avisos
+                            </span>
+                            <span class="badge rounded-pill bg-danger fs-6 px-3">
+                                <field name="error_count_preview" nolabel="1" readonly="1" class="d-inline"/> Errores
+                            </span>
+                        </div>
+                        <p class="text-muted mb-2">
+                            Las filas con <strong>error</strong> no se importarán.
+                            Las filas con <strong>aviso</strong> se saltarán por defecto (duplicados).
+                            Puedes desmarcar la columna "Importar" para excluir filas manualmente.
+                        </p>
+                        <field name="preview_line_ids" nolabel="1">
+                            <tree string="Vista previa"
+                                  decoration-success="status == 'ok'"
+                                  decoration-warning="status == 'warn'"
+                                  decoration-danger="status == 'error'"
+                                  editable="bottom">
+                                <field name="row_num" string="#" readonly="1"/>
+                                <field name="first_name" string="Nombre" readonly="1"/>
+                                <field name="last_name" string="Apellidos" readonly="1"/>
+                                <field name="group_id" string="Grupo" readonly="1"/>
+                                <field name="gender" string="Género" readonly="1" optional="show"/>
+                                <field name="birthdate" string="Nacimiento" readonly="1" optional="show"/>
+                                <field name="status" string="Estado" readonly="1"/>
+                                <field name="message" string="Incidencia" readonly="1"/>
+                                <field name="will_import" string="Importar"/>
+                            </tree>
+                        </field>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════
+                         PASO 3: Resultado
+                    ══════════════════════════════════════════ -->
+                    <div invisible="state != 'done'">
+                        <h3>Importación completada</h3>
+                        <div class="alert alert-success">
+                            <strong>El proceso ha finalizado.</strong>
+                        </div>
+                        <group string="Resumen">
+                            <field name="result_imported" readonly="1" string="Alumnos importados"/>
+                            <field name="result_skipped" readonly="1" string="Saltados"/>
+                            <field name="result_errors" readonly="1" string="Errores"/>
+                        </group>
+                        <group string="Detalles"
+                               invisible="not result_details or result_details == 'Sin incidencias.'">
+                            <field name="result_details" readonly="1" nolabel="1"/>
+                        </group>
+                    </div>
+                </sheet>
+
+                <footer>
+                    <button name="action_preview" type="object"
+                            string="Validar y previsualizar"
+                            class="btn-primary"
+                            invisible="state != 'upload'"/>
+
+                    <button name="action_import" type="object"
+                            string="Importar alumnos válidos"
+                            class="btn-primary"
+                            invisible="state != 'preview'"/>
+                    <button name="action_back_to_upload" type="object"
+                            string="← Cambiar fichero"
+                            class="btn-secondary"
+                            invisible="state != 'preview'"/>
+
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_student_import_wizard" model="ir.actions.act_window">
+        <field name="name">Importar Alumnos</field>
+        <field name="res_model">aula_metrics.student_import_wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="groups_id" eval="[(4, ref('group_aulametrics_admin')), (4, ref('group_aulametrics_counselor'))]"/>
+    </record>
+
+    <!-- Acción inteligente: abre el wizard solo si no hay alumnos ya importados -->
+    <record id="action_student_import_wizard_smart" model="ir.actions.server">
+        <field name="name">Importar Alumnos</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="code">
+count = env['res.partner'].search_count([('student_code', '!=', False)])
+if count:
+    action = {
+        'type': 'ir.actions.client',
+        'tag': 'display_notification',
+        'params': {
+            'title': 'Ya existen alumnos en el sistema',
+            'message': 'Esta importación es solo para la puesta en marcha inicial. Importar de nuevo generaría duplicados con códigos distintos.',
+            'type': 'warning',
+            'sticky': True,
+        }
+    }
+else:
+    action = env.ref('aula_metrics.action_student_import_wizard').read()[0]
+        </field>
+    </record>
+</odoo>

@@ -68,15 +68,24 @@ class DashboardDataQueries(models.Model):
 
     @api.model
     def get_available_groups(self, filters, role_info):
-        """Obtiene los grupos académicos disponibles según rol."""
+        """Obtiene los grupos académicos disponibles según rol.
+
+        Cuando hay un curso académico seleccionado se incluyen también los grupos
+        archivados de ese año, ya que al cerrar un curso sus grupos se archivan pero
+        sus datos históricos deben seguir siendo consultables.
+        """
         try:
             AcademicGroup = self.env['aula_metrics.academic_group']
+            year_id = filters.get('academic_year_id')
 
-            domain = role_service.apply_group_filter(
-                [('active', '=', True)],
-                role_info,
-                field='id',
-            )
+            # Si hay año seleccionado filtramos por año (cubre activos e históricos).
+            # Si no hay año, solo grupos activos (vista por defecto del año corriente).
+            if year_id:
+                base = [('academic_year_id', '=', year_id)]
+            else:
+                base = [('active', '=', True)]
+
+            domain = role_service.apply_group_filter(base, role_info, field='id')
             if domain is None:
                 return []
 
@@ -96,10 +105,11 @@ class DashboardDataQueries(models.Model):
                     domain.append(('id', 'in', valid_group_ids))
                 else:
                     return []
-            elif filters.get('academic_year_id'):
-                domain.append(('academic_year_id', '=', filters['academic_year_id']))
 
-            groups = AcademicGroup.search(domain, order='name')
+            # active_test=False: el ORM añade active=True automáticamente en modelos
+            # con campo active; lo desactivamos para que grupos archivados de años
+            # pasados sean visibles cuando el dominio ya está acotado por año.
+            groups = AcademicGroup.with_context(active_test=False).search(domain, order='name')
             return [{
                 'id': g.id,
                 'name': g.name,
@@ -108,6 +118,50 @@ class DashboardDataQueries(models.Model):
         except Exception as e:
             _logger.error("Error in get_available_groups: %s", e)
             return []
+
+    @api.model
+    def get_available_years(self, role_info):
+        """Devuelve los cursos académicos con datos accesibles para el rol dado.
+
+        Para tutores: solo años en que alguno de sus grupos tiene evaluaciones.
+        Para el resto: todos los años que tienen al menos una evaluación.
+        Si no hay ningún año con evaluaciones se devuelven todos los creados
+        (centro que acaba de empezar y aún no tiene datos).
+
+        Returns:
+            list[dict]: [{'id', 'name', 'is_current', 'state'}, ...] ordenados
+                        de más reciente a más antiguo.
+        """
+        AcademicYear = self.env['aula_metrics.academic_year']
+        Evaluation   = self.env['aula_metrics.evaluation']
+
+        if role_info.get('role') == ROLE_TUTOR:
+            allowed_groups = role_info.get('allowed_group_ids', [])
+            if not allowed_groups:
+                return []
+            year_ids = set(
+                Evaluation.sudo()
+                .search([('academic_group_ids', 'in', allowed_groups)])
+                .mapped('academic_year_id')
+                .ids
+            )
+        else:
+            year_ids = set(Evaluation.search([]).mapped('academic_year_id').ids)
+
+        if year_ids:
+            years = AcademicYear.search([('id', 'in', list(year_ids))], order='name desc')
+        else:
+            years = AcademicYear.search([], order='name desc')
+
+        return [
+            {
+                'id':         y.id,
+                'name':       y.name,
+                'is_current': y.is_current,
+                'state':      y.state,
+            }
+            for y in years
+        ]
 
     @api.model
     def get_available_evaluations(self, role_info, filters=None):

@@ -1,57 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Vista del Wizard -->
     <record id="view_new_academic_year_wizard_form" model="ir.ui.view">
         <field name="name">aula_metrics.new_academic_year_wizard.form</field>
         <field name="model">aula_metrics.new_academic_year_wizard</field>
         <field name="arch" type="xml">
-            <form string="Nuevo Curso Académico">
+            <form string="Paso de Curso Académico">
                 <sheet>
-                    <div class="o_form_view">
+                    <field name="step" invisible="1"/>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         PASO 1 — Datos del nuevo curso
+                    ══════════════════════════════════════════════════════ -->
+                    <div invisible="step != '1'">
+                        <h3 class="mb-3">Paso 1 de 3 — Datos del nuevo curso</h3>
                         <group string="Curso de origen">
                             <field name="source_year_id" options="{'no_create': True}"/>
                         </group>
-
                         <group string="Nuevo curso">
                             <field name="new_year_name" placeholder="Ej: 2026-2027"/>
                             <field name="new_year_date_start"/>
                             <field name="new_year_date_end"/>
                         </group>
-
-                        <div class="alert alert-info" role="alert">
-                            <strong>¿Qué ocurrirá al crear el nuevo curso?</strong>
-                            <ul class="mb-0 mt-1">
-                                <li>Se crearán <strong><field name="preview_group_count" readonly="1" nolabel="1" class="d-inline"/></strong> grupos vacíos con la misma estructura que el curso origen.</li>
-                                <li>Los grupos del curso origen quedarán <strong>archivados</strong>.</li>
-                                <li>El curso origen pasará a estado <strong>Cerrado</strong>.</li>
-                                <li>Los alumnos <strong>conservan su historial</strong> vinculado a los grupos del curso anterior. Deberás reasignarlos manualmente a los nuevos grupos.</li>
-                            </ul>
+                        <div class="alert alert-info">
+                            Se copiarán como base <strong>
+                                <field name="preview_group_count" nolabel="1" readonly="1" class="d-inline"/>
+                            </strong> grupos del curso origen.
+                            Podrás editar tutores, añadir y eliminar grupos en el siguiente paso.
                         </div>
-
-                        <group string="Vista previa de grupos a crear" col="1">
-                            <field name="source_group_ids" readonly="1" nolabel="1">
+                        <group string="Grupos que se copiarán como base" col="1">
+                            <field name="source_group_ids" nolabel="1" readonly="1">
                                 <tree string="Grupos del curso origen">
-                                    <field name="name"/>
-                                    <field name="course_level"/>
-                                    <field name="tutor_id"/>
+                                    <field name="name" string="Grupo"/>
+                                    <field name="course_level" string="Nivel"/>
+                                    <field name="tutor_id" string="Tutor/a actual"/>
                                     <field name="student_count" string="Alumnos actuales"/>
                                 </tree>
                             </field>
                         </group>
                     </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         PASO 2 — Grupos y tutores del nuevo año
+                    ══════════════════════════════════════════════════════ -->
+                    <div invisible="step != '2'">
+                        <h3 class="mb-3">Paso 2 de 3 — Grupos y tutores del nuevo año</h3>
+                        <div class="alert alert-info mb-2">
+                            Define los grupos que existirán en el nuevo curso.
+                            <ul class="mb-0 mt-1">
+                                <li>Edita el <strong>tutor/a</strong> de cualquier grupo.</li>
+                                <li><strong>Añade filas</strong> para grupos nuevos (ej: Diversificación A).</li>
+                                <li><strong>Elimina filas</strong> de grupos que desaparezcan este año.</li>
+                            </ul>
+                        </div>
+                        <field name="group_line_ids" nolabel="1">
+                            <tree editable="bottom" string="Grupos del nuevo año">
+                                <field name="name" string="Nombre del grupo"/>
+                                <field name="course_level" string="Nivel"/>
+                                <field name="tutor_id" string="Tutor/a"
+                                       options="{'no_create': True, 'no_quick_create': True}"/>
+                                <field name="source_group_id" string="Copiado de"
+                                       readonly="1" optional="hide"/>
+                                <field name="is_new" string="Nuevo" readonly="1" optional="hide"/>
+                            </tree>
+                        </field>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         PASO 3 — Mapeo de promoción
+                    ══════════════════════════════════════════════════════ -->
+                    <div invisible="step != '3'">
+                        <h3 class="mb-3">Paso 3 de 3 — Asignación de grupos para el nuevo curso</h3>
+                        <div class="alert alert-info mb-2">
+                            Para cada grupo del curso actual, selecciona el grupo destino en el nuevo año.
+                            <ul class="mb-0 mt-1">
+                                <li>Las filas en <span class="text-warning fw-bold">naranja</span>
+                                    no tienen destino asignado: sus alumnos quedarán en grupo archivado
+                                    y podrás reasignarlos desde <strong>Configuración → Alumnos sin grupo activo</strong>.</li>
+                                <li>Las filas en <span class="text-danger fw-bold">rojo</span>
+                                    corresponden a <strong>niveles terminales</strong> (2º Bachillerato,
+                                    CFGM 2º, CFGS 2º, FPB 2º): sus alumnos se <strong>archivarán automáticamente</strong>
+                                    al confirmar. No se puede asignar destino.</li>
+                            </ul>
+                        </div>
+                        <field name="promotion_line_ids" nolabel="1">
+                            <tree editable="bottom" string="Mapeo de promoción"
+                                  decoration-warning="not dest_group_line_id and student_count > 0 and not is_terminal_level"
+                                  decoration-danger="is_terminal_level">
+                                <field name="is_terminal_level" column_invisible="1"/>
+                                <field name="source_group_name" string="Grupo origen" readonly="1"/>
+                                <field name="source_group_level" string="Nivel" readonly="1"/>
+                                <field name="student_count" string="Alumnos" readonly="1"/>
+                                <field name="dest_group_line_id" string="Grupo destino (nuevo año)"
+                                       domain="[('wizard_id', '=', parent.id)]"
+                                       options="{'no_create': True, 'no_quick_create': True}"
+                                       readonly="is_terminal_level"/>
+                            </tree>
+                        </field>
+                    </div>
                 </sheet>
+
                 <footer>
-                    <button name="action_create_new_year" type="object"
-                            string="Crear nuevo curso" class="btn-primary"/>
+                    <button name="action_step1_to_2" type="object"
+                            string="Siguiente → Grupos" class="btn-primary"
+                            invisible="step != '1'"/>
+
+                    <button name="action_step2_to_3" type="object"
+                            string="Siguiente → Asignación" class="btn-primary"
+                            invisible="step != '2'"/>
+                    <button name="action_step2_to_1" type="object"
+                            string="← Anterior" class="btn-secondary"
+                            invisible="step != '2'"/>
+
+                    <button name="action_confirm" type="object"
+                            string="Confirmar paso de curso" class="btn-primary"
+                            invisible="step != '3'"/>
+                    <button name="action_step3_to_2" type="object"
+                            string="← Anterior" class="btn-secondary"
+                            invisible="step != '3'"/>
+
                     <button string="Cancelar" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
     </record>
 
-    <!-- Acción del Wizard -->
     <record id="action_new_academic_year_wizard" model="ir.actions.act_window">
-        <field name="name">Nuevo Curso Académico</field>
+        <field name="name">Paso de Curso Académico</field>
         <field name="res_model">aula_metrics.new_academic_year_wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>

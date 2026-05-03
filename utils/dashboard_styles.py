@@ -552,7 +552,58 @@ def get_common_styles():
             cursor: not-allowed;
             transform: none;
         }
-        
+
+        /* ==================== SELECTOR DE CURSO ACADÉMICO ==================== */
+        .filter-year-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--am-border);
+        }
+
+        .filter-year-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--am-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .year-selector {
+            padding: 7px 32px 7px 12px;
+            border: 2px solid var(--am-border);
+            border-radius: 8px;
+            background-color: var(--am-bg);
+            color: var(--am-text);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            min-width: 140px;
+        }
+
+        .year-selector:hover {
+            border-color: var(--am-primary-200);
+        }
+
+        .year-selector:focus {
+            outline: none;
+            border-color: var(--am-primary);
+            box-shadow: 0 0 0 3px rgba(var(--am-primary-rgb), 0.15);
+        }
+
+        .year-selector option.year-option--current {
+            font-weight: 700;
+        }
+
         /* ==================== ESTADO VACÍO ==================== */
         .empty-state {
             text-align: center;

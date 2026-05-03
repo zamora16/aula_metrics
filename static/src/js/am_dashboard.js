@@ -190,6 +190,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hub filters (quantitative)
     const hubFilters = document.getElementById('hub-filters');
     if (hubFilters) {
+        // Cambio de año: limpia selección de evaluaciones y re-lanza el filtro
+        const yearSelector = document.getElementById('year-selector');
+        if (yearSelector) {
+            yearSelector.addEventListener('change', function() {
+                selectNoneEvals();
+                hubFilters.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            });
+        }
+
         hubFilters.addEventListener('submit', function(e) {
             e.preventDefault();
             const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -198,8 +207,10 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Cargando...';
 
             const evalValues = Array.from(document.querySelectorAll('.eval-pill.active')).map(p => p.dataset.value);
+            const yearValue  = document.getElementById('year-selector')?.value;
             const params = new URLSearchParams();
             if (evalValues.length > 0) params.append('evaluation_ids', evalValues.join(','));
+            if (yearValue) params.append('academic_year_id', yearValue);
             params.append('section', 'quantitative');
             const url = '/aulametrics/dashboard?' + params.toString();
 

@@ -307,6 +307,11 @@ class DashboardChartsEvolution(models.TransientModel):
         metric_name = df['metric_name'].iloc[0]
         course_keys = [c for c in df['curso'].dropna().unique().tolist() if c]
 
+        # Mapa nombre → ID de evaluación construido desde el df, que ya está
+        # filtrado por curso académico. Evita mezclar evaluaciones de distintos
+        # años que tengan el mismo nombre.
+        eval_id_map = df.groupby('evaluation_name')['evaluation_id'].first().to_dict()
+
         MetricValue = self.env['aula_metrics.metric_value']
 
         group_y  = []
@@ -314,24 +319,31 @@ class DashboardChartsEvolution(models.TransientModel):
         level_y  = []
 
         for eval_name in eval_labels:
+            eval_id = eval_id_map.get(eval_name)
+
             # Mi grupo (df ya filtrado por ACL del tutor)
             df_eval = df[df['evaluation_name'] == eval_name]['value_numeric'].dropna()
             group_y.append(round(float(df_eval.mean()), 1) if len(df_eval) > 0 else None)
 
-            # Centro — sudo para superar ACL del tutor
+            if not eval_id:
+                center_y.append(None)
+                level_y.append(None)
+                continue
+
+            # Centro — sudo para superar ACL del tutor; filtra por ID, no por nombre
             mvs  = MetricValue.sudo().search([
-                ('metric_name',        '=', metric_name),
-                ('evaluation_id.name', '=', eval_name),
-                ('value_float',        '!=', False),
+                ('metric_name',  '=', metric_name),
+                ('evaluation_id', '=', eval_id),
+                ('value_float',  '!=', False),
             ])
             vals = [mv.value_float for mv in mvs if mv.value_float is not False]
             center_y.append(round(float(sum(vals) / len(vals)), 1) if vals else None)
 
-            # Nivel educativo — sudo para superar ACL del tutor
+            # Nivel educativo — sudo para superar ACL del tutor; filtra por ID
             if course_keys:
                 mvs_l  = MetricValue.sudo().search([
                     ('metric_name',                    '=',  metric_name),
-                    ('evaluation_id.name',             '=',  eval_name),
+                    ('evaluation_id',                  '=',  eval_id),
                     ('academic_group_id.course_level', 'in', course_keys),
                     ('value_float',                    '!=', False),
                 ])

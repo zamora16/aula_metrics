@@ -14,12 +14,28 @@ class AcademicGroup(models.Model):
     )
     
     course_level = fields.Selection([
+        # ESO
         ('eso1', '1º ESO'),
         ('eso2', '2º ESO'),
         ('eso3', '3º ESO'),
         ('eso4', '4º ESO'),
+        # Bachillerato
         ('bach1', '1º Bachillerato'),
         ('bach2', '2º Bachillerato'),
+        # Formación Profesional Básica
+        ('fpb1', 'FPB — 1er curso'),
+        ('fpb2', 'FPB — 2º curso'),
+        # Ciclos Formativos Grado Medio
+        ('cfgm1', 'CFGM — 1er curso'),
+        ('cfgm2', 'CFGM — 2º curso'),
+        # Ciclos Formativos Grado Superior
+        ('cfgs1', 'CFGS — 1er curso'),
+        ('cfgs2', 'CFGS — 2º curso'),
+        # Programas de atención a la diversidad
+        ('pmar', 'PMAR'),
+        ('pmar3', 'PMAR 3º ESO'),
+        # Otros
+        ('otro', 'Otro nivel'),
     ], string='Nivel Educativo', required=True)
     
     academic_year_id = fields.Many2one(

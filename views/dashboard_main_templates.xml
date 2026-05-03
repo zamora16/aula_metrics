@@ -318,15 +318,44 @@
 
     <!-- =====================================================================
          CONTROLES DE FILTRO
-         Variables: available_evaluations (list[dict]), selected_evals (list[int])
+         Variables requeridas:
+           available_evaluations (list[dict])  — evaluaciones disponibles
+           selected_evals        (list[int])   — IDs de evaluaciones seleccionadas
+           available_years       (list[dict])  — cursos académicos disponibles
+           selected_year_id      (int|None)    — curso actualmente seleccionado
          ===================================================================== -->
     <template id="dashboard_filter_controls" name="AulaMetrics - Controles de Filtro">
         <div class="filter-panel-compact">
             <form id="hub-filters" method="get" action="/aulametrics/dashboard">
                 <div class="filter-header">
                     <i class="fa-solid fa-filter" aria-hidden="true"/>
-                    <span>Filtrar por Evaluaciones</span>
+                    <span>Filtros</span>
                 </div>
+
+                <!-- Selector de curso académico (solo si hay más de uno disponible) -->
+                <t t-if="available_years and len(available_years) > 1">
+                    <div class="filter-year-row">
+                        <label class="filter-year-label" for="year-selector">
+                            <i class="fa-solid fa-graduation-cap me-1" aria-hidden="true"/>
+                            Curso académico
+                        </label>
+                        <select id="year-selector"
+                                name="academic_year_id"
+                                class="year-selector"
+                                aria-label="Seleccionar curso académico">
+                            <t t-foreach="available_years" t-as="yr">
+                                <option t-att-value="yr['id']"
+                                        t-att-selected="'selected' if yr['id'] == selected_year_id else None"
+                                        t-att-class="'year-option--current' if yr['is_current'] else ''">
+                                    <t t-out="yr['name']"/>
+                                    <t t-if="yr['is_current']"> ✓</t>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                </t>
+
+                <!-- Pills de evaluaciones -->
                 <div class="filter-pills-container" role="group" aria-label="Filtrar por evaluación">
                     <t t-foreach="available_evaluations or []" t-as="ev">
                         <t t-set="is_active" t-value="(selected_evals and ev['id'] in selected_evals) or not selected_evals"/>
@@ -341,6 +370,7 @@
                         </button>
                     </t>
                 </div>
+
                 <div class="filter-actions">
                     <button type="button" class="btn-filter-action" onclick="selectAllEvals()">
                         <i class="fa-solid fa-check-double me-1" aria-hidden="true"/>Todas

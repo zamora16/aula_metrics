@@ -33,15 +33,17 @@ class DashboardCharts(models.TransientModel):
             role_info = {'role': 'admin', 'anonymize_students': False}
 
         # Obtener opciones disponibles para los filtros
-        available_metrics = self.env['aula_metrics.dashboard.data_queries'].get_available_metrics(filters, role_info)
-        available_groups = self.env['aula_metrics.dashboard.data_queries'].get_available_groups(filters, role_info)
-        available_evaluations = self.env['aula_metrics.dashboard.data_queries'].get_available_evaluations(role_info, filters)
-        segmentation_vars = self.env['aula_metrics.dashboard.data_queries'].get_segmentation_variables(filters, role_info)
+        DataQueries = self.env['aula_metrics.dashboard.data_queries']
+        available_metrics     = DataQueries.get_available_metrics(filters, role_info)
+        available_groups      = DataQueries.get_available_groups(filters, role_info)
+        available_evaluations = DataQueries.get_available_evaluations(role_info, filters)
+        available_years       = DataQueries.get_available_years(role_info)
+        segmentation_vars     = DataQueries.get_segmentation_variables(filters, role_info)
 
         # Si no hay datos disponibles, mostrar mensaje
         if not available_metrics:
             return self._build_html_empty(
-                available_evaluations, filters, role_info
+                available_evaluations, filters, role_info, available_years
             )
 
         # Consultar valores de métricas según filtros
@@ -49,21 +51,21 @@ class DashboardCharts(models.TransientModel):
         
         if not metric_values:
             return self._build_html_empty(
-                available_evaluations, filters, role_info
+                available_evaluations, filters, role_info, available_years
             )
 
         # Preparar DataFrame
-        df = self.env['aula_metrics.dashboard.data_queries'].prepare_dataframe(metric_values, role_info)
-        
+        df = DataQueries.prepare_dataframe(metric_values, role_info)
+
         # Generar gráficos
         charts = self._generate_charts(df, filters, available_metrics, role_info, segmentation_vars)
-        
+
         # Generar KPIs (retorna dict con kpi_students, kpi_groups, kpi_evals, kpi_participation)
         kpi_values = self._generate_kpis(df, filters, role_info)
-        
+
         # Construir contexto para dashboard_main
         return self._build_html(
-            available_evaluations, filters, role_info, kpi_values, charts
+            available_evaluations, filters, role_info, kpi_values, charts, available_years
         )
         
     def _get_segmentation_variables(self, filters, role_info):

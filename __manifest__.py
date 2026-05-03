@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "AulaMetrics",
-    'version': '1.0.4',
+    'version': '1.0.6',
     'summary': "Sistema de evaluación psicosocial para centros educativos",
 
     'author': "Angel Zamora",
@@ -12,7 +12,6 @@
         'security/security.xml',
         'security/ir.model.access.csv',
         'security/record_rules.xml',
-        'data/users_groups.xml',
         # 2. Datos
         'data/sequences.xml',
         'data/alert_keywords.xml',
@@ -51,9 +50,13 @@
         'wizards/resolve_alert_wizard_views.xml',
         'wizards/manual_alert_wizard_views.xml',
         'wizards/new_academic_year_wizard_views.xml',
+        'wizards/student_import_wizard_views.xml',
+        'wizards/first_year_wizard_views.xml',
         'views/menu.xml',
     ],
-    'demo': [],
+    'demo': [
+        'data/users_groups.xml',
+    ],
     'assets': {
         'web.assets_backend': [
             'aula_metrics/static/src/scss/dashboard_home.scss',

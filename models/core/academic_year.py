@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 from odoo import models, fields, api, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 
 
 class AcademicYear(models.Model):
@@ -123,9 +123,17 @@ class AcademicYear(models.Model):
         """Usado como default en otros modelos."""
         return self.get_current_year()
 
-    @api.model
     def action_open_new_year_wizard(self):
         """Abre el wizard de 'Pasar de Curso' desde la lista de cursos."""
+        active_year = self.env['aula_metrics.academic_year'].search(
+            [('state', '=', 'active')], limit=1
+        )
+        if not active_year:
+            raise UserError(_(
+                'No hay ningún curso académico activo.\n\n'
+                'Si es la primera vez que usas AulaMetrics, utiliza '
+                '"Configuración Inicial" para crear el primer curso.'
+            ))
         return self.env['ir.actions.act_window']._for_xml_id(
             'aula_metrics.action_new_academic_year_wizard'
         )

@@ -6,6 +6,14 @@ class ResPartner(models.Model):
     """Extensión del modelo de contactos para alumnos"""
     _inherit = 'res.partner'
 
+    _sql_constraints = [
+        (
+            'student_code_unique',
+            'UNIQUE(student_code)',
+            'Ya existe un alumno con este código. El código de alumno debe ser único.',
+        ),
+    ]
+
     student_code = fields.Char(
         string='Código de Alumno',
         readonly=True,
@@ -14,6 +22,9 @@ class ResPartner(models.Model):
         help='Identificador único permanente del alumno. Se asigna al crear el '
              'alumno y no cambia aunque pase de grupo o de curso académico.'
     )
+
+    student_firstname = fields.Char(string='Nombre', store=True)
+    student_lastname = fields.Char(string='Apellidos', store=True)
 
     academic_group_id = fields.Many2one(
         'aula_metrics.academic_group',
@@ -74,14 +85,36 @@ class ResPartner(models.Model):
                     'aula_metrics.student_code'
                 )
 
+    @api.onchange('student_firstname', 'student_lastname')
+    def _onchange_student_name_parts(self):
+        fn = self.student_firstname or ''
+        ln = self.student_lastname or ''
+        full = f'{fn} {ln}'.strip()
+        if full:
+            self.name = full
+
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            fn = vals.get('student_firstname', '')
+            ln = vals.get('student_lastname', '')
+            if (fn or ln) and not vals.get('name'):
+                vals['name'] = f'{fn} {ln}'.strip()
         records = super().create(vals_list)
         records._assign_student_code()
         return records
 
     def write(self, vals):
         result = super().write(vals)
+        # Keep name in sync when name parts are updated programmatically.
+        # Run after super() so we read the already-committed field values.
+        if 'student_firstname' in vals or 'student_lastname' in vals:
+            for partner in self:
+                fn = partner.student_firstname or ''
+                ln = partner.student_lastname or ''
+                full = f'{fn} {ln}'.strip()
+                if full and partner.name != full:
+                    super(ResPartner, partner).write({'name': full})
         if 'academic_group_id' in vals:
             self._assign_student_code()
         return result
