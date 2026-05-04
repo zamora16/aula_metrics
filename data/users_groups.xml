@@ -6,6 +6,32 @@
         <!-- DATOS DE DEMOSTRACIÓN GENERADOS AUTOMÁTICAMENTE -->
         <!-- ========================================== -->
 
+        <!-- Curso Académico Demo -->
+        <record id="demo_academic_year_2526" model="aula_metrics.academic_year">
+            <field name="name">2025-2026</field>
+            <field name="date_start">2025-09-01</field>
+            <field name="date_end">2026-06-30</field>
+            <field name="state">active</field>
+        </record>
+
+        <!-- Orientadora del Departamento de Orientación -->
+        <record id="user_counselor_demo" model="res.users">
+            <field name="name">Dra. María González</field>
+            <field name="login">orientador@test.com</field>
+            <field name="email">orientador@test.com</field>
+            <field name="password">orientador123</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_counselor')])]"/>
+        </record>
+
+        <!-- Director del Centro -->
+        <record id="user_management_demo" model="res.users">
+            <field name="name">Sr. Antonio Reyes</field>
+            <field name="login">direccion@test.com</field>
+            <field name="email">direccion@test.com</field>
+            <field name="password">direccion123</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('aula_metrics.group_aulametrics_management')])]"/>
+        </record>
+
         <!-- Tutor: 1º ESO A -->
         <record id="user_tutor_1" model="res.users">
             <field name="name">Prof. Pedro López</field>
@@ -19,6 +45,7 @@
         <record id="group_eso1_a" model="aula_metrics.academic_group">
             <field name="name">1º ESO A</field>
             <field name="course_level">eso1</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_1"/>
         </record>
 
@@ -107,6 +134,7 @@
         <record id="group_eso1_b" model="aula_metrics.academic_group">
             <field name="name">1º ESO B</field>
             <field name="course_level">eso1</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_2"/>
         </record>
 
@@ -195,6 +223,7 @@
         <record id="group_eso1_c" model="aula_metrics.academic_group">
             <field name="name">1º ESO C</field>
             <field name="course_level">eso1</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_3"/>
         </record>
 
@@ -283,6 +312,7 @@
         <record id="group_eso2_a" model="aula_metrics.academic_group">
             <field name="name">2º ESO A</field>
             <field name="course_level">eso2</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_4"/>
         </record>
 
@@ -371,6 +401,7 @@
         <record id="group_eso2_b" model="aula_metrics.academic_group">
             <field name="name">2º ESO B</field>
             <field name="course_level">eso2</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_5"/>
         </record>
 
@@ -459,6 +490,7 @@
         <record id="group_eso2_c" model="aula_metrics.academic_group">
             <field name="name">2º ESO C</field>
             <field name="course_level">eso2</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_6"/>
         </record>
 
@@ -547,6 +579,7 @@
         <record id="group_eso3_a" model="aula_metrics.academic_group">
             <field name="name">3º ESO A</field>
             <field name="course_level">eso3</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_7"/>
         </record>
 
@@ -635,6 +668,7 @@
         <record id="group_eso3_b" model="aula_metrics.academic_group">
             <field name="name">3º ESO B</field>
             <field name="course_level">eso3</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_8"/>
         </record>
 
@@ -723,6 +757,7 @@
         <record id="group_eso4_a" model="aula_metrics.academic_group">
             <field name="name">4º ESO A</field>
             <field name="course_level">eso4</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_9"/>
         </record>
 
@@ -811,6 +846,7 @@
         <record id="group_eso4_b" model="aula_metrics.academic_group">
             <field name="name">4º ESO B</field>
             <field name="course_level">eso4</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_10"/>
         </record>
 
@@ -899,6 +935,7 @@
         <record id="group_bach1_a" model="aula_metrics.academic_group">
             <field name="name">1º Bachillerato A</field>
             <field name="course_level">bach1</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_11"/>
         </record>
 
@@ -987,6 +1024,7 @@
         <record id="group_bach2_a" model="aula_metrics.academic_group">
             <field name="name">2º Bachillerato A</field>
             <field name="course_level">bach2</field>
+            <field name="academic_year_id" ref="demo_academic_year_2526"/>
             <field name="tutor_id" ref="user_tutor_12"/>
         </record>
 

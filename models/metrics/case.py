@@ -164,7 +164,38 @@ class Case(models.Model):
             else:
                 # Si se saca de fase final, limpiar fecha de cierre
                 vals['close_date'] = False
-        return super().write(vals)
+        result = super().write(vals)
+        # Sincronizar estado de la alerta vinculada cuando cambia la fase del caso:
+        #   · Screening (primera fase) → alerta 'active'   (pendiente de atender)
+        #   · Seguimiento / Intervención → alerta 'en_gestion' (siendo atendida)
+        #   · Cerrado (fase final) → alerta 'resolved'     (caso cerrado)
+        if 'stage_id' in vals:
+            stage = self.env['aula_metrics.case.stage'].browse(vals['stage_id'])
+            first_stage = self.env['aula_metrics.case.stage'].search(
+                [('is_final', '=', False)], order='sequence, id', limit=1
+            )
+            for case in self:
+                if not case.alert_id:
+                    continue
+                if stage.is_final:
+                    new_status = 'resolved'
+                elif stage.id == first_stage.id:
+                    new_status = 'active'
+                else:
+                    new_status = 'en_gestion'
+                if case.alert_id.status != new_status:
+                    update = {'status': new_status}
+                    if new_status == 'resolved':
+                        update['resolution_date'] = fields.Datetime.now()
+                        update['resolution_action'] = (
+                            f'Caso cerrado el {fields.Date.today()}.'
+                        )
+                    elif new_status == 'active':
+                        # Al volver a screening limpiar la resolución anterior
+                        update['resolution_date'] = False
+                        update['resolution_action'] = False
+                    case.alert_id.sudo().write(update)
+        return result
 
     # ── Acciones de botón ─────────────────────────────────────────────────────
     def action_close_case(self):
@@ -183,14 +214,6 @@ class Case(models.Model):
                 'color': 2,
             })
         self.write({'stage_id': final_stage.id})
-        # Resolver la alerta vinculada si estaba en gestión
-        for case in self:
-            if case.alert_id and case.alert_id.status == 'en_gestion':
-                case.alert_id.sudo().write({
-                    'status': 'resolved',
-                    'resolution_date': fields.Datetime.now(),
-                    'resolution_action': f'Caso de orientación cerrado el {fields.Date.today()}.',
-                })
 
     def action_reopen_case(self):
         """Mueve el caso de vuelta a la primera fase no final.
@@ -201,10 +224,6 @@ class Case(models.Model):
         )
         if first_stage:
             self.write({'stage_id': first_stage.id})
-        # Reactivar la alerta vinculada si estaba resuelta por este caso
-        for case in self:
-            if case.alert_id and case.alert_id.status == 'resolved':
-                case.alert_id.sudo().write({'status': 'en_gestion'})
 
     def action_view_alert(self):
         """Abre la alerta vinculada."""
@@ -252,7 +271,13 @@ class Case(models.Model):
             name_parts.append('Alerta Cualitativa')
         case_name = ' - '.join(name_parts) if name_parts else 'Nuevo Caso'
 
-        return self.create({
+        # Crear el caso en el contexto del usuario sistema para que todos los
+        # mensajes del chatter (tracking "creado" + nota de apertura) aparezcan
+        # con el nombre "AulaMetrics" en lugar del usuario que disparó el flujo.
+        system_user = self.env.ref('aula_metrics.user_aulametrics_system', raise_if_not_found=False)
+        create_self = self.with_user(system_user).sudo() if system_user else self
+
+        return create_self.create({
             'name': case_name,
             'student_id': student.id if student else False,
             'alert_id': alert.id,

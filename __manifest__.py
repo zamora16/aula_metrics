@@ -20,6 +20,7 @@
         'data/cron/cron_jobs.xml',
         'data/dashboard_data.xml',
         'data/case_stages.xml',
+        'data/system_users.xml',
         # 3. Vistas
         'views/dashboard_home_views.xml',
         'views/dashboard.xml',
@@ -65,6 +66,7 @@
     'installable': True,
     'application': True,
     'auto_install': False,
+    'post_init_hook': '_post_init_create_indexes',
     'license': 'LGPL-3',
 }
 

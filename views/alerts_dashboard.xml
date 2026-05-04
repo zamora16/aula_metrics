@@ -35,37 +35,9 @@
                                 <field name="academic_group_id" groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
                                 <field name="education_level" groups="aula_metrics.group_aulametrics_management"/>
                                 <field name="score_value"/>
-                                <!-- case_id: campo auxiliar para condicionar botones; oculto en columna -->
-                                <field name="case_id" column_invisible="1"/>
-                                <!--
-                                    RESOLVER: solo cuando NO hay caso (alertas grupales o individuales sin caso).
-                                    Accesible a orientador, admin y tutor.
-                                -->
-                                <button name="action_resolve" string="Resolver" type="object"
-                                        class="btn btn-success btn-sm"
-                                        invisible="case_id"
-                                        groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
-                                <!--
-                                    VER CASO: solo cuando hay caso vinculado.
-                                    Exclusivo de orientadores y admins (los que gestionan casos).
-                                -->
-                                <button name="action_open_case" string="Ver Caso" type="object"
-                                        class="btn btn-primary btn-sm"
-                                        invisible="not case_id"
-                                        groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor"/>
-                                <!--
-                                    DESCARTAR: falso positivo; funciona en 'active' y 'en_gestion'.
-                                    Accesible a orientador, admin y tutor.
-                                -->
-                                <button name="action_dismiss" string="Descartar" type="object"
-                                        class="btn btn-warning btn-sm"
-                                        confirm="¿Descartar esta alerta?"
-                                        invisible="status not in ('active', 'en_gestion')"
-                                        groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
                             </tree>
                             <form string="Alerta">
                                 <sheet>
-                                    <field name="case_id" invisible="1"/>
                                     <group>
                                         <field name="name" readonly="1"/>
                                         <field name="alert_date" readonly="1"/>

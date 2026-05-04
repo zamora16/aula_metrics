@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!--
+        Usuario de sistema para casos de orientación auto-generados.
+        Aparece como "Responsable" inicial cuando el sistema crea un caso
+        a partir de una alerta, dejando claro que aún no hay una persona
+        asignada. Los orientadores lo reemplazarán manualmente.
+        No tiene contraseña → no puede iniciar sesión.
+    -->
+    <record id="user_aulametrics_system" model="res.users">
+        <field name="name">AulaMetrics</field>
+        <field name="login">aulametrics-system</field>
+        <field name="groups_id" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+</odoo>

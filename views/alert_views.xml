@@ -22,43 +22,7 @@
         <field name="model">aula_metrics.alert</field>
         <field name="arch" type="xml">
             <form string="Alerta">
-                <header>
-                    <!--
-                        RESOLVER: solo para alertas SIN caso vinculado (grupales o edge cases).
-                        Orientadores, admins y tutores pueden resolverlas manualmente.
-                    -->
-                    <button string="Resolver Alerta" type="object" name="action_resolve"
-                            invisible="case_id or status not in ('active', 'en_gestion')"
-                            class="btn-success"
-                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
-                    <!--
-                        DESCARTAR: falso positivo; funciona en 'active' y 'en_gestion'.
-                    -->
-                    <button string="Descartar Alerta" type="object" name="action_dismiss"
-                            invisible="status not in ('active', 'en_gestion')"
-                            class="btn-warning"
-                            confirm="¿Está seguro de que quiere descartar esta alerta?"
-                            groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_tutor"/>
-                </header>
                 <sheet>
-                    <!-- case_id declarado sin grupos para que los modifiers 'invisible' funcionen
-                         para todos los roles; la navegación al caso sí lleva restricción de grupo -->
-                    <field name="case_id" invisible="1"/>
-                    <div class="oe_button_box" name="button_box">
-                        <!-- Acceso directo al caso vinculado; solo orientadores y admins -->
-                        <button class="oe_stat_button"
-                                type="object"
-                                name="action_open_case"
-                                invisible="not case_id"
-                                groups="aula_metrics.group_aulametrics_admin,aula_metrics.group_aulametrics_counselor">
-                            <div class="o_stat_info">
-                                <span class="o_stat_text">Ver Caso</span>
-                                <span class="o_stat_value">
-                                    <field name="case_id"/>
-                                </span>
-                            </div>
-                        </button>
-                    </div>
                     <group>
                         <field name="name" readonly="1"/>
                         <field name="alert_date" readonly="1"/>

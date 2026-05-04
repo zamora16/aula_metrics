@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import ValidationError
 import uuid
 
 _logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class Participation(models.Model):
         'res.partner',
         string='Alumno',
         required=True,
-        ondelete='cascade',
+        ondelete='restrict',
         index=True,
         domain=[('academic_group_id', '!=', False)]
     )
@@ -108,7 +109,21 @@ class Participation(models.Model):
          'UNIQUE(evaluation_id, student_id)',
          'Un alumno solo puede participar una vez en cada evaluación.')
     ]
-    
+
+    @api.constrains('evaluation_id')
+    def _check_evaluation_open(self):
+        """Impide crear participaciones en evaluaciones cerradas o canceladas."""
+        for part in self:
+            if part.evaluation_id.state in ('closed', 'cancelled'):
+                raise ValidationError(_(
+                    "No se puede crear una participación en la evaluación "
+                    "'%(name)s' porque está %(state)s.",
+                    name=part.evaluation_id.name,
+                    state=dict(part.evaluation_id._fields['state'].selection).get(
+                        part.evaluation_id.state, part.evaluation_id.state
+                    ),
+                ))
+
     @api.model_create_multi
     def create(self, vals_list):
         """Genera token único y congela grupo/género/año en el momento de creación."""

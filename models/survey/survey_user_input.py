@@ -160,12 +160,17 @@ class SurveyUserInput(models.Model):
                 'description': baremo.description if baremo else '',
             }
 
-        # Determinar evaluación activa (si hay)
-        evaluation = self.env['aula_metrics.evaluation'].search([
-            ('state', 'in', ['scheduled', 'active']),
-            ('survey_ids', 'in', survey.id)
-        ], order='date_start desc', limit=1)
-        evaluation_id = evaluation.id if evaluation else False
+        # Usar la evaluación ya vinculada al user_input cuando esté disponible.
+        # Hacer búsqueda genérica solo como fallback: evita asignar el resultado
+        # a la evaluación equivocada cuando hay varias activas con el mismo survey.
+        if self.aulametrics_evaluation_id:
+            evaluation_id = self.aulametrics_evaluation_id.id
+        else:
+            evaluation = self.env['aula_metrics.evaluation'].search([
+                ('state', 'in', ['scheduled', 'active']),
+                ('survey_ids', 'in', survey.id)
+            ], order='date_start desc', limit=1)
+            evaluation_id = evaluation.id if evaluation else False
 
         vals = {
             'student_id': self.partner_id.id,

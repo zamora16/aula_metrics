@@ -15,6 +15,20 @@ class AulaMetricsSurveyPortal(http.Controller):
     @http.route('/survey/preview/<int:survey_id>', type='http', auth='user', website=True)
     def survey_preview(self, survey_id, **kw):
         """Vista previa de survey usando template personalizado."""
+        # Solo usuarios con algún rol AulaMetrics pueden previsualizar surveys
+        user = request.env.user
+        has_role = (
+            user.has_group('aula_metrics.group_aulametrics_admin')
+            or user.has_group('aula_metrics.group_aulametrics_counselor')
+            or user.has_group('aula_metrics.group_aulametrics_management')
+            or user.has_group('aula_metrics.group_aulametrics_tutor')
+        )
+        if not has_role:
+            return request.render('aula_metrics.portal_error', {
+                'error_title': 'Acceso denegado',
+                'error_message': 'No tienes permisos para previsualizar encuestas de AulaMetrics.',
+            })
+
         survey = request.env['survey.survey'].sudo().browse(survey_id)
         if not survey.exists() or not (survey.is_aulametrics or survey.is_adhoc):
             return request.render('aula_metrics.portal_error', {

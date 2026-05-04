@@ -23,6 +23,14 @@ class SurveyResult(models.Model):
     _order = 'completed_at desc'
     _rec_name = 'display_name'
 
+    # Impide crear dos resultados para el mismo user_input. NULL es permitido
+    # por PostgreSQL en UNIQUE (un result sin user_input es válido).
+    _sql_constraints = [
+        ('unique_user_input_id',
+         'UNIQUE(user_input_id)',
+         'Ya existe un resultado registrado para este user_input.'),
+    ]
+
     # ──────────────────────────────────────────────
     # Relaciones principales
     # ──────────────────────────────────────────────

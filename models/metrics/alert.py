@@ -366,39 +366,8 @@ class Alert(models.Model):
             if alert_level == 'individual' and new_alert.student_id:
                 self.env['aula_metrics.case'].sudo().create_from_alert(new_alert)
 
-    def action_resolve(self):
-        """Abrir wizard para registrar la acción tomada y resolver la alerta.
-        Solo se usa para alertas grupales o individuales sin caso asociado.
-        """
-        self.ensure_one()
-        return {
-            'name': 'Resolver Alerta',
-            'type': 'ir.actions.act_window',
-            'res_model': 'aula_metrics.resolve_alert_wizard',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_alert_id': self.id,
-            }
-        }
-
-    def action_open_case(self):
-        """Navega al caso de orientación vinculado a esta alerta.
-        Solo accesible para orientadores y administradores.
-        """
-        self.ensure_one()
-        if not self.case_id:
-            return
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'aula_metrics.case',
-            'res_id': self.case_id.id,
-            'view_mode': 'form',
-            'target': 'current',
-        }
-
-    def action_dismiss(self):
-        """Descartar alerta. Funciona tanto en estado 'active' como 'en_gestion'."""
-        for alert in self:
-            if alert.status in ('active', 'en_gestion'):
-                alert.status = 'dismissed'
+    def write(self, vals):
+        """Auto-rellena resolution_date al resolver una alerta."""
+        if vals.get('status') == 'resolved' and not vals.get('resolution_date'):
+            vals['resolution_date'] = fields.Datetime.now()
+        return super().write(vals)
