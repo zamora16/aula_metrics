@@ -36,6 +36,7 @@
         'views/alert_keyword_views.xml',
         'views/alerts_dashboard.xml',
         'views/case_views.xml',
+        'views/backend_fonts.xml',
         'views/message_thread_views.xml',
         'views/survey_portal_templates.xml',
         'views/qualitative_dashboard_templates.xml',
@@ -59,7 +60,11 @@
         'data/users_groups.xml',
     ],
     'assets': {
+        'web._assets_primary_variables': [
+            ('prepend', 'aula_metrics/static/src/scss/variables.scss'),
+        ],
         'web.assets_backend': [
+            'aula_metrics/static/src/scss/backend_overrides.scss',
             'aula_metrics/static/src/scss/dashboard_home.scss',
         ],
     },

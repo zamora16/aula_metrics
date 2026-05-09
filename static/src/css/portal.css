@@ -1,0 +1,508 @@
+/* ============================================================
+   AulaMetrics — Portal del Alumno
+   Paleta y tipografía unificadas con el dashboard interno.
+   Warm Teal Scholarly: primary #1A5C52 · accent #D4621A · bg #F5EEE6
+   ============================================================ */
+
+/* ── Variables ──────────────────────────────────────────────── */
+:root {
+    --am-bg:           #F5EEE6;
+    --am-surface:      #FEFCF8;
+    --am-text:         #1A1714;
+    --am-primary:      #1A5C52;
+    --am-primary-light:#EBF6F4;
+    --am-accent:       #D4621A;
+    --am-border:       #E0D8CF;
+    --am-muted:        #7A6D65;
+    --am-success:      #166534;
+    --am-success-bg:   #dcfce7;
+    --am-success-bd:   #bbf7d0;
+    --am-warning-bg:   #fef3c7;
+    --am-warning-text: #92400e;
+    --am-error:        #ef4444;
+    --am-radius:       12px;
+    --am-shadow:       0 1px 3px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.07);
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    background: var(--am-bg);
+    color: var(--am-text);
+    font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.am-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.sf-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.am-card {
+    background: var(--am-surface);
+    border-radius: var(--am-radius);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--am-shadow);
+    border: 1px solid var(--am-border);
+}
+
+/* ── Cabecera de evaluación ─────────────────────────────────── */
+.am-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--am-primary);
+    line-height: 1.2;
+}
+
+.am-header p {
+    margin: 0;
+    color: var(--am-muted);
+}
+
+/* ── Info grid (alumno / progreso / fecha) ──────────────────── */
+.am-info {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+}
+
+.am-info-item .label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--am-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.2rem;
+}
+
+.am-info-item .value {
+    display: block;
+    font-weight: 600;
+    color: var(--am-text);
+}
+
+/* ── Barra de progreso ──────────────────────────────────────── */
+.am-progress-bar {
+    height: 8px;
+    background: var(--am-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.am-progress-fill {
+    height: 100%;
+    background: var(--am-primary);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+/* ── Lista de encuestas ─────────────────────────────────────── */
+.am-survey-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.am-survey-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--am-border);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    background: var(--am-surface);
+    transition: border-color 0.2s;
+}
+
+.am-survey-item:hover {
+    border-color: var(--am-primary);
+}
+
+.am-survey-item.completed {
+    background: var(--am-success-bg);
+    border-color: var(--am-success-bd);
+}
+
+.am-survey-title {
+    font-weight: 500;
+}
+
+/* ── Caja de completado total ───────────────────────────────── */
+.am-complete-box {
+    text-align: center;
+    padding: 2.5rem 2rem;
+}
+
+.am-complete-box svg {
+    width: 64px;
+    height: 64px;
+    color: var(--am-primary);
+    margin-bottom: 1rem;
+}
+
+.am-complete-box h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--am-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.am-complete-box p {
+    color: var(--am-muted);
+    margin: 0;
+}
+
+/* ── Botones ─────────────────────────────────────────────────── */
+.am-btn,
+.sf-btn {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.am-btn-primary,
+.sf-btn-submit {
+    background: var(--am-primary);
+    color: #fff;
+}
+
+.am-btn-primary:hover,
+.sf-btn-submit:hover {
+    background: #134840;
+    color: #fff;
+}
+
+.sf-btn-submit:disabled {
+    background: var(--am-muted);
+    cursor: not-allowed;
+}
+
+.sf-btn { padding: 0.75rem 2rem; font-size: 1rem; }
+
+/* ── Badges ─────────────────────────────────────────────────── */
+.am-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.am-badge-success {
+    background: var(--am-success-bg);
+    color: var(--am-success);
+    border: 1px solid var(--am-success-bd);
+}
+
+.am-badge-pending {
+    background: var(--am-warning-bg);
+    color: var(--am-warning-text);
+}
+
+/* ── Alertas flash ───────────────────────────────────────────── */
+.am-alert {
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.am-alert-success {
+    background: var(--am-success-bg);
+    color: var(--am-success);
+    border: 1px solid var(--am-success-bd);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FORMULARIO DE ENCUESTA (sf-*)
+   ══════════════════════════════════════════════════════════════ */
+
+.sf-header {
+    background: var(--am-surface);
+    border-radius: var(--am-radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--am-border);
+    box-shadow: var(--am-shadow);
+}
+
+.sf-header h1 {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--am-primary);
+}
+
+.sf-header p {
+    margin: 0.5rem 0 0 0;
+    color: var(--am-muted);
+    font-size: 0.9rem;
+}
+
+.sf-back {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--am-accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.sf-back:hover { text-decoration: underline; }
+
+.sf-form {
+    background: var(--am-surface);
+    border-radius: var(--am-radius);
+    padding: 2rem;
+    border: 1px solid var(--am-border);
+    box-shadow: var(--am-shadow);
+}
+
+.sf-page-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--am-primary);
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--am-border);
+}
+
+.sf-page-title:first-child { margin-top: 0; }
+
+/* ── Preguntas ───────────────────────────────────────────────── */
+.sf-question { margin-bottom: 1.5rem; }
+
+.sf-question-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--am-text);
+}
+
+.sf-question-title .required { color: var(--am-error); }
+
+/* ── Opciones (radio / checkbox) ─────────────────────────────── */
+.sf-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sf-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.125rem;
+    border: 2px solid var(--am-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    background: var(--am-surface);
+}
+
+.sf-option:hover {
+    border-color: var(--am-primary);
+    background: var(--am-primary-light);
+    transform: translateX(2px);
+}
+
+.sf-option input[type="radio"],
+.sf-option input[type="checkbox"] {
+    margin: 0;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--am-primary);
+    flex-shrink: 0;
+}
+
+.sf-option:has(input:checked) {
+    border-color: var(--am-primary);
+    background: var(--am-primary-light);
+    box-shadow: 0 2px 8px rgba(26, 92, 82, 0.15);
+}
+
+.sf-option span {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* ── Matriz ──────────────────────────────────────────────────── */
+.sf-matrix-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 0.5rem;
+}
+
+.sf-matrix {
+    width: 100%;
+    min-width: 520px;
+    border-collapse: collapse;
+}
+
+.sf-matrix th,
+.sf-matrix td {
+    padding: 0.65rem 0.4rem;
+    text-align: center;
+    border-bottom: 1px solid var(--am-border);
+    font-size: 0.85rem;
+}
+
+.sf-matrix th {
+    font-weight: 600;
+    color: var(--am-muted);
+    font-size: 0.75rem;
+    line-height: 1.3;
+    max-width: 90px;
+    word-break: break-word;
+}
+
+.sf-matrix td:first-child {
+    text-align: left;
+    font-weight: 500;
+    min-width: 200px;
+    max-width: 340px;
+    padding-right: 1rem;
+}
+
+.sf-matrix input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--am-primary);
+}
+
+/* ── Inputs de texto ─────────────────────────────────────────── */
+.sf-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--am-border);
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--am-text);
+    background: var(--am-surface);
+    transition: border-color 0.2s;
+}
+
+.sf-input:focus {
+    outline: none;
+    border-color: var(--am-primary);
+    box-shadow: 0 0 0 3px rgba(26, 92, 82, 0.12);
+}
+
+textarea.sf-input {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* ── Acciones del formulario ─────────────────────────────────── */
+.sf-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--am-border);
+    gap: 1rem;
+}
+
+.sf-preview-notice {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--am-warning-bg);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--am-warning-text);
+    font-size: 0.9rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PÁGINA DE ERROR
+   ══════════════════════════════════════════════════════════════ */
+
+.am-error-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+}
+
+.am-error-box {
+    background: var(--am-surface);
+    padding: 3rem;
+    border-radius: var(--am-radius);
+    text-align: center;
+    box-shadow: var(--am-shadow);
+    border: 1px solid var(--am-border);
+    max-width: 420px;
+    width: 100%;
+}
+
+.am-error-box svg {
+    width: 64px;
+    height: 64px;
+    color: var(--am-error);
+    margin-bottom: 1rem;
+}
+
+.am-error-box h3 {
+    margin: 0 0 0.5rem 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--am-primary);
+    font-size: 1.3rem;
+}
+
+.am-error-box p {
+    margin: 0;
+    color: var(--am-muted);
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .am-container,
+    .sf-container { padding: 1rem 0.75rem; }
+
+    .am-card,
+    .sf-form,
+    .sf-header { padding: 1.25rem; }
+
+    .am-info { gap: 1rem; }
+
+    .sf-matrix { font-size: 0.75rem; min-width: 480px; }
+    .sf-matrix th,
+    .sf-matrix td { padding: 0.4rem 0.2rem; }
+    .sf-matrix td:first-child { min-width: 140px; }
+
+    .sf-actions { flex-direction: column-reverse; }
+    .sf-btn { width: 100%; text-align: center; }
+}

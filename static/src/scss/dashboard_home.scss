@@ -1,5 +1,4 @@
-// Variables — Warm Teal Scholarly palette (logo #42bda5 / #f39e35 / #ec712f)
-$am-bg:              #F5EEE6;
+$am-bg:              #F9F5F0;
 $am-surface:         #FEFCF8;
 $am-text:            #1A1714;
 $am-primary:         #1A5C52;
@@ -7,17 +6,16 @@ $am-primary-light:   #EBF6F4;
 $am-accent:          #D4621A;
 $am-border:          #E0D8CF;
 $am-muted:           #7A6D65;
+$am-font-display:    'Playfair Display', Georgia, serif;
 $am-card-radius:     14px;
 $am-card-shadow:     0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.07);
 $am-card-hover-shadow: 0 8px 28px rgba(0,0,0,0.11);
 $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
 
-// Main Container Reset
 .o_kanban_view.am_dashboard_view {
     padding: 2rem 3rem !important;
     background-color: $am-bg !important;
-    
-    // Hide Control Panel
+
     .o_control_panel {
         display: none !important;
     }
@@ -26,66 +24,61 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
         display: flex;
         flex-wrap: wrap;
         gap: 2rem;
-        justify-content: flex-start; 
+        justify-content: flex-start;
         align-items: stretch;
         padding: 0 1rem !important;
         margin: 0 !important;
         width: 100%;
-        
+
         &::after { display: none; }
     }
 }
 
-// Reset Odoo Native Kanban Record Styles
 .am_dashboard_view .o_kanban_record {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    width: 100%; 
+    width: 100%;
     flex: 0 0 100%;
-    
+
     &:focus, &:focus-within {
         outline: none !important;
     }
 }
 
-// --- BANNER STYLE ---
 .am_dashboard_banner {
     width: 100%;
     margin-bottom: 1rem;
     padding: 1rem 0 3rem 0;
-    
     background: transparent;
     box-shadow: none;
     border: none;
-    
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
 
     &::before, &::after { display: none; }
-    
+
     .am_banner_content {
         width: 100%;
         max-width: 900px;
-        
+
         h1 {
             font-size: 2.5rem;
             font-weight: 700;
-            font-family: 'Playfair Display', Georgia, serif;
+            font-family: $am-font-display;
             color: $am-text;
             margin-bottom: 0.75rem;
             line-height: 1.2;
             letter-spacing: -0.02em;
-            
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
+
         p {
             font-size: 1.15rem;
             color: $am-muted;
@@ -97,9 +90,7 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
 }
 
-// --- CARD STYLE (Kanban hub cards) ---
 .am_dashboard_card {
-    // Button Reset
     width: 100%;
     border: 1px solid $am-border;
     outline: none;
@@ -109,7 +100,6 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
     font: inherit;
     appearance: none;
     -webkit-appearance: none;
-    
     height: 100%;
     min-height: 260px;
     background: $am-surface;
@@ -121,11 +111,11 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
     flex-direction: column;
     position: relative;
     cursor: pointer;
-    
+
     &:hover {
         transform: translateY(-6px);
         box-shadow: $am-card-hover-shadow;
-        
+
         .am_card_header i {
             transform: scale(1.08) rotate(4deg);
         }
@@ -137,15 +127,15 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
         justify-content: center;
         align-items: center;
         position: relative;
-        
+
         i {
             font-size: 3rem;
             color: white;
             transition: $am-transition;
             filter: drop-shadow(0 3px 5px rgba(0,0,0,0.12));
         }
-        
-        // Curved separator
+
+        // border-radius trick creates a curved wave between the colored header and the white body
         &::after {
             content: "";
             position: absolute;
@@ -160,23 +150,22 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
 
     .am_card_body {
-        padding: 2rem;
+        padding: 1rem 2rem 2rem;
         flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding-top: 1rem;
-        
+
         .am_card_title {
             font-size: 1.2rem;
             font-weight: 700;
-            font-family: 'Playfair Display', Georgia, serif;
+            font-family: $am-font-display;
             color: $am-text;
             margin-bottom: 0.75rem;
             letter-spacing: -0.01em;
         }
-        
+
         .am_card_desc {
             font-size: 0.95rem;
             color: $am-muted;
@@ -187,7 +176,7 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        
+
         .am_card_action {
             margin-top: 1.5rem;
             color: $am-muted;
@@ -196,11 +185,11 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
             opacity: 0;
             transform: translateY(10px);
             transition: $am-transition;
-            
+
             i { margin-left: 5px; }
         }
     }
-    
+
     &:hover .am_card_action {
         opacity: 1;
         transform: translateY(0);
@@ -208,27 +197,21 @@ $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
 }
 
-// --- RESPONSIVE GRID SYSTEM ---
-
-// Banner Full Width
 .am_dashboard_view .o_kanban_record:has(.am_dashboard_banner) {
-     flex: 0 0 100% !important;
-     width: 100% !important;
-     margin-bottom: 2rem !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    margin-bottom: 2rem !important;
 }
 
 .am_dashboard_view .o_kanban_record:not(:has(.am_dashboard_banner)) {
-    // Desktop (Large): 4 cols
     flex: 0 0 calc(25% - 1.5rem) !important;
     max-width: calc(25% - 1.5rem) !important;
-    
-    // Tablet / Small Desktop: 2 cols
+
     @media (max-width: 1400px) {
         flex: 0 0 calc(50% - 1rem) !important;
         max-width: calc(50% - 1rem) !important;
     }
-    
-    // Mobile: 1 col
+
     @media (max-width: 768px) {
         flex: 0 0 100% !important;
         max-width: 100% !important;
