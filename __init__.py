@@ -6,8 +6,9 @@ from . import wizards
 from . import utils
 
 
-def _post_init_create_indexes(env):
-    """Crea índices compuestos de rendimiento en instalación nueva."""
+def _setup_indexes_and_lang(env):
+    """Crea índices de rendimiento y activa el idioma Valencià con sus traducciones."""
+    # Índices de rendimiento
     cr = env.cr
     indexes = [
         ("idx_participation_eval_state",
@@ -25,3 +26,19 @@ def _post_init_create_indexes(env):
         cr.execute(
             f"CREATE INDEX IF NOT EXISTS {name} ON {table} {columns}"
         )
+
+    # Activar idioma Valencià y cargar traducciones del módulo automáticamente
+    env['res.lang']._activate_lang('ca_ES')
+    module = env['ir.module.module'].search([('name', '=', 'aula_metrics')], limit=1)
+    if module:
+        module._update_translations('ca_ES')
+
+
+def _post_init_create_indexes(env):
+    """Hook de post-instalación."""
+    _setup_indexes_and_lang(env)
+
+
+def _post_migrate_setup(env):
+    """Hook de post-migración/actualización: asegura idioma Valencià activo."""
+    _setup_indexes_and_lang(env)

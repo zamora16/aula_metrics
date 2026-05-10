@@ -9,3 +9,4 @@ from . import dashboard_helpers
 from . import palette
 from . import chart_defaults
 from . import role_service
+from . import lang_service

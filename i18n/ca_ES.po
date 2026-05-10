@@ -1,0 +1,333 @@
+# Traducció al Valencià — AulaMetrics
+# Mòdul: aula_metrics
+#
+# INSTRUCCIONS:
+#   Omple cada camp msgstr "" amb la traducció valenciana.
+#   Un cop completat, executa:
+#       odoo --update aula_metrics -d <nom_bbdd>
+#
+#   Per afegir un nou cuestionari:
+#     1. Afegir les entrades del .xml de dades en castellà com sempre.
+#     2. Afegir ací els blocs de traducció per als nous XML IDs.
+#     3. Executar --update.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-05-10 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Language: ca_ES\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+# ==============================================================
+#  SDQ — Cuestionario de Capacidades y Dificultades
+# ==============================================================
+
+#. module: aula_metrics
+#: model:survey.survey,title:aula_metrics.survey_sdq
+msgid "SDQ — Cuestionario de Capacidades y Dificultades (Autoinforme)"
+msgstr "SDQ — Qüestionari de Capacitats i Dificultats (Autoinforme)"
+
+#. module: aula_metrics
+#: model:survey.survey,description:aula_metrics.survey_sdq
+msgid "Para cada frase, marca la casilla que mejor describa cómo te has comportado o sentido en los últimos 6 meses."
+msgstr "Per a cada frase, marca la casella que millor descrigua com t'has comportat o sentit en els últims 6 mesos."
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q01
+msgid "Tengo en cuenta los sentimientos de otras personas"
+msgstr "Tinc en compte els sentiments d'altres persones"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q02
+msgid "Soy inquieto/a, hiperactivo/a, no puedo permanecer quieto/a por mucho tiempo"
+msgstr "Sóc inquiet/a, hiperactiu/a, no puc romandre quiet/a molt de temps"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q03
+msgid "Suelo tener muchos dolores de cabeza, estómago o náuseas"
+msgstr "Sovint tinc molts mals de cap, de ventre o nàusees"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q04
+msgid "Normalmente comparto con otros mis juegos, lápices, útiles, etc."
+msgstr "Normalment compartixc amb altres els meus jocs, llapis, útils, etc."
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q05
+msgid "Cuando me enojo, me enojo mucho y pierdo el control"
+msgstr "Quan m'enrabie, m'enrabie molt i perdc el control"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q06
+msgid "Soy más bien solitario/a y tiendo a jugar solo/a"
+msgstr "Sóc més aviat solitari/a i tendixc a jugar sol/a"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q07
+msgid "Por lo general soy obediente"
+msgstr "En general sóc obedient"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q08
+msgid "A menudo estoy preocupado/a"
+msgstr "Sovint estic preocupat/ada"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q09
+msgid "Ayudo si alguien está enfermo, disgustado o herido"
+msgstr "Ajude si algú està malalt, disgustat/ada o ferit/ida"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q10
+msgid "Estoy todo el tiempo moviéndome, me muevo demasiado"
+msgstr "Estic tot el temps movent-me, em moc massa"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q11
+msgid "Tengo un/a buen/a amigo/a por lo menos"
+msgstr "Tinc almenys un/a bon/a amic/amiga"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q12
+msgid "Peleo mucho. Puedo hacer que los demás hagan lo que yo quiero"
+msgstr "Baralle molt. Puc fer que els altres facen el que jo vull"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q13
+msgid "Me siento a menudo triste, desanimado/a o con ganas de llorar"
+msgstr "Sovint em sent trist/a, desanimat/ada o amb ganes de plorar"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q14
+msgid "Por lo general caigo bien a la otra gente de mi edad"
+msgstr "En general caic bé a l'altra gent de la meua edat"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q15
+msgid "Me distraigo con facilidad, me cuesta concentrarme"
+msgstr "Em distraig amb facilitat, em costa concentrar-me"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q16
+msgid "Me pongo nervioso/a con situaciones nuevas, fácilmente pierdo la confianza en mí mismo/a"
+msgstr "Em pose nerviós/a amb situacions noves, fàcilment perdc la confiança en mi mateix/a"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q17
+msgid "Trato bien a los niños/as más pequeños/as"
+msgstr "Tracte bé els xiquets/es més menuts/es"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q18
+msgid "A menudo me acusan de mentir o de hacer trampa"
+msgstr "Sovint m'acusen de mentir o de fer trampa"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q19
+msgid "Otros chicos de mi edad se meten conmigo o se burlan de mí"
+msgstr "Altres xics/xiques de la meua edat es fiquen amb mi o es burlen de mi"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q20
+msgid "A menudo ofrezco mi ayuda (a padres, profesores, niños)"
+msgstr "Sovint oferixc la meua ajuda (a pares, professors, xiquets)"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q21
+msgid "Pienso las cosas antes de hacerlas"
+msgstr "Pense les coses abans de fer-les"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q22
+msgid "Tomo cosas que no son mías de casa, la escuela o de otros sitios"
+msgstr "Prenc coses que no són meues de casa, l'escola o d'altres llocs"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q23
+msgid "Me llevo mejor con adultos que con otros de mi edad"
+msgstr "M'entenc millor amb adults que amb altres de la meua edat"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q24
+msgid "Tengo muchos miedos, me asusto fácilmente"
+msgstr "Tinc moltes pors, m'espante fàcilment"
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.sdq_q25
+msgid "Termino lo que empiezo, tengo buena concentración"
+msgstr "Acabe allò que comence, tinc bona concentració"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.sdq_q01_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q02_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q03_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q04_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q05_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q06_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q07_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q08_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q09_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q10_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q11_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q12_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q13_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q14_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q15_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q16_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q17_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q18_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q19_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q20_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q21_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q22_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q23_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q24_a0
+#: model:survey.question.answer,value:aula_metrics.sdq_q25_a0
+msgid "No es cierto"
+msgstr "No és cert"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.sdq_q01_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q02_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q03_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q04_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q05_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q06_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q07_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q08_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q09_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q10_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q11_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q12_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q13_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q14_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q15_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q16_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q17_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q18_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q19_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q20_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q21_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q22_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q23_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q24_a1
+#: model:survey.question.answer,value:aula_metrics.sdq_q25_a1
+msgid "Un tanto cierto"
+msgstr "Una mica cert"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.sdq_q01_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q02_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q03_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q04_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q05_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q06_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q07_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q08_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q09_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q10_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q11_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q12_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q13_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q14_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q15_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q16_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q17_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q18_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q19_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q20_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q21_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q22_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q23_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q24_a2
+#: model:survey.question.answer,value:aula_metrics.sdq_q25_a2
+msgid "Absolutamente cierto"
+msgstr "Absolutament cert"
+
+
+# ==============================================================
+#  SWLS — Escala de Satisfacción con la Vida
+# ==============================================================
+
+#. module: aula_metrics
+#: model:survey.survey,title:aula_metrics.survey_swls
+msgid "SWLS — Escala de Satisfacción con la Vida"
+msgstr "SWLS — Escala de Satisfacció amb la Vida"
+
+#. module: aula_metrics
+#: model:survey.survey,description:aula_metrics.survey_swls
+msgid "Por favor, indica tu grado de acuerdo con cada frase seleccionando el número apropiado."
+msgstr "Per favor, indica el teu grau d'acord amb cada frase seleccionant el número apropiat."
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.swls_matrix
+msgid "Para cada una de las siguientes afirmaciones, indica tu grado de acuerdo."
+msgstr "Per a cadascuna de les afirmacions següents, indica el teu grau d'acord."
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_1
+msgid "Completamente en desacuerdo"
+msgstr "Completament en desacord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_2
+msgid "En desacuerdo"
+msgstr "En desacord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_3
+msgid "Más bien en desacuerdo"
+msgstr "Més aviat en desacord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_4
+msgid "Ni de acuerdo ni en desacuerdo"
+msgstr "Ni d'acord ni en desacord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_5
+msgid "Más bien de acuerdo"
+msgstr "Més aviat d'acord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_6
+msgid "De acuerdo"
+msgstr "D'acord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_col_7
+msgid "Completamente de acuerdo"
+msgstr "Completament d'acord"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_row_1
+msgid "En la mayoría de los aspectos mi vida es como yo quiero que sea"
+msgstr "En la majoria dels aspectes la meua vida és com jo vull que siga"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_row_2
+msgid "Las circunstancias de mi vida son muy buenas"
+msgstr "Les circumstàncies de la meua vida són molt bones"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_row_3
+msgid "Estoy satisfecho con mi vida"
+msgstr "Estic satisfet/a amb la meua vida"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_row_4
+msgid "Hasta ahora he conseguido de la vida las cosas que considero importantes"
+msgstr "Fins ara he aconseguit de la vida les coses que considere importants"
+
+#. module: aula_metrics
+#: model:survey.question.answer,value:aula_metrics.swls_row_5
+msgid "Si pudiera vivir mi vida otra vez no cambiaría casi nada"
+msgstr "Si poguera viure la meua vida una altra vegada no canviaria quasi res"
+

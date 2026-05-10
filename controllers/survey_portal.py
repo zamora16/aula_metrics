@@ -5,6 +5,7 @@ Portal público de encuestas para alumnos usando tokens de participación.
 import logging
 from odoo import http, fields
 from odoo.http import request
+from ..utils.lang_service import get_request_lang, set_lang_cookie, SUPPORTED_LANGS, DEFAULT_LANG
 
 _logger = logging.getLogger(__name__)
 
@@ -12,10 +13,22 @@ _logger = logging.getLogger(__name__)
 class AulaMetricsSurveyPortal(http.Controller):
     """Portal público de encuestas sin autenticación."""
 
-    @http.route('/survey/preview/<int:survey_id>', type='http', auth='user', website=True)
+    @http.route('/am/lang', type='http', auth='public', csrf=False, methods=['POST'])
+    def set_lang(self, lang='es_ES', redirect='/', **kw):
+        """Fija el idioma del portal mediante cookie y redirige a la página actual."""
+        if lang not in SUPPORTED_LANGS:
+            lang = DEFAULT_LANG
+        # Evitar open redirects: solo rutas relativas internas
+        if not redirect.startswith('/') or '://' in redirect:
+            redirect = '/'
+        response = request.redirect(redirect)
+        return set_lang_cookie(response, lang)
+
+    @http.route('/survey/preview/<int:survey_id>', type='http', auth='user')
     def survey_preview(self, survey_id, **kw):
         """Vista previa de survey usando template personalizado."""
-        # Solo usuarios con algún rol AulaMetrics pueden previsualizar surveys
+        lang = get_request_lang(request)
+
         user = request.env.user
         has_role = (
             user.has_group('aula_metrics.group_aulametrics_admin')
@@ -36,18 +49,23 @@ class AulaMetricsSurveyPortal(http.Controller):
                 'error_message': 'La encuesta no existe o no es de AulaMetrics.'
             })
 
-        questions = survey.get_questions_data(user_input=None)
+        questions = survey.with_context(lang=lang).get_questions_data(user_input=None)
 
-        return request.render('aula_metrics.portal_survey_form', {
-            'survey': survey,
+        response = request.render('aula_metrics.portal_survey_form', {
+            'survey': survey.with_context(lang=lang),
             'questions': questions,
             'preview': True,
             'token': 'preview',
+            'active_lang': lang,
+            'supported_langs': SUPPORTED_LANGS,
         })
+        return set_lang_cookie(response, lang)
 
     @http.route('/evaluacion/<string:token>', type='http', auth='public', csrf=False)
     def portal_evaluacion(self, token, **kw):
         """Portal principal con lista de encuestas de la evaluación."""
+        lang = get_request_lang(request)
+
         participation = request.env['aula_metrics.participation'].get_by_token(token)
 
         if not participation:
@@ -71,25 +89,30 @@ class AulaMetricsSurveyPortal(http.Controller):
                 'error_message': 'Esta evaluación aún no está disponible.'
             })
 
-        survey_status = participation.get_surveys_status()
+        survey_status = participation.with_context(lang=lang).get_surveys_status()
         completed_count = len([s for s in survey_status if s['completed']])
         total_count = len(survey_status)
         progress = int((completed_count / total_count * 100) if total_count > 0 else 0)
 
-        return request.render('aula_metrics.portal_evaluacion', {
-            'participation': participation.sudo(),
-            'evaluation': evaluation,
-            'student': participation.student_id.sudo(),
+        response = request.render('aula_metrics.portal_evaluacion', {
+            'participation': participation.sudo().with_context(lang=lang),
+            'evaluation': evaluation.with_context(lang=lang),
+            'student': participation.student_id.sudo().with_context(lang=lang),
             'surveys': survey_status,
             'progress': progress,
             'completed_count': completed_count,
             'total_count': total_count,
             'token': token,
+            'active_lang': lang,
+            'supported_langs': SUPPORTED_LANGS,
         })
+        return set_lang_cookie(response, lang)
 
     @http.route('/evaluacion/<string:token>/encuesta/<int:survey_id>', type='http', auth='public', csrf=False)
     def render_survey(self, token, survey_id, **kw):
         """Renderiza el formulario de una encuesta específica."""
+        lang = get_request_lang(request)
+
         participation = request.env['aula_metrics.participation'].get_by_token(token)
 
         if not participation:
@@ -118,17 +141,21 @@ class AulaMetricsSurveyPortal(http.Controller):
         user_input = request.env['survey.user_input'].get_or_create_for_participation(
             participation, survey
         )
-        questions_data = survey.get_questions_data(user_input)
 
-        return request.render('aula_metrics.portal_survey_form', {
-            'participation': participation.sudo(),
-            'evaluation': participation.evaluation_id.sudo(),
-            'student': participation.student_id.sudo(),
-            'survey': survey,
+        questions_data = survey.with_context(lang=lang).get_questions_data(user_input)
+
+        response = request.render('aula_metrics.portal_survey_form', {
+            'participation': participation.sudo().with_context(lang=lang),
+            'evaluation': participation.evaluation_id.sudo().with_context(lang=lang),
+            'student': participation.student_id.sudo().with_context(lang=lang),
+            'survey': survey.with_context(lang=lang),
             'user_input': user_input,
             'questions': questions_data,
             'token': token,
+            'active_lang': lang,
+            'supported_langs': SUPPORTED_LANGS,
         })
+        return set_lang_cookie(response, lang)
 
     @http.route('/evaluacion/<string:token>/encuesta/<int:survey_id>/submit',
                 type='http', auth='public', csrf=False, methods=['POST'])

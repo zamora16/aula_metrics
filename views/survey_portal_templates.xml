@@ -20,6 +20,31 @@
 
 
     <!-- ============================================================
+         SELECTOR DE IDIOMA — widget reutilizable
+         Espera en contexto: `active_lang` (código activo), `supported_langs` (dict),
+         `_lang_base_url` (URL de la página actual, sin parámetros).
+         Envía POST a /am/lang para fijar la cookie sin añadir ?lang= a la URL
+         (evita que el módulo website de Odoo intercepte el parámetro y redirija).
+         ============================================================ -->
+    <template id="portal_lang_switcher" name="Selector de Idioma Portal">
+        <div class="am-lang-switcher" aria-label="Seleccionar idioma">
+            <t t-foreach="supported_langs.items()" t-as="lang_item">
+                <form method="post" action="/am/lang">
+                    <input type="hidden" name="lang" t-att-value="lang_item[0]"/>
+                    <input type="hidden" name="redirect" t-att-value="_lang_base_url"/>
+                    <button type="submit"
+                            t-att-class="'active' if lang_item[0] == active_lang else ''"
+                            t-att-aria-current="'true' if lang_item[0] == active_lang else None"
+                            t-att-title="lang_item[1]">
+                        <t t-out="lang_item[1]"/>
+                    </button>
+                </form>
+            </t>
+        </div>
+    </template>
+
+
+    <!-- ============================================================
          PORTAL DE EVALUACIÓN — lista de encuestas
          ============================================================ -->
     <template id="portal_evaluacion" name="Portal de Evaluación AulaMetrics">
@@ -29,6 +54,11 @@
                 <title>Evaluación - AulaMetrics</title>
             </head>
             <body>
+                <!-- Selector de idioma (fijo en esquina superior derecha) -->
+                <t t-call="aula_metrics.portal_lang_switcher">
+                    <t t-set="_lang_base_url" t-value="'/evaluacion/' + token"/>
+                </t>
+
                 <div class="am-container">
 
                     <!-- Mensajes flash -->
@@ -113,6 +143,18 @@
                 <title><t t-out="survey.title"/> - AulaMetrics</title>
             </head>
             <body>
+                <!-- Selector de idioma -->
+                <t t-if="preview">
+                    <t t-call="aula_metrics.portal_lang_switcher">
+                        <t t-set="_lang_base_url" t-value="'/survey/preview/' + str(survey.id)"/>
+                    </t>
+                </t>
+                <t t-else="">
+                    <t t-call="aula_metrics.portal_lang_switcher">
+                        <t t-set="_lang_base_url" t-value="'/evaluacion/' + token + '/encuesta/' + str(survey.id)"/>
+                    </t>
+                </t>
+
                 <div class="sf-container">
 
                     <!-- Navegación superior -->
@@ -127,7 +169,7 @@
                     <div class="sf-header">
                         <h1><t t-out="survey.title"/></h1>
                         <t t-if="survey.description">
-                            <p><t t-raw="survey.description"/></p>
+                            <p><t t-out="survey.description"/></p>
                         </t>
                     </div>
 
