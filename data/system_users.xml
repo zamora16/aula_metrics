@@ -11,6 +11,7 @@
     <record id="user_aulametrics_system" model="res.users">
         <field name="name">AulaMetrics</field>
         <field name="login">aulametrics-system</field>
+        <field name="email">soporte@aulametrics.com</field>
         <field name="groups_id" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
