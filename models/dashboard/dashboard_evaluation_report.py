@@ -28,6 +28,7 @@ from collections import defaultdict, Counter
 from odoo import models, api
 from markupsafe import Markup
 from ...utils import dashboard_styles
+from ...utils.constants import centro_surveys_enabled
 from ...utils.constants import ROLE_TUTOR, ROLE_MANAGEMENT, ROLE_ADMIN, ROLE_COUNSELOR
 
 _logger = logging.getLogger(__name__)
@@ -239,6 +240,7 @@ class DashboardEvaluationReport(models.TransientModel):
         surveys = evaluation.survey_ids.sorted(
             lambda s: (0 if s.is_aulametrics else 1, s.title or '')
         )
+        _centro_active = centro_surveys_enabled(self.env)
         result = []
         for survey in surveys:
             if survey.is_aulametrics:
@@ -248,6 +250,8 @@ class DashboardEvaluationReport(models.TransientModel):
                 # tabla de frecuencia de palabras sin pasar por la lógica cuantitativa.
                 data = self._get_text_survey_data(survey, evaluation, role_info)
             else:
+                if not _centro_active:
+                    continue
                 data = self._get_adhoc_survey_data(survey, evaluation, role_info)
                 if not data:
                     data = self._get_text_survey_data(survey, evaluation, role_info)

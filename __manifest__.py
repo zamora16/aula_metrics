@@ -22,6 +22,7 @@
         'data/case_stages.xml',
         'data/system_users.xml',
         # 3. Vistas
+        'views/config_settings_views.xml',
         'views/dashboard_home_views.xml',
         'views/dashboard.xml',
         'views/dashboard_hub.xml',

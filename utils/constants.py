@@ -11,10 +11,28 @@ un único lugar.
 # ─────────────────────────────────────────────────────────────────────────────
 # Grupos de seguridad de Odoo (XML IDs)
 # ─────────────────────────────────────────────────────────────────────────────
-GROUP_ADMIN      = 'aula_metrics.group_aulametrics_admin'
-GROUP_COUNSELOR  = 'aula_metrics.group_aulametrics_counselor'
-GROUP_MANAGEMENT = 'aula_metrics.group_aulametrics_management'
-GROUP_TUTOR      = 'aula_metrics.group_aulametrics_tutor'
+GROUP_ADMIN           = 'aula_metrics.group_aulametrics_admin'
+GROUP_COUNSELOR       = 'aula_metrics.group_aulametrics_counselor'
+GROUP_MANAGEMENT      = 'aula_metrics.group_aulametrics_management'
+GROUP_TUTOR           = 'aula_metrics.group_aulametrics_tutor'
+GROUP_CENTRO_SURVEYS  = 'aula_metrics.group_aulametrics_centro_surveys'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature flags
+# ─────────────────────────────────────────────────────────────────────────────
+_PARAM_CENTRO_SURVEYS = 'aula_metrics.enable_centro_surveys'
+
+
+def centro_surveys_enabled(env):
+    """Devuelve True si los cuestionarios del centro (adhoc) están activados.
+
+    Lee el parámetro de sistema ``aula_metrics.enable_centro_surveys``.
+    Por defecto False — desactivado en instalaciones nuevas.
+    """
+    return (
+        env['ir.config_parameter'].sudo()
+        .get_param(_PARAM_CENTRO_SURVEYS, 'False') == 'True'
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Jerarquía de roles (de mayor a menor privilegio)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+from ...utils.constants import centro_surveys_enabled
 
 class Threshold(models.Model):
     _name = 'aula_metrics.threshold'
@@ -19,14 +20,15 @@ class Threshold(models.Model):
 
     @api.model
     def _get_score_field_options(self):
-        """Genera opciones dinámicamente desde TODOS los cuestionarios AulaMetrics (oficiales y del centro)"""
+        """Genera opciones dinámicamente desde los cuestionarios AulaMetrics.
+        Incluye cuestionarios del centro (is_adhoc) solo si el feature flag está activo."""
         options = []
-        # Obtener todos los cuestionarios: oficiales (is_aulametrics) y del centro (is_adhoc)
-        surveys = self.env['survey.survey'].search([
-            '|',
-            ('is_aulametrics', '=', True),
-            ('is_adhoc', '=', True),
-        ], order='is_adhoc, title')
+        _centro_active = centro_surveys_enabled(self.env)
+        # Dominio base: siempre cuestionarios oficiales
+        domain = [('is_aulametrics', '=', True)]
+        if _centro_active:
+            domain = ['|', ('is_aulametrics', '=', True), ('is_adhoc', '=', True)]
+        surveys = self.env['survey.survey'].search(domain, order='is_adhoc, title')
         
         for survey in surveys:
             # Para oficiales: usar survey_code

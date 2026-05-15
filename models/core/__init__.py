@@ -9,3 +9,4 @@ from . import threshold
 from . import metric_value
 from . import participation
 from . import evaluation
+from . import config_settings

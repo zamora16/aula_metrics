@@ -15,6 +15,7 @@ import pandas as pd
 from markupsafe import Markup
 from ...utils import dashboard_styles, dashboard_profile_styles, dashboard_helpers, role_service
 from ...utils.constants import QUERY_LIMIT_STUDENTS
+from ...utils.constants import centro_surveys_enabled
 
 
 def _qweb(env, template_id, values):
@@ -56,8 +57,10 @@ class DashboardStudentProfile(models.TransientModel):
 
         df = self._prepare_metrics_dataframe(metrics)
 
+        _centro_active = centro_surveys_enabled(self.env)
+
         # Métricas de cuestionarios del centro (excluye oficiales AulaMetrics)
-        centro_metrics = self._get_centro_metrics(student_id)
+        centro_metrics = self._get_centro_metrics(student_id) if _centro_active else None
         df_centro      = self._prepare_metrics_dataframe(centro_metrics) if centro_metrics else pd.DataFrame()
 
         evolution_charts      = self._generate_evolution_chartjs(df_centro, student)
@@ -68,7 +71,7 @@ class DashboardStudentProfile(models.TransientModel):
         participations_html   = self._get_participations_html(student_id)
         qualitative_html      = self._get_qualitative_responses_html(student_id)
         official_surveys_data = self._get_official_surveys_html(student_id)
-        centro_surveys_html   = self._get_centro_surveys_html(student_id, student)
+        centro_surveys_html   = self._get_centro_surveys_html(student_id, student) if _centro_active else ''
 
         return self._build_profile_html_chartjs(
             student, role_info, kpis_html,
@@ -77,6 +80,7 @@ class DashboardStudentProfile(models.TransientModel):
             participations_html, qualitative_html,
             official_surveys_data=official_surveys_data,
             centro_surveys_html=centro_surveys_html,
+            centro_active=_centro_active,
         )
 
     @api.model
@@ -372,7 +376,7 @@ class DashboardStudentProfile(models.TransientModel):
     def _build_profile_html_chartjs(self, student, role_info, kpis_html, evolution, radar,
                                      alerts, alerts_history, participations,
                                      qualitative='', official_surveys_data=None,
-                                     centro_surveys_html=''):
+                                     centro_surveys_html='', centro_active=False):
         """
         Contexto completo para el perfil — layout y JS via QWeb template.
         """
@@ -405,6 +409,7 @@ class DashboardStudentProfile(models.TransientModel):
             'evol_ofic_html':        Markup(evol_ofic_html) if evol_ofic_html else Markup(''),
             'evolution_charts_html': Markup(evolution) if evolution else Markup(''),
             'centro_surveys_html':   Markup(centro_surveys_html) if centro_surveys_html else Markup(''),
+            'centro_active':         centro_active,
             'qualitative_html':      Markup(qualitative) if qualitative else Markup(''),
             'alerts_html':           Markup(alerts) if alerts else Markup(''),
             'alerts_history_html':   Markup(alerts_history) if alerts_history else Markup(''),

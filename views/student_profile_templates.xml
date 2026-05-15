@@ -598,10 +598,12 @@
                             onclick="amSubtab('cuant','ofic',this)">
                         <i class="fa-solid fa-clipboard-check me-1"/>Cuestionarios Oficiales
                     </button>
-                    <button class="am-subtab" data-group="cuant" data-sub="centro"
-                            onclick="amSubtab('cuant','centro',this)">
-                        <i class="fa-solid fa-school me-1"/>Cuestionarios del Centro
-                    </button>
+                    <t t-if="centro_active">
+                        <button class="am-subtab" data-group="cuant" data-sub="centro"
+                                onclick="amSubtab('cuant','centro',this)">
+                            <i class="fa-solid fa-school me-1"/>Cuestionarios del Centro
+                        </button>
+                    </t>
                 </div>
                 <div id="am-cuant-ofic" class="am-subpane am-show" data-group="cuant">
                     <t t-if="has_surveys">
@@ -625,17 +627,19 @@
                         </div>
                     </div>
                 </div>
-                <div id="am-cuant-centro" class="am-subpane" data-group="cuant">
-                    <t t-if="centro_surveys_html">
-                        <t t-out="centro_surveys_html"/>
-                    </t>
-                    <t t-else="">
-                        <div class="text-center py-5">
-                            <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"/>
-                            <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
-                        </div>
-                    </t>
-                </div>
+                <t t-if="centro_active">
+                    <div id="am-cuant-centro" class="am-subpane" data-group="cuant">
+                        <t t-if="centro_surveys_html">
+                            <t t-out="centro_surveys_html"/>
+                        </t>
+                        <t t-else="">
+                            <div class="text-center py-5">
+                                <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"/>
+                                <p class="text-muted mb-0">No hay métricas de cuestionarios del centro registradas.</p>
+                            </div>
+                        </t>
+                    </div>
+                </t>
             </div>
 
             <!-- ── Tab: Datos cualitativos ─────────────────────────────── -->
@@ -666,10 +670,12 @@
                             onclick="amSubtab('evol','ofic',this)">
                         <i class="fa-solid fa-clipboard-check me-1"/>Cuestionarios Oficiales
                     </button>
-                    <button class="am-subtab" data-group="evol" data-sub="centro"
-                            onclick="amSubtab('evol','centro',this)">
-                        <i class="fa-solid fa-school me-1"/>Cuestionarios del Centro
-                    </button>
+                    <t t-if="centro_active">
+                        <button class="am-subtab" data-group="evol" data-sub="centro"
+                                onclick="amSubtab('evol','centro',this)">
+                            <i class="fa-solid fa-school me-1"/>Cuestionarios del Centro
+                        </button>
+                    </t>
                 </div>
                 <div id="am-evol-ofic" class="am-subpane am-show" data-group="evol">
                     <t t-if="evol_ofic_html">
@@ -682,17 +688,19 @@
                         </div>
                     </t>
                 </div>
-                <div id="am-evol-centro" class="am-subpane" data-group="evol">
-                    <t t-if="evolution_charts_html">
-                        <t t-out="evolution_charts_html"/>
-                    </t>
-                    <t t-else="">
-                        <div class="text-center py-5">
-                            <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"/>
-                            <p class="text-muted mb-0">No hay datos de evolución de métricas del centro disponibles.</p>
-                        </div>
-                    </t>
-                </div>
+                <t t-if="centro_active">
+                    <div id="am-evol-centro" class="am-subpane" data-group="evol">
+                        <t t-if="evolution_charts_html">
+                            <t t-out="evolution_charts_html"/>
+                        </t>
+                        <t t-else="">
+                            <div class="text-center py-5">
+                                <i class="fa-solid fa-chart-bar fa-3x mb-3" style="color:var(--am-border);"/>
+                                <p class="text-muted mb-0">No hay datos de evolución de métricas del centro disponibles.</p>
+                            </div>
+                        </t>
+                    </div>
+                </t>
             </div>
 
             <!-- ── Tab: Alertas ────────────────────────────────────────── -->

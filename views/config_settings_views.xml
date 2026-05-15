@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_aulametrics" model="ir.ui.view">
+        <field name="name">res.config.settings.view.aulametrics</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="priority" eval="80"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="AulaMetrics"
+                     string="AulaMetrics"
+                     name="aula_metrics"
+                     groups="aula_metrics.group_aulametrics_admin">
+                    <block title="Cuestionarios" name="centro_surveys_block">
+                        <setting string="Cuestionarios del Centro"
+                                 help="Permite crear cuestionarios propios del centro y ver sus resultados en dashboards y reportes. Desactivado por defecto.">
+                            <field name="enable_centro_surveys"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>
+
