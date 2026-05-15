@@ -12,6 +12,12 @@ $am-card-shadow:     0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.07);
 $am-card-hover-shadow: 0 8px 28px rgba(0,0,0,0.11);
 $am-transition:      all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
 
+.o_form_view.am_alerts_form {
+    .o_control_panel {
+        display: none !important;
+    }
+}
+
 .o_kanban_view.am_dashboard_view {
     padding: 2rem 3rem !important;
     background-color: $am-bg !important;
