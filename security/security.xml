@@ -35,5 +35,13 @@
             <field name="category_id" ref="module_category_aulametrics"/>
             <field name="comment">Administrador con gestión completa del sistema</field>
         </record>
+
+        <!-- Grupo: Feature flag — Cuestionarios del Centro (adhoc) -->
+        <!-- Solo se asigna cuando el ajuste "Activar cuestionarios del centro" está activado -->
+        <record id="group_aulametrics_centro_surveys" model="res.groups">
+            <field name="name">Cuestionarios del Centro (activado)</field>
+            <field name="category_id" ref="module_category_aulametrics"/>
+            <field name="comment">Feature flag: habilita la creación y visualización de cuestionarios no-oficiales del centro</field>
+        </record>
     </data>
 </odoo>

@@ -25,11 +25,12 @@
               action="action_survey_official"
               sequence="10"/>
               
-    <menuitem id="menu_aulametrics_surveys_adhoc" 
-              name="Cuestionarios del Centro" 
+    <menuitem id="menu_aulametrics_surveys_adhoc"
+              name="Cuestionarios del Centro"
               parent="menu_aulametrics_surveys"
               action="action_survey_adhoc"
-              groups="group_aulametrics_counselor,group_aulametrics_admin"
+              groups="aula_metrics.group_aulametrics_counselor,aula_metrics.group_aulametrics_admin"
+              active="0"
               sequence="20"/>
 
     <!-- Evaluaciones -->
