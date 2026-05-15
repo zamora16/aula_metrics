@@ -97,6 +97,56 @@ class DashboardEvaluationReport(models.TransientModel):
             participation_data, surveys_data,
         )
 
+    @api.model
+    def get_pdf_report_data(self, eval_id, role_info):
+        """
+        Reúne los datos crudos necesarios para renderizar el PDF de evaluación.
+        Los datos ya están filtrados por rol; el template no necesita lógica de acceso.
+
+        Args:
+            eval_id  (int):  ID de la evaluación.
+            role_info (dict): Resultado de role_service.get_role_info() o dict equivalente.
+
+        Returns:
+            dict | None:  Diccionario listo para pasar como data= a _render_qweb_pdf,
+                          o None si la evaluación no existe o el rol no tiene acceso.
+        """
+        from datetime import date as _date
+        from ...utils.dashboard_helpers import format_date_range
+        from ...utils.constants import ROLE_ADMIN, ROLE_COUNSELOR, ROLE_TUTOR
+
+        evaluation = self.env['aula_metrics.evaluation'].browse(eval_id)
+        if not evaluation.exists():
+            return None
+
+        error = self._check_eval_access(evaluation, role_info)
+        if error:
+            return None
+
+        participation_data = self._get_participation_summary(evaluation, role_info)
+        surveys_data       = self._collect_surveys_data(evaluation, role_info)
+
+        role = role_info.get('role')
+        show_groups = role in (ROLE_ADMIN, ROLE_COUNSELOR, ROLE_TUTOR)
+
+        _ROLE_LABELS = {
+            ROLE_ADMIN:     'Administrador',
+            ROLE_COUNSELOR: 'Orientador',
+            'management':   'Dirección',
+            ROLE_TUTOR:     'Tutor',
+        }
+        role_label = _ROLE_LABELS.get(role, role or '')
+
+        return {
+            'eval_name':      evaluation.name or '',
+            'date_range':     format_date_range(evaluation.date_start, evaluation.date_end),
+            'generated_date': _date.today().strftime('%d/%m/%Y'),
+            'role_label':     role_label,
+            'participation':  participation_data,
+            'surveys_data':   surveys_data,
+            'show_groups':    show_groups,
+        }
+
     # ──────────────────────────────────────────────────────────────────────
     # Control de acceso
     # ──────────────────────────────────────────────────────────────────────

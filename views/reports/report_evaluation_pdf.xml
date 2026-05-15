@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── Acción de informe PDF de evaluación ── -->
+    <record id="action_report_evaluation_pdf" model="ir.actions.report">
+        <field name="name">Informe PDF de Evaluación</field>
+        <field name="model">aula_metrics.evaluation</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">aula_metrics.report_evaluation_pdf</field>
+        <field name="report_file">aula_metrics.report_evaluation_pdf</field>
+        <field name="paperformat_id" ref="aula_metrics.paperformat_no_margin"/>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         PLANTILLA PDF UNIVERSAL DE EVALUACIÓN
+         Recibe via data={}:
+           eval_name      str   – nombre de la evaluación
+           date_range     str   – período formateado
+           generated_date str   – fecha de generación dd/mm/yyyy
+           role_label     str   – etiqueta del perfil que genera el informe
+           participation  dict  – {totals, by_group, by_level}
+           surveys_data   list  – lista de dicts de cuestionarios (data-driven)
+           show_groups    bool  – False para dirección
+         Todos los datos ya están filtrados por rol antes de llegar aquí.
+         No existe ninguna referencia a cuestionarios concretos.
+    ════════════════════════════════════════════════════════════════════ -->
+    <template id="report_evaluation_pdf">
+        <div class="article">
+            <style>
+                /* ── Página ── */
+                @page {
+                    size: A4 portrait;
+                    margin: 0;
+                }
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    box-sizing: border-box;
+                }
+
+                /* ── Tipografía ── */
+                .am-ev {
+                    font-family: Arial, sans-serif;
+                    font-size: 10pt;
+                    color: #1e293b;
+                    width: 100%;
+                }
+                .am-ev p { margin: 0 0 5pt 0; }
+
+                /* ── CABECERA ── */
+                .am-ev-header {
+                    background: #1A5C52 !important;
+                    padding: 18pt 24pt 14pt;
+                    border-bottom: 3pt solid #D4621A !important;
+                }
+                .am-ev-header .tag {
+                    font-size: 7.5pt; letter-spacing: 0.1em;
+                    text-transform: uppercase; color: rgba(168,216,208,1) !important;
+                    margin-bottom: 5pt;
+                }
+                .am-ev-header h1 {
+                    font-size: 17pt; font-weight: bold;
+                    color: #ffffff !important; margin: 0 0 12pt; line-height: 1.2;
+                }
+                .am-ev-header .meta-row td {
+                    padding: 0 20pt 0 0; color: #ffffff !important;
+                    font-size: 9.5pt; vertical-align: top; border: none !important;
+                }
+                .am-ev-header .meta-lbl {
+                    font-size: 7.5pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: rgba(168,216,208,1) !important;
+                    margin-bottom: 2pt;
+                }
+                .am-ev-header table, .am-ev-header tr, .am-ev-header td {
+                    border: none !important; outline: none !important;
+                }
+
+                /* ── PORTADA — cuerpo ── */
+                .am-ev-cover-body {
+                    padding: 18pt 24pt;
+                }
+
+                /* ── KPIs ── */
+                .am-ev-kpis {
+                    display: -webkit-box; display: -webkit-flex; display: flex;
+                    gap: 10pt; margin-bottom: 16pt;
+                }
+                .am-ev-kpi {
+                    -webkit-box-flex: 1; -webkit-flex: 1; flex: 1;
+                    background: #f8fafc !important;
+                    border: 1pt solid #e2e8f0 !important;
+                    border-radius: 4pt; padding: 10pt 12pt;
+                    text-align: center;
+                }
+                .am-ev-kpi .kpi-val {
+                    font-size: 20pt; font-weight: bold; color: #1A5C52; line-height: 1.1;
+                }
+                .am-ev-kpi .kpi-lbl {
+                    font-size: 8pt; color: #64748b; text-transform: uppercase;
+                    letter-spacing: 0.06em; margin-top: 3pt;
+                }
+
+                /* ── Lista de cuestionarios ── */
+                .am-ev-surveys {
+                    margin-bottom: 16pt;
+                }
+                .am-ev-surveys h3 {
+                    font-size: 8.5pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: #1A5C52;
+                    border-bottom: 1pt solid #B8DED9 !important;
+                    padding-bottom: 5pt; margin: 0 0 8pt;
+                }
+                .am-ev-surveys ul {
+                    margin: 0; padding-left: 14pt; list-style: disc;
+                }
+                .am-ev-surveys li { margin-bottom: 4pt; font-size: 10pt; }
+
+                /* ── Tablas genéricas ── */
+                .am-ev-table {
+                    width: 100%; border-collapse: collapse;
+                    font-size: 9.5pt; margin-bottom: 14pt;
+                }
+                .am-ev-table thead th {
+                    background: #f1f5f9 !important;
+                    border-bottom: 1.5pt solid #cbd5e1 !important;
+                    padding: 6pt 8pt; text-align: left;
+                    font-size: 8pt; font-weight: bold;
+                    text-transform: uppercase; letter-spacing: 0.05em; color: #475569;
+                }
+                .am-ev-table tbody td {
+                    padding: 5pt 8pt; border-bottom: 0.5pt solid #f1f5f9 !important;
+                    vertical-align: middle; border-top: none !important;
+                    border-left: none !important; border-right: none !important;
+                }
+                .am-ev-table tbody tr:last-child td {
+                    border-bottom: none !important;
+                }
+
+                /* ── Badges de nivel ── */
+                .am-ev-badge {
+                    display: inline-block; padding: 2pt 8pt; border-radius: 3pt;
+                    font-size: 8.5pt; font-weight: bold; color: #ffffff !important;
+                    -webkit-print-color-adjust: exact !important;
+                }
+
+                /* ── SECCIÓN POR CUESTIONARIO ── */
+                .am-ev-survey-section {
+                    page-break-before: always;
+                }
+                .am-ev-survey-header {
+                    background: #1A5C52 !important;
+                    padding: 14pt 24pt 12pt;
+                    border-bottom: 3pt solid #D4621A !important;
+                    margin-bottom: 16pt;
+                }
+                .am-ev-survey-header .tag {
+                    font-size: 7.5pt; text-transform: uppercase;
+                    letter-spacing: 0.1em; color: rgba(168,216,208,1) !important;
+                    margin-bottom: 4pt;
+                }
+                .am-ev-survey-header h2 {
+                    font-size: 14pt; font-weight: bold;
+                    color: #ffffff !important; margin: 0 0 8pt; line-height: 1.2;
+                }
+                .am-ev-survey-header .meta-row td {
+                    padding: 0 16pt 0 0; color: #ffffff !important;
+                    font-size: 9pt; border: none !important;
+                }
+                .am-ev-survey-header table, .am-ev-survey-header tr, .am-ev-survey-header td {
+                    border: none !important;
+                }
+                .am-ev-survey-body {
+                    padding: 0 24pt 20pt;
+                }
+
+                /* ── Escala ── */
+                .am-ev-scale-title {
+                    font-size: 9pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.09em; color: #1A5C52;
+                    border-bottom: 1pt solid #B8DED9 !important;
+                    padding-bottom: 4pt; margin: 14pt 0 10pt;
+                }
+                .am-ev-scale-title:first-child { margin-top: 0; }
+
+                /* ── Centro resumen ── */
+                .am-ev-center-row {
+                    display: -webkit-box; display: -webkit-flex; display: flex;
+                    align-items: center; gap: 8pt;
+                    background: #f8fafc !important;
+                    border: 1pt solid #e2e8f0 !important;
+                    border-radius: 4pt; padding: 8pt 12pt;
+                    margin-bottom: 10pt; font-size: 9.5pt;
+                }
+                .am-ev-center-row .center-score {
+                    font-size: 16pt; font-weight: bold; color: #1e293b;
+                    line-height: 1;
+                }
+                .am-ev-center-row .center-lbl {
+                    font-size: 8pt; color: #64748b; text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                }
+                .am-ev-center-row .center-n {
+                    font-size: 9pt; color: #94a3b8; margin-left: auto;
+                }
+
+                /* ── Aviso legal ── */
+                .am-ev-disclaimer {
+                    border-left: 3pt solid #1A5C52 !important;
+                    background: #f8fafc !important; padding: 10pt 14pt;
+                    font-size: 9pt; color: #475569; line-height: 1.6;
+                    margin-top: 14pt;
+                }
+                .am-ev-disclaimer .disc-title {
+                    font-weight: bold; font-size: 9pt; color: #334155;
+                    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5pt;
+                }
+
+                /* ── PIE ── */
+                .am-ev-footer {
+                    padding: 7pt 24pt;
+                    border-top: 2pt solid #D4621A !important;
+                    font-size: 7.5pt; color: #5A4E48; text-align: center;
+                    background: #ffffff !important;
+                }
+
+                /* ── Portada: estructura de página completa ── */
+                .am-ev-cover-page {
+                    height: 297mm;
+                    display: -webkit-box; display: -webkit-flex; display: flex;
+                    -webkit-box-orient: vertical; -webkit-flex-direction: column;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                .am-ev-cover-body-flex {
+                    -webkit-box-flex: 1; -webkit-flex: 1; flex: 1;
+                    padding: 18pt 24pt;
+                    overflow: hidden;
+                }
+
+                /* ── Tabla de participación en portada ── */
+                .am-ev-part-section {
+                    margin-bottom: 16pt;
+                }
+                .am-ev-part-section h3 {
+                    font-size: 8.5pt; font-weight: bold; text-transform: uppercase;
+                    letter-spacing: 0.08em; color: #1A5C52;
+                    border-bottom: 1pt solid #B8DED9 !important;
+                    padding-bottom: 5pt; margin: 0 0 8pt;
+                }
+            </style>
+
+            <!-- ══════════ PORTADA ══════════ -->
+            <main class="am-ev am-ev-cover-page">
+                <div class="am-ev-header">
+                    <table border="0" cellspacing="0" cellpadding="0" style="width:100%;">
+                        <tr>
+                            <td style="border:none;padding:0;">
+                                <div class="tag">Informe de Evaluaci&#243;n · AulaMetrics</div>
+                                <h1><t t-out="eval_name or (docs and docs[0].name) or ''"/></h1>
+                                <table border="0" cellspacing="0" cellpadding="0">
+                                    <tr class="meta-row">
+                                        <td>
+                                            <div class="meta-lbl">Per&#237;odo</div>
+                                            <t t-out="date_range or ''"/>
+                                        </td>
+                                        <td>
+                                            <div class="meta-lbl">Generado el</div>
+                                            <t t-out="generated_date or ''"/>
+                                        </td>
+                                        <td>
+                                            <div class="meta-lbl">Perfil</div>
+                                            <t t-out="role_label or ''"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="am-ev-cover-body-flex">
+                    <!-- KPIs de participación -->
+                    <t t-set="totals" t-value="participation.get('totals', {})"/>
+                    <div class="am-ev-kpis">
+                        <div class="am-ev-kpi">
+                            <div class="kpi-val"><t t-out="totals.get('total', 0)"/></div>
+                            <div class="kpi-lbl">Alumnos</div>
+                        </div>
+                        <div class="am-ev-kpi">
+                            <div class="kpi-val"><t t-out="totals.get('completed', 0)"/></div>
+                            <div class="kpi-lbl">Completados</div>
+                        </div>
+                        <div class="am-ev-kpi">
+                            <div class="kpi-val"><t t-out="totals.get('rate', 0)"/>%</div>
+                            <div class="kpi-lbl">Tasa</div>
+                        </div>
+                        <div class="am-ev-kpi">
+                            <div class="kpi-val"><t t-out="len(surveys_data or [])"/></div>
+                            <div class="kpi-lbl">Cuestionarios</div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de cuestionarios -->
+                    <div class="am-ev-surveys">
+                        <h3>Cuestionarios incluidos</h3>
+                        <ul>
+                            <t t-foreach="surveys_data or []" t-as="sv">
+                                <li><t t-out="sv.get('survey_name', '')"/></li>
+                            </t>
+                        </ul>
+                    </div>
+
+                    <!-- Participación por grupo (solo si el rol puede ver grupos) -->
+                    <t t-if="show_groups and participation.get('by_group')">
+                        <div class="am-ev-part-section">
+                            <h3>Participaci&#243;n por grupo</h3>
+                            <table class="am-ev-table">
+                                <thead>
+                                    <tr>
+                                        <th>Grupo</th>
+                                        <th style="text-align:right;">Total</th>
+                                        <th style="text-align:right;">Completados</th>
+                                        <th style="text-align:right;">Tasa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="participation.get('by_group', [])" t-as="grp">
+                                        <tr>
+                                            <td><t t-out="grp.get('group_name', '')"/></td>
+                                            <td style="text-align:right;"><t t-out="grp.get('total', 0)"/></td>
+                                            <td style="text-align:right;"><t t-out="grp.get('completed', 0)"/></td>
+                                            <td style="text-align:right;font-weight:bold;">
+                                                <t t-out="grp.get('rate', 0)"/>%
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+
+                    <!-- Participación por nivel (dirección/todos) -->
+                    <t t-if="not show_groups and participation.get('by_level')">
+                        <div class="am-ev-part-section">
+                            <h3>Participaci&#243;n por nivel educativo</h3>
+                            <table class="am-ev-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nivel</th>
+                                        <th style="text-align:right;">Total</th>
+                                        <th style="text-align:right;">Completados</th>
+                                        <th style="text-align:right;">Tasa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="participation.get('by_level', [])" t-as="lvl">
+                                        <tr>
+                                            <td><t t-out="lvl.get('label', '')"/></td>
+                                            <td style="text-align:right;"><t t-out="lvl.get('total', 0)"/></td>
+                                            <td style="text-align:right;"><t t-out="lvl.get('completed', 0)"/></td>
+                                            <td style="text-align:right;font-weight:bold;">
+                                                <t t-out="lvl.get('rate', 0)"/>%
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+
+                    <!-- Aviso legal -->
+                    <div class="am-ev-disclaimer">
+                        <div class="disc-title">Nota importante sobre este informe</div>
+                        <p>Los resultados presentados son de car&#225;cter <b>exclusivamente informativo</b>
+                        y provienen de instrumentos de medida con fines de orientaci&#243;n educativa.
+                        No constituyen diagn&#243;stico cl&#237;nico ni pueden sustituir una evaluaci&#243;n
+                        psicol&#243;gica individualizada.</p>
+                    </div>
+                </div>
+
+                <div class="am-ev-footer">
+                    Informe de Evaluaci&#243;n &#183; AulaMetrics &#183;
+                    <t t-out="eval_name or ''"/> &#183; <t t-out="generated_date or ''"/>
+                </div>
+            </main>
+
+            <!-- ══════════ PÁGINAS POR CUESTIONARIO ══════════ -->
+            <t t-foreach="surveys_data or []" t-as="sv">
+                <main class="am-ev" style="page-break-before:always;display:block;min-height:297mm;">
+
+                    <!-- Cabecera del cuestionario -->
+                    <div class="am-ev-survey-header">
+                        <table border="0" cellspacing="0" cellpadding="0" style="width:100%;">
+                            <tr>
+                                <td style="border:none;padding:0;">
+                                    <div class="tag">
+                                        <t t-out="eval_name or ''"/>
+                                    </div>
+                                    <h2><t t-out="sv.get('survey_name', '')"/></h2>
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tr class="meta-row">
+                                            <td>
+                                                <div class="meta-lbl">Tipo</div>
+                                                <t t-if="sv.get('is_aulametrics')">Cuestionario oficial</t>
+                                                <t t-elif="sv.get('is_text_survey')">Texto abierto</t>
+                                                <t t-else="">Cuestionario del centro</t>
+                                            </td>
+                                            <td>
+                                                <div class="meta-lbl">Resultados</div>
+                                                <t t-out="sv.get('n_results') or sv.get('n_responses') or ''"/>
+                                            </td>
+                                            <td>
+                                                <div class="meta-lbl">Perfil</div>
+                                                <t t-out="role_label or ''"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Cuerpo del cuestionario -->
+                    <div class="am-ev-survey-body">
+
+                        <!-- ── CUESTIONARIO OFICIAL (is_aulametrics=True) ── -->
+                        <t t-if="sv.get('is_aulametrics') and not sv.get('is_text_survey')">
+                            <t t-foreach="sv.get('scales', [])" t-as="scale">
+
+                                <div class="am-ev-scale-title">
+                                    <t t-out="scale.get('scale_label', scale.get('scale_name', ''))"/>
+                                </div>
+
+                                <!-- Resumen de centro -->
+                                <t t-set="cb" t-value="scale.get('center_baremo') or {}"/>
+                                <t t-if="scale.get('center_mean') is not None">
+                                    <div class="am-ev-center-row">
+                                        <div>
+                                            <div class="center-lbl">Promedio del centro</div>
+                                            <div class="center-score">
+                                                <t t-out="'%.1f' % scale['center_mean']"/>
+                                                <span style="font-size:10pt;font-weight:normal;color:#64748b;">
+                                                    /<t t-out="scale.get('score_max', '')"/>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <t t-if="cb">
+                                            <span class="am-ev-badge"
+                                                  t-att-style="'background:{c} !important;'.format(c=cb.get('color','#6c757d'))">
+                                                <t t-out="cb.get('label', '')"/>
+                                            </span>
+                                        </t>
+                                        <span class="center-n">N = <t t-out="scale.get('center_n', '')"/></span>
+                                    </div>
+                                </t>
+
+                                <!-- Tabla por grupo (solo si el rol puede ver grupos) -->
+                                <t t-if="show_groups and scale.get('groups')">
+                                    <div style="margin-bottom:4pt;font-size:8.5pt;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">
+                                        Por grupo
+                                    </div>
+                                    <table class="am-ev-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Grupo</th>
+                                                <th style="text-align:right;">N</th>
+                                                <th style="text-align:right;">Media</th>
+                                                <th>Nivel</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="scale.get('groups', [])" t-as="grp">
+                                                <tr>
+                                                    <td><t t-out="grp.get('group_name', '')"/></td>
+                                                    <td style="text-align:right;color:#64748b;">
+                                                        <t t-out="grp.get('n', 0)"/>
+                                                    </td>
+                                                    <td style="text-align:right;font-weight:bold;">
+                                                        <t t-out="'%.1f' % grp['mean_score']"/>
+                                                    </td>
+                                                    <td>
+                                                        <t t-if="grp.get('baremo_label')">
+                                                            <span class="am-ev-badge"
+                                                                  t-att-style="'background:{c} !important;'.format(c=grp.get('baremo_color','#6c757d'))">
+                                                                <t t-out="grp.get('baremo_label', '')"/>
+                                                            </span>
+                                                        </t>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+
+                                <!-- Tabla por nivel educativo -->
+                                <t t-if="scale.get('by_level')">
+                                    <div style="margin-bottom:4pt;font-size:8.5pt;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">
+                                        Por nivel educativo
+                                    </div>
+                                    <table class="am-ev-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nivel</th>
+                                                <th style="text-align:right;">N</th>
+                                                <th style="text-align:right;">Media</th>
+                                                <th>Nivel baremo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="scale.get('by_level', [])" t-as="lvl">
+                                                <tr>
+                                                    <td><t t-out="lvl.get('label', '')"/></td>
+                                                    <td style="text-align:right;color:#64748b;">
+                                                        <t t-out="lvl.get('n', 0)"/>
+                                                    </td>
+                                                    <td style="text-align:right;font-weight:bold;">
+                                                        <t t-out="'%.1f' % lvl['mean_score']"/>
+                                                    </td>
+                                                    <td>
+                                                        <t t-if="lvl.get('baremo_label')">
+                                                            <span class="am-ev-badge"
+                                                                  t-att-style="'background:{c} !important;'.format(c=lvl.get('baremo_color','#6c757d'))">
+                                                                <t t-out="lvl.get('baremo_label', '')"/>
+                                                            </span>
+                                                        </t>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+
+                            </t><!-- /t-foreach scales -->
+                        </t>
+
+                        <!-- ── CUESTIONARIO AD-HOC (is_aulametrics=False, is_text_survey=False) ── -->
+                        <t t-elif="not sv.get('is_text_survey') and sv.get('metrics')">
+                            <t t-foreach="sv.get('metrics', [])" t-as="metric">
+                                <div class="am-ev-scale-title">
+                                    <t t-out="metric.get('metric_label', metric.get('metric_name', ''))"/>
+                                </div>
+
+                                <!-- Resumen de centro -->
+                                <t t-if="metric.get('center_avg') is not None">
+                                    <div class="am-ev-center-row">
+                                        <div>
+                                            <div class="center-lbl">Promedio del centro</div>
+                                            <div class="center-score">
+                                                <t t-out="'%.2f' % metric['center_avg']"/>
+                                            </div>
+                                        </div>
+                                        <span class="center-n">N = <t t-out="metric.get('center_n', '')"/></span>
+                                    </div>
+                                </t>
+
+                                <!-- Tabla por grupo -->
+                                <t t-if="show_groups and metric.get('groups')">
+                                    <div style="margin-bottom:4pt;font-size:8.5pt;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">
+                                        Por grupo
+                                    </div>
+                                    <table class="am-ev-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Grupo</th>
+                                                <th style="text-align:right;">N</th>
+                                                <th style="text-align:right;">Promedio</th>
+                                                <th style="text-align:right;">M&#237;n.</th>
+                                                <th style="text-align:right;">M&#225;x.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="metric.get('groups', [])" t-as="grp">
+                                                <tr>
+                                                    <td><t t-out="grp.get('group_name', '')"/></td>
+                                                    <td style="text-align:right;color:#64748b;"><t t-out="grp.get('n', 0)"/></td>
+                                                    <td style="text-align:right;font-weight:bold;"><t t-out="'%.2f' % grp['avg']"/></td>
+                                                    <td style="text-align:right;color:#64748b;"><t t-out="'%.2f' % grp.get('min', 0)"/></td>
+                                                    <td style="text-align:right;color:#64748b;"><t t-out="'%.2f' % grp.get('max', 0)"/></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+
+                                <!-- Tabla por nivel -->
+                                <t t-if="metric.get('by_level')">
+                                    <div style="margin-bottom:4pt;font-size:8.5pt;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">
+                                        Por nivel educativo
+                                    </div>
+                                    <table class="am-ev-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nivel</th>
+                                                <th style="text-align:right;">N</th>
+                                                <th style="text-align:right;">Promedio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="metric.get('by_level', [])" t-as="lvl">
+                                                <tr>
+                                                    <td><t t-out="lvl.get('label', '')"/></td>
+                                                    <td style="text-align:right;color:#64748b;"><t t-out="lvl.get('n', 0)"/></td>
+                                                    <td style="text-align:right;font-weight:bold;"><t t-out="'%.2f' % lvl['avg']"/></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                            </t><!-- /t-foreach metrics -->
+                        </t>
+
+                        <!-- ── CUESTIONARIO DE TEXTO ABIERTO ── -->
+                        <t t-elif="sv.get('is_text_survey')">
+                            <div style="margin-bottom:12pt;">
+                                <div class="am-ev-scale-title">Frecuencia de t&#233;rminos relevantes</div>
+                                <p style="font-size:9pt;color:#475569;margin-bottom:10pt;">
+                                    Palabras m&#225;s mencionadas en las respuestas del centro
+                                    (N = <t t-out="sv.get('n_responses', 0)"/> respuestas):
+                                </p>
+
+                                <!-- Top 10 palabras del centro -->
+                                <t t-if="sv.get('top_words')">
+                                    <div style="display:-webkit-box;display:-webkit-flex;display:flex;flex-wrap:wrap;gap:6pt;margin-bottom:14pt;">
+                                        <t t-foreach="sv.get('top_words', [])" t-as="word">
+                                            <t t-set="freq" t-value="sv.get('center_freq', {}).get(word, 0)"/>
+                                            <span style="background:#e0f2f0 !important;color:#1A5C52;padding:3pt 10pt;border-radius:3pt;font-size:9pt;font-weight:bold;">
+                                                <t t-out="word"/>
+                                                <span style="font-weight:normal;color:#64748b;margin-left:4pt;">(<t t-out="freq"/>)</span>
+                                            </span>
+                                        </t>
+                                    </div>
+                                </t>
+
+                                <!-- Tabla por nivel educativo -->
+                                <t t-if="sv.get('levels') and len(sv.get('levels', [])) > 1">
+                                    <div style="margin-bottom:4pt;font-size:8.5pt;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">
+                                        T&#233;rminos principales por nivel educativo
+                                    </div>
+                                    <table class="am-ev-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nivel</th>
+                                                <th>T&#233;rminos m&#225;s frecuentes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="sv.get('levels', [])" t-as="lvl_pair">
+                                                <t t-set="lvl_code" t-value="lvl_pair[0]"/>
+                                                <t t-set="lvl_label" t-value="lvl_pair[1]"/>
+                                                <t t-set="lvl_freq" t-value="sv.get('level_freq', {}).get(lvl_code, {})"/>
+                                                <tr>
+                                                    <td style="white-space:nowrap;"><t t-out="lvl_label"/></td>
+                                                    <td style="font-size:9pt;color:#475569;">
+                                                        <t t-out="', '.join(w for w, _ in sorted(lvl_freq.items(), key=lambda x: -x[1])[:6])"/>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                            </div>
+                        </t>
+
+                        <!-- ── SIN DATOS ── -->
+                        <t t-else="">
+                            <p style="color:#94a3b8;font-style:italic;padding:12pt 0;">
+                                No hay datos disponibles para este cuestionario con el perfil actual.
+                            </p>
+                        </t>
+
+                    </div><!-- /am-ev-survey-body -->
+
+                    <div class="am-ev-footer">
+                        AulaMetrics &#183; <t t-out="eval_name or ''"/> &#183;
+                        <t t-out="sv.get('survey_name', '')"/> &#183; <t t-out="generated_date or ''"/>
+                        &#183; Exclusivamente informativo, no constituye diagn&#243;stico.
+                    </div>
+                </main>
+            </t><!-- /t-foreach surveys_data -->
+
+        </div><!-- /article -->
+    </template>
+
+</odoo>

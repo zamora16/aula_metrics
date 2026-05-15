@@ -366,8 +366,8 @@ class DashboardStudentProfile(models.TransientModel):
                 f'<i class="fa-solid fa-user me-2"></i>{group_name} · {fields.Date.today().strftime("%d/%m/%Y")}'
             ),
             'topbar_extra_actions': Markup(
-                '<a href="/aulametrics/students" class="btn btn-outline-secondary btn-sm">'
-                '<i class="fa-solid fa-users"></i> Lista</a>'
+                '<a href="/aulametrics/students" class="btn-filter-action">'
+                '<i class="fa-solid fa-users"></i>Lista</a>'
             ),
             'content_html':  content_html,
             'scripts_html':  Markup(''),

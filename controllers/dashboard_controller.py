@@ -205,6 +205,59 @@ class DashboardChartsController(AulaMetricsBaseController):
                 'error_message': 'No se pudo generar el informe. Contacta con el administrador.',
             })
 
+    @http.route('/aulametrics/evaluacion/<int:eval_id>/informe_pdf',
+                type='http', auth='user', methods=['GET'])
+    def evaluation_report_pdf(self, eval_id, **kwargs):
+        """
+        Genera y descarga el informe PDF de una evaluación.
+        Los datos se filtran por el rol del usuario antes de renderizar.
+
+        Args:
+            eval_id (int): ID de la evaluación.
+        """
+        role_info = self._detect_user_role()
+
+        try:
+            pdf_data = request.env['aula_metrics.dashboard.evaluation_report'].get_pdf_report_data(
+                eval_id=eval_id,
+                role_info=role_info,
+            )
+            if pdf_data is None:
+                return _render('aula_metrics.dashboard_error_page', {
+                    'error_title':   'Sin acceso',
+                    'error_message': 'No tienes permiso para generar este informe o la evaluación no existe.',
+                })
+
+            evaluation = request.env['aula_metrics.evaluation'].browse(eval_id)
+            pdf_bytes, _ = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+                'aula_metrics.report_evaluation_pdf',
+                [eval_id],
+                data=pdf_data,
+            )
+
+            def _slug(s):
+                s = unicodedata.normalize('NFKD', s or '').encode('ascii', 'ignore').decode()
+                return re.sub(r'[^\w]+', '_', s).strip('_')
+
+            _eval  = _slug(evaluation.name or 'evaluacion')
+            _fecha = _date.today().strftime('%Y%m%d')
+            filename = f'{_eval}_informe_{_fecha}.pdf'
+
+            return request.make_response(
+                pdf_bytes,
+                headers=[
+                    ('Content-Type',        'application/pdf'),
+                    ('Content-Disposition', f'inline; filename="{filename}"'),
+                ],
+            )
+
+        except Exception:
+            _logger.exception('Error al generar PDF de evaluación %s', eval_id)
+            return _render('aula_metrics.dashboard_error_page', {
+                'error_title':   'Error al generar el PDF',
+                'error_message': 'No se pudo generar el informe PDF. Contacta con el administrador.',
+            })
+
     @http.route('/aulametrics/evaluacion/<int:eval_id>/informe', type='http', auth='user')
     def evaluation_report_view(self, eval_id, **kwargs):
         """

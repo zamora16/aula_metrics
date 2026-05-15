@@ -389,9 +389,227 @@ class Evaluation(models.Model):
     def action_close(self):
         """Cerrar evaluación (active -> closed)"""
         self.write({'state': 'closed'})
-        # Marcar participaciones pendientes como expiradas
         for evaluation in self:
             evaluation.participation_ids.filtered(lambda p: p.state == 'pending').action_expire()
+            try:
+                evaluation._send_closure_emails()
+            except Exception as e:
+                _logger.error('Error enviando emails de cierre para evaluación %s: %s',
+                              evaluation.id, e, exc_info=True)
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Emails de cierre de evaluación
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _send_closure_emails(self):
+        """
+        Envía informes PDF por email al cerrarse la evaluación, adaptados por rol:
+          - Dirección     → datos solo por nivel educativo y centro
+          - Orientadores  → datos completos (todos los grupos)
+          - Tutores       → solo los grupos que tienen asignados
+
+        Cada destinatario recibe un PDF generado con su capa de visibilidad propia.
+        Los errores de PDF o de envío se capturan individualmente para no bloquear
+        el cierre de la evaluación.
+        """
+        from ...utils.constants import ROLE_ADMIN, ROLE_COUNSELOR, ROLE_MANAGEMENT, ROLE_TUTOR
+
+        self.ensure_one()
+        EvalReport = self.env['aula_metrics.dashboard.evaluation_report']
+        eval_id    = self.id
+
+        def _make_role_info(role, is_admin=False, is_counselor=False,
+                            is_management=False, allowed_group_ids=None):
+            return {
+                'role':             role,
+                'is_admin':         is_admin,
+                'is_counselor':     is_counselor,
+                'is_management':    is_management,
+                'is_tutor':         True,
+                'allowed_group_ids': allowed_group_ids or [],
+                'anonymize_students': role == ROLE_MANAGEMENT,
+            }
+
+        def _generate_pdf(role_info):
+            pdf_data = EvalReport.get_pdf_report_data(eval_id, role_info)
+            if pdf_data is None:
+                return None
+            pdf_bytes, _ = self.env['ir.actions.report'].sudo()._render_qweb_pdf(
+                'aula_metrics.report_evaluation_pdf',
+                [eval_id],
+                data=pdf_data,
+            )
+            return pdf_bytes
+
+        def _attach_pdf(pdf_bytes, filename):
+            return self.env['ir.attachment'].create({
+                'name':         filename,
+                'type':         'binary',
+                'datas':        __import__('base64').b64encode(pdf_bytes).decode(),
+                'mimetype':     'application/pdf',
+                'res_model':    'aula_metrics.evaluation',
+                'res_id':       self.id,
+            })
+
+        def _send(subject, body_html, recipient_email, attachment_ids=None):
+            vals = {
+                'subject':          subject,
+                'body_html':        body_html,
+                'email_to':         recipient_email,
+                'email_from':       self._get_email_from(self),
+                'attachment_ids':   [(4, att.id) for att in (attachment_ids or [])],
+            }
+            self._send_mail(vals, recipient_email)
+
+        eval_name    = escape(self.name or '')
+        date_closed  = escape(fields.Date.today().strftime('%d/%m/%Y'))
+        base_url     = self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url', 'http://localhost:8069'
+        )
+        informe_url  = f'{base_url}/aulametrics/evaluacion/{self.id}/informe'
+
+        # ── 1. Dirección ─────────────────────────────────────────────────
+        mgmt_group = self.env.ref('aula_metrics.group_aulametrics_management',
+                                  raise_if_not_found=False)
+        if mgmt_group:
+            mgmt_role_info = _make_role_info(ROLE_MANAGEMENT, is_management=True)
+            mgmt_pdf = None
+            try:
+                mgmt_pdf = _generate_pdf(mgmt_role_info)
+            except Exception as e:
+                _logger.error('PDF dirección eval %s: %s', self.id, e, exc_info=True)
+
+            for user in mgmt_group.users.filtered(lambda u: u.email):
+                try:
+                    atts = []
+                    if mgmt_pdf:
+                        att = _attach_pdf(mgmt_pdf,
+                                          f'informe_evaluacion_{self.id}_direccion.pdf')
+                        atts.append(att)
+                    _send(
+                        subject=f'Evaluación cerrada: {self.name}',
+                        body_html=self._get_closure_email_body(
+                            user, eval_name, date_closed, informe_url,
+                            'Dirección', nivel='nivel',
+                        ),
+                        recipient_email=user.email,
+                        attachment_ids=atts,
+                    )
+                except Exception as e:
+                    _logger.error('Email cierre dirección %s eval %s: %s',
+                                  user.email, self.id, e, exc_info=True)
+
+        # ── 2. Orientadores / Admin ───────────────────────────────────────
+        counselor_group = self.env.ref('aula_metrics.group_aulametrics_counselor',
+                                       raise_if_not_found=False)
+        admin_group     = self.env.ref('aula_metrics.group_aulametrics_admin',
+                                       raise_if_not_found=False)
+        counselor_users = self.env['res.users'].browse()
+        if counselor_group:
+            counselor_users |= counselor_group.users
+        if admin_group:
+            counselor_users |= admin_group.users
+        counselor_users = counselor_users.filtered(lambda u: u.email)
+
+        if counselor_users:
+            counselor_role_info = _make_role_info(
+                ROLE_COUNSELOR, is_counselor=True,
+            )
+            counselor_pdf = None
+            try:
+                counselor_pdf = _generate_pdf(counselor_role_info)
+            except Exception as e:
+                _logger.error('PDF orientadores eval %s: %s', self.id, e, exc_info=True)
+
+            for user in counselor_users:
+                try:
+                    atts = []
+                    if counselor_pdf:
+                        att = _attach_pdf(counselor_pdf,
+                                          f'informe_evaluacion_{self.id}_orientador.pdf')
+                        atts.append(att)
+                    _send(
+                        subject=f'Evaluación cerrada: {self.name}',
+                        body_html=self._get_closure_email_body(
+                            user, eval_name, date_closed, informe_url,
+                            'Orientador',
+                        ),
+                        recipient_email=user.email,
+                        attachment_ids=atts,
+                    )
+                except Exception as e:
+                    _logger.error('Email cierre orientador %s eval %s: %s',
+                                  user.email, self.id, e, exc_info=True)
+
+        # ── 3. Tutores ────────────────────────────────────────────────────
+        eval_group_ids = self.academic_group_ids.ids
+        if not eval_group_ids:
+            return
+
+        tutors = self.academic_group_ids.mapped('tutor_id').filtered(
+            lambda t: t and t.email
+        )
+        for tutor_user in tutors:
+            tutor_groups = self.academic_group_ids.filtered(
+                lambda g: g.tutor_id == tutor_user
+            )
+            tutor_role_info = _make_role_info(
+                ROLE_TUTOR,
+                allowed_group_ids=tutor_groups.ids,
+            )
+            try:
+                tutor_pdf   = _generate_pdf(tutor_role_info)
+                atts = []
+                if tutor_pdf:
+                    att = _attach_pdf(tutor_pdf,
+                                      f'informe_evaluacion_{self.id}_tutor.pdf')
+                    atts.append(att)
+                group_names = escape(', '.join(tutor_groups.mapped('name')))
+                _send(
+                    subject=f'Evaluación cerrada: {self.name}',
+                    body_html=self._get_closure_email_body(
+                        tutor_user, eval_name, date_closed, informe_url,
+                        'Tutor', group_names=group_names,
+                    ),
+                    recipient_email=tutor_user.email,
+                    attachment_ids=atts,
+                )
+            except Exception as e:
+                _logger.error('Email cierre tutor %s eval %s: %s',
+                              tutor_user.email, self.id, e, exc_info=True)
+
+    def _get_closure_email_body(self, user, eval_name, date_closed,
+                                 informe_url, role_label,
+                                 nivel='grupo', group_names=None):
+        """Genera el HTML del email de cierre adaptado a cada tipo de destinatario."""
+        user_name    = escape(user.name or '')
+        surveys_list = escape(', '.join(self.survey_ids.mapped('title')))
+
+        if group_names:
+            group_line = f'<li><strong>Grupos:</strong> {group_names}</li>'
+        else:
+            group_line = ''
+
+        return f"""
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #1A5C52;">Evaluaci&#243;n Finalizada</h2>
+    <p>Hola <strong>{user_name}</strong> ({role_label}),</p>
+    <p>La evaluaci&#243;n <strong>&#8220;{eval_name}&#8221;</strong> ha finalizado el <strong>{date_closed}</strong>.</p>
+    <p>Adjunto encontrar&#225;s el informe PDF con los resultados filtrados para tu perfil.</p>
+    <ul>
+        <li><strong>Cuestionarios:</strong> {surveys_list}</li>
+        {group_line}
+    </ul>
+    <p style="text-align:center;margin:24px 0;">
+        <a href="{informe_url}"
+           style="background:#1A5C52;color:white;padding:10px 22px;text-decoration:none;border-radius:5px;display:inline-block;">
+            Ver informe en l&#237;nea
+        </a>
+    </p>
+    <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+    <p style="font-size:12px;color:#666;">Mensaje autom&#225;tico del sistema AulaMetrics.</p>
+</div>
+"""
     
     def action_cancel(self):
         """Cancelar evaluación"""

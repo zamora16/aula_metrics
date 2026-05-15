@@ -98,8 +98,11 @@ class DashboardEvaluationReportSections(models.TransientModel):
                 f'Informe de Evaluación · {date_range}'
             ),
             'topbar_extra_actions': Markup(
-                '<a href="/aulametrics/dashboard" class="btn btn-outline-secondary btn-sm">'
-                '<i class="fa-solid fa-arrow-left me-1"></i>Dashboard</a>'
+                f'<a href="/aulametrics/evaluacion/{evaluation.id}/informe_pdf" '
+                f'   class="btn-filter-action btn-filter-primary" target="_blank">'
+                f'<i class="fa-solid fa-file-pdf"></i>Exportar PDF</a>'
+                f'<a href="/aulametrics/dashboard" class="btn-filter-action">'
+                f'<i class="fa-solid fa-arrow-left"></i>Volver</a>'
             ),
             'content_html':         content_html,
             'scripts_html':         Markup(_TAB_RESIZE_SCRIPT),

@@ -518,6 +518,9 @@ def get_common_styles():
         }
         
         .btn-filter-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             padding: 8px 16px;
             font-size: 14px;
             font-weight: 500;
@@ -526,24 +529,28 @@ def get_common_styles():
             background: white;
             color: var(--am-muted);
             cursor: pointer;
+            text-decoration: none;
             transition: all 0.2s ease;
         }
-        
+
         .btn-filter-action:hover {
             background: var(--am-light);
             border-color: var(--am-subtle-border);
             color: var(--am-text-secondary);
+            text-decoration: none;
         }
-        
+
         .btn-filter-primary {
             background: var(--am-primary);
             color: var(--am-surface);
             border-color: var(--am-primary);
             box-shadow: 0 2px 4px rgba(var(--am-primary-rgb), 0.2);
         }
-        
+
         .btn-filter-primary:hover {
             background: var(--am-primary-600);
+            color: var(--am-surface);
+            text-decoration: none;
             box-shadow: 0 4px 8px rgba(var(--am-primary-rgb), 0.3);
         }
         
