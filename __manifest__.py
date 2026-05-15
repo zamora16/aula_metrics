@@ -21,6 +21,7 @@
         'data/dashboard_data.xml',
         'data/case_stages.xml',
         'data/system_users.xml',
+        'data/menu_visibility.xml',
         # 3. Vistas
         'views/config_settings_views.xml',
         'views/dashboard_home_views.xml',
@@ -67,6 +68,10 @@
         'web.assets_backend': [
             'aula_metrics/static/src/scss/backend_overrides.scss',
             'aula_metrics/static/src/scss/dashboard_home.scss',
+            'aula_metrics/static/src/js/branding.js',
+        ],
+        'web.assets_frontend': [
+            'aula_metrics/static/src/scss/login.scss',
         ],
     },
     'installable': True,

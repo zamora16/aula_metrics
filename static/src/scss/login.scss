@@ -1,0 +1,53 @@
+// =============================================
+// Login page — AulaMetrics branding
+// =============================================
+
+body {
+    background-color: #F9F5F0 !important;
+    font-family: 'Source Sans 3', sans-serif;
+}
+
+// Tarjeta central
+.o_database_list.card {
+    background-color: #FEFCF8 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 24px rgba(26, 92, 82, 0.10) !important;
+    max-width: 360px !important;
+}
+
+// Botón primario
+.btn-primary {
+    background-color: #1A5C52 !important;
+    border-color: #1A5C52 !important;
+    border-radius: 8px !important;
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 600;
+
+    &:hover, &:focus {
+        background-color: #12332F !important;
+        border-color: #12332F !important;
+    }
+}
+
+// Inputs
+.form-control {
+    border-radius: 8px !important;
+    border-color: #D0C9C0 !important;
+    font-family: 'Source Sans 3', sans-serif;
+
+    &:focus {
+        border-color: #1A5C52 !important;
+        box-shadow: 0 0 0 3px rgba(26, 92, 82, 0.15) !important;
+    }
+}
+
+// Labels
+.form-label {
+    font-weight: 600;
+    color: #12332F;
+}
+
+// Pie de tarjeta
+.border-top.mt-4 {
+    border-color: #E8E0D8 !important;
+}

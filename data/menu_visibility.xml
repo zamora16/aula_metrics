@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Restringe los menús de módulos de Odoo que no deben ser visibles
+        para los roles cliente (tutor, orientador, dirección).
+        Solo los administradores (base.group_system) tendrán acceso.
+    -->
+    <data>
+        <!-- Ocultar app "Discuss / Conversaciones" -->
+        <record id="mail.menu_root_discuss" model="ir.ui.menu">
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+        </record>
+
+        <!-- Ocultar app "Surveys / Encuestas" -->
+        <record id="survey.menu_surveys" model="ir.ui.menu">
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+        </record>
+    </data>
+</odoo>

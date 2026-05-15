@@ -10,4 +10,38 @@
                   href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&amp;family=Source+Sans+3:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap"/>
         </xpath>
     </template>
+
+    <!-- Favicon + título personalizado AulaMetrics -->
+    <template id="aula_metrics_favicon"
+              inherit_id="web.layout"
+              name="AulaMetrics Favicon &amp; Title">
+        <xpath expr="//link[@rel='shortcut icon']" position="replace">
+            <link type="image/x-icon" rel="shortcut icon" href="/aula_metrics/static/src/img/favicon.png"/>
+        </xpath>
+        <xpath expr="//title" position="replace">
+            <title t-esc="title or 'AulaMetrics'"/>
+        </xpath>
+    </template>
+
+    <!-- Login page: logo, fuentes, estilos y quitar branding Odoo -->
+    <template id="aula_metrics_login_layout"
+              inherit_id="web.login_layout"
+              name="AulaMetrics Login">
+        <!-- Fuentes Google en el head del layout -->
+        <xpath expr="//t[@t-call='web.frontend_layout']" position="before">
+            <t t-set="head">
+                <link rel="preconnect" href="https://fonts.googleapis.com"/>
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&amp;display=swap"/>
+            </t>
+        </xpath>
+        <!-- Logo AulaMetrics en lugar del logo de empresa -->
+        <xpath expr="//img[contains(@t-attf-src,'company_logo')]" position="replace">
+            <img src="/aula_metrics/static/description/icon.png"
+                 alt="AulaMetrics"
+                 style="max-height: 90px; width: auto;"/>
+        </xpath>
+        <!-- Quitar enlace "Powered by Odoo" -->
+        <xpath expr="//a[contains(@href,'odoo.com')]" position="replace"/>
+    </template>
 </odoo>

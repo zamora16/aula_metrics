@@ -34,11 +34,28 @@ def _setup_indexes_and_lang(env):
         module._update_translations('ca_ES')
 
 
+def _set_client_home_action(env):
+    """Asigna el dashboard de AulaMetrics como pantalla de inicio
+    para todos los usuarios con roles cliente (tutor, orientador, dirección)."""
+    action = env.ref('aula_metrics.action_dashboard_home', raise_if_not_found=False)
+    if not action:
+        return
+    admin_group = env.ref('base.group_system')
+    client_group_xmlids = [
+        'aula_metrics.group_aulametrics_tutor',
+        'aula_metrics.group_aulametrics_counselor',
+        'aula_metrics.group_aulametrics_management',
+    ]
+    for xmlid in client_group_xmlids:
+        group = env.ref(xmlid, raise_if_not_found=False)
+        if not group:
+            continue
+        client_users = group.users.filtered(lambda u: admin_group not in u.groups_id)
+        if client_users:
+            client_users.write({'action_id': action.id})
+
+
 def _post_init_create_indexes(env):
     """Hook de post-instalación."""
     _setup_indexes_and_lang(env)
-
-
-def _post_migrate_setup(env):
-    """Hook de post-migración/actualización: asegura idioma Valencià activo."""
-    _setup_indexes_and_lang(env)
+    _set_client_home_action(env)
