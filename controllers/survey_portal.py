@@ -6,6 +6,7 @@ import logging
 from odoo import http, fields
 from odoo.http import request
 from ..utils.lang_service import get_request_lang, set_lang_cookie, SUPPORTED_LANGS, DEFAULT_LANG
+from ..utils.constants import centro_surveys_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -47,6 +48,13 @@ class AulaMetricsSurveyPortal(http.Controller):
             return request.render('aula_metrics.portal_error', {
                 'error_title': 'Encuesta no encontrada',
                 'error_message': 'La encuesta no existe o no es de AulaMetrics.'
+            })
+
+        # Denegar acceso a encuestas adhoc si el feature flag está desactivado
+        if survey.is_adhoc and not centro_surveys_enabled(request.env):
+            return request.render('aula_metrics.portal_error', {
+                'error_title': 'Encuesta no disponible',
+                'error_message': 'Los cuestionarios del centro no están activados en esta instancia.',
             })
 
         questions = survey.with_context(lang=lang).get_questions_data(user_input=None)
