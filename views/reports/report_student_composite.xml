@@ -195,12 +195,13 @@
             </style>
 
             <!-- ══════════ PORTADA ══════════ -->
+            <t t-set="am_company" t-value="env.company"/>
             <main class="am-report">
                 <div class="am-header">
                     <table border="0" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:separate;border-spacing:0;border:none;">
                         <tr>
-                            <td style="vertical-align:top;border:none;padding:0;">
-                                <div class="tag">Evaluaci&#243;n Psicosocial</div>
+                            <td style="vertical-align:top;border:none;padding:0;width:100%;">
+                                <div class="tag">Evaluaci&#243;n Psicosocial · <t t-out="am_company.name"/></div>
                                 <h1>Informe compuesto de evaluaci&#243;n</h1>
                                 <table border="0" cellspacing="0" cellpadding="0" class="meta-table">
                                     <tr>
@@ -219,6 +220,12 @@
                                     </tr>
                                 </table>
                             </td>
+                            <t t-if="am_company.logo">
+                                <td style="vertical-align:middle;text-align:right;border:none;padding:0 0 0 16pt;white-space:nowrap;">
+                                    <img t-att-src="'/web/image/res.company/' + str(am_company.id) + '/logo'"
+                                         style="max-height:40pt;max-width:110pt;object-fit:contain;display:block;margin-left:auto;"/>
+                                </td>
+                            </t>
                         </tr>
                     </table>
                 </div>
@@ -273,8 +280,8 @@
                         <div class="am-header">
                             <table border="0" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:separate;border-spacing:0;border:none;">
                                 <tr>
-                                    <td style="vertical-align:top;border:none;padding:0;">
-                                        <div class="tag"><t t-out="d.get('evaluation_name', '')"/></div>
+                                    <td style="vertical-align:top;border:none;padding:0;width:100%;">
+                                        <div class="tag"><t t-out="d.get('evaluation_name', '')"/> · <t t-out="am_company.name"/></div>
                                         <h1><t t-out="d.get('survey_title', '')"/></h1>
                                         <table border="0" cellspacing="0" cellpadding="0" class="meta-table">
                                             <tr>
@@ -296,6 +303,12 @@
                                             </tr>
                                         </table>
                                     </td>
+                                    <t t-if="am_company.logo">
+                                        <td style="vertical-align:middle;text-align:right;border:none;padding:0 0 0 16pt;white-space:nowrap;">
+                                            <img t-att-src="'/web/image/res.company/' + str(am_company.id) + '/logo'"
+                                                 style="max-height:40pt;max-width:110pt;object-fit:contain;display:block;margin-left:auto;"/>
+                                        </td>
+                                    </t>
                                 </tr>
                             </table>
                         </div>

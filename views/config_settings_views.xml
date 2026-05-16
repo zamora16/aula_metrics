@@ -11,15 +11,39 @@
                      string="AulaMetrics"
                      name="aula_metrics"
                      groups="aula_metrics.group_aulametrics_admin">
+
+                    <!-- ── Identidad del Centro ─────────────────────────────────── -->
+                    <block title="Identidad del Centro" name="center_identity_block">
+                        <setting string="Nombre del centro"
+                                 help="Aparecerá en la cabecera de todos los informes PDF y plantillas de correo generados por AulaMetrics.">
+                            <field name="am_center_name" nolabel="1"
+                                   placeholder="Ej. IES Blasco Ibáñez"/>
+                        </setting>
+                        <setting string="Logo del centro"
+                                 help="Se incluirá en la esquina superior derecha de los informes PDF. Recomendado: fondo transparente o claro, formato PNG.">
+                            <field name="company_logo" widget="image" nolabel="1"
+                                   options="{'size': [120, 60]}"/>
+                        </setting>
+                        <setting string="Tipo de centro">
+                            <field name="am_center_type"/>
+                        </setting>
+                        <setting string="Código de centro"
+                                 help="Código oficial asignado por la administración educativa (ej. 46012345). Opcional — útil para identificar el centro en documentación oficial.">
+                            <field name="am_center_code"
+                                   placeholder="Ej. 46012345"/>
+                        </setting>
+                    </block>
+
+                    <!-- ── Cuestionarios ──────────────────────────────────────── -->
                     <block title="Cuestionarios" name="centro_surveys_block">
                         <setting string="Cuestionarios del Centro"
                                  help="Permite crear cuestionarios propios del centro y ver sus resultados en dashboards y reportes. Desactivado por defecto.">
                             <field name="enable_centro_surveys"/>
                         </setting>
                     </block>
+
                 </app>
             </xpath>
         </field>
     </record>
 </odoo>
-

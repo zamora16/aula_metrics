@@ -15,7 +15,7 @@
         <link rel="stylesheet"
               href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Source+Sans+3:wght@400;500;600&amp;display=swap"/>
         <!-- Hoja de estilos del portal: paleta Warm Teal Scholarly del dashboard -->
-        <link rel="stylesheet" type="text/css" href="/aula_metrics/static/src/css/portal.css"/>
+        <link rel="stylesheet" type="text/css" href="/aula_metrics/static/src/css/portal.css?v=3"/>
     </template>
 
 
@@ -45,6 +45,27 @@
 
 
     <!-- ============================================================
+         TOPBAR DEL PORTAL — logo del centro + selector de idioma
+         Variables requeridas: las mismas que portal_lang_switcher
+         (_lang_base_url, active_lang, supported_langs).
+         El lang switcher usa posición estática dentro del topbar
+         (el CSS de .am-topbar .am-lang-switcher anula el position:fixed).
+         ============================================================ -->
+    <template id="portal_topbar" name="Portal Topbar AulaMetrics">
+        <t t-set="am_company" t-value="env.company"/>
+        <header class="am-topbar" role="banner">
+            <div class="am-topbar-logo">
+                <t t-if="am_company.logo">
+                    <img t-att-src="'/web/image/res.company/' + str(am_company.id) + '/logo'"
+                         t-att-alt="am_company.name"/>
+                </t>
+            </div>
+            <t t-call="aula_metrics.portal_lang_switcher"/>
+        </header>
+    </template>
+
+
+    <!-- ============================================================
          PORTAL DE EVALUACIÓN — lista de encuestas
          ============================================================ -->
     <template id="portal_evaluacion" name="Portal de Evaluación AulaMetrics">
@@ -54,8 +75,8 @@
                 <title>Evaluación - AulaMetrics</title>
             </head>
             <body>
-                <!-- Selector de idioma (fijo en esquina superior derecha) -->
-                <t t-call="aula_metrics.portal_lang_switcher">
+                <!-- Topbar: logo del centro + selector de idioma -->
+                <t t-call="aula_metrics.portal_topbar">
                     <t t-set="_lang_base_url" t-value="'/evaluacion/' + token"/>
                 </t>
 
@@ -143,14 +164,14 @@
                 <title><t t-out="survey.title"/> - AulaMetrics</title>
             </head>
             <body>
-                <!-- Selector de idioma -->
+                <!-- Topbar: logo del centro + selector de idioma -->
                 <t t-if="preview">
-                    <t t-call="aula_metrics.portal_lang_switcher">
+                    <t t-call="aula_metrics.portal_topbar">
                         <t t-set="_lang_base_url" t-value="'/survey/preview/' + str(survey.id)"/>
                     </t>
                 </t>
                 <t t-else="">
-                    <t t-call="aula_metrics.portal_lang_switcher">
+                    <t t-call="aula_metrics.portal_topbar">
                         <t t-set="_lang_base_url" t-value="'/evaluacion/' + token + '/encuesta/' + str(survey.id)"/>
                     </t>
                 </t>

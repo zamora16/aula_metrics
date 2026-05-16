@@ -36,17 +36,62 @@ body {
     margin: 0;
 }
 
+/* ── Topbar del portal (logo + lang switcher) ───────────────── */
+.am-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.625rem 1.25rem;
+    background: var(--am-surface);
+    border-bottom: 1px solid var(--am-border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    min-height: 56px;
+}
+
+.am-topbar-logo {
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.am-topbar-logo img {
+    /* altura fija para que no dependa del tamaño natural de la imagen */
+    height: 38px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    display: block;
+}
+
+@media (max-width: 480px) {
+    .am-topbar { padding: 0.5rem 0.875rem; min-height: 48px; }
+    .am-topbar-logo img { height: 28px; max-width: 110px; }
+}
+
 /* ── Layout ─────────────────────────────────────────────────── */
 .am-container {
     max-width: 800px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1.25rem;
 }
 
 .sf-container {
     max-width: 900px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1.25rem;
+}
+
+@media (max-width: 700px) {
+    .am-container,
+    .sf-container { padding: 1.25rem 1rem; }
+}
+
+@media (max-width: 400px) {
+    .am-container,
+    .sf-container { padding: 1rem 0.75rem; }
 }
 
 /* ── Cards ──────────────────────────────────────────────────── */
@@ -57,6 +102,14 @@ body {
     margin-bottom: 1.5rem;
     box-shadow: var(--am-shadow);
     border: 1px solid var(--am-border);
+}
+
+@media (max-width: 700px) {
+    .am-card { padding: 1.25rem; }
+}
+
+@media (max-width: 400px) {
+    .am-card { padding: 1rem; border-radius: 8px; }
 }
 
 /* ── Cabecera de evaluación ─────────────────────────────────── */
@@ -72,6 +125,14 @@ body {
 .am-header p {
     margin: 0;
     color: var(--am-muted);
+}
+
+@media (max-width: 700px) {
+    .am-header h1 { font-size: 1.35rem; }
+}
+
+@media (max-width: 400px) {
+    .am-header h1 { font-size: 1.15rem; }
 }
 
 /* ── Info grid (alumno / progreso / fecha) ──────────────────── */
@@ -95,6 +156,14 @@ body {
     display: block;
     font-weight: 600;
     color: var(--am-text);
+}
+
+@media (max-width: 700px) {
+    .am-info { gap: 1.25rem; }
+}
+
+@media (max-width: 400px) {
+    .am-info { gap: 0.875rem; }
 }
 
 /* ── Barra de progreso ──────────────────────────────────────── */
@@ -124,6 +193,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
     padding: 1rem 1.25rem;
     border: 1px solid var(--am-border);
     border-radius: 8px;
@@ -143,6 +213,20 @@ body {
 
 .am-survey-title {
     font-weight: 500;
+    flex: 1;
+    min-width: 0;
+}
+
+/* En móvil, el botón va debajo del título */
+@media (max-width: 560px) {
+    .am-survey-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .am-survey-item .am-btn,
+    .am-survey-item .am-badge {
+        align-self: flex-end;
+    }
 }
 
 /* ── Caja de completado total ───────────────────────────────── */
@@ -169,10 +253,18 @@ body {
     margin: 0;
 }
 
-/* ── Botones ─────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+    .am-complete-box { padding: 1.75rem 1.25rem; }
+    .am-complete-box svg { width: 48px; height: 48px; }
+}
+
+/* ── Botones — touch targets mínimo 44px ────────────────────── */
 .am-btn,
 .sf-btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
     padding: 0.5rem 1.25rem;
     border-radius: 6px;
     text-decoration: none;
@@ -212,6 +304,7 @@ body {
     border-radius: 50px;
     font-size: 0.8rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .am-badge-success {
@@ -266,9 +359,20 @@ body {
     font-size: 0.9rem;
 }
 
+@media (max-width: 700px) {
+    .sf-header { padding: 1.25rem; }
+    .sf-header h1 { font-size: 1.2rem; }
+}
+
+@media (max-width: 400px) {
+    .sf-header h1 { font-size: 1.1rem; }
+}
+
 .sf-back {
-    display: inline-block;
-    margin-bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 0.5rem;
     color: var(--am-accent);
     text-decoration: none;
     font-size: 0.9rem;
@@ -283,6 +387,14 @@ body {
     padding: 2rem;
     border: 1px solid var(--am-border);
     box-shadow: var(--am-shadow);
+}
+
+@media (max-width: 700px) {
+    .sf-form { padding: 1.25rem; }
+}
+
+@media (max-width: 400px) {
+    .sf-form { padding: 1rem; }
 }
 
 .sf-page-title {
@@ -325,12 +437,19 @@ body {
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, transform 0.15s;
     background: var(--am-surface);
+    /* Touch target mínimo */
+    min-height: 44px;
 }
 
 .sf-option:hover {
     border-color: var(--am-primary);
     background: var(--am-primary-light);
     transform: translateX(2px);
+}
+
+/* Evitar transform en pantallas táctiles */
+@media (hover: none) {
+    .sf-option:hover { transform: none; }
 }
 
 .sf-option input[type="radio"],
@@ -360,11 +479,20 @@ body {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     margin-top: 0.5rem;
+    /* Indicador visual de scroll */
+    background:
+        linear-gradient(to right, var(--am-surface) 30%, transparent) left,
+        linear-gradient(to left,  var(--am-surface) 30%, transparent) right,
+        radial-gradient(ellipse at left,  rgba(0,0,0,0.12) 0%, transparent 70%) left,
+        radial-gradient(ellipse at right, rgba(0,0,0,0.12) 0%, transparent 70%) right;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-repeat: no-repeat;
+    background-attachment: local, local, scroll, scroll;
 }
 
 .sf-matrix {
     width: 100%;
-    min-width: 520px;
+    min-width: 480px;
     border-collapse: collapse;
 }
 
@@ -388,16 +516,23 @@ body {
 .sf-matrix td:first-child {
     text-align: left;
     font-weight: 500;
-    min-width: 200px;
-    max-width: 340px;
+    min-width: 160px;
+    max-width: 300px;
     padding-right: 1rem;
 }
 
 .sf-matrix input[type="radio"] {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     cursor: pointer;
     accent-color: var(--am-primary);
+}
+
+@media (max-width: 700px) {
+    .sf-matrix { min-width: 420px; font-size: 0.78rem; }
+    .sf-matrix th,
+    .sf-matrix td { padding: 0.4rem 0.25rem; }
+    .sf-matrix td:first-child { min-width: 120px; }
 }
 
 /* ── Inputs de texto ─────────────────────────────────────────── */
@@ -411,6 +546,8 @@ body {
     color: var(--am-text);
     background: var(--am-surface);
     transition: border-color 0.2s;
+    /* Touch target */
+    min-height: 44px;
 }
 
 .sf-input:focus {
@@ -433,6 +570,16 @@ textarea.sf-input {
     padding-top: 1.5rem;
     border-top: 1px solid var(--am-border);
     gap: 1rem;
+}
+
+@media (max-width: 560px) {
+    .sf-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    .sf-btn,
+    .sf-back { width: 100%; text-align: center; justify-content: center; }
 }
 
 .sf-preview-notice {
@@ -487,39 +634,19 @@ textarea.sf-input {
     color: var(--am-muted);
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 700px) {
-    .am-container,
-    .sf-container { padding: 1rem 0.75rem; }
-
-    .am-card,
-    .sf-form,
-    .sf-header { padding: 1.25rem; }
-
-    .am-info { gap: 1rem; }
-
-    .sf-matrix { font-size: 0.75rem; min-width: 480px; }
-    .sf-matrix th,
-    .sf-matrix td { padding: 0.4rem 0.2rem; }
-    .sf-matrix td:first-child { min-width: 140px; }
-
-    .sf-actions { flex-direction: column-reverse; }
-    .sf-btn { width: 100%; text-align: center; }
+@media (max-width: 480px) {
+    .am-error-box { padding: 2rem 1.25rem; }
 }
 
-/* ── Selector de idioma ──────────────────────────────────────── */
+/* ── Selector de idioma — siempre dentro del topbar (estático) ── */
 .am-lang-switcher {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 100;
     display: flex;
     gap: 0;
     border-radius: 20px;
     overflow: hidden;
     border: 1.5px solid var(--am-primary);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
     background: var(--am-surface);
+    flex-shrink: 0;
 }
 
 .am-lang-switcher form {
@@ -538,6 +665,7 @@ textarea.sf-input {
     border: none;
     cursor: pointer;
     font-family: inherit;
+    min-height: 36px;
 }
 
 .am-lang-switcher form + form button {
@@ -554,11 +682,7 @@ textarea.sf-input {
     pointer-events: none;
 }
 
-@media (max-width: 700px) {
-    .am-lang-switcher {
-        top: 0.5rem;
-        right: 0.5rem;
-    }
+@media (max-width: 480px) {
     .am-lang-switcher button {
         padding: 0.25rem 0.6rem;
         font-size: 0.72rem;

@@ -250,12 +250,13 @@
             </style>
 
             <!-- ══════════ PORTADA ══════════ -->
+            <t t-set="am_company" t-value="env.company"/>
             <main class="am-ev am-ev-cover-page">
                 <div class="am-ev-header">
                     <table border="0" cellspacing="0" cellpadding="0" style="width:100%;">
                         <tr>
-                            <td style="border:none;padding:0;">
-                                <div class="tag">Informe de Evaluaci&#243;n · AulaMetrics</div>
+                            <td style="border:none;padding:0;width:100%;">
+                                <div class="tag"><t t-out="am_company.name"/> · AulaMetrics</div>
                                 <h1><t t-out="eval_name or (docs and docs[0].name) or ''"/></h1>
                                 <table border="0" cellspacing="0" cellpadding="0">
                                     <tr class="meta-row">
@@ -274,6 +275,12 @@
                                     </tr>
                                 </table>
                             </td>
+                            <t t-if="am_company.logo">
+                                <td style="vertical-align:middle;text-align:right;border:none;padding:0 0 0 16pt;white-space:nowrap;">
+                                    <img t-att-src="'/web/image/res.company/' + str(am_company.id) + '/logo'"
+                                         style="max-height:40pt;max-width:110pt;object-fit:contain;display:block;margin-left:auto;"/>
+                                </td>
+                            </t>
                         </tr>
                     </table>
                 </div>

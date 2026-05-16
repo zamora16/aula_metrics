@@ -11,6 +11,32 @@ class AulaMetricsSettings(models.TransientModel):
     """
     _inherit = 'res.config.settings'
 
+    # ── Identidad del centro (relacionados con res.company) ──────────────────
+    # company_name ya está declarado por base_setup como readonly → usamos
+    # am_center_name propio para poder editar el nombre desde aquí.
+    am_center_name = fields.Char(
+        related='company_id.name',
+        readonly=False,
+        string='Nombre del centro',
+    )
+    # company_logo no existe en res.config.settings base → lo declaramos aquí.
+    company_logo = fields.Binary(
+        related='company_id.logo',
+        readonly=False,
+        string='Logo del centro',
+    )
+    am_center_code = fields.Char(
+        related='company_id.am_center_code',
+        readonly=False,
+        string='Código de centro',
+    )
+    am_center_type = fields.Selection(
+        related='company_id.am_center_type',
+        readonly=False,
+        string='Tipo de centro',
+    )
+
+    # ── Feature flags ────────────────────────────────────────────────────────
     enable_centro_surveys = fields.Boolean(
         string='Activar cuestionarios del centro',
         help=(

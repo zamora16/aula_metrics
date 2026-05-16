@@ -10,3 +10,4 @@ from . import metric_value
 from . import participation
 from . import evaluation
 from . import config_settings
+from . import res_company
