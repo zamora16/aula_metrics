@@ -31,16 +31,28 @@ class SurveyExtension(models.Model):
         help='Identificador único del cuestionario (ej: WHO5, BULLYING_VA, SDQ)'
     )
 
+    # Descripción de qué evalúa la escala (visible para orientadores en el backend)
+    scale_description = fields.Text(
+        string='Descripción de la escala',
+        help='Qué mide este cuestionario y para qué sirve. Información para el orientador.'
+    )
+
     # Edad recomendada para el cuestionario
     recommended_age_min = fields.Integer(
         string='Edad mínima recomendada',
         default=0,
-        help='Edad mínima recomendada para aplicar este cuestionario (0 = sin límite)'
+        help='Edad mínima recomendada para aplicar este cuestionario (0 = sin límite inferior)'
     )
     recommended_age_max = fields.Integer(
         string='Edad máxima recomendada',
         default=0,
-        help='Edad máxima recomendada para aplicar este cuestionario (0 = sin límite)'
+        help='Edad máxima recomendada para aplicar este cuestionario (0 = sin límite superior)'
+    )
+
+    # Etiqueta legible del rango de edad (computada)
+    age_range_label = fields.Char(
+        string='Rango de edad',
+        compute='_compute_age_range_label',
     )
 
     # Baremos del cuestionario (sólo para is_aulametrics)
@@ -106,6 +118,20 @@ class SurveyExtension(models.Model):
 
         return super(SurveyExtension, self).write(vals)
     
+    @api.depends('recommended_age_min', 'recommended_age_max')
+    def _compute_age_range_label(self):
+        for survey in self:
+            min_age = survey.recommended_age_min
+            max_age = survey.recommended_age_max
+            if not min_age and not max_age:
+                survey.age_range_label = 'Sin restricción de edad'
+            elif min_age and not max_age:
+                survey.age_range_label = f'{min_age}+ años'
+            elif not min_age and max_age:
+                survey.age_range_label = f'Hasta {max_age} años'
+            else:
+                survey.age_range_label = f'{min_age}–{max_age} años'
+
     @api.depends('evaluation_ids')
     def _compute_evaluation_count(self):
         """Cuenta cuántas evaluaciones usan este cuestionario"""
