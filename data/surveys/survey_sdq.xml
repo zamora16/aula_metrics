@@ -17,6 +17,7 @@
         <field name="recommended_age_min">11</field>
         <field name="recommended_age_max">17</field>
         <field name="description">Para cada frase, marca la casilla que mejor describa cómo te has comportado o sentido en los últimos 6 meses.</field>
+        <field name="scale_description">El SDQ (Strengths and Difficulties Questionnaire) es un cuestionario de cribado del comportamiento y la salud mental en niños y adolescentes de 11 a 17 años. Evalúa cinco dimensiones: síntomas emocionales, problemas de conducta, hiperactividad/inatención, problemas con compañeros y conducta prosocial. La puntuación total de dificultades (suma de las cuatro primeras subescalas, rango 0–40) permite identificar alumnos en riesgo y orientar posibles derivaciones especializadas.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">one_page</field>
         <field name="users_can_go_back" eval="True"/>

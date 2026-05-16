@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "AulaMetrics",
-    'version': '1.0.8',
+    'version': '1.0.9',
     'summary': "Sistema de evaluación psicosocial para centros educativos",
 
     'author': "Angel Zamora",

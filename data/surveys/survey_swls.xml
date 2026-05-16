@@ -16,6 +16,7 @@
         <field name="survey_code">SWLS</field>
         <field name="recommended_age_min">14</field>
         <field name="description">Por favor, indica tu grado de acuerdo con cada frase seleccionando el número apropiado.</field>
+        <field name="scale_description">La SWLS (Satisfaction With Life Scale, Diener et al. 1985) es una medida breve de bienestar subjetivo global. Evalúa en qué medida el alumno valora positivamente su vida en conjunto a través de 5 ítems en escala Likert de 7 puntos (rango total: 5–35). Puntúa una única dimensión: satisfacción vital. Es especialmente útil como indicador de bienestar psicológico general a partir de los 14 años.</field>
         <field name="scoring_type">no_scoring</field>
         <field name="questions_layout">one_page</field>
         <field name="users_can_go_back" eval="True"/>

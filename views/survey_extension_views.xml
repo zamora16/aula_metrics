@@ -145,29 +145,24 @@
                         </button>
                         <button type="object" name="action_test_survey" class="oe_stat_button" icon="fa-eye" string="Vista Previa"/>
                     </div>
-                    
+
                     <field name="is_adhoc" invisible="1"/>
                     <field name="is_aulametrics" invisible="1"/>
-                    
+
                     <group>
                         <group>
                             <field name="title" readonly="1"/>
                             <field name="survey_code" readonly="1"/>
+                            <field name="age_range_label" readonly="1" string="Rango de edad recomendado"/>
                         </group>
                         <group>
                             <field name="average_duration" readonly="1"/>
                         </group>
                     </group>
-                    
-                    <group>
-                        <field name="description" readonly="1"/>
+
+                    <group string="Descripción de la escala" col="1">
+                        <field name="scale_description" readonly="1" nolabel="1"/>
                     </group>
-                    
-                    <div class="alert alert-info mt-3" role="alert">
-                        <strong>ℹ️ Cuestionario validado científicamente</strong><br/>
-                        Este es un cuestionario oficial de AulaMetrics. No puede ser modificado para mantener su validez psicométrica.
-                        Usa el botón "Vista Previa" para ver las preguntas.
-                    </div>
                 </sheet>
             </form>
         </field>
@@ -180,7 +175,9 @@
         <field name="arch" type="xml">
             <tree string="Cuestionarios" create="false" edit="false" delete="false">
                 <field name="title" string="Título del Cuestionario"/>
-                <field name="average_duration" string="Duración Media (min)" widget="integer"/>
+                <field name="survey_code" string="Código" optional="show"/>
+                <field name="age_range_label" string="Rango de edad"/>
+                <field name="average_duration" string="Duración (min)" widget="integer"/>
                 <field name="evaluation_count" string="Nº Evaluaciones"/>
                 <button name="action_test_survey" type="object" string="Vista Previa" icon="fa-eye"/>
             </tree>
