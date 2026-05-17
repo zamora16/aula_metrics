@@ -62,13 +62,30 @@ def _make_url_fetcher(base_url, session_id=None):
 
 # WeasyPrint renderiza fuentes marginalmente más altas que un motor de browser,
 # lo que provoca que el flex container de 297mm desborde y genere una página
-# extra con solo el footer. overflow:hidden lo recorta en lugar de paginarlo.
-_WP_FIX = (
+# extra con solo el footer. Para páginas de altura fija se fuerza body a 297mm
+# y se corta el overflow. Para páginas de contenido dinámico (evaluaciones con
+# n escalas variable) se deja que WeasyPrint pagine libremente y solo se
+# restablecen los márgenes.
+_WP_FIX_FIXED = (
     '<style>'
     'html,body{height:297mm!important;margin:0!important;padding:0!important}'
-    '.am-report{overflow:hidden!important;break-inside:avoid!important}'
+    '.am-report{overflow:hidden!important}'
     '</style>'
 )
+
+_WP_FIX_FLOW = (
+    '<style>'
+    'html,body{margin:0!important;padding:0!important}'
+    # Primera página del documento: sin margen superior (la cabecera es full-bleed)
+    # Páginas de continuación (2, 3…): margen superior para que el contenido
+    # no aparezca pegado al borde cuando un cuestionario ocupa varias páginas.
+    '@page :first{margin-top:0}'
+    '@page{margin-top:18pt}'
+    '</style>'
+)
+
+# Clases CSS que identifican páginas diseñadas para ocupar exactamente 297mm.
+_FIXED_PAGE_CLASSES = {'am-report', 'am-ev-cover-page'}
 
 
 def _build_page_html(main_node, base_tag, inline_styles):
@@ -78,13 +95,16 @@ def _build_page_html(main_node, base_tag, inline_styles):
     elif 'style' in main_node.attrib:
         del main_node.attrib['style']
 
+    node_classes = set((main_node.get('class', '') or '').split())
+    wp_fix = _WP_FIX_FIXED if node_classes & _FIXED_PAGE_CLASSES else _WP_FIX_FLOW
+
     return (
         '<!DOCTYPE html><html>\n'
         '<head>\n'
         '<meta charset="utf-8"/>\n'
         f'{base_tag}\n'
         f'{inline_styles}\n'
-        f'{_WP_FIX}\n'
+        f'{wp_fix}\n'
         '</head>\n'
         f'<body>\n{lxml.html.tostring(main_node, encoding="unicode")}\n</body>\n'
         '</html>'

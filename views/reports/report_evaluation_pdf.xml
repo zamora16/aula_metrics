@@ -221,6 +221,27 @@
                     border-top: 2pt solid #D4621A !important;
                     font-size: 7.5pt; color: #5A4E48; text-align: center;
                     background: #ffffff !important;
+                    break-before: avoid; page-break-before: avoid;
+                }
+
+                /* ── Prevención de cortes de página en secciones dinámicas ──
+                   Aplica a páginas de cuestionario que pueden tener contenido
+                   variable (n escalas, n grupos, n niveles). */
+                .am-ev-survey-header {
+                    break-inside: avoid; page-break-inside: avoid;
+                    break-after: avoid;  page-break-after: avoid;
+                }
+                .am-ev-scale-block {
+                    break-inside: avoid; page-break-inside: avoid;
+                }
+                .am-ev-scale-title {
+                    break-after: avoid; page-break-after: avoid;
+                }
+                .am-ev-center-row {
+                    break-inside: avoid; page-break-inside: avoid;
+                }
+                .am-ev-table tr {
+                    break-inside: avoid; page-break-inside: avoid;
                 }
 
                 /* ── Portada: estructura de página completa ── */
@@ -433,6 +454,9 @@
                         <!-- ── CUESTIONARIO OFICIAL (is_aulametrics=True) ── -->
                         <t t-if="sv.get('is_aulametrics') and not sv.get('is_text_survey')">
                             <t t-foreach="sv.get('scales', [])" t-as="scale">
+                                <!-- am-ev-scale-block agrupa título + datos de una escala como
+                                     unidad indivisible para que WeasyPrint no corte en medio -->
+                                <div class="am-ev-scale-block">
 
                                 <div class="am-ev-scale-title">
                                     <t t-out="scale.get('scale_label', scale.get('scale_name', ''))"/>
@@ -537,12 +561,15 @@
                                     </table>
                                 </t>
 
+                                </div><!-- /am-ev-scale-block -->
                             </t><!-- /t-foreach scales -->
                         </t>
 
                         <!-- ── CUESTIONARIO AD-HOC (is_aulametrics=False, is_text_survey=False) ── -->
                         <t t-elif="not sv.get('is_text_survey') and sv.get('metrics')">
                             <t t-foreach="sv.get('metrics', [])" t-as="metric">
+                                <div class="am-ev-scale-block">
+
                                 <div class="am-ev-scale-title">
                                     <t t-out="metric.get('metric_label', metric.get('metric_name', ''))"/>
                                 </div>
@@ -613,6 +640,8 @@
                                         </tbody>
                                     </table>
                                 </t>
+
+                                </div><!-- /am-ev-scale-block -->
                             </t><!-- /t-foreach metrics -->
                         </t>
 

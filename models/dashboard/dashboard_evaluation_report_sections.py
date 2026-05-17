@@ -251,11 +251,11 @@ class DashboardEvaluationReportSections(models.TransientModel):
                     '<i class="fa fa-info-circle me-2"></i>'
                     'No hay resultados disponibles para este rol y evaluación.</div>')
         return '\n'.join(
-            self._build_official_survey_html(sd, role_info)
-            if sd['is_aulametrics']
+            self._build_text_survey_html(sd, role_info)
+            if sd.get('is_text_survey')
             else (
-                self._build_text_survey_html(sd, role_info)
-                if sd.get('is_text_survey')
+                self._build_official_survey_html(sd, role_info)
+                if sd['is_aulametrics']
                 else self._build_adhoc_survey_html(sd, role_info)
             )
             for sd in surveys_data

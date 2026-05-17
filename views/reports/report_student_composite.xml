@@ -50,10 +50,13 @@
                 .am-report p { margin: 0 0 6pt 0; }
 
                 /* ── Anti-corte en saltos de página ── */
-                .am-header { page-break-inside: avoid; }
-                .am-global { page-break-inside: avoid; }
-                .am-footer { page-break-inside: avoid; }
-                .am-scales tr { page-break-inside: avoid; }
+                .am-header    { page-break-inside: avoid; break-inside: avoid; }
+                .am-global    { page-break-inside: avoid; break-inside: avoid; }
+                .am-disclaimer { page-break-inside: avoid; break-inside: avoid; }
+                .am-footer    { page-break-inside: avoid; break-inside: avoid;
+                                page-break-before: avoid; break-before: avoid; }
+                .am-scales tr { page-break-inside: avoid; break-inside: avoid; }
+                .am-section-title { page-break-after: avoid; break-after: avoid; }
 
                 /* ── CABECERA ── */
                 .am-header {

@@ -294,7 +294,14 @@ class DashboardEvaluationReport(models.TransientModel):
         result = []
         for survey in surveys:
             if survey.is_aulametrics:
-                data = self._get_official_survey_data(survey, evaluation, role_info)
+                if self._is_text_only_survey(survey):
+                    # Cuestionario oficial con solo preguntas de texto abierto
+                    # (p.ej. RELACIONES_SOCIALES): mostrar análisis cualitativo.
+                    data = self._get_text_survey_data(survey, evaluation, role_info)
+                    if data:
+                        data['is_aulametrics'] = True  # preserva badge "Cuestionario oficial"
+                else:
+                    data = self._get_official_survey_data(survey, evaluation, role_info)
             elif self._is_text_only_survey(survey):
                 # Si el cuestionario sólo tiene preguntas de texto abierto, mostrar
                 # tabla de frecuencia de palabras sin pasar por la lógica cuantitativa.
