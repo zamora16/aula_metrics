@@ -17,6 +17,7 @@
         'data/alert_keywords.xml',
         'data/surveys/survey_sdq.xml',
         'data/surveys/survey_swls.xml',
+        'data/surveys/survey_relaciones_sociales.xml',
         'data/cron/cron_jobs.xml',
         'data/dashboard_data.xml',
         'data/case_stages.xml',

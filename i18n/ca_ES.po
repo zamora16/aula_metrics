@@ -331,3 +331,23 @@ msgstr "Fins ara he aconseguit de la vida les coses que considere importants"
 msgid "Si pudiera vivir mi vida otra vez no cambiaría casi nada"
 msgstr "Si poguera viure la meua vida una altra vegada no canviaria quasi res"
 
+
+# ==============================================================
+#  RELACIONES SOCIALES — Convivència entre Iguals
+# ==============================================================
+
+#. module: aula_metrics
+#: model:survey.survey,title:aula_metrics.survey_relaciones_sociales
+msgid "Relaciones Sociales — Convivencia entre Iguales"
+msgstr "Relacions Socials — Convivència entre Iguals"
+
+#. module: aula_metrics
+#: model:survey.survey,description:aula_metrics.survey_relaciones_sociales
+msgid "Responde con sinceridad. No hay respuestas correctas ni incorrectas. Tu opinión es muy importante para conocer cómo te sientes en clase."
+msgstr "Respon amb sinceritat. No hi ha respostes correctes ni incorrectes. La teua opinió és molt important per a conéixer com et sents a classe."
+
+#. module: aula_metrics
+#: model:survey.question,title:aula_metrics.rsoc_q01
+msgid "¿Te sientes cómodo/a y aceptado/a por tus compañeros/as? ¿Por qué?"
+msgstr "Et sents còmode/a i acceptat/ada pels teus companys/es? Per què?"
+

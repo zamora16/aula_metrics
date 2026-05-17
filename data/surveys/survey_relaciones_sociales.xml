@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===========================================================
+         CUESTIONARIO RELACIONES SOCIALES — Pregunta abierta
+         Evaluación de la convivencia y bienestar entre iguales
+         survey_code: RELACIONES_SOCIALES | Edad recomendada: 10–18 años
+
+         Tipo: pregunta de texto abierto (text_box).
+         No genera SurveyResult ni datos cuantitativos (sin estrategia
+         de scoring asociada al survey_code).
+         Las respuestas se almacenan como aula_metrics.qualitative_response
+         y aparecen exclusivamente en el dashboard de Análisis Cualitativo.
+         =========================================================== -->
+
+    <record id="survey_relaciones_sociales" model="survey.survey">
+        <field name="title">Relaciones Sociales — Convivencia entre Iguales</field>
+        <field name="is_aulametrics" eval="True"/>
+        <field name="survey_code">RELACIONES_SOCIALES</field>
+        <field name="recommended_age_min">10</field>
+        <field name="recommended_age_max">18</field>
+        <field name="description">Responde con sinceridad. No hay respuestas correctas ni incorrectas. Tu opinión es muy importante para conocer cómo te sientes en clase.</field>
+        <field name="scale_description">Cuestionario de pregunta abierta para evaluar la percepción del estudiante sobre su integración y bienestar en el grupo de iguales. Proporciona datos cualitativos sobre las relaciones interpersonales en el aula, permitiendo identificar indicadores de aislamiento social, exclusión o conflictos entre compañeros. Los datos se analizan cualitativamente mediante detección automática de palabras clave y nube de términos.</field>
+        <field name="scoring_type">no_scoring</field>
+        <field name="questions_layout">one_page</field>
+        <field name="users_can_go_back" eval="True"/>
+        <field name="is_attempts_limited" eval="False"/>
+        <field name="is_time_limited" eval="False"/>
+        <field name="access_mode">token</field>
+        <field name="users_login_required" eval="False"/>
+    </record>
+
+    <!-- Pregunta única de texto abierto -->
+    <record id="rsoc_q01" model="survey.question">
+        <field name="survey_id" ref="survey_relaciones_sociales"/>
+        <field name="title">¿Te sientes cómodo/a y aceptado/a por tus compañeros/as? ¿Por qué?</field>
+        <field name="question_type">text_box</field>
+        <field name="sequence">1</field>
+        <field name="metric_label">Relaciones sociales</field>
+        <field name="constr_mandatory" eval="True"/>
+    </record>
+
+</odoo>
