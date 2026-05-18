@@ -99,7 +99,13 @@ class ResPartner(models.Model):
             fn = vals.get('student_firstname', '')
             ln = vals.get('student_lastname', '')
             if (fn or ln) and not vals.get('name'):
+                # Parts → name
                 vals['name'] = f'{fn} {ln}'.strip()
+            elif vals.get('name') and not fn and not ln and vals.get('academic_group_id'):
+                # name → parts (alumno creado sin desglose)
+                parts = vals['name'].split(' ', 1)
+                vals['student_firstname'] = parts[0]
+                vals['student_lastname'] = parts[1] if len(parts) > 1 else ''
         records = super().create(vals_list)
         records._assign_student_code()
         return records

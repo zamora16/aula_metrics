@@ -96,7 +96,24 @@ class Alert(models.Model):
         string='Nivel Educativo',
         store=False,
     )
-    
+
+    # Campos de visualización para la tabla de alertas activas
+    alert_date_only = fields.Date(
+        string='Fecha',
+        compute='_compute_alert_date_only',
+        store=False,
+    )
+    threshold_display = fields.Char(
+        string='Umbral',
+        compute='_compute_threshold_display',
+        store=False,
+    )
+    score_display = fields.Char(
+        string='Valor',
+        compute='_compute_score_display',
+        store=False,
+    )
+
     # Empty @api.depends() is intentional: case_id is computed via a reverse
     # search (aula_metrics.case → alert_id) so there is no direct field
     # dependency to declare. The field is store=False and recomputed on every
@@ -127,6 +144,36 @@ class Alert(models.Model):
             else:
                 alert.course_level_general = 'Sin curso'
     
+    @api.depends('alert_date')
+    def _compute_alert_date_only(self):
+        for alert in self:
+            alert.alert_date_only = alert.alert_date.date() if alert.alert_date else False
+
+    @api.depends('alert_type', 'threshold_id.name')
+    def _compute_threshold_display(self):
+        for alert in self:
+            if alert.alert_type == 'qualitative':
+                alert.threshold_display = 'Palabra de alerta'
+            elif alert.alert_type == 'manual':
+                alert.threshold_display = 'Notificada por tutor'
+            else:
+                alert.threshold_display = alert.threshold_id.name or ''
+
+    @api.depends('alert_type', 'score_value', 'qualitative_response_id',
+                 'qualitative_response_id.detected_keyword_ids')
+    def _compute_score_display(self):
+        for alert in self:
+            if alert.alert_type == 'qualitative':
+                try:
+                    keywords = alert.qualitative_response_id.detected_keyword_ids.mapped('keyword')
+                    alert.score_display = ', '.join(keywords) if keywords else 'Palabra de alerta'
+                except (AttributeError, TypeError):
+                    alert.score_display = 'Palabra de alerta'
+            elif alert.alert_type == 'manual':
+                alert.score_display = '-'
+            else:
+                alert.score_display = f'{alert.score_value:.2f}' if alert.score_value else '-'
+
     @api.depends('qualitative_response_id', 'threshold_id', 'is_manual')
     def _compute_alert_type(self):
         """Determina si la alerta es cuantitativa, cualitativa o manual."""

@@ -23,7 +23,9 @@ class AlertsDashboard(models.Model):
     @api.depends()
     def _compute_all_alerts(self):
         for record in self:
-            record.all_alerts = self.env['aula_metrics.alert'].search([])
+            record.all_alerts = self.env['aula_metrics.alert'].search([
+                ('status', 'in', ['resolved', 'dismissed'])
+            ])
 
     @api.depends()
     def _compute_thresholds(self):
