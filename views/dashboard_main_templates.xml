@@ -118,8 +118,8 @@
                         </div>
                     </div>
                 </t>
-                <a href="/web" class="btn btn-outline-light btn-sm w-100">
-                    <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"/>Volver a Odoo
+                <a href="/web#action=aula_metrics.action_dashboard_home" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"/>Volver
                 </a>
             </div>
         </aside>

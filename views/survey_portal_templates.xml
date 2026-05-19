@@ -183,7 +183,7 @@
                         <a t-attf-href="/evaluacion/#{token}" class="sf-back">&#8592; Volver a la evaluación</a>
                     </t>
                     <t t-if="preview">
-                        <a href="#" onclick="window.close()" class="sf-back">&#8592; Cerrar vista previa</a>
+                        <a href="/web#action=aula_metrics.action_survey_official" class="sf-back">&#8592; Volver a Cuestionarios Oficiales</a>
                     </t>
 
                     <!-- Cabecera de la encuesta -->
