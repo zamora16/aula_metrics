@@ -46,9 +46,9 @@
         'wizards/resolve_alert_wizard_views.xml',
 
     ],
-    'demo': [
-        'demo/demo.xml',
-    ],
+    'external_dependencies': {
+        'python': ['pandas', 'plotly'],
+    },
     'installable': True,
     'application': True,
     'auto_install': False,
